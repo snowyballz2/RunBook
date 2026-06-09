@@ -1,16 +1,2 @@
-# Dependencies
-node_modules
-
-# Build output
-dist
-dev-dist
-
-# Logs
-*.log
-npm-debug.log*
-
-# Editor / OS
-.DS_Store
-*.local
-.vscode/*
-!.vscode/extensions.json
+node_modules/
+dist/
