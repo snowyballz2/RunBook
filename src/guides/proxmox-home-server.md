@@ -176,6 +176,23 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > [!DANGER]
 > Only pipe a script straight into a root shell when you trust the source and have read it. This one is widely used and open, but make that judgement yourself every time.
 
+> [!DETAILS] How to check a script yourself before running it
+> "Piping curl to bash" runs whatever the server sends at that exact moment. The safer habit costs one minute — download, read, then run the copy you read:
+>
+> ```bash
+> # 1. Download to a file instead of executing it:
+> curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh -o post-install.sh
+>
+> # 2. Read it (press q to quit). Skim for the URLs it contacts
+> #    and anything it deletes or installs:
+> less post-install.sh
+>
+> # 3. Run the exact copy you just read:
+> bash post-install.sh
+> ```
+>
+> This project is open source with a large, active maintainer community, but it is community-run — not official Proxmox software. The same habit applies to the Home Assistant helper in Phase 3, and to every other one-liner the internet hands you.
+
 > [!DETAILS] What the script actually changes
 > Run it in the Proxmox shell (Datacenter → your node → Shell). It walks you through yes/no menus:
 >
