@@ -160,6 +160,86 @@ describe("parseGuide — friendly errors", () => {
   });
 });
 
+describe("parseGuide — [!DETAILS] expandable sections", () => {
+  const md = [
+    "# T",
+    "",
+    "## Phase",
+    "",
+    "### Step with depth",
+    "Short body.",
+    "",
+    "> [!DETAILS] How to choose a static IP",
+    "> Find your gateway first:",
+    ">",
+    "> ```bash",
+    "> ipconfig",
+    "> ```",
+    ">",
+    "> Then pick an address outside the DHCP pool.",
+    "",
+    "> [!DETAILS]",
+    "> Body with no custom title.",
+  ].join("\n");
+
+  const guide = parseGuide(md);
+  const blocks = guide.phases[0].steps[0].blocks;
+
+  it("parses a titled details block, collapsed content intact", () => {
+    const details = blocks.filter((b) => b.type === "details");
+    expect(details).toHaveLength(2);
+    if (details[0].type === "details") {
+      expect(details[0].title).toBe("How to choose a static IP");
+      expect(details[0].blocks.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("renders command cards inside details (recursion)", () => {
+    const d = blocks.find((b) => b.type === "details");
+    if (d?.type === "details") {
+      const cmd = d.blocks.find((b) => b.type === "command");
+      expect(cmd).toBeTruthy();
+      if (cmd?.type === "command") {
+        expect(cmd.language).toBe("bash");
+        expect(cmd.code).toBe("ipconfig");
+      }
+    }
+  });
+
+  it("falls back to a default title", () => {
+    const second = blocks.filter((b) => b.type === "details")[1];
+    if (second.type === "details") expect(second.title).toBe("More detail");
+  });
+
+  it("keeps plain callouts working alongside details", () => {
+    const g = parseGuide(
+      "# T\n\n### S\n> [!WARNING]\n> careful\n\n> [!DETAILS] More\n> depth",
+    );
+    const b = g.phases[0].steps[0].blocks;
+    expect(b.some((x) => x.type === "callout")).toBe(true);
+    expect(b.some((x) => x.type === "details")).toBe(true);
+  });
+});
+
+describe("bundled guides", () => {
+  const files = import.meta.glob("../guides/*.md", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }) as Record<string, string>;
+
+  it("ship at least one guide", () => {
+    expect(Object.keys(files).length).toBeGreaterThan(0);
+  });
+
+  it("all parse without errors and have steps", () => {
+    for (const [path, raw] of Object.entries(files)) {
+      const guide = parseGuide(raw, { fallbackTitle: path });
+      expect(guide.totalSteps, `${path} should have steps`).toBeGreaterThan(0);
+    }
+  });
+});
+
 describe("slugify", () => {
   it("is stable and url-safe", () => {
     expect(slugify("Phase 1 — Prep & BIOS")).toBe("phase-1-prep-bios");

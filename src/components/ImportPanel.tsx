@@ -30,6 +30,14 @@ A short instruction goes here. **Bold** and \`inline code\` both work.
 \`\`\`bash
 echo "commands render as copyable cards"
 \`\`\`
+
+> [!DETAILS] How to add expandable depth
+> A \`> [!DETAILS] Title\` block collapses by default — perfect for
+> step-by-step minutiae readers only sometimes need. Code works here too:
+>
+> \`\`\`bash
+> echo "even copyable commands"
+> \`\`\`
 `;
 
 export function ImportPanel({ onClose, onImported }: Props) {

@@ -266,6 +266,48 @@
     border-left-color: var(--c);
   }
 
+  /* Expandable details ------------------------------------------------------ */
+  .rb-details {
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background-color: var(--color-surface);
+    overflow: hidden;
+  }
+  .rb-details > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-ink-soft);
+    list-style: none;
+    user-select: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .rb-details > summary::-webkit-details-marker {
+    display: none;
+  }
+  .rb-details > summary:hover {
+    background-color: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  .rb-details[open] > summary {
+    color: var(--color-ink);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .rb-details-chev {
+    color: var(--color-ink-faint);
+    transition: transform 0.25s ease;
+  }
+  .rb-details:not([open]) .rb-details-chev {
+    transform: rotate(-90deg);
+  }
+  .rb-details-body {
+    padding: 0.85rem 0.95rem;
+  }
+
   /* Prose (rendered Markdown bodies) -------------------------------------- */
   .prose-rb {
     color: var(--color-ink);

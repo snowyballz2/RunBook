@@ -68,6 +68,29 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Print the whole guide: pop every closed <details> open for the print run,
+  // then restore. (Collapsed phases are handled in CSS via .phase-collapser.)
+  useEffect(() => {
+    const opened: HTMLDetailsElement[] = [];
+    const onBefore = () => {
+      document
+        .querySelectorAll<HTMLDetailsElement>("details.rb-details:not([open])")
+        .forEach((d) => {
+          d.open = true;
+          opened.push(d);
+        });
+    };
+    const onAfter = () => {
+      opened.splice(0).forEach((d) => (d.open = false));
+    };
+    window.addEventListener("beforeprint", onBefore);
+    window.addEventListener("afterprint", onAfter);
+    return () => {
+      window.removeEventListener("beforeprint", onBefore);
+      window.removeEventListener("afterprint", onAfter);
+    };
+  }, []);
+
   const toggleStep = (phase: Phase, step: Step) => {
     setDone((prev) => {
       const nextDone = new Set(prev);

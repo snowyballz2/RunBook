@@ -52,7 +52,7 @@ function sanitize(html: string): string {
 }
 
 const FENCE_RE = /^(\s*)(`{3,}|~{3,})(.*)$/;
-const ADMONITION_RE = /^>\s*\[!(note|tip|warning|danger)\]\s*(.*)$/i;
+const ADMONITION_RE = /^>\s*\[!(note|tip|warning|danger|details)\]\s*(.*)$/i;
 const HEADING_RE = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
 
 /* -------------------------------------------------------------------------- */
@@ -139,11 +139,11 @@ function splitBlocks(raw: string): Block[] {
       continue;
     }
 
-    // GitHub-style admonition -> callout.
+    // GitHub-style admonition -> callout, or [!DETAILS] -> expandable section.
     const adm = line.match(ADMONITION_RE);
     if (adm) {
       flushProse();
-      const kind = adm[1].toLowerCase() as CalloutKind;
+      const kindRaw = adm[1].toLowerCase();
       const customTitle = adm[2].trim();
       const body: string[] = [];
       i++;
@@ -152,6 +152,18 @@ function splitBlocks(raw: string): Block[] {
         i++;
       }
       i--; // step back; outer loop will advance
+
+      if (kindRaw === "details") {
+        // Recurse so command cards (and anything else) work inside details.
+        blocks.push({
+          type: "details",
+          title: customTitle || "More detail",
+          blocks: splitBlocks(body.join("\n")),
+        });
+        continue;
+      }
+
+      const kind = kindRaw as CalloutKind;
       const callout: Callout = {
         kind,
         html: md2html(body.join("\n").trim()),

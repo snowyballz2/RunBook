@@ -12,7 +12,9 @@ export type Callout = {
 export type Block =
   | { type: "prose"; html: string }
   | { type: "command"; language: string; code: string }
-  | { type: "callout"; data: Callout };
+  | { type: "callout"; data: Callout }
+  /** A collapsed-by-default expandable section for granular how-to depth. */
+  | { type: "details"; title: string; blocks: Block[] };
 
 export type Step = {
   /** Stable slug of the title, unique within the guide. Persistence key. */
