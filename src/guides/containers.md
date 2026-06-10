@@ -16,7 +16,7 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 >
 > - **Pi-hole / AdGuard Home** — network-wide ad blocking for every device in the house (the most popular first container)
 > - **Jellyfin or Plex** — stream your movies, music, and photos to TVs and phones
-> - **Nextcloud** — your own Google Drive / Photos replacement
+> - **Nextcloud** — your own Google Drive / Photos replacement (the *Nextcloud* guide)
 > - **Vaultwarden** — self-hosted Bitwarden password manager
 > - **Paperless-ngx** — scan, archive, and search every document you own
 > - **Uptime Kuma** — a dashboard that pings your services and alerts you when one dies
