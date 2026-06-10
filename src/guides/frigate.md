@@ -34,6 +34,9 @@ Accept the defaults — **8 cores, 4 GB RAM, a 20 GB disk** on Debian 12 — and
 > [!WARNING]
 > Two honest caveats. First, this script builds a **privileged** container — weaker isolation from the host than the unprivileged containers the *Containers* guide prefers. Second, Frigate's own docs say running it in an LXC is unsupported territory: Proxmox recommends application containers like Frigate run inside a QEMU VM, and "Frigate does not officially support running inside of an LXC." This path is popular and works well, but if something breaks oddly, the officially supported route is the one in the expandable below.
 
+> [!TIP]
+> This is the fussiest script in the collection — it downloads large AI components and occasionally stumbles partway. If it errors, just re-run it; needing a second attempt is normal.
+
 > [!DETAILS] The officially supported way — Docker Compose in a VM
 > Frigate's docs are explicit: "Running through Docker with Docker Compose is the recommended install method." Create a Debian VM (the *Virtual machines* guide covers when a VM is the right tool), install Docker, and use the official compose file — trimmed here to the Intel-iGPU case:
 >
@@ -85,7 +88,7 @@ You want to see `renderD128`. If it's there, move on.
 > If `/dev/dri` is empty, Proxmox can pass the device through from the web UI (Proxmox 8.2 and later; the CLI has had it since 8.1). Logged in as **root@pam** — the menu item is greyed out otherwise — select the container, then **Resources → Add → Device Passthrough**, and set **Device Path** to `/dev/dri/renderD128`. For this privileged, root-run container the default access mode is fine; for an *unprivileged* container you would set **Access Mode in CT** to `0666`, or set **GID in CT** to `104` (the render group on Debian). Restart the container and check `/dev/dri` again.
 
 ### Set the decode preset
-The installer writes `hwaccel_args: auto` into the config, which may already work. To pin it explicitly to the iGPU, edit `/config/config.yml` (in the container's console: `nano /config/config.yml`) and set:
+The installer writes `hwaccel_args: auto` into the config, which may already work. To pin it explicitly to the iGPU, edit `/config/config.yml` — easiest in the web UI's **built-in config editor**, which validates as you type; `nano /config/config.yml` in the container's console works too — and set:
 
 ```yaml
 ffmpeg:
@@ -159,10 +162,10 @@ cameras:
   driveway:
     ffmpeg:
       inputs:
-        - path: rtsp://192.168.1.42:554/main   # full-res main stream
+        - path: rtsp://user:pass@192.168.1.42:554/main   # full-res main stream
           roles:
             - record
-        - path: rtsp://192.168.1.42:554/sub    # low-res substream
+        - path: rtsp://user:pass@192.168.1.42:554/sub    # low-res substream
           roles:
             - detect
     detect:
@@ -171,10 +174,12 @@ cameras:
       enabled: true
 ```
 
-Swap in your camera's IP and its real RTSP paths — every brand spells them differently, so check the camera's manual or web interface.
+Swap in your camera's IP, credentials, and real RTSP paths — take them from the camera's app or manual rather than guessing; every brand spells them differently.
 
 > [!NOTE]
 > Don't reach for a high-resolution detect stream: the frames get resized down to the detection model's small input anyway, so extra detail is simply lost. The docs' example detect stream is 1280x720 at 5 fps — 5 fps is the recommended rate, and 10 fps the recommended maximum for most users.
+>
+> Frigate tracks `person` by default. To watch for more, add an `objects:` block to a camera with a `track:` list — `car`, `dog`, `cat`, and friends.
 
 > [!DETAILS] Sharing one camera connection with go2rtc
 > Some cameras only allow one active connection, and even good ones appreciate fewer. Frigate bundles **go2rtc** for exactly this: one connection goes to the camera, and Frigate's `detect` and `record` consume the local restream instead. The docs' pattern:
@@ -183,7 +188,7 @@ Swap in your camera's IP and its real RTSP paths — every brand spells them dif
 > go2rtc:
 >   streams:
 >     driveway:
->       - rtsp://192.168.1.42:554/main
+>       - rtsp://user:pass@192.168.1.42:554/main
 >       - "ffmpeg:driveway#audio=opus"
 >
 > cameras:
@@ -211,7 +216,7 @@ systemctl restart frigate
 Reload the web UI: your camera's live view should appear, and walking through the frame should produce a tracked person within a few seconds.
 
 > [!TIP]
-> If the camera stays black, watch the logs while it starts: `journalctl -u frigate -f` in the container's console. A wrong RTSP path or password shows up there immediately.
+> If the camera stays black, watch the logs while it starts: `journalctl -u frigate -f` in the container's console. A wrong RTSP path or password shows up there immediately. And if detection feels sluggish or the CPU is pinned, the iGPU probably isn't doing the work — re-check the `/dev/dri` passthrough and confirm the logs name the OpenVINO detector, not a CPU fallback.
 
 ## Wire it into the build
 
