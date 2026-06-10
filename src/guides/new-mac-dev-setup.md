@@ -1,8 +1,11 @@
 ---
 title: New Mac Dev Setup
-subtitle: From a fresh macOS install to writing code in an afternoon
+subtitle: Example guide — from a fresh macOS install to writing code
 accent: azure
 ---
+
+> [!NOTE]
+> This is an example guide that ships with RunBook to show the format. Use it, edit it, or remove it — your real guides work the same way.
 
 ## Phase 1 — Essentials
 

@@ -15,7 +15,7 @@ type Preview =
   | { state: "error"; message: string };
 
 const SAMPLE = `---
-title: My First Runbook
+title: My First RunBook
 subtitle: A tiny example to get you started
 ---
 

@@ -39,8 +39,8 @@ export default defineConfig({
         id: base,
         start_url: base,
         scope: base,
-        name: "Runbook — checkable procedure guides",
-        short_name: "Runbook",
+        name: "RunBook — checkable procedure guides",
+        short_name: "RunBook",
         description:
           "Turn a Markdown procedure into a calm, sequential, checkable guide. Local-first and offline.",
         theme_color: PAPER,

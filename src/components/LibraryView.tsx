@@ -71,7 +71,7 @@ export function LibraryView({
           </span>
           <div>
             <h1 className="font-display text-xl font-semibold leading-none text-ink">
-              Runbook
+              RunBook
             </h1>
             <p className="mt-1 text-xs text-ink-faint">
               {items.length} {items.length === 1 ? "guide" : "guides"}

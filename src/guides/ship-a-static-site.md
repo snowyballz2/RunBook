@@ -1,8 +1,11 @@
 ---
 title: Ship a Static Site
-subtitle: Build, configure, and deploy a site to production cleanly
+subtitle: Example guide — build, configure, and deploy a site cleanly
 accent: violet
 ---
+
+> [!NOTE]
+> This is an example guide that ships with RunBook to show the format. Use it, edit it, or remove it — your real guides work the same way.
 
 ## Phase 1 — Build it clean
 
