@@ -6,6 +6,9 @@ order: 2
 accent: spruce
 ---
 
+> [!NOTE]
+> Do the *Prep & BIOS* guide first — this one assumes your files are saved off the machine, virtualization is enabled, and you know which drive Proxmox gets.
+
 ### Download the Proxmox VE ISO
 Get the ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads) — click **Proxmox Virtual Environment**, then the top item, **Proxmox VE 9.2 ISO Installer**. It is free, needs no account, and is about 1.7 GB.
 
@@ -13,8 +16,11 @@ Get the ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads
 > Hash the file and compare it against the SHA256 shown next to the download link. A match means the file arrived intact and untampered.
 >
 > ```bash
-> # macOS / Linux
+> # macOS
 > shasum -a 256 proxmox-ve_9.2-1.iso
+>
+> # Linux
+> sha256sum proxmox-ve_9.2-1.iso
 >
 > # Windows (Command Prompt)
 > CertUtil -hashfile proxmox-ve_9.2-1.iso SHA256
@@ -69,7 +75,7 @@ https://your-ip:8006
 
 > [!DETAILS] Every prompt the installer shows, in order
 > 1. **EULA** — read or skim, click I agree.
-> 2. **Target disk** — the drive Proxmox will erase and install onto. The **Options** button picks the filesystem; the default (ext4 on LVM) is fine.
+> 2. **Target disk** — the drive Proxmox will erase and install onto (the one you decided on in the *Prep & BIOS* guide). The **Options** button picks the filesystem; the default (ext4 on LVM) is right for a single drive. With two identical drives you could pick **ZFS RAID1** instead to mirror the whole system — nice, but strictly optional.
 > 3. **Country, time zone, keyboard layout** — usually auto-detected; confirm and move on.
 > 4. **Password, confirm, email address** — this is the root password (8 characters minimum, longer is better) and an email for system notifications.
 > 5. **Management network** — the form your prepared answers go into: the network **interface** (pick the wired port), the **hostname** you chose, the **IP address** you picked for the server, and your router's address in both the **Gateway** and **DNS server** fields. The two blocks below walk through exactly where each number comes from.
@@ -127,6 +133,8 @@ From another machine on the LAN, browse to `https://your-ip:8006`. Your browser 
 > - **Realm:** leave it on **Linux PAM standard authentication** — it just means "check this login against the system account"
 >
 > A popup saying "No valid subscription" appears on every login. It is normal for the free version — click OK; the next step deals with it.
+>
+> Before moving on, put the root password and the server's IP in your password manager — every guide that follows starts from those two facts.
 
 ### Post-install cleanup
 A fresh install points at Proxmox's paid *enterprise* package repo, so updates error until you switch to the free one. The community script below fixes that **and** removes the "No valid subscription" login popup. The by-hand route (last expandable) fixes updates just as well, but the popup stays — it is harmless, and clicking OK is all it ever needs.
@@ -162,6 +170,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > - Enables the free no-subscription repo so updates work
 > - Corrects the apt source lists for your PVE version
 > - Removes the "No valid subscription" login popup, and keeps it removed after updates
+> - May offer to disable the High-Availability services — accepting is fine on a single machine like this; they only matter when several Proxmox servers work as a cluster
 > - Optionally runs a full update and reboots
 >
 > Answer yes to all of those for a home server.
