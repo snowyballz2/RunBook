@@ -13,6 +13,15 @@
 
       "Bash(git rm *)",
       "Bash(python3 -m json.tool *)",
+      "Bash(rm src/guides/*)",
+      "Bash(gh run watch *)",
+      "Bash(gh run list *)",
+
+      "Bash(curl -s https://raw.githubusercontent.com/*)",
+      "Bash(curl -s https://api.github.com/*)",
+      "Bash(curl -s https://pve.proxmox.com/*)",
+      "Bash(curl -s -o /dev/null -w *)",
+      "Bash(curl -sI *)",
 
       "WebFetch(domain:github.com)",
       "WebFetch(domain:api.github.com)",
@@ -35,7 +44,9 @@
       "WebFetch(domain:support.hp.com)",
       "WebFetch(domain:support.lenovo.com)",
       "WebFetch(domain:etcher.balena.io)",
-      "WebFetch(domain:rufus.ie)"
+      "WebFetch(domain:rufus.ie)",
+      "WebFetch(domain:manpages.debian.org)",
+      "WebFetch(domain:git.proxmox.com)"
     ]
   }
 }
