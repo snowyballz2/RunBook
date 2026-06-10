@@ -38,7 +38,7 @@ Accept the defaults — an **unprivileged** container with **2 cores, 2 GB RAM, 
 > Nextcloud AIO's README opens with "The official Nextcloud installation method", and nextcloud.com/install lists it first: a Docker image maintained by Nextcloud GmbH bundling the whole stack — Nextcloud, PostgreSQL, Redis and APCu caching, the high-performance push backend, Talk. You would run it in a Debian VM with Docker, then open `https://<vm-ip>:8080` to set up. The catch that keeps it out of this guide's mainline: **AIO requires exactly one domain with working HTTPS, even for LAN-only use** — there is no bare-IP, no-TLS mode, and its local-access docs call Tailscale "the recommended way" to satisfy that at home. If you already own a domain or are happy to adopt Tailscale, AIO is a first-class choice; if "browse to an IP and go" is the goal, NCP is the friendlier path.
 
 > [!DETAILS] Squeezing into 1 GB — the Alpine variant
-> The catalog's other entry, `alpine-nextcloud.sh`, builds plain Nextcloud from Alpine 3.23 packages in a 2-core, **1 GB RAM, 2 GB disk** container — the lightest footprint here, with costs to match: the admin login (`ncAdmin` plus a generated password) hides in `~/nextcloud.creds` inside the container, the certificate is self-signed for 365 days and renewed by hand, and the Nextcloud version is tied to Alpine's packaging — updates come from `apk upgrade` and the script's own menu, not Nextcloud's built-in updater. Fine for an experiment on starved hardware; not the relaxed household choice.
+> The catalog's other entry, `alpine-nextcloud.sh`, builds plain Nextcloud from Alpine 3.23 packages in a 2-core, **1 GB RAM, 2 GB disk** container — the lightest footprint here, with costs to match: the admin login (`ncAdmin` plus a generated password) hides in `~/nextcloud.creds` inside the container, the certificate is self-signed for 365 days and renewed by hand, and the Nextcloud version is tied to Alpine's packaging — updates come from `apk upgrade` and the script's own menu, not Nextcloud's built-in updater. Fine for an experiment on starved hardware; not the relaxed household choice. (The catalog also carries `vm/nextcloud-vm.sh`, a heavier full-Debian-VM build, if a VM is your preference.)
 
 ### Reserve its IP and start it at boot
 The script finishes by printing the container's address as `http://<IP>` — no port, and no passwords yet; those come in the browser. Before opening it, pin that IP with a DHCP reservation on your router (the *AdGuard Home* habit), because it is about to be baked into your bookmarks and every device's sync client. Then enable **Options → Start at boot** in Proxmox, the *Containers* guide habit, so the family cloud survives a power cut.
@@ -88,6 +88,9 @@ Get the desktop client from [nextcloud.com/install](https://nextcloud.com/instal
 > [!NOTE]
 > Expect each new device to raise the same self-signed-certificate objection your browser did. If that grates, the clean fix is the panel's Let's Encrypt tool plus a (sub)domain; on a LAN-only box, accepting the warning per device is the usual compromise.
 
+> [!WARNING]
+> Away from home, reach it over a private tunnel — Tailscale or your own WireGuard — never a router port-forward. A personal cloud full of your files and photos is exactly the thing you don't want exposed to the public internet.
+
 ### Add accounts for the household
 Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account**, enter an account name and password, and click **Add new account** — one per person, so everyone gets their own files, photos, and password.
 
@@ -106,7 +109,7 @@ pct resize <ctid> rootfs +32G
 Growing works while the container runs; **shrinking is not supported**, so add space in honest increments rather than one giant leap.
 
 > [!DETAILS] Putting the archive on bigger storage
-> If you built the *TrueNAS* guide, the tempting move is to point Nextcloud's data directory at the NAS. One hard constraint first: NCP's data-directory tool enforces that "Only ext/btrfs/zfs filesystems can hold the data directory" — which rules out simply mounting an SMB/NFS share and pointing at it. The pattern that stays inside the lines: keep live data on the container's (grown) local disk, and aim TrueNAS at the *backup* job instead — which the next step needs anyway.
+> Two truths here. NCP's data-directory tool enforces that "Only ext/btrfs/zfs filesystems can hold the data directory" — so you cannot simply point the data directory at an SMB/NFS mount. But Nextcloud has a first-class middle path: **External Storage**. Enable the bundled **External Storage Support** app under **Apps** (it ships disabled), then go to **Settings → Administration → External Storage** and add a *TrueNAS* SMB share with its credentials. It appears as a folder in everyone's files — the heavy stuff (photo archive, media) lives on the ZFS pool with all its space, while the app, database, and sync-critical data stay on the container's local disk. Either way, keep TrueNAS in the *backup* role from the next step too.
 
 ### Back up all five pieces at once
 Nextcloud's docs list five things a backup must retain: the config folder, custom apps, **the data folder, the theme folder, and the database** — and insist on "a fresh backup before every upgrade." Here all five live inside one container, so the Proxmox backup job from *Make it safe to tinker* — to storage that is not this machine — captures the lot in one pass.
