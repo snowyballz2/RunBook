@@ -285,6 +285,23 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 ### Create a Debian container
 Use a lightweight LXC container for services that don't need a full VM. From the web UI: **Create CT**, pick the Debian template, give it 2 cores and 2 GB of RAM to start.
 
+> [!DETAILS] What would you actually run in one?
+> A container shares the host's kernel, so it starts in about a second and idles at a few hundred MB of RAM — perfect for one small always-on service each. The home-server classics:
+>
+> - **Pi-hole / AdGuard Home** — network-wide ad blocking for every device in the house (the most popular first container)
+> - **Jellyfin or Plex** — stream your movies, music, and photos to TVs and phones
+> - **Nextcloud** — your own Google Drive / Photos replacement
+> - **Vaultwarden** — self-hosted Bitwarden password manager
+> - **Paperless-ngx** — scan, archive, and search every document you own
+> - **Uptime Kuma** — a dashboard that pings your services and alerts you when one dies
+> - **A Samba share** — turn spare disk space into a network drive
+> - **A Docker host** — one bigger container running Docker Compose for everything else
+> - Game servers, qBittorrent, the *arr media stack…
+>
+> The community-scripts project has one-command installers for nearly all of these — browse them at [community-scripts.org](https://community-scripts.org/). Same habit as always: read a script before piping it into a root shell.
+>
+> Rule of thumb: if it's a Linux service, use a container. If it needs its own kernel or isn't Linux, that's the next step.
+
 > [!DETAILS] Download a template first
 > Container templates live in storage, and a fresh install has none. Grab one before you create your first CT:
 >
@@ -315,6 +332,16 @@ For a Windows box, a full Linux desktop, or anything doing GPU work, create a co
 qm list
 pct list
 ```
+
+> [!DETAILS] When a VM is the right tool (examples)
+> A VM emulates a whole computer, so it can run anything — at the cost of more RAM and slower startup than a container. Reach for one when:
+>
+> - **It isn't Linux** — a Windows VM for that one stubborn Windows-only program, or to remote into from the couch
+> - **It's an appliance OS that wants the whole machine** — Home Assistant OS (next step), TrueNAS as a proper NAS (pass real disks through to it), or OPNsense if you ever want to be your own router vendor
+> - **You want a sandbox** — a Linux desktop to experiment in: snapshot it, break it, roll back, repeat
+> - **It needs kernel control or a GPU** — passthrough and custom kernel modules behave better in a VM
+>
+> Everything else — the everyday self-hosted services — belongs in containers, where ten of them cost less RAM than one Windows VM.
 
 > [!DETAILS] Upload an ISO to Proxmox
 > ISOs live in storage, same as container templates:
