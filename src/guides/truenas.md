@@ -119,4 +119,4 @@ The pool's other guardian is already on duty: TrueNAS generated a default **scru
 > [!DETAILS] Make it the storage hub — and the offsite question
 > Once the share works, the rest of the build can lean on it: point Proxmox's scheduled backups here (the *Make it safe to tinker* guide) and Home Assistant's backups too (the *Home Assistant OS* guide), so their safety copies live on different disks than the things they protect.
 >
-> For the small set of data you truly cannot lose, TrueNAS has built-in **Cloud Sync** tasks (**Data Protection → Cloud Sync Tasks**) that push encrypted copies to cloud storage on a schedule. The discipline that keeps costs sane: bulk, replaceable data — camera recordings, media — stays local-only; offsite is reserved for the irreplaceable.
+> For the small set of data you truly cannot lose, TrueNAS has built-in **Cloud Sync** tasks (**Data Protection → Cloud Sync Tasks**) that push encrypted copies to cloud storage on a schedule. The discipline that keeps costs sane: bulk, replaceable data — camera recordings (the *Frigate* guide), media — stays local-only; offsite is reserved for the irreplaceable.
