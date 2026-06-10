@@ -64,6 +64,8 @@ https://your-ip:8006
 > Right after powering on, tap the one-time boot menu key — commonly `F8` (ASUS), `F11` (MSI, ASRock), `F12` (Gigabyte, Dell, Lenovo), or `Esc` then `F9` (HP). If none of those work, enter the BIOS and put the USB stick first in the boot order.
 >
 > If the menu lists the stick twice, pick the entry starting with **UEFI:**.
+>
+> Stick refuses to boot no matter what? Disable **Secure Boot** in the BIOS and try again. Proxmox has been properly signed for Secure Boot since version 8.1, but on some boards it still gets in the way, and turning it off is the documented fallback.
 
 > [!DETAILS] Every prompt the installer shows, in order
 > 1. **EULA** — read or skim, click I agree.

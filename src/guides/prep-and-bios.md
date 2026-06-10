@@ -7,7 +7,7 @@ accent: amber
 ---
 
 ### Check the machine meets the requirements
-Almost any 64-bit PC from the last decade can run Proxmox. You need: a CPU with virtualization support, 8 GB+ RAM to be comfortable, a drive you are willing to wipe, **wired Ethernet**, a 4 GB+ USB stick, a second device with a browser — and, just for the install, **a monitor and keyboard plugged into the server itself**. Once Proxmox is running you unplug both and drive everything from the other device's browser.
+Almost any 64-bit PC from the last decade can run Proxmox. You need: a CPU with virtualization support, 8 GB+ RAM to be comfortable, a drive you are willing to wipe, **wired Ethernet**, a 4 GB+ USB stick, a second device with a browser — and, just for the install, **a monitor and keyboard plugged into the server itself**. Borrowed peripherals are fine; once Proxmox is running you unplug both, give them back, and drive everything from the other device's browser.
 
 > [!WARNING]
 > Proxmox needs a wired network connection — Wi-Fi is effectively unsupported for its management interface. If the machine isn't near your router, sort that out first (a long cable or a powerline adapter both work).
@@ -17,7 +17,7 @@ Almost any 64-bit PC from the last decade can run Proxmox. You need: a CPU with 
 >
 > - **CPU** — anything 64-bit with virtualization (Intel VT-x or AMD-V). Practically every desktop CPU since ~2010 has it; it just may be switched off in the BIOS (next steps).
 > - **RAM** — Proxmox itself wants ~2 GB; every container and VM you run needs its own share. 8 GB is a workable start, 16 GB+ is comfortable.
-> - **Disk** — an SSD makes everything feel dramatically better than a hard drive. 128 GB+ gives you room for several VMs. The install **wipes the whole drive**.
+> - **Disk** — an SSD makes everything feel dramatically better than a hard drive. 128 GB+ gives you room for several VMs. The install **wipes the whole drive**. If the machine has several drives, decide *now* which one Proxmox gets: a common build is a small SSD for Proxmox and its guests plus bigger drives left alone for data (the *TrueNAS* guide hands those over later) — the installer will ask which drive to erase, and you want a ready answer.
 > - **Network** — one wired Gigabit port. For PCIe passthrough later (GPU, disk controllers) the CPU/board also needs VT-d (Intel) or AMD-Vi/IOMMU — most do.
 > - **Old laptops, mini PCs, ex-office desktops** (Dell OptiPlex, HP EliteDesk, Lenovo ThinkCentre) are all excellent candidates and very common Proxmox hosts.
 
@@ -68,8 +68,8 @@ Enter the BIOS and switch on the virtualization features Proxmox relies on. The 
 >
 > - **VT-x** — *Advanced → CPU Configuration*, listed as **Intel Virtualization Technology** (newer ASUS BIOSes call it **Intel (VMX) Virtualization Technology**). Set to Enabled.
 > - **VT-d** — usually in a *different* submenu than VT-x, so don't stop after the first toggle: ASUS keeps it under *Advanced → System Agent (SA) Configuration*; Gigabyte under *Settings → Miscellaneous*; MSI under *OC → CPU Features*.
-> - **Integrated graphics** — under the graphics/System Agent section, listed as **Internal Graphics** or **iGPU Multi-Monitor**. Enable it if the machine also has a discrete GPU you might pass through later.
-> - **C-states** — under *CPU Power Management*. Enabled or Auto, for cooler and quieter idle.
+> - **Integrated graphics** — under the graphics/System Agent section, listed as **Internal Graphics** or **iGPU Multi-Monitor**. Enable it if the machine also has a discrete GPU you might pass through later — and because Intel's iGPU (QuickSync) is what gives media servers like Jellyfin cheap hardware video transcoding down the road.
+> - **C-states** — under *CPU Power Management*. Enabled or Auto — a home server idles 24/7, so the saved watts add up over a year.
 >
 > Save with `F10` and confirm before exiting.
 
