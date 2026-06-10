@@ -1,10 +1,25 @@
 ---
 title: Proxmox Home Server Build
-subtitle: Bare-metal to a full local stack on the old 8700K
+subtitle: Bare-metal to a full local stack — containers, VMs, and Home Assistant
 accent: spruce
 ---
 
 ## Phase 1 — Prep & BIOS
+
+### Check the machine meets the requirements
+Almost any 64-bit PC from the last decade can run Proxmox. You need: a CPU with virtualization support, 8 GB+ RAM to be comfortable, a drive you are willing to wipe, **wired Ethernet**, a 4 GB+ USB stick, and a second device with a browser.
+
+> [!WARNING]
+> Proxmox needs a wired network connection — Wi-Fi is effectively unsupported for its management interface. If the machine isn't near your router, sort that out first (a long cable or a powerline adapter both work).
+
+> [!DETAILS] The requirements, decoded
+> Proxmox's official *minimum* is tiny — 64-bit Intel/AMD CPU with Intel VT or AMD-V, 1 GB RAM, a hard drive, one network card. What actually matters for a pleasant home server:
+>
+> - **CPU** — anything 64-bit with virtualization (Intel VT-x or AMD-V). Practically every desktop CPU since ~2010 has it; it just may be switched off in the BIOS (next steps).
+> - **RAM** — Proxmox itself wants ~2 GB; every container and VM you run needs its own share. 8 GB is a workable start, 16 GB+ is comfortable.
+> - **Disk** — an SSD makes everything feel dramatically better than a hard drive. 128 GB+ gives you room for several VMs. The install **wipes the whole drive**.
+> - **Network** — one wired Gigabit port. For PCIe passthrough later (GPU, disk controllers) the CPU/board also needs VT-d (Intel) or AMD-Vi/IOMMU — most do.
+> - **Old laptops, mini PCs, ex-office desktops** (Dell OptiPlex, HP EliteDesk, Lenovo ThinkCentre) are all excellent candidates and very common Proxmox hosts.
 
 ### Save anything off the PC first
 Installing Proxmox wipes the drive, Windows and all. Pull any files you want to keep onto another machine or an external disk before you go further.
@@ -35,28 +50,45 @@ Installing Proxmox wipes the drive, Windows and all. Pull any files you want to 
 > - **Any spare USB stick** — even a small one works if you move files in batches, prioritising the irreplaceable stuff first.
 
 ### Set BIOS for virtualization
-Enter the BIOS (usually `Del` or `F2` at boot) and turn on the virtualization features Proxmox relies on:
-
-- Enable **VT-x** (Intel Virtualization Technology)
-- Enable **VT-d** (Directed I/O)
-- Enable the **integrated graphics** so the dGPU stays free for passthrough
-- Turn on **C-states** for cooler, quieter idle
+Enter the BIOS and switch on the virtualization features Proxmox relies on. The names differ by platform — Intel calls them **VT-x** and **VT-d**; AMD calls them **SVM** and **IOMMU** — but the job is the same. Find your machine in the expandable sections below.
 
 > [!TIP]
-> VT-d (IOMMU) is what makes PCIe passthrough work later — handing a GPU, a disk controller, or a whole USB controller to a VM. Enable it now; it is easy to forget and annoying to discover missing.
+> VT-d / IOMMU is what makes PCIe passthrough work later — handing a GPU, a disk controller, or a whole USB controller to a VM. Enable it now; it is easy to forget and annoying to discover missing.
 
 > [!DETAILS] How to get into the BIOS
-> Power the machine off fully, power it on, and tap `Del` (or `F2` on some boards) repeatedly from the moment the screen lights up. If Windows boots too fast to catch it: hold `Shift` while clicking *Restart* in the Start menu, then go to *Troubleshoot → Advanced options → UEFI Firmware Settings → Restart* — the PC reboots straight into the BIOS.
+> Power the machine off fully, power it on, and tap the setup key repeatedly from the moment the screen lights up:
+>
+> - **Custom-built PCs** (ASUS, Gigabyte, MSI boards) — `Del`, occasionally `F2`
+> - **Dell** — `F2` · **HP** — `F10` · **Lenovo** — `F1`
+>
+> If Windows boots too fast to catch it: hold `Shift` while clicking *Restart* in the Start menu, then *Troubleshoot → Advanced options → UEFI Firmware Settings → Restart* — the PC reboots straight into the BIOS.
 
-> [!DETAILS] Where each setting lives on a Z370-era board
-> The 8700K sits on a Z370 or Z390 board, so the layout is roughly:
+> [!DETAILS] Intel boards (Z370 through Z790 and similar)
+> On ASUS, Gigabyte, and MSI boards with Intel CPUs:
 >
-> - **VT-x** — *Advanced → CPU Configuration*, listed as **Intel Virtualization Technology**. Set to Enabled.
-> - **VT-d** — *Advanced → System Agent (SA) Configuration*, listed as **VT-d**. Set to Enabled.
-> - **Integrated graphics** — *System Agent (SA) Configuration → Graphics Configuration*, listed as **Internal Graphics** or **iGPU Multi-Monitor**. Set to Enabled so the iGPU stays active alongside the dGPU.
-> - **C-states** — under *CPU Power Management* (often inside *Advanced → CPU Configuration*), listed as **CPU C-states** or **Package C State Limit**. Set to Enabled or Auto.
+> - **VT-x** — *Advanced → CPU Configuration*, listed as **Intel Virtualization Technology** (newer ASUS BIOSes call it **Intel (VMX) Virtualization Technology**). Set to Enabled.
+> - **VT-d** — usually in a *different* submenu than VT-x, so don't stop after the first toggle: ASUS keeps it under *Advanced → System Agent (SA) Configuration*; Gigabyte under *Settings → Miscellaneous*; MSI under *OC → CPU Features*.
+> - **Integrated graphics** — under the graphics/System Agent section, listed as **Internal Graphics** or **iGPU Multi-Monitor**. Enable it if the machine also has a discrete GPU you might pass through later.
+> - **C-states** — under *CPU Power Management*. Enabled or Auto, for cooler and quieter idle.
 >
-> Vendor naming varies — ASUS, Gigabyte, and MSI shuffle these menus around, but the section names above are close on all three. Save with `F10` and confirm before exiting.
+> Save with `F10` and confirm before exiting.
+
+> [!DETAILS] AMD boards (AM4 / AM5)
+> The same two switches under AMD names:
+>
+> - **SVM Mode** (the AMD-V toggle) — ASUS: *Advanced → CPU Configuration*; Gigabyte: *Tweaker → Advanced CPU Settings*; MSI: *OC → CPU Features*. Set to Enabled.
+> - **IOMMU** (the VT-d equivalent) — ASUS: *Advanced → AMD CBS → NBIO Common Options*; Gigabyte: *Settings → Miscellaneous*; MSI: near SVM in the OC menus. Set it explicitly to **Enabled** — on AMD boards, *Auto* is not the same thing and passthrough will not work with it.
+>
+> Two gotchas: MSI sometimes hides the CPU features until *OC Explore Mode* is set to **Expert**, and menu layouts shift between BIOS revisions — if a path above is missing, search the BIOS (many have a built-in search) for "SVM" or "IOMMU".
+
+> [!DETAILS] Prebuilt desktops (Dell, HP, Lenovo)
+> Ex-office machines make great Proxmox hosts, and their BIOSes are simpler:
+>
+> - **Dell OptiPlex** — `F2` into Setup → **Virtualization Support** section → enable **Virtualization** and **VT for Direct I/O**.
+> - **HP EliteDesk / ProDesk** — `F10` into Setup → *Advanced → System Options* → tick **Virtualization Technology (VTx)** and **(VTd)**. On some older models it lives under the *Security* tab instead.
+> - **Lenovo ThinkCentre** — `F1` into Setup → *Advanced → CPU Setup* → enable **Intel Virtualization Technology** and **Intel VT-d**.
+>
+> Save and exit (usually `F10`).
 
 ## Phase 2 — Install Proxmox
 
@@ -77,13 +109,13 @@ Get the ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads
 > For the 9.2-1 ISO the expected value is `4e88fe416df9b527624a175f24c9aa07c714d3332afb1ee3dbf3879573ef2c6c`.
 
 ### Flash the installer
-Write the ISO to a USB stick (4 GB or larger) with [balenaEtcher](https://etcher.balena.io/), then keep the stick handy for the next step.
+Write the ISO to a USB stick (4 GB or larger) with **one** of the two tools below — they do the same job, so pick whichever suits and skip the other. balenaEtcher is the easy default on any OS; Rufus is a Windows-only alternative.
 
 > [!WARNING]
 > Flashing erases everything on the stick. Double-check you have selected the USB drive, not an internal disk.
 
-> [!DETAILS] How to write the ISO with balenaEtcher, click by click
-> Etcher is free, works on Windows, macOS, and Linux, and handles the Proxmox ISO with no special settings.
+> [!DETAILS] Option A — balenaEtcher (Windows, macOS, Linux)
+> Etcher is free and handles the Proxmox ISO with no special settings.
 >
 > 1. Download Etcher from [etcher.balena.io](https://etcher.balena.io/) and install it.
 > 2. Insert a USB stick of 4 GB or more.
@@ -92,8 +124,8 @@ Write the ISO to a USB stick (4 GB or larger) with [balenaEtcher](https://etcher
 > 5. Click **Flash** and wait. Etcher validates the write afterwards; let it finish.
 > 6. On Windows, Explorer may now pop up "You need to format the disk before you can use it." Click **Cancel** — the stick is fine; Windows just can't read its Linux partitions. Formatting it would destroy the installer you just made.
 
-> [!DETAILS] On Windows: Rufus works too
-> [Rufus](https://rufus.ie/) is a lighter Windows-only alternative, with one catch: the Proxmox docs say you must write in **DD mode**.
+> [!DETAILS] Option B — Rufus (Windows only)
+> [Rufus](https://rufus.ie/) is a lighter alternative if you'd rather not install Etcher — same result, one catch: the Proxmox docs say you must write in **DD mode**.
 >
 > 1. Pick the ISO and the stick, then click **Start**.
 > 2. If asked to download a different version of GRUB, click **No**.
@@ -113,7 +145,7 @@ https://your-ip:8006
 > Proxmox has no desktop of its own. You administer everything from a browser at that address.
 
 > [!DETAILS] How to boot from the USB stick
-> Right after powering on, tap the one-time boot menu key — commonly `F8` (ASUS), `F11` (MSI, ASRock), or `F12` (Gigabyte, Dell, Lenovo). If none of those work, enter the BIOS (`Del` or `F2`) and put the USB stick first in the boot order.
+> Right after powering on, tap the one-time boot menu key — commonly `F8` (ASUS), `F11` (MSI, ASRock), `F12` (Gigabyte, Dell, Lenovo), or `Esc` then `F9` (HP). If none of those work, enter the BIOS and put the USB stick first in the boot order.
 >
 > If the menu lists the stick twice, pick the entry starting with **UEFI:**.
 
@@ -164,10 +196,10 @@ From another machine on the LAN, browse to `https://your-ip:8006`. Your browser 
 > - **Password:** the one you set during install
 > - **Realm:** Linux PAM standard authentication
 >
-> A popup saying "No valid subscription" appears on every login. It is normal for the free version — click OK; the next step removes it.
+> A popup saying "No valid subscription" appears on every login. It is normal for the free version — click OK; the next step deals with it.
 
 ### Post-install cleanup
-Run the excellent community post-install script to fix the package repositories and remove the subscription nag screen.
+A fresh install points at Proxmox's paid *enterprise* package repo, so updates error until you switch to the free one. Fix it with the community post-install script below — or by hand in about two minutes (see the last expandable).
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh)"
@@ -191,7 +223,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > bash post-install.sh
 > ```
 >
-> This project is open source with a large, active maintainer community, but it is community-run — not official Proxmox software. The same habit applies to the Home Assistant helper in Phase 3, and to every other one-liner the internet hands you.
+> This project is open source with a large, active maintainer community, but it is community-run — not official Proxmox software. The same habit applies to every other one-liner the internet hands you.
 
 > [!DETAILS] What the script actually changes
 > Run it in the Proxmox shell (Datacenter → your node → Shell). It walks you through yes/no menus:
@@ -203,6 +235,38 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > - Optionally runs a full update and reboots
 >
 > Answer yes to all of those for a home server.
+
+> [!DETAILS] Prefer no script? Do the same by hand
+> The whole job is three small steps, straight from the official Proxmox docs.
+>
+> **Easiest: use the web UI.** Select your node → **Updates → Repositories**. Disable the two *enterprise* entries, then use **Add** to add the **No-Subscription** repository.
+>
+> **Or edit the files in the node's Shell.** Disable the enterprise repos by adding a line `Enabled: no` to each of these two files (open them with `nano <file>`):
+>
+> ```bash
+> nano /etc/apt/sources.list.d/pve-enterprise.sources
+> nano /etc/apt/sources.list.d/ceph.sources
+> ```
+>
+> Then create `/etc/apt/sources.list.d/proxmox.sources` with the free repo:
+>
+> ```bash
+> cat > /etc/apt/sources.list.d/proxmox.sources <<'EOF'
+> Types: deb
+> URIs: http://download.proxmox.com/debian/pve
+> Suites: trixie
+> Components: pve-no-subscription
+> Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+> EOF
+> ```
+>
+> Finally update everything:
+>
+> ```bash
+> apt update && apt full-upgrade -y
+> ```
+>
+> Done this way, the "No valid subscription" popup at login stays — it is purely cosmetic, and clicking OK is all it ever needs.
 
 ## Phase 3 — First workloads
 
@@ -232,7 +296,7 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 > Select the container in the tree and open **Console** to log in as `root` with the password you set.
 
 ### Spin up a VM for anything that needs a real kernel
-For Home Assistant OS, a Windows box, or anything doing GPU work, create a full VM instead and attach the ISO you uploaded to local storage.
+For a Windows box, a full Linux desktop, or anything doing GPU work, create a complete virtual machine with its own kernel.
 
 ```bash
 # List your VMs and containers from the Proxmox shell:
@@ -263,17 +327,47 @@ pct list
 >
 > Confirm, start the VM, and open **Console** to run the OS installer.
 
-> [!NOTE]
-> Home Assistant OS ships as a ready-made disk image, not an installer — don't use the wizard for it. Expand below for the easy way.
+### Run Home Assistant OS
+Home Assistant is the workload many home servers exist for. HAOS ships as a ready-made disk image — not an installer ISO — so don't use the Create VM wizard for it; use one of the two paths below.
 
-> [!DETAILS] The easy way to run Home Assistant OS
+> [!DETAILS] The quick way — community helper script
 > The same community-scripts project from the post-install step has a helper that downloads the official HAOS image and builds the VM for you. Run it in the Proxmox shell and accept the defaults:
 >
 > ```bash
 > bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/haos-vm.sh)"
 > ```
 >
-> Same rule as before: you are piping a script into a root shell, so read it first and make that call yourself. When it finishes, Home Assistant is at `http://haos-ip:8123` after a few minutes of first-boot setup.
+> Same rule as before: you are piping a script into a root shell, so read it first (the download-read-run habit from Phase 2) and make that call yourself.
+
+> [!DETAILS] The manual way — no scripts
+> Five commands in the Proxmox shell, using only official sources. Check the [HAOS releases page](https://github.com/home-assistant/operating-system/releases) for the latest version and substitute it for `17.3` below. Replace `100` with a free VM ID and `local-lvm` with your storage name if it differs.
+>
+> ```bash
+> # 1. Download and unpack the official image:
+> cd /tmp
+> wget https://github.com/home-assistant/operating-system/releases/download/17.3/haos_ova-17.3.qcow2.xz
+> unxz haos_ova-17.3.qcow2.xz
+>
+> # 2. Create the VM shell. HAOS needs UEFI boot with secure boot off,
+> #    which is what the efidisk line sets up:
+> qm create 100 --name haos --ostype l26 --bios ovmf \
+>   --efidisk0 local-lvm:0,efitype=4m,pre-enrolled-keys=0 \
+>   --cores 2 --memory 4096 --scsihw virtio-scsi-pci \
+>   --net0 virtio,bridge=vmbr0 --agent enabled=1
+>
+> # 3. Import the image as the VM's disk and make it the boot disk:
+> qm disk import 100 /tmp/haos_ova-17.3.qcow2 local-lvm --target-disk scsi0
+> qm set 100 --boot order=scsi0
+>
+> # 4. Optional — the image defaults to 32 GB; grow it if you want room:
+> qm disk resize 100 scsi0 64G
+>
+> # 5. Start it:
+> qm start 100
+> ```
+
+> [!DETAILS] First contact with Home Assistant
+> Give it a few minutes on first boot — HAOS sets itself up unattended. Then browse to `http://homeassistant.local:8123`, or find the VM's IP in Proxmox (the VM's **Summary** tab shows it, thanks to the guest agent) and use `http://that-ip:8123`. From there the onboarding wizard takes over.
 
 ### Take a snapshot before you tinker
 Snapshots are instant and save you constantly. Take one before any risky change so rollback is a single click.
