@@ -8,20 +8,8 @@ accent: azure
 
 ## Create the container
 
-### Pick your path: script or by hand
-The helper script below builds a ready-to-go AdGuard container in about two minutes — that's the path these steps follow. Prefer no scripts? Install AdGuard into your own container instead (expand below), then skip ahead to the setup wizard.
-
-> [!DETAILS] The manual way — into your own Debian container
-> Make a container as in the *Containers* guide (2 cores and 2 GB is plenty), give it a **fixed IP** (set a static address in the container's Network config, or use your router's DHCP reservation page), then run the official installer in the container's **Console**:
->
-> ```bash
-> curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -v
-> ```
->
-> Same rule as ever for piped scripts — download and read it first if you prefer. Then continue at **Run the setup wizard** below.
-
 ### Run the install script
-In the Proxmox web interface, click your node in the left sidebar, then click **Shell**. The script runs on the Proxmox host itself, not inside a VM or container. Paste this and press Return:
+The quickest path: a helper script builds a ready-to-go AdGuard container in about two minutes. In the Proxmox web interface, click your node in the left sidebar, then click **Shell** — the script runs on the Proxmox host itself, not inside a VM or container. Paste this and press Return:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"
@@ -30,8 +18,17 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > [!NOTE]
 > This uses the Proxmox community helper scripts — the successor to the well-known tteck scripts. Same habit as always: read a script before piping it into a root shell (the download-read-run habit from the *Install Proxmox* guide).
 
+> [!DETAILS] Prefer no scripts? Do it by hand instead
+> Make a container yourself as in the *Containers* guide (2 cores and 2 GB is plenty), give it a **fixed IP** (set a static address in the container's Network config, or use your router's DHCP reservation page), then run the official AdGuard installer in the container's **Console**:
+>
+> ```bash
+> curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -v
+> ```
+>
+> Done this way, you've already covered the next step too — check it off and continue at **Run the setup wizard**.
+
 ### Choose Advanced and set a static IP
-When it asks **Default or Advanced**, pick **Advanced**. Accept the sensible defaults for CPU and RAM, but when it reaches networking, set a **static IP** instead of DHCP, for example `192.168.1.53`. Note down the IP you choose — you will use it everywhere below. Then let the script finish; it prints the setup URL when done.
+This happens *while the script runs*: when it asks **Default or Advanced**, pick **Advanced**. Accept the sensible defaults for CPU and RAM, but when it reaches networking, set a **static IP** instead of DHCP, for example `192.168.1.53`. Note down the IP you choose — you will use it everywhere below. Then let the script finish; it prints the setup URL when done.
 
 > [!WARNING]
 > AdGuard is about to become your network's DNS server, and its address must never change. A static IP is essential — if it ever moves, the whole house loses name resolution.
