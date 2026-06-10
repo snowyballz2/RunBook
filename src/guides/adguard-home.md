@@ -36,7 +36,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Done this way, you've already covered the next step too — check it off and continue at **Run the setup wizard**.
 
 ### Choose Advanced and set a static IP
-This happens *while the script runs*: when it asks **Default or Advanced**, pick **Advanced**. Accept the sensible defaults for CPU and RAM, but when it reaches networking, set a **static IP** instead of DHCP, for example `192.168.1.53`. Note down the IP you choose — you will use it everywhere below. Then let the script finish; it prints the setup URL when done.
+This happens *while the script runs*: when it asks **Default or Advanced**, pick **Advanced**. Every prompt comes pre-filled with a sane suggestion — 1 CPU core, 512 MB RAM, 2 GB disk, which is plenty for AdGuard's single small binary — so just press Enter through them. The one to change is networking: set a **static IP** instead of DHCP, for example `192.168.1.53`. Note down the IP you choose — you will use it everywhere below. Then let the script finish; it prints the setup URL when done.
 
 > [!WARNING]
 > AdGuard is about to become your network's DNS server, and its address must never change. A static IP is essential — if it ever moves, the whole house loses name resolution.
@@ -59,7 +59,10 @@ Swap in your own IP.
 Leave the **Admin Web Interface** on its default port, and leave the **DNS server** on port 53, listening on all interfaces. Click Next.
 
 > [!NOTE]
-> Port 53 is the standard DNS port. Listening on all interfaces is what lets every device on your network use AdGuard.
+> Port 53 is the standard DNS port, and "all interfaces" means all of the *container's* interfaces — which live on your home network. None of this is reachable from the internet: your router blocks unsolicited inbound traffic by default.
+
+> [!WARNING]
+> Keep it that way — never create a router port-forward to this container. A DNS server exposed to the internet (an "open resolver") gets found and abused for attacks within hours. AdGuard should serve your LAN only.
 
 ### Create your admin login
 Set a username and a strong password for the dashboard, then finish the wizard. The dashboard now lives at the container's IP (no `:3000` needed anymore).
