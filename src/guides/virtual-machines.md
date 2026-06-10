@@ -3,7 +3,7 @@ title: Virtual machines
 subtitle: Create a general-purpose VM with its own kernel
 collection: Proxmox Home Server
 order: 5
-accent: spruce
+accent: violet
 ---
 
 ### Spin up a generic VM

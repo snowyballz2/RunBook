@@ -3,7 +3,7 @@ title: TrueNAS
 subtitle: A real NAS — ZFS pools on passed-through disks
 collection: Proxmox Home Server
 order: 7
-accent: spruce
+accent: violet
 ---
 
 ### Install TrueNAS in a VM

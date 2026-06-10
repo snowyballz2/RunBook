@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { accentStyle } from "../lib/accents";
 import { groupByCollection } from "../lib/collections";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
@@ -100,6 +101,7 @@ export function LibraryView({
               <CollectionHeader name={col.name} items={col.items} />
               <CardGrid
                 items={col.items}
+                theme={theme}
                 onOpen={onOpen}
                 onReset={onReset}
                 onRemove={onRemove}
@@ -116,6 +118,7 @@ export function LibraryView({
               )}
               <CardGrid
                 items={grouped.standalone}
+                theme={theme}
                 onOpen={onOpen}
                 onReset={onReset}
                 onRemove={onRemove}
@@ -156,11 +159,13 @@ function CollectionHeader({
 
 function CardGrid({
   items,
+  theme,
   onOpen,
   onReset,
   onRemove,
 }: {
   items: LibraryItem[];
+  theme: Theme;
   onOpen: (id: string) => void;
   onReset: (id: string) => void;
   onRemove: (id: string) => void;
@@ -171,6 +176,7 @@ function CardGrid({
         <GuideCard
           key={item.guide.id}
           item={item}
+          theme={theme}
           onOpen={() => onOpen(item.guide.id)}
           onReset={() => onReset(item.guide.id)}
           onRemove={() => onRemove(item.guide.id)}
@@ -182,17 +188,25 @@ function CardGrid({
 
 function GuideCard({
   item,
+  theme,
   onOpen,
   onReset,
   onRemove,
 }: {
   item: LibraryItem;
+  theme: Theme;
   onOpen: () => void;
   onReset: () => void;
   onRemove: () => void;
 }) {
   const { guide, origin } = item;
   const doneCount = store.getProgressCount(guide.id);
+  // Per-guide accent: overrides the accent tokens for this card (ring, status,
+  // left rail) and falls back to the app accent for the default palette.
+  const cardStyle = {
+    ...accentStyle(guide.accent, theme),
+    borderLeftColor: "var(--color-accent)",
+  };
   const status =
     guide.totalSteps > 0 && doneCount >= guide.totalSteps
       ? "Done"
@@ -211,7 +225,8 @@ function GuideCard({
           onOpen();
         }
       }}
-      className="rb-card relative flex min-h-[152px] cursor-pointer flex-col gap-3 p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift focus-visible:-translate-y-0.5"
+      style={cardStyle}
+      className="rb-card relative flex min-h-[152px] cursor-pointer flex-col gap-3 border-l-[3px] p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-lift focus-visible:-translate-y-0.5"
     >
       <div className="absolute right-2.5 top-2.5">
         <CardMenu

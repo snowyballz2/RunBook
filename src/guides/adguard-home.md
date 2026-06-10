@@ -3,7 +3,7 @@ title: AdGuard Home
 subtitle: Network-wide ad blocking for every device in the house
 collection: Proxmox Home Server
 order: 4
-accent: spruce
+accent: azure
 ---
 
 ### Create or reuse a container

@@ -3,7 +3,7 @@ title: Containers
 subtitle: Your first general-purpose LXC container
 collection: Proxmox Home Server
 order: 3
-accent: spruce
+accent: azure
 ---
 
 ### Create a Debian container

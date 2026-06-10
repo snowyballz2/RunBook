@@ -3,7 +3,7 @@ title: Home Assistant OS
 subtitle: The official image — scripted or fully by hand
 collection: Proxmox Home Server
 order: 6
-accent: spruce
+accent: violet
 ---
 
 ### Create the HAOS VM

@@ -3,7 +3,7 @@ title: Make it safe to tinker
 subtitle: Snapshot before every risky change
 collection: Proxmox Home Server
 order: 8
-accent: spruce
+accent: rose
 ---
 
 ### Take a snapshot before you tinker

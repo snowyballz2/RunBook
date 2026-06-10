@@ -3,7 +3,7 @@ title: Prep & BIOS
 subtitle: Check the hardware, save your files, and ready the firmware
 collection: Proxmox Home Server
 order: 1
-accent: spruce
+accent: amber
 ---
 
 ### Check the machine meets the requirements
