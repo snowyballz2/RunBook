@@ -7,7 +7,7 @@ accent: amber
 ---
 
 ### Check the machine meets the requirements
-Almost any 64-bit PC from the last decade can run Proxmox. You need: a CPU with virtualization support, 8 GB+ RAM to be comfortable, a drive you are willing to wipe, **wired Ethernet**, a 4 GB+ USB stick, and a second device with a browser.
+Almost any 64-bit PC from the last decade can run Proxmox. You need: a CPU with virtualization support, 8 GB+ RAM to be comfortable, a drive you are willing to wipe, **wired Ethernet**, a 4 GB+ USB stick, a second device with a browser — and, just for the install, **a monitor and keyboard plugged into the server itself**. Once Proxmox is running you unplug both and drive everything from the other device's browser.
 
 > [!WARNING]
 > Proxmox needs a wired network connection — Wi-Fi is effectively unsupported for its management interface. If the machine isn't near your router, sort that out first (a long cable or a powerline adapter both work).

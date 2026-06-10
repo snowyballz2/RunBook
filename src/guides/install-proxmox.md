@@ -59,6 +59,8 @@ https://your-ip:8006
 > Proxmox has no desktop of its own. You administer everything from a browser at that address.
 
 > [!DETAILS] How to boot from the USB stick
+> This happens on a **keyboard and monitor plugged into the server itself** — there is nothing to connect to remotely yet. (It's temporary: once the install is done, the server runs headless and you do everything from your other computer's browser.)
+>
 > Right after powering on, tap the one-time boot menu key — commonly `F8` (ASUS), `F11` (MSI, ASRock), `F12` (Gigabyte, Dell, Lenovo), or `Esc` then `F9` (HP). If none of those work, enter the BIOS and put the USB stick first in the boot order.
 >
 > If the menu lists the stick twice, pick the entry starting with **UEFI:**.
