@@ -18,11 +18,19 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > [!NOTE]
 > This uses the Proxmox community helper scripts — the successor to the well-known tteck scripts. Same habit as always: read a script before piping it into a root shell (the download-read-run habit from the *Install Proxmox* guide).
 
-> [!DETAILS] Prefer no scripts? Do it by hand instead
-> Make a container yourself as in the *Containers* guide (2 cores and 2 GB is plenty), give it a **fixed IP** (set a static address in the container's Network config, or use your router's DHCP reservation page), then run the official AdGuard installer in the container's **Console**:
+> [!DETAILS] Prefer no scripts at all? Install it by hand
+> The truly manual route, straight from AdGuard's own docs — no piped scripts anywhere. Make a container yourself as in the *Containers* guide (2 cores and 2 GB is plenty) and give it a **fixed IP** (set a static address in the container's Network config, or use your router's DHCP reservation page). Then, in the container's **Console**:
 >
 > ```bash
-> curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -v
+> # Get the official release and unpack it under /opt:
+> apt update && apt install -y wget
+> cd /opt
+> wget https://static.adtidy.org/adguardhome/release/AdGuardHome_linux_amd64.tar.gz
+> tar -xf AdGuardHome_linux_amd64.tar.gz
+>
+> # Install and start it as a service (auto-starts with the container):
+> cd AdGuardHome
+> ./AdGuardHome -s install
 > ```
 >
 > Done this way, you've already covered the next step too — check it off and continue at **Run the setup wizard**.
