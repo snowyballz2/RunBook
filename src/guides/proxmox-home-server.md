@@ -324,8 +324,27 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 >
 > Select the container in the tree and open **Console** to log in as `root` with the password you set.
 
+> [!DETAILS] Worked example: AdGuard Home (network-wide ad blocking)
+> The classic first service. Three parts: install it in the container, set it up, then point your router at it.
+>
+> **1. Give the container a fixed address first.** AdGuard will become your network's DNS server, so its address must never change — use your router's DHCP reservation page (same trick as Phase 2) to pin the container's IP.
+>
+> **2. Install it.** In the container's **Console**, run the official installer:
+>
+> ```bash
+> curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -v
+> ```
+>
+> (Same rule as ever for piped scripts — download and read it first if you prefer.)
+>
+> **3. Set it up.** Browse to `http://container-ip:3000` and walk the short wizard. After setup the dashboard moves to plain `http://container-ip` and DNS runs on port 53.
+>
+> **4. Point the network at it.** In your router's DHCP/DNS settings, set the DNS server to the container's IP. As devices renew their leases, every phone, TV, and laptop in the house starts using it — watch the query log fill up.
+>
+> Prefer one command instead? community-scripts has a script that creates the whole container with AdGuard already in it: `bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"` — run on the Proxmox host, not in a container.
+
 ### Spin up a VM for anything that needs a real kernel
-For a Windows box, a full Linux desktop, or anything doing GPU work, create a complete virtual machine with its own kernel.
+For anything that isn't a small Linux service — Home Assistant, a NAS, a Windows box, a full Linux desktop — create a complete virtual machine with its own kernel. Two fully worked examples are in the expandables below.
 
 ```bash
 # List your VMs and containers from the Proxmox shell:
@@ -337,7 +356,7 @@ pct list
 > A VM emulates a whole computer, so it can run anything — at the cost of more RAM and slower startup than a container. Reach for one when:
 >
 > - **It isn't Linux** — a Windows VM for that one stubborn Windows-only program, or to remote into from the couch
-> - **It's an appliance OS that wants the whole machine** — Home Assistant OS (next step), TrueNAS as a proper NAS (pass real disks through to it), or OPNsense if you ever want to be your own router vendor
+> - **It's an appliance OS that wants the whole machine** — Home Assistant OS and TrueNAS (both worked through below), or OPNsense if you ever want to be your own router vendor
 > - **You want a sandbox** — a Linux desktop to experiment in: snapshot it, break it, roll back, repeat
 > - **It needs kernel control or a GPU** — passthrough and custom kernel modules behave better in a VM
 >
@@ -366,11 +385,10 @@ pct list
 >
 > Confirm, start the VM, and open **Console** to run the OS installer.
 
-### Run Home Assistant OS
-Home Assistant is the workload many home servers exist for. HAOS ships as a ready-made disk image — not an installer ISO — so don't use the Create VM wizard for it; use one of the two paths below.
-
-> [!DETAILS] The quick way — community helper script
-> The same community-scripts project from the post-install step has a helper that downloads the official HAOS image and builds the VM for you. Run it in the Proxmox shell and accept the defaults:
+> [!DETAILS] Worked example: Home Assistant OS — the quick way
+> Home Assistant is the workload many home servers exist for, with one trap: HAOS ships as a ready-made disk image, **not** an installer ISO — so skip the Create VM wizard for it and use this expandable (or the manual one below) instead.
+>
+> The community-scripts helper downloads the official HAOS image and builds the VM for you. Run it in the Proxmox shell and accept the defaults:
 >
 > ```bash
 > bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/haos-vm.sh)"
@@ -378,8 +396,8 @@ Home Assistant is the workload many home servers exist for. HAOS ships as a read
 >
 > Same rule as before: you are piping a script into a root shell, so read it first (the download-read-run habit from Phase 2) and make that call yourself.
 
-> [!DETAILS] The manual way — no scripts
-> Five commands in the Proxmox shell, using only official sources. Check the [HAOS releases page](https://github.com/home-assistant/operating-system/releases) for the latest version and substitute it for `17.3` below. Replace `100` with a free VM ID and `local-lvm` with your storage name if it differs.
+> [!DETAILS] Worked example: Home Assistant OS — the manual way
+> Five commands in the Proxmox shell, using only official sources — no helper scripts. Check the [HAOS releases page](https://github.com/home-assistant/operating-system/releases) for the latest version and substitute it for `17.3` below. Replace `100` with a free VM ID and `local-lvm` with your storage name if it differs.
 >
 > ```bash
 > # 1. Download and unpack the official image:
@@ -405,8 +423,28 @@ Home Assistant is the workload many home servers exist for. HAOS ships as a read
 > qm start 100
 > ```
 
-> [!DETAILS] First contact with Home Assistant
+> [!DETAILS] Home Assistant OS — first contact
 > Give it a few minutes on first boot — HAOS sets itself up unattended. Then browse to `http://homeassistant.local:8123`, or find the VM's IP in Proxmox (the VM's **Summary** tab shows it, thanks to the guest agent) and use `http://that-ip:8123`. From there the onboarding wizard takes over.
+
+> [!DETAILS] Worked example: a NAS with TrueNAS
+> TrueNAS turns a pile of disks into a proper network-storage appliance — shared folders, snapshots, and the ZFS filesystem guarding your data. Unlike HAOS it ships as a normal installer ISO, so the Create VM wizard works:
+>
+> 1. Download **TrueNAS Community Edition** from [truenas.com](https://www.truenas.com/download-truenas-community-edition/) and upload the ISO to Proxmox (the upload expandable above).
+> 2. Run the wizard: 2 cores, **8192 MB memory** (TrueNAS is memory-hungry — ZFS uses RAM as cache; give it more if you can spare it), a 32 GB boot disk, network on `vmbr0`. Install from the console, then browse to the address the console prints.
+> 3. The part that makes it a *real* NAS — give it real disks, not virtual ones. ZFS wants to manage whole physical drives. In the **Proxmox host shell**:
+>
+> ```bash
+> # Find your data disks' stable IDs (match model + serial):
+> lsblk -o +MODEL,SERIAL
+> ls -l /dev/disk/by-id/
+>
+> # Attach each disk to the VM (here VM 101, as its second disk):
+> qm set 101 -scsi1 /dev/disk/by-id/ata-YOUR-DISK-ID
+> ```
+>
+> 4. Reboot the VM. The disks appear under **Storage** in TrueNAS — build a pool there. With two disks, choose a **mirror**: one drive can die and your data survives.
+>
+> Use disks with nothing on them you care about — TrueNAS will claim them entirely. And note for later: serious builds pass through a whole disk-controller card instead (PCIe passthrough — that is what the VT-d/IOMMU setting from Phase 1 was for), but per-disk passthrough is the right starting point.
 
 ### Take a snapshot before you tinker
 Snapshots are instant and save you constantly. Take one before any risky change so rollback is a single click.
