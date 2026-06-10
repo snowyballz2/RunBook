@@ -36,6 +36,10 @@ export type Guide = {
   id: string;
   title: string;
   subtitle?: string;
+  /** Optional name of the build this guide belongs to; groups guides in the Library. */
+  collection?: string;
+  /** Optional position within its collection (lower first). Lives in frontmatter, not filenames. */
+  order?: number;
   /** Optional palette accent override from frontmatter. */
   accent?: string;
   /** Content before the first phase heading. */

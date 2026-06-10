@@ -59,7 +59,13 @@ const HEADING_RE = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
 /* Frontmatter                                                                */
 /* -------------------------------------------------------------------------- */
 
-type Frontmatter = { title?: string; subtitle?: string; accent?: string };
+type Frontmatter = {
+  title?: string;
+  subtitle?: string;
+  accent?: string;
+  collection?: string;
+  order?: number;
+};
 
 function extractFrontmatter(lines: string[]): {
   meta: Frontmatter;
@@ -95,6 +101,11 @@ function extractFrontmatter(lines: string[]): {
     if (key === "title") meta.title = value;
     else if (key === "subtitle") meta.subtitle = value;
     else if (key === "accent") meta.accent = value;
+    else if (key === "collection") meta.collection = value;
+    else if (key === "order") {
+      const n = Number.parseInt(value, 10);
+      if (Number.isFinite(n)) meta.order = n;
+    }
   }
   return { meta, rest: lines.slice(end + 1) };
 }
@@ -327,6 +338,8 @@ export function parseGuide(markdown: string, opts: ParseOptions = {}): Guide {
   };
   if (meta.subtitle) guide.subtitle = meta.subtitle;
   if (meta.accent) guide.accent = meta.accent;
+  if (meta.collection) guide.collection = meta.collection;
+  if (meta.order !== undefined) guide.order = meta.order;
   if (intro.length) guide.intro = intro;
 
   return guide;

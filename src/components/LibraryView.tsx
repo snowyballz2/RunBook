@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { groupByCollection } from "../lib/collections";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
 import { BookOpen, More, Plus, Search, Trash } from "./Icons";
@@ -38,9 +39,12 @@ export function LibraryView({
     ? items.filter(
         (i) =>
           i.guide.title.toLowerCase().includes(q) ||
-          i.guide.subtitle?.toLowerCase().includes(q),
+          i.guide.subtitle?.toLowerCase().includes(q) ||
+          i.guide.collection?.toLowerCase().includes(q),
       )
     : items;
+
+  const grouped = groupByCollection(filtered);
 
   return (
     <div className="mx-auto min-h-dvh max-w-5xl px-4 pb-24 pt-5 sm:px-6">
@@ -90,18 +94,88 @@ export function LibraryView({
           No guides match “{query}”.
         </p>
       ) : (
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((item) => (
-            <GuideCard
-              key={item.guide.id}
-              item={item}
-              onOpen={() => onOpen(item.guide.id)}
-              onReset={() => onReset(item.guide.id)}
-              onRemove={() => onRemove(item.guide.id)}
-            />
+        <>
+          {grouped.collections.map((col) => (
+            <section key={col.name} aria-label={`${col.name} collection`}>
+              <CollectionHeader name={col.name} items={col.items} />
+              <CardGrid
+                items={col.items}
+                onOpen={onOpen}
+                onReset={onReset}
+                onRemove={onRemove}
+              />
+            </section>
           ))}
-        </div>
+
+          {grouped.standalone.length > 0 && (
+            <section aria-label="Standalone guides">
+              {grouped.collections.length > 0 && (
+                <h2 className="mb-3 mt-8 font-display text-[1.05rem] font-semibold text-ink">
+                  Standalone
+                </h2>
+              )}
+              <CardGrid
+                items={grouped.standalone}
+                onOpen={onOpen}
+                onReset={onReset}
+                onRemove={onRemove}
+              />
+            </section>
+          )}
+        </>
       )}
+    </div>
+  );
+}
+
+function CollectionHeader({
+  name,
+  items,
+}: {
+  name: string;
+  items: LibraryItem[];
+}) {
+  let done = 0;
+  let total = 0;
+  for (const { guide } of items) {
+    done += Math.min(store.getProgressCount(guide.id), guide.totalSteps);
+    total += guide.totalSteps;
+  }
+  return (
+    <div className="mb-3 mt-8 flex items-center gap-2.5">
+      <ProgressRing done={done} total={total} size={26} stroke={3.5} showLabel={false} />
+      <h2 className="font-display text-[1.05rem] font-semibold leading-none text-ink">
+        {name}
+      </h2>
+      <span className="mt-px font-mono text-[11px] tabular-nums text-ink-faint">
+        {items.length} {items.length === 1 ? "guide" : "guides"} · {done}/{total} steps
+      </span>
+    </div>
+  );
+}
+
+function CardGrid({
+  items,
+  onOpen,
+  onReset,
+  onRemove,
+}: {
+  items: LibraryItem[];
+  onOpen: (id: string) => void;
+  onReset: (id: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((item) => (
+        <GuideCard
+          key={item.guide.id}
+          item={item}
+          onOpen={() => onOpen(item.guide.id)}
+          onReset={() => onReset(item.guide.id)}
+          onRemove={() => onRemove(item.guide.id)}
+        />
+      ))}
     </div>
   );
 }

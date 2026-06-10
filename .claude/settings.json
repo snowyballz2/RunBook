@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_eval",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__Claude_Preview__preview_stop",
+      "mcp__Claude_Preview__preview_click",
+      "mcp__ccd_session_mgmt__search_session_transcripts",
+      "mcp__ccd_session__mark_chapter",
+
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:snowyballz2.github.io)",
+      "WebFetch(domain:nodejs.org)",
+      "WebFetch(domain:pve.proxmox.com)",
+      "WebFetch(domain:www.proxmox.com)",
+      "WebFetch(domain:forum.proxmox.com)",
+      "WebFetch(domain:www.home-assistant.io)",
+      "WebFetch(domain:community-scripts.org)",
+      "WebFetch(domain:www.truenas.com)",
+      "WebFetch(domain:www.rfc-editor.org)",
+      "WebFetch(domain:learn.microsoft.com)",
+      "WebFetch(domain:support.apple.com)",
+      "WebFetch(domain:www.asus.com)",
+      "WebFetch(domain:www.gigabyte.com)",
+      "WebFetch(domain:www.msi.com)",
+      "WebFetch(domain:www.dell.com)",
+      "WebFetch(domain:support.hp.com)",
+      "WebFetch(domain:support.lenovo.com)",
+      "WebFetch(domain:etcher.balena.io)",
+      "WebFetch(domain:rufus.ie)"
+    ]
+  }
+}
