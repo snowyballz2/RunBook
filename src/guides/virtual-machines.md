@@ -6,8 +6,10 @@ order: 5
 accent: violet
 ---
 
+## Create it
+
 ### Spin up a generic VM
-For anything that isn't a small Linux service — a Windows box, a full Linux desktop, an appliance OS — create a complete virtual machine with its own kernel. Home Assistant and the NAS each get their own guide in this collection.
+For anything that isn't a small Linux service — a Windows box, a full Linux desktop, an appliance OS — create a complete virtual machine with its own kernel. The *Home Assistant OS* and *TrueNAS* guides build on this one.
 
 ```bash
 # List your VMs and containers from the Proxmox shell:
@@ -19,7 +21,7 @@ pct list
 > A VM emulates a whole computer, so it can run anything — at the cost of more RAM and slower startup than a container. Reach for one when:
 >
 > - **It isn't Linux** — a Windows VM for that one stubborn Windows-only program, or to remote into from the couch
-> - **It's an appliance OS that wants the whole machine** — Home Assistant OS and TrueNAS (each has its own guide in this collection), or OPNsense if you ever want to be your own router vendor
+> - **It's an appliance OS that wants the whole machine** — the *Home Assistant OS* and *TrueNAS* guides in this collection, or OPNsense if you ever want to be your own router vendor
 > - **You want a sandbox** — a Linux desktop to experiment in: snapshot it, break it, roll back, repeat
 > - **It needs kernel control or a GPU** — passthrough and custom kernel modules behave better in a VM
 >
@@ -47,3 +49,68 @@ pct list
 > - **Windows guests** — the VirtIO defaults make the Windows installer see no disk. Either pick **SATA** for the disk and **Intel E1000** for the network, or attach the [virtio-win drivers ISO](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso) as a second CD drive and load drivers during setup.
 >
 > Confirm, start the VM, and open **Console** to run the OS installer.
+
+## Install the OS
+
+### Run the installer in the Console
+Start the VM, select it in the left tree, and click **Console**. The VM boots from the ISO you attached, and you walk the OS installer exactly as you would on physical hardware — partitioning, user account, reboot at the end.
+
+> [!TIP]
+> If a Windows installer reports no disk to install to, that is the VirtIO driver situation from the **Create VM wizard essentials** expandable above — load the drivers from the virtio-win CD, or rebuild with SATA and E1000.
+
+### Install the QEMU guest agent
+The guest agent is a small service inside the VM that lets Proxmox shut it down cleanly, show its IP address on the Summary page, and freeze the filesystem during backups. It only works when both halves are in place: the **Qemu Agent** option on the VM (the checkbox you ticked in the wizard) and the agent package inside the guest.
+
+```bash
+# Inside a Debian or Ubuntu guest:
+apt-get install qemu-guest-agent
+systemctl start qemu-guest-agent
+systemctl enable qemu-guest-agent
+```
+
+> [!NOTE]
+> The explicit start and enable matter — depending on the distribution, the agent might not start automatically after installation.
+
+> [!DETAILS] Installing the agent on a Windows guest
+> The agent comes on the same virtio-win drivers ISO from the wizard step. Attach it as a CD drive, open it in the guest, and run the **virtio-win-guest-tools** wizard — it installs the QEMU Guest Agent along with the SPICE agent for a smoother console. If you only want the agent itself, the MSI lives on the ISO at `guest-agent\qemu-ga-x86_64.msi`. Verify it is running from PowerShell:
+>
+> ```powershell
+> Get-Service QEMU-GA
+> ```
+
+> [!DETAILS] Turning the agent option on after the fact
+> If the wizard checkbox was missed, the VM-side half lives in the VM's **Options** panel — edit **QEMU Guest Agent** and enable it, or from the host shell:
+>
+> ```bash
+> qm set 100 --agent 1
+> ```
+>
+> Swap in your own VM ID. The agent package in the guest does nothing until this option is on.
+
+### Eject the installer ISO
+Once the OS boots from its own disk, take the installer out of the virtual drive: open the VM's **Hardware** tab, double-click the **CD/DVD Drive**, and select **Do not use any media**. The VM stops offering the installer at every boot, and the ISO file back in storage can be deleted whenever you want the space.
+
+## Run it like an appliance
+
+### Start it at boot
+An appliance should come back on its own after a power cut or a host reboot. In the VM's **Options** tab, edit **Start at boot** and enable it — or from the host shell:
+
+```bash
+qm set 100 -onboot 1
+```
+
+### Grow the disk later
+When the disk fills up, adding space is a two-part job, and Proxmox only does the first part. From the host, grow the virtual disk — then, inside the guest, grow the partition and filesystem into the new space, because the guest knows nothing about it until you do. Shrinking is not supported, so size changes are one-way.
+
+```bash
+# From the Proxmox host shell — check the disk name (scsi0, virtio0, ...) in the Hardware tab:
+qm disk resize 100 scsi0 +16G
+```
+
+> [!DETAILS] Growing the partition inside the guest
+> The second half depends on the guest OS:
+>
+> - **Windows** — open Disk Management and extend the volume into the new unallocated space.
+> - **Linux** — grow the partition with `parted` or `fdisk`, then the filesystem: `resize2fs` for ext4, or `pvresize` followed by `lvresize --resizefs` if the install uses LVM. `lsblk` shows which layout you have.
+>
+> This second step is a VM-only chore — containers do not need it, because Proxmox grows a container's filesystem for you.

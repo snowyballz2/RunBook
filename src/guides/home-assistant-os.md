@@ -6,6 +6,8 @@ order: 6
 accent: violet
 ---
 
+## Create the VM
+
 ### Create the HAOS VM
 The workload many home servers exist for, with one trap: HAOS ships as a ready-made disk image, **not** an installer ISO — so skip the Create VM wizard and use one of the two paths below.
 
@@ -45,5 +47,36 @@ The workload many home servers exist for, with one trap: HAOS ships as a ready-m
 > qm start 100
 > ```
 
+## First boot
+
 ### First contact
 Give it a few minutes on first boot — HAOS sets itself up unattended. Then browse to `http://homeassistant.local:8123`, or find the VM's IP in Proxmox (the VM's **Summary** tab shows it, thanks to the guest agent) and use `http://that-ip:8123`. From there the onboarding wizard takes over.
+
+### Walk the onboarding
+The first screen is **Preparing Home Assistant** while it downloads the latest version (roughly 700 MB) — this can take twenty minutes or so depending on hardware and connection, so let it work. Then choose **Create my smart home** and the wizard walks you through an owner account, your home location, and an analytics choice, ending with **Finish**.
+
+> [!WARNING]
+> The owner account is the one account that cannot be recovered — Home Assistant's own docs say to store the name, username, and password somewhere safe. Put them in your password manager before clicking Create account.
+
+> [!DETAILS] What each screen asks for
+> **Owner account** — a Name (displayed in the UI), a Username (lowercase, no whitespace), and a Password; then **Create account**. **Home location** — used to set your time zone, unit system, and currency; then **Next**. **Analytics** — choose whether to share anonymized usage data; sharing is off by default. Confirm with **Next**, press **Finish**, and you land on your default dashboard.
+
+### Add a first integration
+Go to **Settings > Devices & services**. Anything Home Assistant has already spotted on your network sits in the **Discovered** section — select **Add** under one of them and follow the prompts. For something it has not found, select **Add integration** in the bottom-right corner and search for it.
+
+> [!NOTE]
+> Older walkthroughs show a "devices found on your network" screen inside the onboarding wizard itself. The current flow does discovery here instead, after onboarding — so an empty wizard is not a sign anything went wrong.
+
+## Keep it healthy
+
+### Turn on automatic backups
+Go to **Settings > System > Backups** and select **Set up backups**. Pick a schedule — daily, or specific days — and a time preference (**System optimal** or **Custom**), and Home Assistant handles the rest from then on.
+
+> [!DETAILS] Where the backups can live
+> Three options. **Local** — the default, stored in the VM's own `/backup` directory; convenient, but it lives on the same virtual disk as Home Assistant itself. **Network storage** — add a network share and mark it for Backup use, putting copies on different hardware. **Home Assistant Cloud** — up to 5 GB, holding only the most recent backup saved there. The docs themselves recommend keeping backups somewhere other than the device Home Assistant runs on, and that advice is sound.
+
+### Update safely
+Updates appear under **Settings > System > Updates** — Home Assistant Core and the Operating System update separately, each with its own entry. The update dialog has a backup toggle; the docs recommend enabling it, and the automatic-backup setup can also back up before every update for you.
+
+> [!TIP]
+> Before a major update, also take a Proxmox snapshot of the VM — the snapshot habit from the *Make it safe to tinker* guide. That is community practice rather than official Home Assistant advice, but it gives you a one-click rollback at the hypervisor level if an update goes sideways, independent of anything inside the VM.

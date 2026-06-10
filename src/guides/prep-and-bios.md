@@ -89,3 +89,6 @@ Enter the BIOS and switch on the virtualization features Proxmox relies on. The 
 > - **Lenovo ThinkCentre** — `F1` into Setup → *Advanced → CPU Setup* → enable **Intel Virtualization Technology** and **Intel VT-d**.
 >
 > Save and exit (usually `F10`).
+
+> [!DETAILS] How to confirm it worked
+> If Windows is still on the machine, boot back into it and press `Ctrl+Shift+Esc` for Task Manager → **Performance → CPU** — the right-hand column should read **Virtualization: Enabled**. If you've already wiped, no stress: the Proxmox installer warns loudly if hardware virtualization is missing, so you'll find out on the very next step either way.

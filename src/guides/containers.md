@@ -6,6 +6,8 @@ order: 3
 accent: azure
 ---
 
+## Create it
+
 ### Create a Debian container
 Use a lightweight LXC container for services that don't need a full VM. From the web UI: **Create CT**, pick the Debian template, give it 2 cores and 2 GB of RAM to start.
 
@@ -47,3 +49,68 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 > - **Confirm** — tick **Start after created** and finish.
 >
 > Select the container in the tree and open **Console** to log in as `root` with the password you set.
+
+## Get comfortable inside
+
+### Log in at the Console
+Select the container in the left tree and open **Console**. Log in as `root` with the password you set in the wizard — you're standing inside a small, fresh Debian machine.
+
+> [!DETAILS] How to reach it over SSH instead
+> The Debian standard template comes with an SSH server already running, but `ssh root@<ip>` with a **password** fails out of the box — Debian's sshd defaults root login to keys only (`PermitRootLogin prohibit-password`). Two honest paths:
+>
+> - If you filled in the **SSH Public Key** field in the Create CT wizard, key-based `ssh root@<ip>` already works. Done.
+> - If not, get a shell the easy way first — the Console, or `pct enter 101` from the node's **Shell**, which drops you into a root shell with no password asked — and add your key:
+>
+> ```bash
+> mkdir -p /root/.ssh && chmod 700 /root/.ssh
+> # Paste your own public key:
+> echo "ssh-ed25519 AAAA... you@laptop" >> /root/.ssh/authorized_keys
+> ```
+>
+> You *can* instead set `PermitRootLogin yes` in `/etc/ssh/sshd_config` and `systemctl restart ssh`, but a guessable root password on the network is a worse trade than a key, even on a home LAN. (If a leaner template ever lacks sshd: `apt install -y openssh-server`.)
+
+### Bring Debian up to date
+Templates are built ahead of time, so the packages inside are already a little stale. First command in any new container:
+
+```bash
+apt update && apt full-upgrade -y
+```
+
+> [!DETAILS] Why full-upgrade rather than upgrade
+> `full-upgrade` will also add or remove packages when dependencies have shifted since the template was built — the right tool for a first sync. For routine updates later, plain `apt upgrade` is the more conservative habit. While you're in there, `dpkg-reconfigure tzdata` sets the timezone so the container's logs match your clock.
+
+## Run it like an appliance
+
+### Make it start at boot
+A useful container should survive a power cut without you remembering it exists. Select the container, open **Options**, and set **Start at boot** to Yes — or from the node's **Shell**:
+
+```bash
+# Swap in your container's ID:
+pct set 101 -onboot 1
+```
+
+> [!DETAILS] Where the ordering knobs live
+> The same **Options** panel has **Start/Shutdown order** and **Startup delay**, for when one guest must come up before another — a DNS container before everything that resolves names, say. On host shutdown, Proxmox asks each container to stop cleanly and waits up to 60 seconds by default before moving on.
+
+### Grow the disk when it gets tight
+That 8 GB starter disk can be enlarged live, no downtime. In the container's **Resources** panel, select the **Root Disk** row, then **Volume Action → Resize** and enter a **Size Increment (GiB)** — or:
+
+```bash
+pct resize 101 rootfs +4G
+```
+
+The filesystem inside grows along with it — unlike a VM, where the guest has to be resized separately (that story is in the *Virtual machines* guide).
+
+> [!WARNING]
+> This is one-way: shrinking a container disk is not supported. Grow in modest increments rather than one generous guess.
+
+### Add cores or memory on the fly
+In **Resources**, select the **Cores** or **Memory** row and click **Edit** — Proxmox hot-plugs most changes into the running container instantly, no reboot. The rare change that can't apply live shows in red as pending until the next restart.
+
+```bash
+pct set 101 -cores 4
+pct set 101 -memory 4096   # MB
+```
+
+> [!TIP]
+> That's the whole lifecycle: create, log in, set-and-forget. When you're ready to give a container a real job, the *AdGuard Home* guide is the classic first one.
