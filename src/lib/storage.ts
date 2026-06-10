@@ -106,6 +106,21 @@ export function saveCollapsed(guideId: string, collapsed: Set<string>): void {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Collapsed Library sections (collection names; standalone uses a sentinel)  */
+/* -------------------------------------------------------------------------- */
+
+const LIB_COLLAPSED_KEY = `${NS}:lib-collapsed`;
+
+export function getLibCollapsed(): Set<string> {
+  return new Set(read<string[]>(LIB_COLLAPSED_KEY, []));
+}
+
+export function saveLibCollapsed(collapsed: Set<string>): void {
+  if (collapsed.size === 0) remove(LIB_COLLAPSED_KEY);
+  else write(LIB_COLLAPSED_KEY, [...collapsed]);
+}
+
+/* -------------------------------------------------------------------------- */
 /* Theme                                                                      */
 /* -------------------------------------------------------------------------- */
 

@@ -3,7 +3,7 @@ import { accentStyle } from "../lib/accents";
 import { groupByCollection } from "../lib/collections";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
-import { BookOpen, More, Plus, Search, Trash } from "./Icons";
+import { BookOpen, ChevronDown, More, Plus, Search, Trash } from "./Icons";
 import { ProgressRing } from "./ProgressRing";
 import { ThemeToggle } from "./ThemeToggle";
 import type { Theme } from "../lib/storage";
@@ -34,8 +34,23 @@ export function LibraryView({
   onRemove,
 }: Props) {
   const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<string>>(() =>
+    store.getLibCollapsed(),
+  );
   const showSearch = items.length > 5;
   const q = query.trim().toLowerCase();
+
+  const toggleSection = (name: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      store.saveLibCollapsed(next);
+      return next;
+    });
+  };
+  // While searching, show every match — ignore collapse state.
+  const isCollapsed = (name: string) => !q && collapsed.has(name);
   const filtered = q
     ? items.filter(
         (i) =>
@@ -98,31 +113,61 @@ export function LibraryView({
         <>
           {grouped.collections.map((col) => (
             <section key={col.name} aria-label={`${col.name} collection`}>
-              <CollectionHeader name={col.name} items={col.items} />
-              <CardGrid
+              <CollectionHeader
+                name={col.name}
                 items={col.items}
-                theme={theme}
-                onOpen={onOpen}
-                onReset={onReset}
-                onRemove={onRemove}
+                collapsed={isCollapsed(col.name)}
+                onToggle={() => toggleSection(col.name)}
               />
+              <Collapsible collapsed={isCollapsed(col.name)}>
+                <CardGrid
+                  items={col.items}
+                  theme={theme}
+                  onOpen={onOpen}
+                  onReset={onReset}
+                  onRemove={onRemove}
+                />
+              </Collapsible>
             </section>
           ))}
 
           {grouped.standalone.length > 0 && (
             <section aria-label="Standalone guides">
               {grouped.collections.length > 0 && (
-                <h2 className="mb-3 mt-8 font-display text-[1.05rem] font-semibold text-ink">
-                  Standalone
-                </h2>
+                <button
+                  type="button"
+                  onClick={() => toggleSection("__standalone__")}
+                  aria-expanded={!isCollapsed("__standalone__")}
+                  className="group mb-1 mt-8 flex w-full items-center gap-2.5 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-surface-2/60"
+                >
+                  <h2 className="font-display text-[1.05rem] font-semibold leading-none text-ink">
+                    Standalone
+                  </h2>
+                  <span className="font-mono text-[11px] tabular-nums text-ink-faint">
+                    {grouped.standalone.length}{" "}
+                    {grouped.standalone.length === 1 ? "guide" : "guides"}
+                  </span>
+                  <ChevronDown
+                    size={17}
+                    className={`ml-auto shrink-0 text-ink-faint transition-transform duration-300 ${
+                      isCollapsed("__standalone__") ? "-rotate-90" : ""
+                    }`}
+                  />
+                </button>
               )}
-              <CardGrid
-                items={grouped.standalone}
-                theme={theme}
-                onOpen={onOpen}
-                onReset={onReset}
-                onRemove={onRemove}
-              />
+              <Collapsible
+                collapsed={
+                  grouped.collections.length > 0 && isCollapsed("__standalone__")
+                }
+              >
+                <CardGrid
+                  items={grouped.standalone}
+                  theme={theme}
+                  onOpen={onOpen}
+                  onReset={onReset}
+                  onRemove={onRemove}
+                />
+              </Collapsible>
             </section>
           )}
         </>
@@ -134,9 +179,13 @@ export function LibraryView({
 function CollectionHeader({
   name,
   items,
+  collapsed,
+  onToggle,
 }: {
   name: string;
   items: LibraryItem[];
+  collapsed: boolean;
+  onToggle: () => void;
 }) {
   let done = 0;
   let total = 0;
@@ -145,7 +194,12 @@ function CollectionHeader({
     total += guide.totalSteps;
   }
   return (
-    <div className="mb-3 mt-8 flex items-center gap-2.5">
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={!collapsed}
+      className="group mb-1 mt-8 flex w-full items-center gap-2.5 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-surface-2/60"
+    >
       <ProgressRing done={done} total={total} size={26} stroke={3.5} showLabel={false} />
       <h2 className="font-display text-[1.05rem] font-semibold leading-none text-ink">
         {name}
@@ -153,6 +207,33 @@ function CollectionHeader({
       <span className="mt-px font-mono text-[11px] tabular-nums text-ink-faint">
         {items.length} {items.length === 1 ? "guide" : "guides"} · {done}/{total} steps
       </span>
+      <ChevronDown
+        size={17}
+        className={`ml-auto shrink-0 text-ink-faint transition-transform duration-300 ${
+          collapsed ? "-rotate-90" : ""
+        }`}
+      />
+    </button>
+  );
+}
+
+/** Smooth grid-rows collapse, matching the reader's phase animation. */
+function Collapsible({
+  collapsed,
+  children,
+}: {
+  collapsed: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none"
+      style={{ gridTemplateRows: collapsed ? "0fr" : "1fr" }}
+      inert={collapsed || undefined}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <div className="px-1 pb-4">{children}</div>
+      </div>
     </div>
   );
 }
