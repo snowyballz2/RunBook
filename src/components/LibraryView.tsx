@@ -202,10 +202,13 @@ function GuideCard({
   const { guide, origin } = item;
   const doneCount = store.getProgressCount(guide.id);
   // Per-guide accent: overrides the accent tokens for this card (ring, status,
-  // left rail) and falls back to the app accent for the default palette.
+  // left rail) and falls back to the app accent for the default palette. A
+  // soft wash of the accent fades in from the rail so groups read at a glance.
   const cardStyle = {
     ...accentStyle(guide.accent, theme),
     borderLeftColor: "var(--color-accent)",
+    background:
+      "linear-gradient(105deg, color-mix(in srgb, var(--color-accent) 16%, var(--color-surface)) 0%, var(--color-surface) 55%)",
   };
   const status =
     guide.totalSteps > 0 && doneCount >= guide.totalSteps
