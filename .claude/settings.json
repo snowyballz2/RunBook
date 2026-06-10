@@ -11,6 +11,9 @@
       "mcp__ccd_session_mgmt__search_session_transcripts",
       "mcp__ccd_session__mark_chapter",
 
+      "Bash(git rm *)",
+      "Bash(python3 -m json.tool *)",
+
       "WebFetch(domain:github.com)",
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
