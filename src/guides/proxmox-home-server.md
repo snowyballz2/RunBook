@@ -154,7 +154,7 @@ https://your-ip:8006
 > 2. **Target disk** — the drive Proxmox will erase and install onto. The **Options** button picks the filesystem; the default (ext4 on LVM) is fine.
 > 3. **Country, time zone, keyboard layout** — usually auto-detected; confirm and move on.
 > 4. **Password, confirm, email address** — this is the root password (8 characters minimum, longer is better) and an email for system notifications.
-> 5. **Management network** — interface, hostname (FQDN), IP address (CIDR), gateway, and DNS server. The two details blocks below cover the hostname and the IP numbers.
+> 5. **Management network** — the form your prepared answers go into: the network **interface** (pick the wired port), the **hostname** you chose, the **IP address** you picked for the server, and your router's address in both the **Gateway** and **DNS server** fields. The two blocks below walk through exactly where each number comes from.
 > 6. **Summary** — review everything, click Install, and the machine reboots on its own when done. When the reboot starts, unplug the USB stick — and if you changed the BIOS boot order earlier, set the internal drive back to first, or you will boot straight back into the installer.
 
 > [!DETAILS] How to pick the hostname
@@ -162,8 +162,14 @@ https://your-ip:8006
 >
 > `home.arpa` is the domain reserved for home networks by RFC 8375, which makes `pve.home.arpa` a safe default. Avoid `.local`: it is reserved for mDNS (RFC 6762), and macOS in particular hands `.local` lookups to Bonjour instead of your DNS server, so names under it resolve unreliably.
 
-> [!DETAILS] How to choose the static IP — finding your numbers
-> First find your router's IP (the gateway):
+> [!DETAILS] The static IP — what you find and what you pick
+> The installer wants three numbers. Two you **find** (they are facts about your network), one you **pick** (a brand-new address for the server):
+>
+> - **Gateway** — *found*. It is simply your router's address.
+> - **DNS server** — *no decision needed*. Enter the router's address again (or `1.1.1.1` if you prefer Cloudflare's public DNS).
+> - **IP address** — *picked by you*. An address nothing else on your network is using.
+>
+> **Step 1 — find the router's address:**
 >
 > ```bash
 > # Windows — press Win+R, type cmd, press Enter, then
@@ -174,16 +180,19 @@ https://your-ip:8006
 > netstat -nr | grep default
 > ```
 >
-> On macOS you can also use System Settings → Wi-Fi → **Details** next to your network, and read the Router address.
+> On macOS you can also use System Settings → Wi-Fi → **Details** next to your network, and read the Router address. It is usually something like `192.168.1.1`. That one number fills both the Gateway and DNS fields.
 >
-> Then browse to that IP (e.g. `http://192.168.1.1`) and log in to the router — the admin username and password are usually printed on a sticker on the router itself, or in your ISP's app or paperwork. Find the DHCP range under the LAN or DHCP settings. Pick an address **outside** that range for Proxmox, or create a DHCP reservation for it inside the range — some routers only allow one or the other.
+> **Step 2 — pick the server's address.** Keep the first three numbers the same as the router's and change only the last one. The catch: your router automatically hands out addresses to phones and laptops as they join, from a block called the **DHCP range** (often `.100` and up). If you pick a number from that block, the router may later hand the *same* number to another device — and both will misbehave. Two safe ways around it:
 >
-> Can't get into the router at all? Pick a high address like `192.168.1.250` and ping it first — if nothing answers, it is almost certainly free.
+> - **Easiest** — browse to the router's address and log in (the admin password is usually on a sticker on the router, or in your ISP's app). Find the DHCP range under the LAN or DHCP settings, and pick a number *below* it — if the range is `.100`–`.254`, something like `.50` is perfect.
+> - **Alternative** — on that same router page, use **DHCP reservation** (sometimes called *static lease* or *address reservation*) to permanently assign your chosen number to the server, so the router never gives it to anything else.
 >
-> Concrete example for a `192.168.1.x` network with a DHCP pool of `.100`–`.254`:
-> - **IP Address (CIDR):** `192.168.1.50/24` (the `/24` is the standard home subnet mask, 255.255.255.0)
-> - **Gateway:** `192.168.1.1` (your router)
-> - **DNS Server:** `192.168.1.1` (the router) or `1.1.1.1`
+> Can't get into the router at all? Pick a high number like `.250` and ping it first — if nothing answers, it is almost certainly free.
+>
+> **Worked example** for a network whose router is `192.168.1.1` with a DHCP range of `.100`–`.254`:
+> - **IP Address (CIDR):** `192.168.1.50/24` (the `/24` just means "standard home network", mask 255.255.255.0)
+> - **Gateway:** `192.168.1.1` (the router — found in step 1)
+> - **DNS Server:** `192.168.1.1` (the router again) or `1.1.1.1`
 
 ### Log in to the web UI for the first time
 From another machine on the LAN, browse to `https://your-ip:8006`. Your browser will warn about the certificate before you see a login screen — that is expected, not a sign anything went wrong.
@@ -199,7 +208,7 @@ From another machine on the LAN, browse to `https://your-ip:8006`. Your browser 
 > A popup saying "No valid subscription" appears on every login. It is normal for the free version — click OK; the next step deals with it.
 
 ### Post-install cleanup
-A fresh install points at Proxmox's paid *enterprise* package repo, so updates error until you switch to the free one. Fix it with the community post-install script below — or by hand in about two minutes (see the last expandable).
+A fresh install points at Proxmox's paid *enterprise* package repo, so updates error until you switch to the free one. The community script below fixes that **and** removes the "No valid subscription" login popup. The by-hand route (last expandable) fixes updates just as well, but the popup stays — it is harmless, and clicking OK is all it ever needs.
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh)"
@@ -266,7 +275,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > apt update && apt full-upgrade -y
 > ```
 >
-> Done this way, the "No valid subscription" popup at login stays — it is purely cosmetic, and clicking OK is all it ever needs.
+> **One honest trade-off:** done this way, the "No valid subscription" login popup stays. It is purely cosmetic — click OK and everything works. Removing it means patching a Proxmox UI file that *every update overwrites*, which is exactly why the community script exists (it re-applies the patch automatically after each update). So your three options are: live with the popup (fine), run the script (gone), or buy a subscription (gone, and supports Proxmox).
 
 ## Phase 3 — First workloads
 
