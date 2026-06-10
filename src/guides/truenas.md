@@ -15,8 +15,22 @@ TrueNAS turns a pile of disks into a proper network-storage appliance — shared
 2. Run the Create VM wizard: 2 cores, **8192 MB memory** (TrueNAS is memory-hungry — ZFS uses RAM as cache; give it more if you can spare it), a 32 GB boot disk, network on `vmbr0`.
 3. Install from the console, then browse to the address the console prints.
 
+> [!NOTE]
+> ECC RAM is ideal for ZFS data integrity but not required at home — most consumer boards don't support it, and that's fine.
+
+> [!DETAILS] Skip the wizard — helper script
+> community-scripts has a TrueNAS helper too: it builds the VM (2 cores, 8 GB RAM, 16 GB boot disk) and fetches the official ISO straight from download.truenas.com, letting you pick the version (default: latest stable). Run it in the Proxmox shell — read it first, as always:
+>
+> ```bash
+> bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/truenas-vm.sh)"
+> ```
+>
+> It only builds the empty VM and attaches the installer — everything from the installer walkthrough below onward still applies, including the disk passthrough.
+
 > [!DETAILS] What the installer asks, and your first login
-> Boot the VM and pick **Install/Upgrade**. The installer asks which disk to install onto — pick the only one offered, the 32 GB virtual boot disk (your data disks aren't attached yet; that's the next step, and it's deliberate). It then asks you to set a password for the administrative account — current versions name it `truenas_admin`. Write it down: when the VM reboots and the console prints the web address, those are exactly the credentials the login screen wants.
+> Boot the VM and pick **Install/Upgrade**. The installer asks which disk to install onto — pick the only one offered, the virtual boot disk (your data disks aren't attached yet; that's the next step, and it's deliberate). It then asks you to set a password for the administrative account — current versions name it `truenas_admin`. Write it down: when the VM reboots and the console prints the web address, those are exactly the credentials the login screen wants.
+>
+> When the install finishes, detach the installer: **Hardware → CD/DVD Drive → Do not use any media** (the eject step from the *Virtual machines* guide). If the VM keeps landing back in the installer at every boot, that's why.
 
 ### Give it real disks — passthrough
 The part that makes it a *real* NAS: ZFS wants to manage whole physical drives, not virtual disks. In the **Proxmox host shell**:
@@ -47,9 +61,11 @@ A pool is ZFS's big bucket: your physical disks fused into one storage unit. In 
 
 > [!DETAILS] How the wizard picks the disks
 > The **Automated Disk Selection** fields do the choosing for you: pick your drives' size in the **Disk Size** dropdown and set **Width** to 2, putting both disks in one mirrored vdev. Prefer to point at the disks yourself? Click **Manual Disk Selection** instead. A mirror needs at least two disks of the same size, and the pool's usable capacity is one disk's worth — the second holds the live copy. Pool names allow up to 50 lowercase alphanumeric characters.
+>
+> Only one spare disk? A single-disk pool works fine to start — just know it has zero redundancy until you add a mirror partner, so treat it accordingly.
 
 ### Add a dataset with the SMB preset
-Datasets are the folders-with-superpowers inside a pool — each carries its own settings, and snapshot tasks target them individually. Go to **Datasets**, select the pool's root dataset, and click **Add Dataset**: enter a **Name** (say `files`) and set **Dataset Preset** to **SMB**, then save.
+Datasets are the folders-with-superpowers inside a pool — each carries its own settings, and snapshot tasks target them individually. Go to **Datasets**, select the pool's root dataset, and click **Add Dataset**: enter a **Name** (say `files` — you can add more later, one per purpose: `backups`, `media`) and set **Dataset Preset** to **SMB**, then save.
 
 > [!DETAILS] What the SMB preset actually changes
 > It tunes the dataset for Windows-style sharing: case-insensitive filenames and NFSv4 ACLs, the permission style SMB expects. It also auto-fills the share name with the dataset name when you create the share in a moment. For a dataset that will never be shared, **Generic** is the right preset instead.
@@ -99,3 +115,8 @@ The pool's other guardian is already on duty: TrueNAS generated a default **scru
 
 > [!NOTE]
 > Honest accounting: a NAS is not a backup. The mirror survives one dead drive and snapshots survive accidental deletion — neither survives fire, theft, or both drives going at once. Anything you truly cannot lose needs a copy on separate hardware; the *Make it safe to tinker* guide covers that distinction and how to act on it.
+
+> [!DETAILS] Make it the storage hub — and the offsite question
+> Once the share works, the rest of the build can lean on it: point Proxmox's scheduled backups here (the *Make it safe to tinker* guide) and Home Assistant's backups too (the *Home Assistant OS* guide), so their safety copies live on different disks than the things they protect.
+>
+> For the small set of data you truly cannot lose, TrueNAS has built-in **Cloud Sync** tasks (**Data Protection → Cloud Sync Tasks**) that push encrypted copies to cloud storage on a schedule. The discipline that keeps costs sane: bulk, replaceable data — camera recordings, media — stays local-only; offsite is reserved for the irreplaceable.
