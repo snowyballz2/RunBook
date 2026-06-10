@@ -158,9 +158,12 @@ https://your-ip:8006
 > 6. **Summary** — review everything, click Install, and the machine reboots on its own when done. When the reboot starts, unplug the USB stick — and if you changed the BIOS boot order earlier, set the internal drive back to first, or you will boot straight back into the installer.
 
 > [!DETAILS] How to pick the hostname
-> The installer wants a fully qualified domain name — a hostname plus a domain, like `pve.home.arpa`. The first part becomes the node name you see everywhere in the UI, so keep it short.
+> The installer wants a fully qualified domain name — a name for the machine, a dot, and a domain, like `pve.home.arpa`. Both halves are your choice:
 >
-> `home.arpa` is the domain reserved for home networks by RFC 8375, which makes `pve.home.arpa` a safe default. Avoid `.local`: it is reserved for mDNS (RFC 6762), and macOS in particular hands `.local` lookups to Bonjour instead of your DNS server, so names under it resolve unreliably.
+> - **The first part** — `pve` is just a convention (short for *Proxmox Virtual Environment*). Call the machine anything you like: `server`, `homelab`, `vault`. Lowercase letters, digits, and hyphens; keep it short, because it becomes the node name you see everywhere in the UI. Pick something you're happy with now — renaming a Proxmox node later is genuinely annoying.
+> - **The domain part** — not required to be `home.arpa`, but it can't be empty. `home.arpa` is the domain officially reserved for home networks (RFC 8375), so it can never clash with the real internet — that's why it's the safe default. `.lan` is common and works, just unofficial. Avoid two things: `.local` (reserved for mDNS per RFC 6762 — macOS hands those lookups to Bonjour, so they resolve unreliably) and any real domain you don't own, like a made-up `.com`.
+>
+> Day to day you'll mostly reach the server by its IP anyway, so don't agonize over the domain half.
 
 > [!DETAILS] The static IP — what you find and what you pick
 > The installer wants three numbers. Two you **find** (they are facts about your network), one you **pick** (a brand-new address for the server):
@@ -201,9 +204,9 @@ From another machine on the LAN, browse to `https://your-ip:8006`. Your browser 
 > Proxmox generates its own (self-signed) certificate, so your browser cannot vouch for it and shows a full-page warning. Click **Advanced**, then **Proceed** (wording varies by browser). On your own LAN, connecting to a server you just installed, this is fine.
 
 > [!DETAILS] Your first login
-> - **User name:** `root`
+> - **User name:** `root` — not a name you chose. Proxmox is Linux underneath, and `root` is Linux's built-in administrator account, like "Administrator" on Windows. The password you set during install was root's password.
 > - **Password:** the one you set during install
-> - **Realm:** Linux PAM standard authentication
+> - **Realm:** leave it on **Linux PAM standard authentication** — it just means "check this login against the system account"
 >
 > A popup saying "No valid subscription" appears on every login. It is normal for the free version — click OK; the next step deals with it.
 
