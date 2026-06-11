@@ -2,7 +2,7 @@
 title: Containers
 subtitle: Your first general-purpose LXC container
 collection: Proxmox Home Server
-order: 3
+order: 4
 accent: azure
 ---
 
@@ -112,5 +112,15 @@ pct set 101 -cores 4
 pct set 101 -memory 4096   # MB
 ```
 
+### Snapshot before you change anything
+Snapshots are instant and nearly free. Before any risky change to a container — an upgrade, a config experiment — take one, so rollback is a single click.
+
+> [!TIP]
+> Name snapshots for *what you were about to do* ("before-adguard-upgrade"), not the date. Future-you will thank present-you.
+
+> [!DETAILS] How to take and roll back a snapshot
+> - Select the container in the left tree and open **Snapshots**.
+> - Click **Take Snapshot**, give it a name that says what you were about to attempt, and an optional description.
+> - To undo, select the snapshot in the list and click **Rollback** — everything since that snapshot is discarded.
 > [!TIP]
 > That's the whole lifecycle: create, log in, set-and-forget. When you're ready to give a container a real job, the *AdGuard Home* guide is the classic first one.

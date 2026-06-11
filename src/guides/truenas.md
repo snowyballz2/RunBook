@@ -2,7 +2,7 @@
 title: TrueNAS
 subtitle: A real NAS — ZFS pools on passed-through disks
 collection: Proxmox Home Server
-order: 7
+order: 8
 accent: violet
 ---
 
@@ -114,9 +114,9 @@ The pool's other guardian is already on duty: TrueNAS generated a default **scru
 > A snapshot is a point-in-time picture of the dataset — delete or overwrite a file by accident and you can reach back and recover it. But snapshots live in the same pool, on the same disks: they protect against fat fingers, not against the pool itself dying. One field to know: the **Naming Schema** must include the time elements `%Y`, `%m`, `%d`, `%H` and `%M`.
 
 > [!NOTE]
-> Honest accounting: a NAS is not a backup. The mirror survives one dead drive and snapshots survive accidental deletion — neither survives fire, theft, or both drives going at once. Anything you truly cannot lose needs a copy on separate hardware; the *Make it safe to tinker* guide covers that distinction and how to act on it.
+> Honest accounting: a NAS is not a backup. The mirror survives one dead drive and snapshots survive accidental deletion — neither survives fire, theft, or both drives going at once. Anything you truly cannot lose needs a copy on separate hardware; the *Proxmox Backups* guide covers the scheduled half, and the expandable below covers offsite.
 
 > [!DETAILS] Make it the storage hub — and the offsite question
-> Once the share works, the rest of the build can lean on it: point Proxmox's scheduled backups here (the *Make it safe to tinker* guide) and Home Assistant's backups too (the *Home Assistant OS* guide), so their safety copies live on different disks than the things they protect.
+> Once the share works, the rest of the build can lean on it: point Proxmox's scheduled backups here (the *Proxmox Backups* guide) and Home Assistant's backups too (the *Home Assistant OS* guide), so their safety copies live on different disks than the things they protect.
 >
 > For the small set of data you truly cannot lose, TrueNAS has built-in **Cloud Sync** tasks (**Data Protection → Cloud Sync Tasks**) that push encrypted copies to cloud storage on a schedule. The discipline that keeps costs sane: bulk, replaceable data — camera recordings (the *Frigate* guide), media — stays local-only; offsite is reserved for the irreplaceable.

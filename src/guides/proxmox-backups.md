@@ -1,32 +1,20 @@
 ---
-title: Make it safe to tinker
-subtitle: Snapshots, scheduled backups, and staying current
+title: Proxmox Backups
+subtitle: Scheduled, restorable copies of every container and VM
 collection: Proxmox Home Server
-order: 11
+order: 12
 accent: rose
 ---
 
-## Snapshots: the undo button
-
-### Take a snapshot before you tinker
-Snapshots are instant and save you constantly. Take one before any risky change so rollback is a single click.
-
-> [!TIP]
-> Name snapshots for *what you were about to do* ("before-gpu-passthrough"), not the date. Future-you will thank present-you.
-
-> [!DETAILS] How to take and roll back a snapshot
-> - Select the VM or container in the left tree and open **Snapshots**.
-> - Click **Take Snapshot**, give it a name that says what you were about to attempt, and an optional description.
-> - For a running VM, the **Include RAM** checkbox also saves its memory state, so rollback returns it running exactly where it was.
-> - To undo, select the snapshot in the list and click **Rollback** — everything since that snapshot is discarded.
-
-## Backups: the real safety net
+## Why snapshots are not enough
 
 ### Understand why a snapshot is not a backup
 A snapshot lives on the same storage as the guest it protects — if that disk dies, the snapshot dies with it. A backup is different: a complete, self-contained archive of the guest's configuration and data, restorable anywhere, even on a rebuilt server.
 
 > [!NOTE]
 > Proxmox backups are always *full* backups — the whole guest in one file, nothing left behind on the original disk. Snapshots undo mistakes; backups survive hardware.
+
+## Schedule it
 
 ### Schedule automatic backups
 Go to **Datacenter → Backup** and click **Add**. Pick a storage, choose a schedule from the dropdown (a quiet hour like `21:00` daily, or `sat 02:00` weekly), and set **Selection mode** to **All** so guests you create later are covered automatically.
@@ -45,6 +33,8 @@ Go to **Datacenter → Backup** and click **Add**. Pick a storage, choose a sche
 > [!DETAILS] Choosing what to keep — retention
 > By default every backup is kept forever, which slowly fills the storage. On the job's **Retention** tab, a sane home setup is **Keep Daily** 7 and **Keep Weekly** 4 — a week of daily restore points plus a month of weekly ones, pruned automatically. Job-level retention overrides whatever the storage itself is configured to keep.
 
+## Prove it works
+
 ### Know how to restore
 Open the backup storage in the left tree and go to its **Backups** view (or the guest's own **Backup** tab), select an archive, and click **Restore**. Restoring over an existing guest returns it to the state in the archive — everything since is discarded.
 
@@ -62,19 +52,3 @@ Open the backup storage in the left tree and go to its **Backups** view (or the 
 > ```
 >
 > Swap in your storage path and the archive's real filename. This is also how you test restores safely.
-
-## Stay current
-
-### Update Proxmox before adding new toys
-Select your node, open **Updates**, click **Refresh** to fetch the package list, then **Upgrade**. This works because of the free-repo switch from the *Install Proxmox* guide. Make it a habit to update *before* installing something new — if anything misbehaves afterwards, you know which change to suspect.
-
-> [!NOTE]
-> This updates the Proxmox host only. Each VM and container is its own little machine and updates from inside itself, the usual `apt update && apt full-upgrade` for Debian guests.
-
-> [!DETAILS] Updating from the shell instead
-> The same thing the Upgrade button does, from the node's **Shell**:
->
-> ```bash
-> apt-get update
-> apt-get dist-upgrade
-> ```

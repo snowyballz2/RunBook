@@ -2,7 +2,7 @@
 title: Virtual machines
 subtitle: Create a general-purpose VM with its own kernel
 collection: Proxmox Home Server
-order: 5
+order: 6
 accent: violet
 ---
 
@@ -114,3 +114,15 @@ qm disk resize 100 scsi0 +16G
 > - **Linux** — grow the partition with `parted` or `fdisk`, then the filesystem: `resize2fs` for ext4, or `pvresize` followed by `lvresize --resizefs` if the install uses LVM. `lsblk` shows which layout you have.
 >
 > This second step is a VM-only chore — containers do not need it, because Proxmox grows a container's filesystem for you.
+
+### Snapshot before you change anything
+Snapshots are instant and nearly free. Before any risky change to a VM — an OS upgrade, a config experiment — take one, so rollback is a single click.
+
+> [!TIP]
+> Name snapshots for *what you were about to do* ("before-gpu-passthrough"), not the date. Future-you will thank present-you.
+
+> [!DETAILS] How to take and roll back a snapshot
+> - Select the VM in the left tree and open **Snapshots**.
+> - Click **Take Snapshot**, give it a name that says what you were about to attempt, and an optional description.
+> - For a running VM, the **Include RAM** checkbox also saves its memory state, so rollback returns it running exactly where it was.
+> - To undo, select the snapshot in the list and click **Rollback** — everything since that snapshot is discarded.

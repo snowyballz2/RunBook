@@ -2,7 +2,7 @@
 title: Home Assistant OS
 subtitle: The official image — scripted or fully by hand
 collection: Proxmox Home Server
-order: 6
+order: 7
 accent: violet
 ---
 
@@ -110,4 +110,4 @@ Go to **Settings > System > Backups** and select **Set up backups**. Pick a sche
 Updates appear under **Settings > System > Updates** — Home Assistant Core and the Operating System update separately, each with its own entry. The update dialog has a backup toggle; the docs recommend enabling it, and the automatic-backup setup can also back up before every update for you.
 
 > [!TIP]
-> Before a major update, also take a Proxmox snapshot of the VM — the snapshot habit from the *Make it safe to tinker* guide. Two layers, two jobs: Home Assistant's own backups capture its configuration; the Proxmox snapshot captures the whole VM for a one-click rollback if an update goes sideways.
+> Before a major update, also take a Proxmox snapshot of the VM — the snapshot habit from the *Virtual machines* guide. Two layers, two jobs: Home Assistant's own backups capture its configuration; the Proxmox snapshot captures the whole VM for a one-click rollback if an update goes sideways.

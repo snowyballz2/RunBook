@@ -2,7 +2,7 @@
 title: Frigate
 subtitle: AI camera recording (NVR) on your own hardware
 collection: Proxmox Home Server
-order: 8
+order: 9
 accent: azure
 ---
 
@@ -265,4 +265,4 @@ mqtt:
 Give the Frigate container a fixed IP via your router's DHCP reservation page — the same habit the *AdGuard Home* guide established — so Home Assistant and your bookmarks never lose it. Then, in Proxmox, select the container, open **Options**, and enable **Start at boot**, so a power cut doesn't silently end your recordings.
 
 > [!NOTE]
-> One quirk of this install to remember at upgrade time: the script builds Frigate 0.17.1 natively and does not update in place — its own update path says to create a new container and transfer your configuration. When a new Frigate version tempts you, take a snapshot first (the *Make it safe to tinker* habit), build the new container, and copy `/config` across.
+> One quirk of this install to remember at upgrade time: the script builds Frigate 0.17.1 natively and does not update in place — its own update path says to create a new container and transfer your configuration. When a new Frigate version tempts you, take a snapshot first (the snapshot habit from the *Containers* guide), build the new container, and copy `/config` across.

@@ -2,7 +2,7 @@
 title: AdGuard Home
 subtitle: House-wide ad and tracker blocking, as a Proxmox container
 collection: Proxmox Home Server
-order: 4
+order: 5
 accent: azure
 ---
 

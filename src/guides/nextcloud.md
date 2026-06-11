@@ -2,7 +2,7 @@
 title: Nextcloud
 subtitle: Your own Google Drive and photo backup, on hardware you control
 collection: Proxmox Home Server
-order: 9
+order: 10
 accent: azure
 ---
 
@@ -112,7 +112,7 @@ Growing works while the container runs; **shrinking is not supported**, so add s
 > Two truths here. NCP's data-directory tool enforces that "Only ext/btrfs/zfs filesystems can hold the data directory" — so you cannot simply point the data directory at an SMB/NFS mount. But Nextcloud has a first-class middle path: **External Storage**. Enable the bundled **External Storage Support** app under **Apps** (it ships disabled), then go to **Settings → Administration → External Storage** and add a *TrueNAS* SMB share with its credentials. It appears as a folder in everyone's files — the heavy stuff (photo archive, media) lives on the ZFS pool with all its space, while the app, database, and sync-critical data stay on the container's local disk. Either way, keep TrueNAS in the *backup* role from the next step too.
 
 ### Back up all five pieces at once
-Nextcloud's docs list five things a backup must retain: the config folder, custom apps, **the data folder, the theme folder, and the database** — and insist on "a fresh backup before every upgrade." Here all five live inside one container, so the Proxmox backup job from *Make it safe to tinker* — to storage that is not this machine — captures the lot in one pass.
+Nextcloud's docs list five things a backup must retain: the config folder, custom apps, **the data folder, the theme folder, and the database** — and insist on "a fresh backup before every upgrade." Here all five live inside one container, so the Proxmox backup job from the *Proxmox Backups* guide — to storage that is not this machine — captures the lot in one pass.
 
 > [!DETAILS] Backing up by hand, the documented way
 > The docs' file-level recipe, useful if you ever migrate off the container: turn on maintenance mode (it "locks the sessions of logged-in users and prevents new logins in order to prevent inconsistencies of your data"), dump the database, copy the folders, turn maintenance off. From `/var/www/nextcloud` in the container's console:
@@ -127,7 +127,7 @@ Nextcloud's docs list five things a backup must retain: the config folder, custo
 > That `mariadb-dump` line is the docs' MariaDB shape; remember the data directory here is `/opt/ncdata/data`, outside the web root, so copy it too.
 
 ### Update on purpose, snapshot first
-Take a snapshot before any update — the *Make it safe to tinker* habit, backed by a red box in Nextcloud's own docs: "The built-in updater does not backup your database or data directory." Then keep two layers current: Debian inside the container with `apt update && apt -y upgrade` (exactly what re-running the install script's update path does), and Nextcloud itself, whose version NCP manages through its own tooling — the community script deliberately leaves that part to NCP.
+Take a snapshot before any update — the snapshot habit from the *Containers* guide, backed by a red box in Nextcloud's own docs: "The built-in updater does not backup your database or data directory." Then keep two layers current: Debian inside the container with `apt update && apt -y upgrade` (exactly what re-running the install script's update path does), and Nextcloud itself, whose version NCP manages through its own tooling — the community script deliberately leaves that part to NCP.
 
 > [!NOTE]
 > On a plain Nextcloud install you would instead watch **Administration settings → Overview** for update notices and use the **Open updater** button in the Version section. On NCP, let NCP drive — mixing updaters is how appliances and their apps fall out of step.

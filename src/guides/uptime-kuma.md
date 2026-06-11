@@ -2,7 +2,7 @@
 title: Uptime Kuma
 subtitle: Know when something dies before the family does
 collection: Proxmox Home Server
-order: 10
+order: 11
 accent: azure
 ---
 
@@ -93,7 +93,7 @@ For a LAN-only build with no port-forwards (keep that habit), the workaround tha
 > If you do run a second instance, it must have its own database — at most one instance per SQLite file, per the maintainer. Two full installs, each watching the other; never two pointed at one data folder.
 
 ### Update on purpose, back up the one folder
-Take a snapshot first — the *Make it safe to tinker* habit — then update **from inside the container**: open its **Console** in Proxmox and type `update`. It compares your installed version against the latest release, stops the service, lays the new version over `/opt/uptime-kuma` without touching your data, and starts it again.
+Take a snapshot first — the snapshot habit from the *Containers* guide — then update **from inside the container**: open its **Console** in Proxmox and type `update`. It compares your installed version against the latest release, stops the service, lays the new version over `/opt/uptime-kuma` without touching your data, and starts it again.
 
 > [!WARNING]
 > Do not re-run the install one-liner on the Proxmox *host* to update — on the host, that command begins the create-a-new-container flow. The same command behaves differently by location: pasted inside the container, it updates in place. The `update` command is exactly that, pre-installed for you.
@@ -101,4 +101,4 @@ Take a snapshot first — the *Make it safe to tinker* habit — then update **f
 > [!DETAILS] Watching what the update actually does
 > `update` re-checks Node.js 22 and Chromium, reads the version recorded in `/root/.uptime-kuma`, and skips cleanly if you're already current. Otherwise: stop the `uptime-kuma` service, fetch the new release tarball over the existing `/opt/uptime-kuma` (copied over, not wiped — which is why your data survives), reinstall dependencies, and restart.
 
-Everything that matters — monitors, their history, notification settings, the SQLite database — lives in the data folder inside the install directory, `/opt/uptime-kuma/data`. The Proxmox backup job from *Make it safe to tinker* captures the whole container in one pass; if you ever copy that folder by hand, stop the service first (`systemctl stop uptime-kuma`) so the database file is consistent. The project's own migration guide repeats "backup your `data` directory" three times in a row. Take the hint.
+Everything that matters — monitors, their history, notification settings, the SQLite database — lives in the data folder inside the install directory, `/opt/uptime-kuma/data`. The Proxmox backup job from the *Proxmox Backups* guide captures the whole container in one pass; if you ever copy that folder by hand, stop the service first (`systemctl stop uptime-kuma`) so the database file is consistent. The project's own migration guide repeats "backup your `data` directory" three times in a row. Take the hint.
