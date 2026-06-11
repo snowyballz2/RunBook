@@ -121,6 +121,42 @@ export function saveLibCollapsed(collapsed: Set<string>): void {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Credentials — values for [!INPUT]/[!SECRET] fields. Device-local only,    */
+/* same trust model as step progress: stored in this browser, never synced.  */
+/* -------------------------------------------------------------------------- */
+
+const CREDENTIALS_KEY = `${NS}:credentials`;
+const CREDENTIALS_EVENT = "runbook:credentials-changed";
+
+export function getCredentials(): Record<string, string> {
+  return read<Record<string, string>>(CREDENTIALS_KEY, {});
+}
+
+export function getCredential(key: string): string {
+  return getCredentials()[key] ?? "";
+}
+
+export function setCredential(key: string, value: string): void {
+  const all = getCredentials();
+  if (value) all[key] = value;
+  else delete all[key];
+  if (Object.keys(all).length === 0) remove(CREDENTIALS_KEY);
+  else write(CREDENTIALS_KEY, all);
+  window.dispatchEvent(new CustomEvent(CREDENTIALS_EVENT));
+}
+
+export function clearCredentials(): void {
+  remove(CREDENTIALS_KEY);
+  window.dispatchEvent(new CustomEvent(CREDENTIALS_EVENT));
+}
+
+/** Subscribe to credential changes (returns an unsubscribe function). */
+export function onCredentialsChange(fn: () => void): () => void {
+  window.addEventListener(CREDENTIALS_EVENT, fn);
+  return () => window.removeEventListener(CREDENTIALS_EVENT, fn);
+}
+
+/* -------------------------------------------------------------------------- */
 /* Theme                                                                      */
 /* -------------------------------------------------------------------------- */
 

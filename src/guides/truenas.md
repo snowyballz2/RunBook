@@ -15,6 +15,12 @@ TrueNAS turns a pile of disks into a proper network-storage appliance — shared
 2. Run the Create VM wizard: 2 cores, **8192 MB memory** (TrueNAS is memory-hungry — ZFS uses RAM as cache; give it more if you can spare it), a 32 GB boot disk, network on `vmbr0`.
 3. Install from the console, then browse to the address the console prints.
 
+> [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
+> The address the console prints after install. Pin it with a DHCP reservation on your router so it never moves.
+
+> [!SECRET] truenas-admin-password | TrueNAS admin password
+> Set during install for the `truenas_admin` account — the web UI login.
+
 > [!NOTE]
 > ECC RAM is ideal for ZFS data integrity but not required at home — most consumer boards don't support it, and that's fine.
 
@@ -28,7 +34,7 @@ TrueNAS turns a pile of disks into a proper network-storage appliance — shared
 > It only builds the empty VM and attaches the installer — everything from the installer walkthrough below onward still applies, including the disk passthrough.
 
 > [!DETAILS] What the installer asks, and your first login
-> Boot the VM and pick **Install/Upgrade**. The installer asks which disk to install onto — pick the only one offered, the virtual boot disk (your data disks aren't attached yet; that's the next step, and it's deliberate). It then asks you to set a password for the administrative account — current versions name it `truenas_admin`. Write it down: when the VM reboots and the console prints the web address, those are exactly the credentials the login screen wants.
+> Boot the VM and pick **Install/Upgrade**. The installer asks which disk to install onto — pick the only one offered, the virtual boot disk (your data disks aren't attached yet; that's the next step, and it's deliberate). It then asks you to set a password for the administrative account — current versions name it `truenas_admin`. Save it in the password field above: when the VM reboots and the console prints the web address, those are exactly the credentials the login screen wants.
 >
 > When the install finishes, detach the installer: **Hardware → CD/DVD Drive → Do not use any media** (the eject step from the *Virtual machines* guide). If the VM keeps landing back in the installer at every boot, that's why.
 
@@ -74,6 +80,10 @@ Datasets are the folders-with-superpowers inside a pool — each carries its own
 
 ### Create a user for the share
 SMB — served by Samba — is the network-drive protocol Macs and Windows PCs speak natively; sharing over it is what makes TrueNAS feel like a drive on your computers. TrueNAS requires at least one local SMB user before it will create a share — and you cannot connect to shares as root or any built-in account. Go to **Credentials → Users**, click **Add**, and fill in a **Full Name**, a **Username**, and a strong password. Leave **SMB User** selected (it is by default) — that checkbox is what makes these credentials valid for share access.
+
+> [!INPUT] smb-user | SMB share username
+
+> [!SECRET] smb-password | SMB share password
 
 > [!NOTE]
 > These are the credentials you will type on every laptop and phone that connects. One shared household user is fine to start; you can add per-person users later.

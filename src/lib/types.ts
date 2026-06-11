@@ -14,7 +14,19 @@ export type Block =
   | { type: "command"; language: string; code: string }
   | { type: "callout"; data: Callout }
   /** A collapsed-by-default expandable section for granular how-to depth. */
-  | { type: "details"; title: string; blocks: Block[] };
+  | { type: "details"; title: string; blocks: Block[] }
+  /** An inline credential field — the value is saved locally on-device. */
+  | {
+      type: "input";
+      /** Stable storage key, unique across the library (e.g. "proxmox-ip"). */
+      key: string;
+      label: string;
+      placeholder?: string;
+      /** Secrets render masked with a reveal toggle. */
+      secret: boolean;
+      /** Optional help text from the marker's quoted body. */
+      hintHtml?: string;
+    };
 
 export type Step = {
   /** Stable slug of the title, unique within the guide. Persistence key. */

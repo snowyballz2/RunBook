@@ -1,6 +1,7 @@
 import type { Block } from "../lib/types";
 import { Callout } from "./Callout";
 import { CommandBlock } from "./CommandBlock";
+import { CredentialInput } from "./CredentialInput";
 import { ChevronDown } from "./Icons";
 
 export function Blocks({ blocks }: { blocks: Block[] }) {
@@ -21,6 +22,18 @@ export function Blocks({ blocks }: { blocks: Block[] }) {
         }
         if (block.type === "details") {
           return <DetailsBlock key={i} title={block.title} blocks={block.blocks} />;
+        }
+        if (block.type === "input") {
+          return (
+            <CredentialInput
+              key={block.key}
+              fieldKey={block.key}
+              label={block.label}
+              placeholder={block.placeholder}
+              secret={block.secret}
+              hintHtml={block.hintHtml}
+            />
+          );
         }
         return <Callout key={i} data={block.data} />;
       })}

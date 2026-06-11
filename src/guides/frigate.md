@@ -249,6 +249,11 @@ mqtt:
   password: your-mqtt-password
 ```
 
+> [!INPUT] mqtt-user | MQTT username | mqtt-user
+> The dedicated Home Assistant user Frigate logs in as (first expandable below).
+
+> [!SECRET] mqtt-password | MQTT password
+
 > [!DETAILS] Setting up the broker side in Home Assistant
 > The broker everyone uses is **Mosquitto**, run as a Home Assistant App (Apps being the new name for add-ons): in Home Assistant, **Settings → Apps → App Store**, install **Mosquitto broker**, and start it. Create a dedicated Home Assistant user (e.g. `mqtt-user`) for Frigate to log in as — Mosquitto accepts any HA user's credentials. Home Assistant's own **MQTT integration** is then offered automatically under **Settings → Devices & services**; accept it. Those are the host/user/password values Frigate's config above needs.
 
@@ -263,6 +268,8 @@ mqtt:
 
 ### Pin its address and start it at boot
 Give the Frigate container a fixed IP via your router's DHCP reservation page — the same habit the *AdGuard Home* guide established — so Home Assistant and your bookmarks never lose it. Then, in Proxmox, select the container, open **Options**, and enable **Start at boot**, so a power cut doesn't silently end your recordings.
+
+> [!INPUT] frigate-ip | Frigate container IP
 
 > [!NOTE]
 > One quirk of this install to remember at upgrade time: the script builds Frigate 0.17.1 natively and does not update in place — its own update path says to create a new container and transfer your configuration. When a new Frigate version tempts you, take a snapshot first (the snapshot habit from the *Containers* guide), build the new container, and copy `/config` across.

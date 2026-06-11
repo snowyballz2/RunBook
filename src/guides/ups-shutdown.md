@@ -81,6 +81,9 @@ Two things that look like typos but aren't: the `upsmon primary` line really has
 > [!NOTE]
 > These files hold a password, which is why they ship owned by `root:nut` and readable by no one else. Edit them in place and leave the ownership and permissions alone.
 
+> [!SECRET] nut-admin-password | NUT admin password
+> Replaces `pick-a-long-password` in both files above — `upsd.users` and the `MONITOR` line must match.
+
 > [!DETAILS] Reading the four files back
 > `MODE=standalone` means one local UPS protecting this machine, and starts all three NUT layers — driver, `upsd`, `upsmon`. The `[myups]` section names the UPS (any name works, it just has to match the `MONITOR` line); `port = auto` is required syntax that `usbhid-ups` ignores, since it finds the UPS over USB by itself. The `MONITOR` line reads left to right: the UPS called `myups` on this machine feeds **1** of this machine's power supplies; sign in as `admin`; this machine is the **primary** — the one wired to the UPS, responsible for deciding when the load shuts down.
 

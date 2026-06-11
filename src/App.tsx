@@ -4,15 +4,20 @@ import { parseGuide } from "./lib/parseGuide";
 import * as store from "./lib/storage";
 import type { Theme } from "./lib/storage";
 import type { Guide } from "./lib/types";
+import { CredentialsView } from "./components/CredentialsView";
 import { ImportPanel } from "./components/ImportPanel";
 import { LibraryView, type LibraryItem } from "./components/LibraryView";
 import { ReaderView } from "./components/ReaderView";
 
-type Route = { name: "library" } | { name: "reader"; id: string };
+type Route =
+  | { name: "library" }
+  | { name: "reader"; id: string }
+  | { name: "credentials" };
 
 function parseHash(): Route {
   const m = location.hash.match(/^#\/g\/(.+)$/);
   if (m) return { name: "reader", id: decodeURIComponent(m[1]) };
+  if (location.hash === "#/credentials") return { name: "credentials" };
   return { name: "library" };
 }
 
@@ -123,12 +128,22 @@ export function App() {
           onToggleTheme={toggleTheme}
           onBack={goLibrary}
         />
+      ) : route.name === "credentials" ? (
+        <CredentialsView
+          items={items}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onBack={goLibrary}
+        />
       ) : (
         <LibraryView
           items={items}
           theme={theme}
           onToggleTheme={toggleTheme}
           onOpen={openGuide}
+          onOpenCredentials={() => {
+            location.hash = "#/credentials";
+          }}
           onAdd={() => setShowImport(true)}
           onReset={onReset}
           onRemove={onRemove}

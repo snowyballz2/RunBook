@@ -43,6 +43,8 @@ Accept the defaults — an **unprivileged** container with **2 cores, 2 GB RAM, 
 ### Reserve its IP and start it at boot
 The script finishes by printing the container's address as `http://<IP>` — no port, and no passwords yet; those come in the browser. Before opening it, pin that IP with a DHCP reservation on your router (the *AdGuard Home* habit), because it is about to be baked into your bookmarks and every device's sync client. Then enable **Options → Start at boot** in Proxmox, the *Containers* guide habit, so the family cloud survives a power cut.
 
+> [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.52
+
 ## First login
 
 ### Open the activation page
@@ -52,7 +54,12 @@ Browse to the printed address. Plain `http://` immediately redirects to HTTPS, a
 > NCP's docs mention `https://nextcloudpi.local` — an mDNS name that may not resolve to this unprivileged container from another machine. The IP always works, and lives on the container's **Summary** tab if you lose it.
 
 ### Save both passwords, then Activate
-The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Use the **Print** button or copy both into your password manager, then click **Activate**: the page opens `https://<IP>:4443` (the second certificate warning), landing you in the NCP panel.
+The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (or use the **Print** button / your password manager), then click **Activate**: the page opens `https://<IP>:4443` (the second certificate warning), landing you in the NCP panel.
+
+> [!SECRET] ncp-panel-password | NCP admin panel password (port 4443)
+> Login is `ncp` for both — only the passwords differ.
+
+> [!SECRET] nextcloud-password | Nextcloud password
 
 > [!NOTE]
 > Older write-ups say the Nextcloud user is `admin`; current NCP uses **ncp** for both logins — only the passwords differ. If you lose one later, the upstream installer's own words apply: "You may review or reset them anytime by using nc-admin and nc-passwd" — both reachable via `sudo ncp-config` in the container's console.

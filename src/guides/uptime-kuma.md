@@ -38,13 +38,19 @@ Accept the defaults — an **unprivileged** container with **1 core, 1 GB RAM, a
 > It installs Node.js 22 and Chromium, downloads the latest Uptime Kuma release (2.4.0 at the time of writing) into `/opt/uptime-kuma`, builds the production dependencies, and writes a systemd service named `uptime-kuma` that starts with the container and restarts itself if it crashes. It records the installed version in `/root/.uptime-kuma` — the update mechanism reads that later. Port **3001** is Uptime Kuma's own default; the script leaves it alone.
 
 ### Create your admin account
-The script prints the address when it finishes — `http://<ip>:3001`. There are no default credentials: the first visit shows a **Create your admin account** form with **Username**, **Password**, and **Repeat Password**. This login will know about everything you run and send alerts on your behalf, so give it a password from your manager.
+The script prints the address when it finishes — `http://<ip>:3001`. There are no default credentials: the first visit shows a **Create your admin account** form with **Username**, **Password**, and **Repeat Password**. This login will know about everything you run and send alerts on your behalf, so give it a strong password.
+
+> [!INPUT] kuma-user | Uptime Kuma admin username
+
+> [!SECRET] kuma-password | Uptime Kuma admin password
 
 > [!NOTE]
 > If you want a second factor on it, that exists too: the **Security** section of Settings has an **Enable 2FA** option, using codes from an authenticator app.
 
 ### Reserve its IP and start it at boot
 Two habits from earlier guides: pin the container's IP with a DHCP reservation on your router (the *AdGuard Home* habit), and enable **Options → Start at boot** in Proxmox (the *Containers* habit). A monitor that vanishes after a power cut, or wanders to a new address, is worse than none — you'd trust a dashboard that isn't there.
+
+> [!INPUT] kuma-ip | Uptime Kuma container IP
 
 ## Watch everything you built
 

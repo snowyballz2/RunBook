@@ -221,8 +221,63 @@ describe("parseGuide — [!DETAILS] expandable sections", () => {
   });
 });
 
+describe("[!INPUT] / [!SECRET] credential fields", () => {
+  it("parses key, label, and placeholder", () => {
+    const g = parseGuide(
+      "# T\n\n### S\n> [!INPUT] proxmox-ip | Proxmox server IP | 192.168.1.50",
+    );
+    const b = g.phases[0].steps[0].blocks[0];
+    expect(b.type).toBe("input");
+    if (b.type === "input") {
+      expect(b.key).toBe("proxmox-ip");
+      expect(b.label).toBe("Proxmox server IP");
+      expect(b.placeholder).toBe("192.168.1.50");
+      expect(b.secret).toBe(false);
+      expect(b.hintHtml).toBeUndefined();
+    }
+  });
+
+  it("marks [!SECRET] fields and captures the quoted body as hint", () => {
+    const g = parseGuide(
+      "# T\n\n### S\n> [!SECRET] root-password | Root password\n> Use a **long** passphrase.",
+    );
+    const b = g.phases[0].steps[0].blocks[0];
+    if (b.type === "input") {
+      expect(b.secret).toBe(true);
+      expect(b.hintHtml).toContain("<strong>long</strong>");
+    }
+  });
+
+  it("slugifies the key and falls back to it as label", () => {
+    const g = parseGuide("# T\n\n### S\n> [!INPUT] My Key!");
+    const b = g.phases[0].steps[0].blocks[0];
+    if (b.type === "input") {
+      expect(b.key).toBe("my-key");
+      expect(b.label).toBe("My Key!");
+    }
+  });
+
+  it("throws a clear error when the key is missing", () => {
+    expect(() => parseGuide("# T\n\n### S\n> [!INPUT]")).toThrow(/needs a key/);
+  });
+
+  it("parses inside [!DETAILS] blocks (double-quoted nesting)", () => {
+    const g = parseGuide(
+      "# T\n\n### S\n> [!DETAILS] More\n> Text first.\n>\n> > [!INPUT] nested-key | Nested",
+    );
+    const d = g.phases[0].steps[0].blocks.find((x) => x.type === "details");
+    expect(d).toBeTruthy();
+    if (d?.type === "details") {
+      const inp = d.blocks.find((x) => x.type === "input");
+      expect(inp).toBeTruthy();
+      if (inp?.type === "input") expect(inp.key).toBe("nested-key");
+    }
+  });
+});
+
 describe("bundled guides", () => {
-  const files = import.meta.glob("../guides/*.md", {
+  // Mirrors bundledGuides.ts: `-2.md` donor drafts are not part of the app.
+  const files = import.meta.glob(["../guides/*.md", "!../guides/*-2.md"], {
     query: "?raw",
     import: "default",
     eager: true,

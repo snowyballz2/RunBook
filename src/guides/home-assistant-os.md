@@ -60,6 +60,8 @@ Give it a few minutes on first boot — HAOS sets itself up unattended. Then bro
 ### Pin its address
 Give the VM a fixed IP before you go further: use your router's DHCP reservation page (the same trick as the *AdGuard Home* guide). Phone apps, dashboards, and other devices will all point at this address, and `homeassistant.local` doesn't resolve reliably on every network.
 
+> [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
+
 > [!TIP]
 > A stable address now saves a round of reconfiguring every app and integration later.
 
@@ -67,7 +69,11 @@ Give the VM a fixed IP before you go further: use your router's DHCP reservation
 The first screen is **Preparing Home Assistant** while it downloads the latest version (roughly 700 MB) — this can take twenty minutes or so depending on hardware and connection, so let it work. Then choose **Create my smart home** and the wizard walks you through an owner account, your home location, and an analytics choice, ending with **Finish**.
 
 > [!WARNING]
-> The owner account is the one account that cannot be recovered — Home Assistant's own docs say to store the name, username, and password somewhere safe. Put them in your password manager before clicking Create account.
+> The owner account is the one account that cannot be recovered — Home Assistant's own docs say to store the name, username, and password somewhere safe. Save them below or in your password manager before clicking Create account.
+
+> [!INPUT] ha-owner-user | Home Assistant owner username
+
+> [!SECRET] ha-owner-password | Home Assistant owner password
 
 > [!DETAILS] What each screen asks for
 > **Owner account** — a Name (displayed in the UI), a Username (lowercase, no whitespace), and a Password; then **Create account**. **Home location** — used to set your time zone, unit system, and currency; then **Next**. **Analytics** — choose whether to share anonymized usage data; sharing is off by default. Confirm with **Next**, press **Finish**, and you land on your default dashboard.

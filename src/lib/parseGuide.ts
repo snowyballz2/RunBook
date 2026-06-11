@@ -52,7 +52,7 @@ function sanitize(html: string): string {
 }
 
 const FENCE_RE = /^(\s*)(`{3,}|~{3,})(.*)$/;
-const ADMONITION_RE = /^>\s*\[!(note|tip|warning|danger|details)\]\s*(.*)$/i;
+const ADMONITION_RE = /^>\s*\[!(note|tip|warning|danger|details|input|secret)\]\s*(.*)$/i;
 const HEADING_RE = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
 
 /* -------------------------------------------------------------------------- */
@@ -170,6 +170,29 @@ function splitBlocks(raw: string): Block[] {
           type: "details",
           title: customTitle || "More detail",
           blocks: splitBlocks(body.join("\n")),
+        });
+        continue;
+      }
+
+      if (kindRaw === "input" || kindRaw === "secret") {
+        // > [!INPUT] key | Label | placeholder   (placeholder optional;
+        // any quoted body lines become help text under the field)
+        const [keyRaw, labelRaw, placeholderRaw] = customTitle
+          .split("|")
+          .map((s) => s.trim());
+        if (!keyRaw) {
+          throw new GuideParseError(
+            `An [!${kindRaw.toUpperCase()}] field needs a key — write “> [!${kindRaw.toUpperCase()}] my-key | Label”.`,
+          );
+        }
+        const hint = body.join("\n").trim();
+        blocks.push({
+          type: "input",
+          key: slugify(keyRaw),
+          label: labelRaw || keyRaw,
+          ...(placeholderRaw ? { placeholder: placeholderRaw } : {}),
+          secret: kindRaw === "secret",
+          ...(hint ? { hintHtml: md2html(hint) } : {}),
         });
         continue;
       }

@@ -5,8 +5,9 @@ import type { Guide } from "./types";
  * Every `.md` file in `src/guides/` is bundled at build time and precached by
  * the service worker, so the starter library is always available offline.
  * Authoring a new built-in guide is just: drop a `.md` file in that folder.
+ * Files ending in `-2.md` are unmerged donor drafts and stay out of the app.
  */
-const modules = import.meta.glob("../guides/*.md", {
+const modules = import.meta.glob(["../guides/*.md", "!../guides/*-2.md"], {
   query: "?raw",
   import: "default",
   eager: true,

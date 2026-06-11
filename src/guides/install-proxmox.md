@@ -54,7 +54,15 @@ Write the ISO to a USB stick (4 GB or larger) with **one** of the two tools belo
 > The same "format this disk?" popup can appear afterwards — Cancel it here too.
 
 ### Run the installer
-Plug the machine into your router with an **Ethernet cable** first — Proxmox cannot use Wi-Fi for management out of the box. Then boot from the stick, pick **Install Proxmox VE (Graphical)**, and follow the prompts. The two answers worth thinking about beforehand are the hostname and a **static IP** on your LAN — write the IP down, you will need it constantly.
+Plug the machine into your router with an **Ethernet cable** first — Proxmox cannot use Wi-Fi for management out of the box. Then boot from the stick, pick **Install Proxmox VE (Graphical)**, and follow the prompts. The answers worth thinking about beforehand are the hostname, a **static IP** on your LAN, and the root password — record them here as you decide; you will need the IP constantly.
+
+> [!INPUT] proxmox-ip | Proxmox server IP | 192.168.1.50
+> The static address you pick in the expandable below. Every guide that follows starts from this number.
+
+> [!INPUT] proxmox-hostname | Server hostname (FQDN) | pve.home.arpa
+
+> [!SECRET] proxmox-root-password | Root password
+> Set during install — 8 characters minimum, longer is better. This is the web UI login for user `root`.
 
 ```bash
 # After install, reach the web UI from another machine on the LAN:
@@ -134,7 +142,7 @@ From another machine on the LAN, browse to `https://your-ip:8006`. Your browser 
 >
 > A popup saying "No valid subscription" appears on every login. It is normal for the free version — click OK; the next step deals with it.
 >
-> Before moving on, put the root password and the server's IP in your password manager — every guide that follows starts from those two facts.
+> Before moving on, make sure the root password and the server's IP are saved — in the fields back in *Run the installer*, in your password manager, or both. Every guide that follows starts from those two facts.
 
 ### Post-install cleanup
 A fresh install points at Proxmox's paid *enterprise* package repo, so updates error until you switch to the free one. The community script below fixes that **and** removes the "No valid subscription" login popup. The by-hand route (last expandable) fixes updates just as well, but the popup stays — it is harmless, and clicking OK is all it ever needs.

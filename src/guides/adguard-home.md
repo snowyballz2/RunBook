@@ -36,7 +36,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Done this way, you've already covered the next step too — check it off and continue at **Run the setup wizard**.
 
 ### Choose Advanced and set a static IP
-This happens *while the script runs*: when it asks **Default or Advanced**, pick **Advanced**. Every prompt comes pre-filled with a sane suggestion — 1 CPU core, 512 MB RAM, 2 GB disk, which is plenty for AdGuard's single small binary — so just press Enter through them. The one to change is networking: set a **static IP** instead of DHCP, for example `192.168.1.53`. Note down the IP you choose — you will use it everywhere below. Then let the script finish; it prints the setup URL when done.
+This happens *while the script runs*: when it asks **Default or Advanced**, pick **Advanced**. Every prompt comes pre-filled with a sane suggestion — 1 CPU core, 512 MB RAM, 2 GB disk, which is plenty for AdGuard's single small binary — so just press Enter through them. The one to change is networking: set a **static IP** instead of DHCP, for example `192.168.1.53`. Record the IP you choose — you will use it everywhere below. Then let the script finish; it prints the setup URL when done.
+
+> [!INPUT] adguard-ip | AdGuard container IP | 192.168.1.53
 
 > [!WARNING]
 > AdGuard is about to become your network's DNS server, and its address must never change. A static IP is essential — if it ever moves, the whole house loses name resolution.
@@ -66,6 +68,10 @@ Leave the **Admin Web Interface** on its default port, and leave the **DNS serve
 
 ### Create your admin login
 Set a username and a strong password for the dashboard, then finish the wizard. The dashboard now lives at the container's IP (no `:3000` needed anymore).
+
+> [!INPUT] adguard-admin-user | AdGuard admin username
+
+> [!SECRET] adguard-admin-password | AdGuard admin password
 
 ## Point your network at it
 

@@ -35,6 +35,8 @@ When it asks **Default or Advanced**, pick **Advanced** and press Enter through 
 > [!WARNING]
 > Every bookmark, certificate, and DNS rewrite below points at this one address. Pin it — static IP or DHCP reservation — and never let it move.
 
+> [!INPUT] proxy-ip | Proxy container IP | 192.168.1.54
+
 > [!NOTE]
 > The catalog also carries `npmplus.sh` — a different project despite the similar name. The script above, `nginxproxymanager.sh`, is the one this guide is written against.
 
@@ -42,7 +44,11 @@ When it asks **Default or Advanced**, pick **Advanced** and press Enter through 
 > Not Docker, despite what most NPM tutorials assume. The script builds everything from source inside the Debian container: OpenResty (the nginx flavor that does the actual proxying), the NPM app itself on Node.js 22 (source unpacked under `/opt/nginxproxymanager`, running from `/app`), and Certbot — the Let's Encrypt client, DNS plugins included — under `/opt/certbot`. Settings live in a SQLite file at `/data/database.sqlite`, and it all runs as two systemd services, `openresty` and `npm`. Two practical consequences: Docker advice from the wider internet (compose files, volume paths) does not apply here, and updating has its own command — open the container's **Console** and run `update`, which re-runs the installer's update path for NPM, OpenResty, and Certbot. Snapshot first, the *Containers* guide habit.
 
 ### Create your admin account
-Browse to `http://192.168.1.54:81`. A welcome screen asks you to "Get started by creating your admin account." — **Full Name**, **Email address**, **New Password**. Use your password manager for the password, click **Save**, and you land in NPM's dashboard. This login controls where every name in your house points, so treat it accordingly.
+Browse to `http://192.168.1.54:81`. A welcome screen asks you to "Get started by creating your admin account." — **Full Name**, **Email address**, **New Password**. Give it a strong password, click **Save**, and you land in NPM's dashboard. This login controls where every name in your house points, so treat it accordingly.
+
+> [!INPUT] npm-email | NPM admin email
+
+> [!SECRET] npm-password | NPM admin password
 
 > [!NOTE]
 > Older write-ups — most of the internet, in fact — say to log in as `admin@example.com` with password `changeme` and change it immediately. That flow was removed in late 2025: current releases have no default user at all, just this wizard, and the container installs the latest release. If you ever meet the old default login instead, you are looking at an outdated install that deserves the `update` command.
@@ -58,7 +64,12 @@ So the *Install Proxmox* hostname advice splits cleanly in two, and both halves 
 > For names that never touch public DNS, Let's Encrypt's own documentation points at the other honest route: become your own certificate authority, with a tool like minica or step-ca, and issue certificates for whatever names you like — `home.arpa` included, fully offline. The catch is where the trust comes from: your CA's root certificate has to be installed by hand on every phone, laptop, and TV in the house, and on every device you ever add. It genuinely works, and it suits people who refuse to rent a name on principle. This guide buys the domain instead, because ten dollars a year is cheaper than that chore — but the option is real, and nothing else here forbids it.
 
 ### Get the domain — and DNS with an API
-Buy the name at any registrar. The requirement that actually matters is not where you buy but where the domain's **DNS is hosted**: the next step needs NPM's built-in Certbot (the program that talks to Let's Encrypt) to publish a DNS record through an API. NPM ships support for 86 providers at the time of writing — Cloudflare, Porkbun, and deSEC are in the list, alongside Route 53, OVH, GoDaddy, Namecheap, and more — so register somewhere on that list, or point the domain's nameservers at a host that is. Then create an **API token** allowed to edit this domain's DNS, per your provider's docs, scoped as tightly as the provider allows, and put it in your password manager.
+Buy the name at any registrar. The requirement that actually matters is not where you buy but where the domain's **DNS is hosted**: the next step needs NPM's built-in Certbot (the program that talks to Let's Encrypt) to publish a DNS record through an API. NPM ships support for 86 providers at the time of writing — Cloudflare, Porkbun, and deSEC are in the list, alongside Route 53, OVH, GoDaddy, Namecheap, and more — so register somewhere on that list, or point the domain's nameservers at a host that is. Then create an **API token** allowed to edit this domain's DNS, per your provider's docs, scoped as tightly as the provider allows.
+
+> [!INPUT] domain-name | Your domain | example.com
+
+> [!SECRET] dns-api-token | DNS provider API token
+> Scoped to edit this one domain's DNS — Certbot uses it to prove ownership.
 
 Create no other records. No A record with your home IP — nothing about this domain ever points at your house. From outside your LAN the names you are about to mint simply will not resolve, and that is the design working.
 

@@ -1,9 +1,10 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { accentStyle } from "../lib/accents";
 import { groupByCollection } from "../lib/collections";
+import { collectCredentialFields } from "../lib/credentials";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
-import { BookOpen, ChevronDown, More, Plus, Search, Trash } from "./Icons";
+import { BookOpen, ChevronDown, Key, More, Plus, Search, Trash } from "./Icons";
 import { ProgressRing } from "./ProgressRing";
 import { ThemeToggle } from "./ThemeToggle";
 import type { Theme } from "../lib/storage";
@@ -19,6 +20,7 @@ type Props = {
   theme: Theme;
   onToggleTheme: () => void;
   onOpen: (id: string) => void;
+  onOpenCredentials: () => void;
   onAdd: () => void;
   onReset: (id: string) => void;
   onRemove: (id: string) => void;
@@ -29,6 +31,7 @@ export function LibraryView({
   theme,
   onToggleTheme,
   onOpen,
+  onOpenCredentials,
   onAdd,
   onReset,
   onRemove,
@@ -111,6 +114,8 @@ export function LibraryView({
         </p>
       ) : (
         <>
+          {!q && <CredentialsCard items={items} onOpen={onOpenCredentials} />}
+
           {grouped.collections.map((col) => (
             <section key={col.name} aria-label={`${col.name} collection`}>
               <CollectionHeader
@@ -174,6 +179,52 @@ export function LibraryView({
       )}
     </div>
   );
+}
+
+/**
+ * Pinned entry to the Credentials view: every IP/username/password the guides
+ * ask the reader to choose, gathered in one device-local place.
+ */
+function CredentialsCard({
+  items,
+  onOpen,
+}: {
+  items: LibraryItem[];
+  onOpen: () => void;
+}) {
+  const fields = useMemo(() => collectCredentialFields(items), [items]);
+  const [filled, setFilled] = useState(() => countFilled(fields));
+  useEffect(
+    () => store.onCredentialsChange(() => setFilled(countFilled(fields))),
+    [fields],
+  );
+  if (fields.length === 0) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="rb-card mt-6 flex w-full cursor-pointer items-center gap-3.5 p-4 text-left transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-lift focus-visible:-translate-y-0.5"
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
+        <Key size={19} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-[1.06rem] font-semibold leading-snug text-ink">
+          Credentials
+        </span>
+        <span className="mt-0.5 block text-[13px] leading-snug text-ink-soft">
+          {filled} of {fields.length} filled in · stored only on this device
+        </span>
+      </span>
+      <ChevronDown size={17} className="shrink-0 -rotate-90 text-ink-faint" />
+    </button>
+  );
+}
+
+function countFilled(fields: { key: string }[]): number {
+  const saved = store.getCredentials();
+  return fields.filter((f) => (saved[f.key] ?? "").trim() !== "").length;
 }
 
 function CollectionHeader({
