@@ -19,7 +19,7 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 > - **Nextcloud** — your own Google Drive / Photos replacement (the *Nextcloud* guide)
 > - **Vaultwarden** — self-hosted Bitwarden password manager
 > - **Paperless-ngx** — scan, archive, and search every document you own
-> - **Uptime Kuma** — a dashboard that pings your services and alerts you when one dies
+> - **Uptime Kuma** — a dashboard that pings your services and alerts you when one dies (the *Uptime Kuma* guide)
 > - **A Samba share** — turn spare disk space into a network drive
 > - **A Docker host** — one bigger container running Docker Compose for everything else
 > - Game servers, qBittorrent, the *arr media stack…

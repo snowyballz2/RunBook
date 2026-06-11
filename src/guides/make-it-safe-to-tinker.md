@@ -2,7 +2,7 @@
 title: Make it safe to tinker
 subtitle: Snapshots, scheduled backups, and staying current
 collection: Proxmox Home Server
-order: 10
+order: 11
 accent: rose
 ---
 
