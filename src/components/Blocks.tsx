@@ -30,6 +30,7 @@ export function Blocks({ blocks }: { blocks: Block[] }) {
               fieldKey={block.key}
               label={block.label}
               placeholder={block.placeholder}
+              defaultValue={block.defaultValue}
               secret={block.secret}
               hintHtml={block.hintHtml}
             />

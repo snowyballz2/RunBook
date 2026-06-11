@@ -22,6 +22,8 @@ export type Block =
       key: string;
       label: string;
       placeholder?: string;
+      /** Pre-filled value for logins that ship fixed (e.g. `root`). */
+      defaultValue?: string;
       /** Secrets render masked with a reveal toggle. */
       secret: boolean;
       /** Optional help text from the marker's quoted body. */

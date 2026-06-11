@@ -56,8 +56,10 @@ Browse to the printed address. Plain `http://` immediately redirects to HTTPS, a
 ### Save both passwords, then Activate
 The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (or use the **Print** button / your password manager), then click **Activate**: the page opens `https://<IP>:4443` (the second certificate warning), landing you in the NCP panel.
 
+> [!INPUT] nextcloud-user | Nextcloud / NCP username | | ncp
+> The same `ncp` user signs in to both — only the passwords differ.
+
 > [!SECRET] ncp-panel-password | NCP admin panel password (port 4443)
-> Login is `ncp` for both — only the passwords differ.
 
 > [!SECRET] nextcloud-password | Nextcloud password
 

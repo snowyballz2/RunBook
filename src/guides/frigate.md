@@ -249,8 +249,8 @@ mqtt:
   password: your-mqtt-password
 ```
 
-> [!INPUT] mqtt-user | MQTT username | mqtt-user
-> The dedicated Home Assistant user Frigate logs in as (first expandable below).
+> [!INPUT] mqtt-user | MQTT username | | mqtt-user
+> The dedicated Home Assistant user Frigate logs in as (first expandable below) — `mqtt-user` matches the config example; edit if you named yours differently.
 
 > [!SECRET] mqtt-password | MQTT password
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectCredentialFields } from "./credentials";
+import { collectCredentialFields, countFilled, countSaved } from "./credentials";
 import { parseGuide } from "./parseGuide";
 
 const mk = (lines: string[]) => ({ guide: parseGuide(lines.join("\n")) });
@@ -65,6 +65,25 @@ describe("collectCredentialFields", () => {
     expect(fields[0].guideTitle).toBe("A");
   });
 
+  it("carries defaultValue and the guide's collection", () => {
+    const items = [
+      mk([
+        "---",
+        "title: A",
+        "collection: Build",
+        "order: 1",
+        "---",
+        "### S",
+        "> [!INPUT] fixed-user | Username | | root",
+      ]),
+      mk(["# Loner", "### S", "> [!INPUT] loner-key | Loner"]),
+    ];
+    const fields = collectCredentialFields(items);
+    expect(fields[0].defaultValue).toBe("root");
+    expect(fields[0].collection).toBe("Build");
+    expect(fields[1].collection).toBeUndefined();
+  });
+
   it("finds fields nested in [!DETAILS] and in phase intros", () => {
     const items = [
       mk([
@@ -79,5 +98,32 @@ describe("collectCredentialFields", () => {
     const fields = collectCredentialFields(items);
     expect(fields.map((f) => f.key)).toEqual(["intro-key", "nested-key"]);
     expect(fields[1].secret).toBe(true);
+  });
+});
+
+describe("countFilled", () => {
+  const fields = [
+    { key: "a" },
+    { key: "b", defaultValue: "root" },
+    { key: "c" },
+  ];
+
+  it("counts saved values and pre-filled defaults", () => {
+    expect(countFilled(fields, {})).toBe(1); // only the default
+    expect(countFilled(fields, { a: "1.2.3.4" })).toBe(2);
+    expect(countFilled(fields, { a: "x", b: "custom", c: "y" })).toBe(3);
+  });
+
+  it("ignores whitespace-only saved values", () => {
+    expect(countFilled(fields, { a: "   " })).toBe(1);
+  });
+});
+
+describe("countSaved", () => {
+  it("counts only saved values — defaults don't count", () => {
+    const fields = [{ key: "a" }, { key: "b", defaultValue: "root" }];
+    expect(countSaved(fields, {})).toBe(0);
+    expect(countSaved(fields, { b: "custom" })).toBe(1);
+    expect(countSaved(fields, { a: "x", b: "y" })).toBe(2);
   });
 });

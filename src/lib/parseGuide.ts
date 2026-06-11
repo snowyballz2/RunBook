@@ -175,9 +175,11 @@ function splitBlocks(raw: string): Block[] {
       }
 
       if (kindRaw === "input" || kindRaw === "secret") {
-        // > [!INPUT] key | Label | placeholder   (placeholder optional;
-        // any quoted body lines become help text under the field)
-        const [keyRaw, labelRaw, placeholderRaw] = customTitle
+        // > [!INPUT] key | Label | placeholder | default
+        // (placeholder and default optional — a default pre-fills the field
+        // for logins that ship fixed, like root; any quoted body lines
+        // become help text under the field)
+        const [keyRaw, labelRaw, placeholderRaw, defaultRaw] = customTitle
           .split("|")
           .map((s) => s.trim());
         if (!keyRaw) {
@@ -191,6 +193,7 @@ function splitBlocks(raw: string): Block[] {
           key: slugify(keyRaw),
           label: labelRaw || keyRaw,
           ...(placeholderRaw ? { placeholder: placeholderRaw } : {}),
+          ...(defaultRaw ? { defaultValue: defaultRaw } : {}),
           secret: kindRaw === "secret",
           ...(hint ? { hintHtml: md2html(hint) } : {}),
         });

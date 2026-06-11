@@ -145,8 +145,16 @@ export function setCredential(key: string, value: string): void {
   window.dispatchEvent(new CustomEvent(CREDENTIALS_EVENT));
 }
 
-export function clearCredentials(): void {
-  remove(CREDENTIALS_KEY);
+/** Clear saved credentials — just the given keys, or everything if omitted. */
+export function clearCredentials(keys?: string[]): void {
+  if (!keys) {
+    remove(CREDENTIALS_KEY);
+  } else {
+    const all = getCredentials();
+    for (const k of keys) delete all[k];
+    if (Object.keys(all).length === 0) remove(CREDENTIALS_KEY);
+    else write(CREDENTIALS_KEY, all);
+  }
   window.dispatchEvent(new CustomEvent(CREDENTIALS_EVENT));
 }
 

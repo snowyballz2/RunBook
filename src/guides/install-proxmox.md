@@ -61,8 +61,11 @@ Plug the machine into your router with an **Ethernet cable** first — Proxmox c
 
 > [!INPUT] proxmox-hostname | Server hostname (FQDN) | pve.home.arpa
 
-> [!SECRET] proxmox-root-password | Root password
-> Set during install — 8 characters minimum, longer is better. This is the web UI login for user `root`.
+> [!INPUT] proxmox-user | Proxmox web UI username | | root
+> Not a choice — Proxmox is Linux underneath, and `root` is its built-in administrator account.
+
+> [!SECRET] proxmox-root-password | Proxmox web UI password
+> Set during install — 8 characters minimum, longer is better.
 
 ```bash
 # After install, reach the web UI from another machine on the LAN:

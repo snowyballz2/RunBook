@@ -1,7 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { accentStyle } from "../lib/accents";
 import { groupByCollection } from "../lib/collections";
-import { collectCredentialFields } from "../lib/credentials";
+import {
+  collectCredentialFields,
+  countFilled,
+  STANDALONE_SCOPE,
+} from "../lib/credentials";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
 import { BookOpen, ChevronDown, Key, More, Plus, Search, Trash } from "./Icons";
@@ -20,7 +24,8 @@ type Props = {
   theme: Theme;
   onToggleTheme: () => void;
   onOpen: (id: string) => void;
-  onOpenCredentials: () => void;
+  /** Open the Credentials view scoped to one collection (or standalone). */
+  onOpenCredentials: (scope: string) => void;
   onAdd: () => void;
   onReset: (id: string) => void;
   onRemove: (id: string) => void;
@@ -54,16 +59,21 @@ export function LibraryView({
   };
   // While searching, show every match — ignore collapse state.
   const isCollapsed = (name: string) => !q && collapsed.has(name);
-  const filtered = q
-    ? items.filter(
-        (i) =>
-          i.guide.title.toLowerCase().includes(q) ||
-          i.guide.subtitle?.toLowerCase().includes(q) ||
-          i.guide.collection?.toLowerCase().includes(q),
-      )
-    : items;
-
-  const grouped = groupByCollection(filtered);
+  const filtered = useMemo(
+    () =>
+      q
+        ? items.filter(
+            (i) =>
+              i.guide.title.toLowerCase().includes(q) ||
+              i.guide.subtitle?.toLowerCase().includes(q) ||
+              i.guide.collection?.toLowerCase().includes(q),
+          )
+        : items,
+    [q, items],
+  );
+  // Memoized so section item arrays keep their identity across re-renders —
+  // each CredentialsCard's field collection and subscription depend on it.
+  const grouped = useMemo(() => groupByCollection(filtered), [filtered]);
 
   return (
     <div className="mx-auto min-h-dvh max-w-5xl px-4 pb-24 pt-5 sm:px-6">
@@ -114,8 +124,6 @@ export function LibraryView({
         </p>
       ) : (
         <>
-          {!q && <CredentialsCard items={items} onOpen={onOpenCredentials} />}
-
           {grouped.collections.map((col) => (
             <section key={col.name} aria-label={`${col.name} collection`}>
               <CollectionHeader
@@ -125,6 +133,12 @@ export function LibraryView({
                 onToggle={() => toggleSection(col.name)}
               />
               <Collapsible collapsed={isCollapsed(col.name)}>
+                {!q && (
+                  <CredentialsCard
+                    items={col.items}
+                    onOpen={() => onOpenCredentials(col.name)}
+                  />
+                )}
                 <CardGrid
                   items={col.items}
                   theme={theme}
@@ -165,6 +179,12 @@ export function LibraryView({
                   grouped.collections.length > 0 && isCollapsed("__standalone__")
                 }
               >
+                {!q && (
+                  <CredentialsCard
+                    items={grouped.standalone}
+                    onOpen={() => onOpenCredentials(STANDALONE_SCOPE)}
+                  />
+                )}
                 <CardGrid
                   items={grouped.standalone}
                   theme={theme}
@@ -182,8 +202,9 @@ export function LibraryView({
 }
 
 /**
- * Pinned entry to the Credentials view: every IP/username/password the guides
- * ask the reader to choose, gathered in one device-local place.
+ * A collection's entry to the Credentials view: every IP/username/password
+ * its guides ask the reader to choose, gathered in one device-local place.
+ * Renders nothing for groups whose guides declare no fields.
  */
 function CredentialsCard({
   items,
@@ -193,24 +214,28 @@ function CredentialsCard({
   onOpen: () => void;
 }) {
   const fields = useMemo(() => collectCredentialFields(items), [items]);
-  const [filled, setFilled] = useState(() => countFilled(fields));
-  useEffect(
-    () => store.onCredentialsChange(() => setFilled(countFilled(fields))),
-    [fields],
+  const [filled, setFilled] = useState(() =>
+    countFilled(fields, store.getCredentials()),
   );
+  useEffect(() => {
+    setFilled(countFilled(fields, store.getCredentials()));
+    return store.onCredentialsChange(() =>
+      setFilled(countFilled(fields, store.getCredentials())),
+    );
+  }, [fields]);
   if (fields.length === 0) return null;
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="rb-card mt-6 flex w-full cursor-pointer items-center gap-3.5 p-4 text-left transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-lift focus-visible:-translate-y-0.5"
+      className="rb-card mt-3 flex w-full cursor-pointer items-center gap-3.5 px-4 py-3 text-left transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-lift focus-visible:-translate-y-0.5"
     >
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
-        <Key size={19} />
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
+        <Key size={18} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-display text-[1.06rem] font-semibold leading-snug text-ink">
+        <span className="block font-display text-[1rem] font-semibold leading-snug text-ink">
           Credentials
         </span>
         <span className="mt-0.5 block text-[13px] leading-snug text-ink-soft">
@@ -220,11 +245,6 @@ function CredentialsCard({
       <ChevronDown size={17} className="shrink-0 -rotate-90 text-ink-faint" />
     </button>
   );
-}
-
-function countFilled(fields: { key: string }[]): number {
-  const saved = store.getCredentials();
-  return fields.filter((f) => (saved[f.key] ?? "").trim() !== "").length;
 }
 
 function CollectionHeader({

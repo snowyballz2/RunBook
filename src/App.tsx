@@ -12,12 +12,19 @@ import { ReaderView } from "./components/ReaderView";
 type Route =
   | { name: "library" }
   | { name: "reader"; id: string }
-  | { name: "credentials" };
+  | { name: "credentials"; scope?: string };
 
 function parseHash(): Route {
-  const m = location.hash.match(/^#\/g\/(.+)$/);
-  if (m) return { name: "reader", id: decodeURIComponent(m[1]) };
-  if (location.hash === "#/credentials") return { name: "credentials" };
+  try {
+    const m = location.hash.match(/^#\/g\/(.+)$/);
+    if (m) return { name: "reader", id: decodeURIComponent(m[1]) };
+    const c = location.hash.match(/^#\/credentials(?:\/(.+))?$/);
+    if (c) {
+      return { name: "credentials", ...(c[1] ? { scope: decodeURIComponent(c[1]) } : {}) };
+    }
+  } catch {
+    // Malformed escape in a hand-edited hash — fall through to the library.
+  }
   return { name: "library" };
 }
 
@@ -131,6 +138,7 @@ export function App() {
       ) : route.name === "credentials" ? (
         <CredentialsView
           items={items}
+          scope={route.scope}
           theme={theme}
           onToggleTheme={toggleTheme}
           onBack={goLibrary}
@@ -141,8 +149,8 @@ export function App() {
           theme={theme}
           onToggleTheme={toggleTheme}
           onOpen={openGuide}
-          onOpenCredentials={() => {
-            location.hash = "#/credentials";
+          onOpenCredentials={(scope) => {
+            location.hash = `#/credentials/${encodeURIComponent(scope)}`;
           }}
           onAdd={() => setShowImport(true)}
           onReset={onReset}

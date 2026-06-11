@@ -18,8 +18,11 @@ TrueNAS turns a pile of disks into a proper network-storage appliance — shared
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
 > The address the console prints after install. Pin it with a DHCP reservation on your router so it never moves.
 
+> [!INPUT] truenas-admin-user | TrueNAS admin username | | truenas_admin
+> Current versions create `truenas_admin`; older installs used `admin` or `root` — edit to match yours.
+
 > [!SECRET] truenas-admin-password | TrueNAS admin password
-> Set during install for the `truenas_admin` account — the web UI login.
+> Set during install — the web UI login.
 
 > [!NOTE]
 > ECC RAM is ideal for ZFS data integrity but not required at home — most consumer boards don't support it, and that's fine.

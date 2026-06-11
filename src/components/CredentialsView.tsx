@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { accentStyle } from "../lib/accents";
-import { collectCredentialFields } from "../lib/credentials";
+import {
+  collectCredentialFields,
+  countFilled,
+  countSaved,
+  STANDALONE_SCOPE,
+} from "../lib/credentials";
 import * as store from "../lib/storage";
 import type { Theme } from "../lib/storage";
 import { CredentialInput } from "./CredentialInput";
@@ -10,19 +15,38 @@ import { ThemeToggle } from "./ThemeToggle";
 
 type Props = {
   items: LibraryItem[];
+  /** Limit to one collection's fields (or STANDALONE_SCOPE); undefined = all. */
+  scope?: string;
   theme: Theme;
   onToggleTheme: () => void;
   onBack: () => void;
 };
 
-export function CredentialsView({ items, theme, onToggleTheme, onBack }: Props) {
-  const fields = useMemo(() => collectCredentialFields(items), [items]);
+export function CredentialsView({ items, scope, theme, onToggleTheme, onBack }: Props) {
+  // Scope by filtering the guides themselves (the same way the Library card
+  // does), so a key shared across scopes shows up wherever it is declared.
+  const fields = useMemo(() => {
+    const scoped = !scope
+      ? items
+      : scope === STANDALONE_SCOPE
+        ? items.filter((i) => !i.guide.collection)
+        : items.filter((i) => i.guide.collection === scope);
+    return collectCredentialFields(scoped);
+  }, [items, scope]);
 
-  const [filledCount, setFilledCount] = useState(() => countFilled(fields));
-  useEffect(
-    () => store.onCredentialsChange(() => setFilledCount(countFilled(fields))),
-    [fields],
-  );
+  const computeCounts = () => {
+    const saved = store.getCredentials();
+    return {
+      filled: countFilled(fields, saved),
+      saved: countSaved(fields, saved),
+    };
+  };
+  const [counts, setCounts] = useState(computeCounts);
+  useEffect(() => {
+    setCounts(computeCounts());
+    return store.onCredentialsChange(() => setCounts(computeCounts()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fields]);
 
   // Group consecutive fields by their declaring guide, preserving order.
   const groups = useMemo(() => {
@@ -38,9 +62,15 @@ export function CredentialsView({ items, theme, onToggleTheme, onBack }: Props) 
   const accentFor = (guideId: string) =>
     accentStyle(items.find((i) => i.guide.id === guideId)?.guide.accent, theme);
 
+  const scopeLabel = scope === STANDALONE_SCOPE ? "Standalone" : scope;
+
   const onClearAll = () => {
-    if (!window.confirm("Clear every saved credential on this device?")) return;
-    store.clearCredentials();
+    const question = scope
+      ? `Clear the saved ${scopeLabel} credentials on this device? Pre-filled logins like root stay.`
+      : "Clear every saved credential on this device? Pre-filled logins like root stay.";
+    if (!window.confirm(question)) return;
+    // Scoped view clears only its own keys; the unscoped view clears everything.
+    store.clearCredentials(scope ? fields.map((f) => f.key) : undefined);
   };
 
   return (
@@ -60,8 +90,9 @@ export function CredentialsView({ items, theme, onToggleTheme, onBack }: Props) 
             <h1 className="truncate font-display text-[15px] font-semibold leading-tight text-ink">
               Credentials
             </h1>
-            <p className="mt-0.5 font-mono text-[11px] tabular-nums text-ink-soft">
-              {filledCount}/{fields.length} filled in
+            <p className="mt-0.5 truncate font-mono text-[11px] tabular-nums text-ink-soft">
+              {scope ? `${scopeLabel} · ` : ""}
+              {counts.filled}/{fields.length} filled in
             </p>
           </div>
 
@@ -71,9 +102,9 @@ export function CredentialsView({ items, theme, onToggleTheme, onBack }: Props) 
               type="button"
               onClick={onClearAll}
               className="btn btn-quiet h-9 w-9 !px-0"
-              aria-label="Clear all credentials"
-              title="Clear all credentials"
-              disabled={filledCount === 0}
+              aria-label="Clear saved credentials"
+              title="Clear saved credentials"
+              disabled={counts.saved === 0}
             >
               <Trash size={17} />
             </button>
@@ -84,7 +115,8 @@ export function CredentialsView({ items, theme, onToggleTheme, onBack }: Props) 
       <main className="mx-auto max-w-3xl px-4 pb-28 pt-6">
         <p className="text-[15px] leading-relaxed text-ink-soft">
           Every IP, username, and password the guides ask you to choose, in one
-          place. Values are stored only in this browser — never synced or
+          place. Logins that ship fixed — like <code>root</code> — come already
+          filled in. Values are stored only in this browser — never synced or
           uploaded — and the same fields appear inside the guides, so filling
           one in here fills it in there too.
         </p>
@@ -123,6 +155,7 @@ export function CredentialsView({ items, theme, onToggleTheme, onBack }: Props) 
                     fieldKey={f.key}
                     label={f.label}
                     placeholder={f.placeholder}
+                    defaultValue={f.defaultValue}
                     secret={f.secret}
                     compact
                   />
@@ -134,9 +167,4 @@ export function CredentialsView({ items, theme, onToggleTheme, onBack }: Props) 
       </main>
     </div>
   );
-}
-
-function countFilled(fields: { key: string }[]): number {
-  const saved = store.getCredentials();
-  return fields.filter((f) => (saved[f.key] ?? "").trim() !== "").length;
 }

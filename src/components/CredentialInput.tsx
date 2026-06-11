@@ -6,6 +6,8 @@ type Props = {
   fieldKey: string;
   label: string;
   placeholder?: string;
+  /** Pre-filled value for logins that ship fixed (e.g. `root`). */
+  defaultValue?: string;
   secret: boolean;
   hintHtml?: string;
   /** Compact rows for the Credentials view; full cards in the reader. */
@@ -16,26 +18,33 @@ export function CredentialInput({
   fieldKey,
   label,
   placeholder,
+  defaultValue,
   secret,
   hintHtml,
   compact = false,
 }: Props) {
-  const [value, setValue] = useState(() => store.getCredential(fieldKey));
+  const [value, setValue] = useState(
+    () => store.getCredential(fieldKey) || defaultValue || "",
+  );
   const [revealed, setRevealed] = useState(false);
   const [flash, setFlash] = useState<"saved" | "copied" | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Stay in sync when the same key is edited elsewhere (reader <-> credentials view).
+  // Stay in sync when the same key is edited elsewhere (reader <-> credentials
+  // view) — but never while this input is focused, or re-applying the default
+  // would fight the user mid-edit (clear, pause, type → merged text).
   useEffect(
     () =>
       store.onCredentialsChange(() => {
+        if (inputRef.current && document.activeElement === inputRef.current) return;
         setValue((v) => {
-          const latest = store.getCredential(fieldKey);
+          const latest = store.getCredential(fieldKey) || defaultValue || "";
           return latest === v ? v : latest;
         });
       }),
-    [fieldKey],
+    [fieldKey, defaultValue],
   );
 
   useEffect(
@@ -99,10 +108,17 @@ export function CredentialInput({
 
       <div className="mt-1.5 flex items-center gap-1">
         <input
+          ref={inputRef}
           id={`cred-${fieldKey}`}
           type={secret && !revealed ? "password" : "text"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={() =>
+            // A field left empty falls back to its saved value or default.
+            setValue((v) =>
+              v.trim() ? v : store.getCredential(fieldKey) || defaultValue || "",
+            )
+          }
           placeholder={placeholder ?? (secret ? "••••••••" : "")}
           autoComplete="off"
           autoCapitalize="off"

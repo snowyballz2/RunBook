@@ -248,6 +248,17 @@ describe("[!INPUT] / [!SECRET] credential fields", () => {
     }
   });
 
+  it("reads a default value from the fourth segment", () => {
+    const g = parseGuide(
+      "# T\n\n### S\n> [!INPUT] proxmox-user | Proxmox web UI username | | root",
+    );
+    const b = g.phases[0].steps[0].blocks[0];
+    if (b.type === "input") {
+      expect(b.defaultValue).toBe("root");
+      expect(b.placeholder).toBeUndefined(); // empty third segment
+    }
+  });
+
   it("slugifies the key and falls back to it as label", () => {
     const g = parseGuide("# T\n\n### S\n> [!INPUT] My Key!");
     const b = g.phases[0].steps[0].blocks[0];

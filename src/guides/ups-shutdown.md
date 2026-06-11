@@ -81,6 +81,9 @@ Two things that look like typos but aren't: the `upsmon primary` line really has
 > [!NOTE]
 > These files hold a password, which is why they ship owned by `root:nut` and readable by no one else. Edit them in place and leave the ownership and permissions alone.
 
+> [!INPUT] nut-admin-user | NUT admin username | | admin
+> The `[admin]` section name in `upsd.users` — if you rename it, the `MONITOR` line must match.
+
 > [!SECRET] nut-admin-password | NUT admin password
 > Replaces `pick-a-long-password` in both files above — `upsd.users` and the `MONITOR` line must match.
 
