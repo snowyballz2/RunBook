@@ -91,6 +91,9 @@ Get the desktop client from [nextcloud.com/install](https://nextcloud.com/instal
 > [!WARNING]
 > Away from home, reach it over a private tunnel — Tailscale or your own WireGuard — never a router port-forward. A personal cloud full of your files and photos is exactly the thing you don't want exposed to the public internet.
 
+> [!DETAILS] SMB share or Nextcloud sync — which to use?
+> If you built the *TrueNAS* guide you now have two ways at your files, and they complement rather than compete. An SMB share is a **live network drive** — ideal for computers at home (or over your tunnel), heavyweight files, and anything you open in place. Nextcloud is **sync** — copies that follow you onto phones and laptops and keep working offline. The common split: big media and archives live on SMB shares, while the documents and photos you want everywhere live in Nextcloud — and through the External Storage expandable later in this guide, both can sit on the same TrueNAS pool.
+
 ### Add accounts for the household
 Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account**, enter an account name and password, and click **Add new account** — one per person, so everyone gets their own files, photos, and password.
 

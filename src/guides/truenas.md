@@ -73,7 +73,7 @@ Datasets are the folders-with-superpowers inside a pool — each carries its own
 ## Share it
 
 ### Create a user for the share
-TrueNAS requires at least one local SMB user before it will create a share — and you cannot connect to shares as root or any built-in account. Go to **Credentials → Users**, click **Add**, and fill in a **Full Name**, a **Username**, and a strong password. Leave **SMB User** selected (it is by default) — that checkbox is what makes these credentials valid for share access.
+SMB — served by Samba — is the network-drive protocol Macs and Windows PCs speak natively; sharing over it is what makes TrueNAS feel like a drive on your computers. TrueNAS requires at least one local SMB user before it will create a share — and you cannot connect to shares as root or any built-in account. Go to **Credentials → Users**, click **Add**, and fill in a **Full Name**, a **Username**, and a strong password. Leave **SMB User** selected (it is by default) — that checkbox is what makes these credentials valid for share access.
 
 > [!NOTE]
 > These are the credentials you will type on every laptop and phone that connects. One shared household user is fine to start; you can add per-person users later.
@@ -98,6 +98,8 @@ Swap in your own VM's IP and share name.
 > ```bash
 > # Windows — map a persistent drive letter:
 > net use Z: \\192.168.1.20\files /PERSISTENT:YES
+> # (or point-and-click: right-click the share in File Explorer
+> #  and choose "Map network drive")
 >
 > # Linux — mount it with cifs:
 > sudo mount -t cifs //192.168.1.20/files /mnt/files -o username=YOUR_USER
