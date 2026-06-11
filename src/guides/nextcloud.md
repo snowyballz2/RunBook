@@ -58,7 +58,7 @@ The activation page generates two random passwords for a user named **ncp** — 
 > Older write-ups say the Nextcloud user is `admin`; current NCP uses **ncp** for both logins — only the passwords differ. If you lose one later, the upstream installer's own words apply: "You may review or reset them anytime by using nc-admin and nc-passwd" — both reachable via `sudo ncp-config` in the container's console.
 
 > [!DETAILS] Getting to know the 4443 panel
-> `https://<IP>:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. The one the upstream installer specifically advertises: "You can run letsencrypt to get rid of the warning if you have a (sub)domain available" — a real certificate, point-and-click, if you ever give this box a public name. For a LAN-only build, living with the self-signed warning is a legitimate choice — your router blocks unsolicited inbound traffic, and nothing here requires a port-forward. Don't create one.
+> `https://<IP>:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. The one the upstream installer specifically advertises: "You can run letsencrypt to get rid of the warning if you have a (sub)domain available" — a real certificate, point-and-click, if you ever give this box a public name. For a LAN-only build, living with the self-signed warning is a legitimate choice for now — your router blocks unsolicited inbound traffic, and nothing here requires a port-forward. Don't create one.
 
 ### Sign in to Nextcloud itself
 Back at `https://<IP>/`, log in as **ncp** with the *Nextcloud* password. There is no first-run wizard — NCP already created the account and the stack behind it — so you land straight in your files.
@@ -86,7 +86,7 @@ Get the desktop client from [nextcloud.com/install](https://nextcloud.com/instal
 > The Google-Photos replacement lives in the mobile apps: automatic upload of photos and videos — "instant upload", in the official page's words. On Android it's in the app menu as **Auto upload**; point it at your camera folder and every photo lands on your server from then on.
 
 > [!NOTE]
-> Expect each new device to raise the same self-signed-certificate objection your browser did. If that grates, the clean fix is the panel's Let's Encrypt tool plus a (sub)domain; on a LAN-only box, accepting the warning per device is the usual compromise.
+> Expect each new device to raise the same self-signed-certificate objection your browser did. If that grates, the clean fix is the panel's Let's Encrypt tool plus a (sub)domain; on a LAN-only box, accepting the warning per device is the usual compromise — for now.
 
 > [!WARNING]
 > Away from home, reach it over a private tunnel — Tailscale or your own WireGuard — never a router port-forward. A personal cloud full of your files and photos is exactly the thing you don't want exposed to the public internet.

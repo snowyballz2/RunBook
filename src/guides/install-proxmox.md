@@ -125,7 +125,7 @@ https://your-ip:8006
 From another machine on the LAN, browse to `https://your-ip:8006`. Your browser will warn about the certificate before you see a login screen — that is expected, not a sign anything went wrong.
 
 > [!DETAILS] About the scary certificate warning
-> Proxmox generates its own (self-signed) certificate, so your browser cannot vouch for it and shows a full-page warning. Click **Advanced**, then **Proceed** (wording varies by browser). On your own LAN, connecting to a server you just installed, this is fine.
+> Proxmox generates its own (self-signed) certificate, so your browser cannot vouch for it and shows a full-page warning. Click **Advanced**, then **Proceed** (wording varies by browser). On your own LAN, connecting to a server you just installed, this is fine — for now. A later guide in this collection gives every service a real certificate and retires the warning for good.
 
 > [!DETAILS] Your first login
 > - **User name:** `root` — not a name you chose. Proxmox is Linux underneath, and `root` is Linux's built-in administrator account, like "Administrator" on Windows. The password you set during install was root's password.

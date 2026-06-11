@@ -202,7 +202,7 @@ Turn off Wi-Fi so the phone is genuinely on mobile data, check the Tailscale app
 > One optional extra: the server can also be an **exit node** (`tailscale set --advertise-exit-node`, approved on the Machines page like the subnet route). Selecting it on your phone routes *all* the phone's traffic through home — useful on hostile Wi-Fi, off by default, and entirely separate from the subnet route you already approved.
 
 > [!DETAILS] Quieting the certificate warning (optional)
-> The warning is the same self-signed-certificate situation as in *Install Proxmox*, and clicking through remains fine. If you would rather be rid of it when connecting over Tailscale, the official "Tailscale on a Proxmox host" guide documents two fixes: a short script that installs a Tailscale-issued HTTPS certificate into Proxmox (with a cron job suggested to keep it renewed), or Tailscale Serve, which proxies the web UI behind a valid certificate (both fixes run in the Proxmox host's shell):
+> The warning is the same self-signed-certificate situation as in *Install Proxmox*, and clicking through remains fine for now. If you would rather be rid of it when connecting over Tailscale, the official "Tailscale on a Proxmox host" guide documents two fixes: a short script that installs a Tailscale-issued HTTPS certificate into Proxmox (with a cron job suggested to keep it renewed), or Tailscale Serve, which proxies the web UI behind a valid certificate (both fixes run in the Proxmox host's shell):
 >
 > ```bash
 > tailscale serve --bg https+insecure://localhost:8006
