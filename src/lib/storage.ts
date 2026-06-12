@@ -165,6 +165,23 @@ export function onCredentialsChange(fn: () => void): () => void {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Reader mode — phones default to the one-step-at-a-time swipe deck.        */
+/* -------------------------------------------------------------------------- */
+
+export type ReaderMode = "swipe" | "scroll";
+
+const READER_MODE_KEY = `${NS}:reader-mode`;
+
+export function getReaderMode(): ReaderMode {
+  const saved = read<ReaderMode | null>(READER_MODE_KEY, null);
+  return saved === "scroll" ? "scroll" : "swipe";
+}
+
+export function saveReaderMode(mode: ReaderMode): void {
+  write(READER_MODE_KEY, mode);
+}
+
+/* -------------------------------------------------------------------------- */
 /* Theme                                                                      */
 /* -------------------------------------------------------------------------- */
 

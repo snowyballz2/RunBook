@@ -134,6 +134,20 @@ export const Flag = (p: IconProps) => (
   </Icon>
 );
 
+export const Stack = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="5" y="4" width="14" height="16" rx="2" />
+    <path d="M2 8v8M22 8v8" />
+  </Icon>
+);
+
+export const Rows = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="4" width="18" height="6" rx="1.5" />
+    <rect x="3" y="14" width="18" height="6" rx="1.5" />
+  </Icon>
+);
+
 export const Key = (p: IconProps) => (
   <Icon {...p}>
     <circle cx="7.5" cy="15.5" r="4.5" />

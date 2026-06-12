@@ -4,10 +4,25 @@ import * as store from "../lib/storage";
 import type { Theme } from "../lib/storage";
 import type { Guide, Phase, Step } from "../lib/types";
 import { Blocks } from "./Blocks";
-import { ArrowLeft, ChevronDown, Printer, Refresh } from "./Icons";
+import { ArrowLeft, ChevronDown, Printer, Refresh, Rows, Stack } from "./Icons";
 import { SpineCell } from "./ProgressSpine";
 import { StepCard } from "./StepCard";
+import { SwipeView } from "./SwipeView";
 import { ThemeToggle } from "./ThemeToggle";
+
+/** True below Tailwind's `sm` breakpoint — the phone reader's trigger. */
+function useIsPhone(): boolean {
+  const [isPhone, setIsPhone] = useState(
+    () => typeof matchMedia !== "undefined" && matchMedia("(max-width: 639px)").matches,
+  );
+  useEffect(() => {
+    const mq = matchMedia("(max-width: 639px)");
+    const onChange = () => setIsPhone(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return isPhone;
+}
 
 type Props = {
   guide: Guide;
@@ -44,6 +59,19 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
     initialCollapsed(guide, store.getProgress(guide.id), store.getCollapsed(guide.id)),
   );
 
+  // Phones default to the one-step-at-a-time deck; the header button swaps
+  // back to the long page, and the choice sticks.
+  const isPhone = useIsPhone();
+  const [readerMode, setReaderMode] = useState(() => store.getReaderMode());
+  const swipeActive = isPhone && readerMode === "swipe" && guide.totalSteps > 0;
+  const toggleReaderMode = () => {
+    setReaderMode((m) => {
+      const next = m === "swipe" ? "scroll" : "swipe";
+      store.saveReaderMode(next);
+      return next;
+    });
+  };
+
   // Persist whenever progress/collapse changes.
   useEffect(() => store.saveProgress(guide.id, done), [guide.id, done]);
   useEffect(() => store.saveCollapsed(guide.id, collapsed), [guide.id, collapsed]);
@@ -53,9 +81,10 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
   const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
   // Resume: on open, scroll to the first unchecked step (once, on mount).
+  // The swipe deck does its own resuming, so skip when it owns the screen.
   const didResume = useRef(false);
   useEffect(() => {
-    if (didResume.current) return;
+    if (didResume.current || swipeActive) return;
     didResume.current = true;
     // Only jump when there's progress to resume; a fresh guide opens at the top.
     if (!frontierId || done.size === 0) return;
@@ -128,7 +157,10 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
   const rootStyle = accentStyle(guide.accent, theme);
 
   return (
-    <div className="reader min-h-dvh" style={rootStyle}>
+    <div
+      className={`reader ${swipeActive ? "flex h-dvh flex-col overflow-hidden" : "min-h-dvh"}`}
+      style={rootStyle}
+    >
       {/* Sticky header ----------------------------------------------------- */}
       <header className="no-print sticky top-0 z-20 border-b border-line bg-paper/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-2.5">
@@ -166,6 +198,21 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
           </div>
 
           <div className="flex shrink-0 items-center">
+            {guide.totalSteps > 0 && (
+              <button
+                type="button"
+                onClick={toggleReaderMode}
+                className="btn btn-quiet h-9 w-9 !px-0 sm:hidden"
+                aria-label={
+                  readerMode === "swipe"
+                    ? "Switch to full-page view"
+                    : "Switch to one-step-at-a-time view"
+                }
+                title={readerMode === "swipe" ? "Full page" : "One step at a time"}
+              >
+                {readerMode === "swipe" ? <Rows size={17} /> : <Stack size={17} />}
+              </button>
+            )}
             <ThemeToggle theme={theme} onToggle={onToggleTheme} />
             <button
               type="button"
@@ -191,38 +238,47 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
       </header>
 
       {/* Body -------------------------------------------------------------- */}
-      <main className="mx-auto max-w-3xl px-4 pb-28 pt-6">
-        {guide.subtitle && (
-          <p className="mb-6 text-[15px] leading-relaxed text-ink-soft">
-            {guide.subtitle}
-          </p>
-        )}
+      {swipeActive ? (
+        <SwipeView
+          guide={guide}
+          done={done}
+          onToggleStep={toggleStep}
+          onBack={onBack}
+        />
+      ) : (
+        <main className="mx-auto max-w-3xl px-4 pb-28 pt-6">
+          {guide.subtitle && (
+            <p className="mb-6 text-[15px] leading-relaxed text-ink-soft">
+              {guide.subtitle}
+            </p>
+          )}
 
-        {guide.intro && guide.intro.length > 0 && (
-          <div className="mb-8 rounded-2xl border border-line bg-surface-2/60 px-5 py-4">
-            <Blocks blocks={guide.intro} />
-          </div>
-        )}
+          {guide.intro && guide.intro.length > 0 && (
+            <div className="mb-8 rounded-2xl border border-line bg-surface-2/60 px-5 py-4">
+              <Blocks blocks={guide.intro} />
+            </div>
+          )}
 
-        {guideComplete && (
-          <div className="animate-rise mb-6 flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-medium text-accent">
-            <span aria-hidden>✓</span> Every step complete. Nicely done.
-          </div>
-        )}
+          {guideComplete && (
+            <div className="animate-rise mb-6 flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-medium text-accent">
+              <span aria-hidden>✓</span> Every step complete. Nicely done.
+            </div>
+          )}
 
-        {phaseViews.map((pv, pi) => (
-          <PhaseSection
-            key={pv.phase.id}
-            pv={pv}
-            isFirst={pi === 0}
-            collapsed={collapsed.has(pv.phase.id)}
-            guideComplete={guideComplete}
-            doneSet={done}
-            onTogglePhase={() => togglePhase(pv.phase.id)}
-            onToggleStep={(s) => toggleStep(pv.phase, s)}
-          />
-        ))}
-      </main>
+          {phaseViews.map((pv, pi) => (
+            <PhaseSection
+              key={pv.phase.id}
+              pv={pv}
+              isFirst={pi === 0}
+              collapsed={collapsed.has(pv.phase.id)}
+              guideComplete={guideComplete}
+              doneSet={done}
+              onTogglePhase={() => togglePhase(pv.phase.id)}
+              onToggleStep={(s) => toggleStep(pv.phase, s)}
+            />
+          ))}
+        </main>
+      )}
     </div>
   );
 }
