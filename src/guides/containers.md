@@ -12,7 +12,7 @@ accent: azure
 Use a lightweight LXC container for services that don't need a full VM. From the web UI: **Create CT**, pick the Debian template, give it 2 cores and 2 GB of RAM to start.
 
 > [!DETAILS] What would you actually run in one?
-> A container shares the host's kernel, so it starts in about a second and idles at a few hundred MB of RAM — perfect for one small always-on service each. The home-server classics:
+> A container shares the host's kernel, so it starts in about a second and a fresh one idles in a few tens of megabytes — perfect for one small always-on service each. The home-server classics:
 >
 > - **Pi-hole / AdGuard Home** — network-wide ad blocking for every device in the house (the most popular first container)
 > - **Jellyfin or Plex** — stream your movies, music, and photos to TVs and phones
@@ -26,7 +26,7 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 >
 > The community-scripts project has one-command installers for nearly all of these — browse them at [community-scripts.org](https://community-scripts.org/). Same habit as always: read a script before piping it into a root shell.
 >
-> Rule of thumb: if it's a Linux service, use a container. If it needs its own kernel or isn't Linux, that's the *Virtual machines* guide.
+> Rule of thumb: if it's a Linux service, use a container. If it needs its own kernel or isn't Linux, that's the *Virtual machines* guide. And every service guide in this collection says which one it uses — you never have to make the call alone.
 
 > [!DETAILS] Download a template first
 > Container templates live in storage, and a fresh install has none. Grab one before you create your first CT:
@@ -45,10 +45,19 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 > - **Disks** — around 8 GB is plenty to start; you can grow it later.
 > - **CPU** — 2 cores.
 > - **Memory** — 2048 MB.
-> - **Network** — set IPv4 to **DHCP** to start. You can pin a static IP once you know the container earns its keep.
+> - **Network** — set IPv4 to **DHCP** to start. Pin the address once the container earns a real job: anything other machines point *at* — DNS, a reverse proxy — must never move, or everything pointing at it breaks. A DHCP reservation on your router or a static IP here both do it.
 > - **Confirm** — tick **Start after created** and finish.
 >
 > Select the container in the tree and open **Console** to log in as `root` with the password you set.
+
+> [!DETAILS] The shortcut the next guides will use: helper scripts
+> Most service guides in this collection skip this wizard entirely: a one-command helper from the community-scripts catalog builds the container *and* installs the service in one pass, run from the node's **Shell**:
+>
+> ```bash
+> bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/SCRIPT_NAME.sh)"
+> ```
+>
+> Each prompts **Default** or **Advanced** — Advanced is where cores, RAM, and a static IP get set. Two things to know up front: these scripts are community-maintained, not made by Proxmox — which is exactly why the read-it-first habit exists — and a container built this way updates by typing `update` in *its own* console later, never by re-running the script on the host (that starts building a brand-new container). Knowing the wizard first means you'll always understand what the shortcut just did.
 
 ## Get comfortable inside
 
@@ -122,5 +131,6 @@ Snapshots are instant and nearly free. Before any risky change to a container �
 > - Select the container in the left tree and open **Snapshots**.
 > - Click **Take Snapshot**, give it a name that says what you were about to attempt, and an optional description.
 > - To undo, select the snapshot in the list and click **Rollback** — everything since that snapshot is discarded.
+
 > [!TIP]
 > That's the whole lifecycle: create, log in, set-and-forget. When you're ready to give a container a real job, the *AdGuard Home* guide is the classic first one.
