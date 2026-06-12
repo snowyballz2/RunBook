@@ -59,7 +59,7 @@ Start the VM, select it in the left tree, and click **Console**. The VM boots fr
 > If a Windows installer reports no disk to install to, that is the VirtIO driver situation from the **Create VM wizard essentials** expandable above — load the drivers from the virtio-win CD, or rebuild with SATA and E1000.
 
 ### Install the QEMU guest agent
-The guest agent is a small service inside the VM that lets Proxmox shut it down cleanly, show its IP address on the Summary page, and freeze the filesystem during backups. It only works when both halves are in place: the **Qemu Agent** option on the VM (the checkbox you ticked in the wizard) and the agent package inside the guest.
+The guest agent is a small service inside the VM that lets Proxmox shut it down cleanly, show its IP address on the Summary page, and freeze the filesystem during backups. It only works when both halves are in place: the **Qemu Agent** option on the VM (the checkbox you ticked in the wizard) and the agent package inside the guest. It pays off later, too — when a battery backup orders the server down in a later guide, this channel is what shuts every VM down gracefully instead of hoping the guest honors a generic power signal.
 
 ```bash
 # Inside a Debian or Ubuntu guest:
