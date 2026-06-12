@@ -38,7 +38,7 @@ Accept the defaults — an **unprivileged** container with **1 core, 1 GB RAM, a
 > It installs Node.js 22 and Chromium, downloads the latest Uptime Kuma release (2.4.0 at the time of writing) into `/opt/uptime-kuma`, builds the production dependencies, and writes a systemd service named `uptime-kuma` that starts with the container and restarts itself if it crashes. It records the installed version in `/root/.uptime-kuma` — the update mechanism reads that later. Port **3001** is Uptime Kuma's own default; the script leaves it alone.
 
 ### Create your admin account
-The script prints the address when it finishes — `http://<ip>:3001`. There are no default credentials: the first visit shows a **Create your admin account** form with **Username**, **Password**, and **Repeat Password**. This login will know about everything you run and send alerts on your behalf, so give it a strong password.
+The script prints the address when it finishes — `http://<ip>:3001`. There are no default credentials. The first visit asks one setup question — which database to use; pick **SQLite**, the simple single-file choice that suits a home install — and then shows the **Create your admin account** form with **Username**, **Password**, and **Repeat Password**. This login will know about everything you run and send alerts on your behalf, so give it a strong password.
 
 > [!INPUT] kuma-user | Uptime Kuma admin username
 
