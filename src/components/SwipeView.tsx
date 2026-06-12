@@ -113,19 +113,6 @@ export function SwipeView({ guide, done, onToggleStep, onBack }: Props) {
     }
   };
 
-  const counter =
-    current?.kind === "step" ? (
-      <span className="font-mono text-[11px] tabular-nums text-ink-faint">
-        Step {current.stepNo} of {total}
-      </span>
-    ) : current?.kind === "intro" ? (
-      <span className="font-mono text-[11px] text-ink-faint">
-        {total} {total === 1 ? "step" : "steps"} ahead
-      </span>
-    ) : (
-      <span className="font-mono text-[11px] text-ink-faint">Complete</span>
-    );
-
   const currentDone = current?.kind === "step" && done.has(current.step.id);
 
   return (
@@ -154,7 +141,7 @@ export function SwipeView({ guide, done, onToggleStep, onBack }: Props) {
               {slide.kind === "intro" && (
                 <>
                   <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
-                    {guide.title}
+                    {guide.title} · {total} {total === 1 ? "step" : "steps"}
                   </p>
                   {guide.subtitle && (
                     <h2 className="mt-2 font-display text-[1.45rem] font-semibold leading-snug text-ink">
@@ -172,11 +159,11 @@ export function SwipeView({ guide, done, onToggleStep, onBack }: Props) {
               {slide.kind === "step" && (
                 <>
                   <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
-                    <span className="text-accent">
-                      Phase {slide.phaseNo}
+                    <span className="shrink-0 tabular-nums text-accent">
+                      Step {slide.stepNo} of {total}
                     </span>
                     {slide.phase.title && (
-                      <span className="truncate">{slide.phase.title}</span>
+                      <span className="truncate">· {slide.phase.title}</span>
                     )}
                   </p>
                   <h2
@@ -213,8 +200,7 @@ export function SwipeView({ guide, done, onToggleStep, onBack }: Props) {
       </div>
 
       {/* Footer controls ---------------------------------------------------- */}
-      <div className="border-t border-line bg-paper/90 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 backdrop-blur-md">
-        <div className="flex justify-center pb-1.5">{counter}</div>
+      <div className="border-t border-line bg-paper/90 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <button
             type="button"
