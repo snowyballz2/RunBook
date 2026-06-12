@@ -127,7 +127,7 @@ Save, click the refresh icon, and the page is suddenly worth bookmarking.
 >           password: the-token-secret
 > ```
 >
-> AdGuard's is simpler — it reuses the dashboard login: `type: adguard`, `url`, plus your `username` and `password`. The rest, one line each: `homeassistant` wants a long-lived access token from your HA profile page; `truenas` an API key (add `version: 2` on 25.04 or newer); `uptimekuma` just the slug of the status page from the *Uptime Kuma* guide; `frigate` needs nothing at all; `npm` the admin email and password; `nextcloud` the NC-Token from its **Settings → System** page. Exact recipes for all of them live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
+> AdGuard's is simpler — it reuses the dashboard login: `type: adguard`, `url`, plus your `username` and `password`. The rest, one line each: `homeassistant` wants a long-lived access token from your HA profile page; `truenas` an API key (add `version: 2` on 25.04 or newer); `uptimekuma` just the slug of the status page from the *Uptime Kuma* guide; `frigate` needs nothing at all — and gains a list of its latest detections if you add `enableRecentEvents: true`; `npm` the admin email and password; `nextcloud` the NC-Token from its **Settings → System** page. Exact recipes for all of them live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
 
 ### Bookmarks and the name on the door
 Two small files finish the job. `bookmarks.yaml` holds plain links — the router's admin page is the classic, the thing nobody can ever find when they need it:
@@ -175,3 +175,6 @@ Same pattern as *Uptime Kuma*: when you choose to take a new release, type `upda
 
 ### Make it the start page
 The actual point: on the family's devices, set `https://home.example.com` — or the plain `http://192.168.1.55:3000` — as the browser's start page, or at least the first bookmark on the bar. The build now opens like an appliance.
+
+> [!NOTE]
+> Away from home, the dashboard works through the *Remote Access* guide's tunnel exactly as-is: subnet routing delivers you to `192.168.1.55:3000`, which the allow-list already admits. The tiles' links follow the same rule — direct addresses just work, while the pretty names also need your phone's DNS to reach AdGuard remotely, the wiring the *Reverse Proxy* guide's Tailscale expandable covers.
