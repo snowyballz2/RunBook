@@ -36,7 +36,7 @@ Go to **Datacenter → Backup** and click **Add**. Pick a storage, choose a sche
 ## Prove it works
 
 ### Know how to restore
-Open the backup storage in the left tree and go to its **Backups** view (or the guest's own **Backup** tab), select an archive, and click **Restore**. Restoring over an existing guest returns it to the state in the archive — everything since is discarded.
+Open the backup storage in the left tree and go to its **Backups** view (or the guest's own **Backup** tab), select an archive, and click **Restore**. Restoring over an existing guest returns it to the state in the archive — everything since is discarded. From the storage's Backups view, the dialog also accepts a different, unused **CT/VM ID** — restoring a *copy* alongside the original, the gentlest way to do the practice run below.
 
 > [!TIP]
 > A backup you have never restored is a hope, not a plan. Do one practice restore into a spare guest ID while nothing is on fire, just to see the process work.
@@ -52,3 +52,9 @@ Open the backup storage in the left tree and go to its **Backups** view (or the 
 > ```
 >
 > Swap in your storage path and the archive's real filename. This is also how you test restores safely.
+
+> [!NOTE]
+> One scope line worth keeping in mind: this job protects your *guests* — the containers and VMs as machines. The files on the NAS itself (documents, photos, camera footage) are in none of these archives — the TrueNAS VM's backup carries its small boot disk, not the passed-through data disks. Protecting what's *on* the NAS — snapshots, scrubs, an offsite copy — is the next guide's whole job.
+
+> [!DETAILS] The bigger hammer: Proxmox Backup Server
+> Proxmox makes a dedicated companion product, **Proxmox Backup Server**, that upgrades this job's full-archive approach to incremental, deduplicated backups with scheduled verification — after the first run only changed data moves, so dozens of restore points cost little more than one. The honest catch comes from its own documentation: "Installing the backup server directly on the hypervisor is not recommended" — PBS earns its keep on a separate machine, which is its own project. For a one-server home, the vzdump job above is right-sized; PBS is the upgrade path when your backups outgrow it.
