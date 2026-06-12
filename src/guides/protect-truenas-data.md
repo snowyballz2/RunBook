@@ -9,7 +9,7 @@ accent: rose
 ## Schedule the safety nets
 
 ### Schedule snapshots
-The NAS from the *TrueNAS* guide holds the data; this guide makes it hard to lose. Start with the cheapest protection ZFS offers: go to **Data Protection** and click **Add** on the **Periodic Snapshot Tasks** widget — pick your dataset, a schedule, and a **Snapshot Lifetime** (how long each one is kept); the **Naming Schema** field must include the time elements `%Y`, `%m`, `%d`, `%H` and `%M`. Snapshots are nearly free in ZFS, so schedules as frequent as every 15 minutes are common.
+The NAS from the *TrueNAS* guide holds the data; this guide makes it hard to lose. Start with the cheapest protection ZFS offers: go to **Data Protection** and click **Add** on the **Periodic Snapshot Tasks** widget — pick your dataset, a schedule, and a **Snapshot Lifetime** (how long each one is kept); the **Naming Schema** field must include the time elements `%Y`, `%m`, `%d`, `%H` and `%M`. Snapshots are nearly free in ZFS, so schedules as frequent as every 15 minutes are common. A useful pattern is two tasks on the same dataset — one frequent and short-lived, one sparse and long-lived: say, every 15 minutes kept for two days, plus daily at midnight kept for two weeks.
 
 > [!NOTE]
 > This guide follows the current TrueNAS Community Edition (25.10, "Goldeye"). The previous release, 25.04, keeps a few of these controls in different places — the expandables call out the differences where they matter.
@@ -107,6 +107,17 @@ The replacement must be the same capacity or larger, and TrueNAS wipes it. Repla
 > [!DETAILS] When labels differ, and when TrueNAS refuses
 > On 25.04 the button is **Manage Devices** on the **Topology** widget — the flow after that is the same. If **Offline** fails with "no valid replicas", run a **Scrub** from the **ZFS Health** widget and retry once it finishes. If **Replace** fails because the new disk carries old partitions or data, the **Force** option in the **Replacing disk** dialog overrides the safety check — and erases whatever is on that disk.
 
+> [!DETAILS] Started on one disk? Upgrade it to a mirror
+> The single-disk pool from the *TrueNAS* guide can grow into a real mirror without rebuilding anything. First give the VM the new disk, on the Proxmox host:
+>
+> ```bash
+> # Find the new disk's stable ID (model + serial), then attach it:
+> lsblk -o +MODEL,SERIAL
+> qm set 101 -scsi3 /dev/disk/by-id/ata-NEW-DISK-ID
+> ```
+>
+> Reboot the VM so TrueNAS sees the drive. Then: **Storage → View VDEVs**, select the pool's data VDEV, and click **Extend** on its **ZFS Info** widget — pick the new drive in the **New Disk** dropdown. ZFS attaches it and resilvers the existing data across; when it finishes, the stripe has become a two-way mirror, dead-disk drill and all. (Capacity stays at the smaller disk's size, and TrueNAS wipes the newcomer.)
+
 ## Get a copy off the property
 
 ### Make the NAS the storage hub
@@ -130,4 +141,4 @@ Then make the copy private: under **Advanced Options**, select **Remote Encrypti
 The classic scorecard — the same framing TrueNAS's own backup guidance uses — is **3-2-1**: three copies of anything that matters, on at least two different kinds of hardware, one of them offsite. Count honestly: the mirror is one copy, because redundancy inside a single pool is not a second copy, and neither are snapshots. The Cloud Sync task gives your irreplaceable files a second copy that is also the offsite one, and the NAS itself holds second copies of every guest via the *Proxmox Backups* job. For a home server, that is a respectable score — and you know exactly where the gaps are.
 
 > [!DETAILS] Replicating to a second box
-> The route to a third copy — or an offsite copy without the cloud — is **replication** (**Data Protection → Replication Tasks**): TrueNAS sends ZFS snapshots of datasets to another ZFS system, ideally another TrueNAS, over SSH. The first run transfers everything; after that only incremental changes move, and because it ships snapshots themselves, the destination carries the same point-in-time history — something a file-level cloud copy does not. The classic arrangement is a small second TrueNAS box at a relative's house: two different buildings, each holding the other's irreplaceable data.
+> The route to a third copy — or an offsite copy without the cloud — is **replication** (**Data Protection → Replication Tasks**): TrueNAS sends ZFS snapshots of datasets to another ZFS system, ideally another TrueNAS, over SSH. The first run transfers everything; after that only incremental changes move, and because it ships snapshots themselves, the destination carries the same point-in-time history — something a file-level cloud copy does not. The classic arrangement is a small second TrueNAS box at a relative's house: two different buildings, each holding the other's irreplaceable data. The humblest variant of the same idea costs no subscription and no second box: copy the irreplaceable dataset to an external USB drive now and then, and keep that drive somewhere that isn't your house.
