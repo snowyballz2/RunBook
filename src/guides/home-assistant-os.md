@@ -18,7 +18,7 @@ The workload many home servers exist for, with one trap: HAOS ships as a ready-m
 > bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/haos-vm.sh)"
 > ```
 >
-> If the host has RAM to spare, picking **Advanced** and giving the VM 8 GB buys add-ons more headroom — on a small host, leave the default.
+> If the host has RAM to spare, picking **Advanced** and giving the VM 8 GB buys apps (Home Assistant's new name for add-ons) more headroom — on a small host, leave the default.
 >
 > Same rule as before: you are piping a script into a root shell, so read it first (the download-read-run habit from the *Install Proxmox* guide) and make that call yourself.
 
@@ -52,13 +52,13 @@ The workload many home servers exist for, with one trap: HAOS ships as a ready-m
 ## First boot
 
 ### First contact
-Give it a few minutes on first boot — HAOS sets itself up unattended. Then browse to `http://homeassistant.local:8123`, or find the VM's IP in Proxmox (the VM's **Summary** tab shows it, thanks to the guest agent) and use `http://that-ip:8123`. From there the onboarding wizard takes over.
+Give it a few minutes on first boot — HAOS sets itself up unattended. Then browse to `http://homeassistant.local:8123`, or find the VM's IP in Proxmox (the VM's **Summary** tab shows it, thanks to the guest agent — and the VM's own console banner prints the same address once it's up). From there the onboarding wizard takes over.
 
 > [!NOTE]
 > Home Assistant can show high RAM use right after boot. That is normal — it uses free memory for caching.
 
 ### Pin its address
-Give the VM a fixed IP before you go further: use your router's DHCP reservation page (the same trick as the *AdGuard Home* guide). Phone apps, dashboards, and other devices will all point at this address, and `homeassistant.local` doesn't resolve reliably on every network.
+Give the VM a fixed IP before you go further: use your router's DHCP reservation page (the same trick as the *AdGuard Home* guide), or set a static address inside Home Assistant itself under **Settings → System → Network**. Either works; pick one. Phone apps, dashboards, and other devices will all point at this address, and `homeassistant.local` doesn't resolve reliably on every network.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
@@ -102,7 +102,27 @@ Only relevant if you have (or buy) a Zigbee coordinator or Z-Wave stick — the 
 In **Settings > Devices & services > Add integration**: for Zigbee, add **Zigbee Home Automation (ZHA)** — it detects the coordinator, then you put each device into pairing mode and add it. For Z-Wave, add the **Z-Wave** integration, which sets up Z-Wave JS and finds the stick; pair devices by putting them into inclusion mode (a smart lock is the classic reason Z-Wave exists).
 
 > [!NOTE]
-> ZHA is the built-in, simplest Zigbee path. Zigbee2MQTT is the more powerful add-on if you outgrow it later.
+> ZHA is the built-in, simplest Zigbee path. Zigbee2MQTT is the more powerful app if you outgrow it later.
+
+## Connect the house
+
+### Know the few ways devices arrive
+Whatever the device — a light, a blind, a lock, a thermostat — it reaches Home Assistant down one of a handful of paths: Wi-Fi devices and brand hubs appear as integrations under **Settings → Devices & services**, Zigbee and Z-Wave devices pair with the radios from the previous section, and Matter devices commission over Thread or Wi-Fi. Once aboard, every device becomes an *entity* of its kind — lights are `light`, blinds and shades `cover`, locks `lock`, thermostats `climate` — and everything downstream treats them all alike.
+
+> [!DETAILS] Hubs that play nicely
+> Some of the best device families come with their own small hub that Home Assistant talks to **locally** — no cloud in the loop. Lutron Caséta is the classic: its Smart Bridge (standard or PRO, and the RA2 Select and RadioRA 3 processors) covers wall dimmers and Serena shades; you swap the wall switch for a Caséta dimmer and your existing bulbs keep working. Hunter Douglas PowerView shades work the same local way through their gateway. One honest contrast: Somfy shades connect through the Overkiz integration, which runs through the vendor's **cloud** by default — they work, but the "local hub" label doesn't apply.
+
+> [!DETAILS] Locks, without the drama
+> Smart locks sound like the scariest category, but the Z-Wave route keeps everything in the house: the lock pairs with your Z-Wave radio, control stays local, and the keypad and physical key keep working exactly as before — Home Assistant is an *addition*, not a replacement. Two well-trodden examples: the Yale Assure line accepts a plug-in Z-Wave module, and the Schlage Connect ships with Z-Wave built in.
+
+> [!DETAILS] Matter — and the phone it requires
+> Matter is the newer, vendor-neutral standard: local control, no manufacturer cloud. Two things to know before buying. Matter devices that use **Thread** need a *border router* on your network (some smart speakers and hubs double as one; Wi-Fi and Ethernet Matter devices need nothing extra). And commissioning a Matter device — scanning its QR code — happens in the **Home Assistant companion app on a phone with Bluetooth**; the web UI alone can't do it, which surprises people running HA in a VM with no Bluetooth at all. The phone bridges that gap.
+
+> [!TIP]
+> When buying anything new, search "[device] home assistant" first and favor whatever works locally — Zigbee, Z-Wave, Matter, or a local hub. For motorized blinds specifically, check the power story: battery models recharge on your schedule, wired or solar ones don't ask.
+
+### Put every device in an Area
+As each device lands, assign it a room under **Settings → Areas, labels & zones** (or on the device's own page). Two minutes of housekeeping that pays forever: dashboards group by area automatically, and a voice command like "turn off the kitchen" only works if Home Assistant knows what's *in* the kitchen. Connected, named, and sorted devices are the raw material — making them act on their own (lights at sunset, a porch light when someone's at the door) is a later guide's territory.
 
 ## Keep it healthy
 
