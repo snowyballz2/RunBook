@@ -23,28 +23,6 @@ It also keeps the rule this collection lives by: **no router port-forwards, ever
 >
 > The result: the Proxmox UI and everything you build behind it are reachable only by devices signed in to your private network, and your router's settings never change.
 
-> [!DETAILS] What about NordVPN Meshnet?
-> If you already pay for NordVPN, you may know Meshnet — and you may have heard it was shut down. The full story: NordVPN announced on August 18, 2025 that Meshnet would stop working on December 1, 2025 (its product director said only about 1% of subscribers used it), then officially reversed the decision at the end of September 2025 after community pushback — the announcement was titled "Meshnet stays," and NordVPN committed to keeping it supported and open-sourcing it. As of this writing it is alive, under active development, and free for up to 60 devices, even without a paid NordVPN account.
->
-> It can genuinely do this guide's job: a Windows, macOS, or Linux machine at home running the NordVPN app, with **traffic routing** and **local network** permissions granted to a trusted device, lets that device reach your LAN at its original IP addresses. If you are deep in the Nord ecosystem, it is a fair option.
->
-> This guide builds on Tailscale anyway, for two honest reasons: Tailscale publishes first-party documentation for exactly this setup (a guide literally titled "Tailscale on a Proxmox host"), and Meshnet's long-term future carries more risk — it survived on community protest after a cancellation that NordVPN itself justified by low usage.
->
-> If you go the Meshnet route anyway, the working sequence on the server (NordVPN's Linux installer is a piped script — the download-read-run habit applies):
->
-> ```bash
-> sh <(curl -sSf https://downloads.nordcdn.com/apps/linux/install.sh)
-> nordvpn login
-> nordvpn set meshnet on
-> nordvpn allowlist add subnet 192.168.1.0/24
-> # After the phone/laptop log in to the same account with Meshnet on:
-> nordvpn meshnet peer list
-> nordvpn meshnet peer routing allow <peer-name>
-> nordvpn meshnet peer local allow <peer-name>
-> ```
->
-> One behavioral difference to know: reaching your LAN through Meshnet means routing **all** the device's traffic through home (a full tunnel) while connected. Tailscale's subnet route (the LAN-sharing setup later in this guide) is split by default — only home-bound traffic takes the tunnel, the rest of your browsing goes out normally.
-
 ## Put your server on a tailnet
 
 ### Create your Tailscale account
