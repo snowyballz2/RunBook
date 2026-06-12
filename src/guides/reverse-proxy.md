@@ -62,6 +62,8 @@ So the *Install Proxmox* hostname advice splits cleanly in two, and both halves 
 
 > [!DETAILS] Running your own certificate authority instead
 > For names that never touch public DNS, Let's Encrypt's own documentation points at the other honest route: become your own certificate authority, with a tool like minica or step-ca, and issue certificates for whatever names you like — `home.arpa` included, fully offline. The catch is where the trust comes from: your CA's root certificate has to be installed by hand on every phone, laptop, and TV in the house, and on every device you ever add. It genuinely works, and it suits people who refuse to rent a name on principle. This guide buys the domain instead, because ten dollars a year is cheaper than that chore — but the option is real, and nothing else here forbids it.
+>
+> And the third honest answer is to not chase certificates at all: plain-HTTP addresses on your own LAN, wrapped in the already-encrypted tunnel from the *Remote Access* guide when you're away, is a defensible place to stop. The browser warnings are the only cost — the rest of this guide is for when you decide they've annoyed you enough.
 
 ### Get the domain — and DNS with an API
 Buy the name at any registrar. The requirement that actually matters is not where you buy but where the domain's **DNS is hosted**: the next step needs NPM's built-in Certbot (the program that talks to Let's Encrypt) to publish a DNS record through an API. NPM ships support for 86 providers at the time of writing — Cloudflare, Porkbun, and deSEC are in the list, alongside Route 53, OVH, GoDaddy, Namecheap, and more — so register somewhere on that list, or point the domain's nameservers at a host that is. Then create an **API token** allowed to edit this domain's DNS, per your provider's docs, scoped as tightly as the provider allows.
@@ -158,6 +160,8 @@ Save, restart Home Assistant, and reload `https://ha.example.com` — the normal
 
 > [!DETAILS] Reading the 400 if it persists
 > The browser only ever shows the bare 400; the explanation lives in Home Assistant's log. "A request from a reverse proxy was received … but your HTTP integration is not set-up for reverse proxies" means the `http:` block is missing or not loaded yet — restart again. "Received X-Forwarded-For header from an untrusted proxy" means the IP in `trusted_proxies` does not match the proxy's actual address. Two trip wires: YAML indentation is two spaces exactly, and if you ever list a whole subnet instead of one IP, the docs require the network address — `192.168.1.0/24`, not `192.168.1.50/24`. These settings only apply on restart; there is no hot reload.
+>
+> The pattern generalizes beyond Home Assistant, and is worth keeping for any service you ever proxy: if something errors through its new name but works fine by IP, go hunting in its settings for a "trusted proxy" or "allowed hosts" option — that's almost always the whole story.
 
 ### Work down the rack
 Four more proxy hosts, same dialog. Every one gets the wildcard certificate and **Force SSL** on the SSL tab, and **Websockets Support** on — two of these need it outright, and it is harmless where unused:
