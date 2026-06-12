@@ -8,6 +8,12 @@ accent: azure
 
 Every guide so far has said "put it in your password manager" — and so far that has quietly meant someone else's cloud. Vaultwarden ends that: a lightweight, fully compatible Bitwarden server, so the official Bitwarden apps and browser extensions on every phone and laptop sync against your box instead. End-to-end encrypted, autofill everywhere, 2FA codes included — and the features Bitwarden sells as Premium work here, because Vaultwarden simply implements them with nothing to license.
 
+> [!NOTE]
+> One gate before anything else: the moment passwords move in, you become the household's backup department. The *Proxmox Backups* job should already exist, point at separate hardware, and have produced at least one archive you've seen — verify that first, not after.
+
+> [!DETAILS] The honest alternative — not self-hosting this one
+> Bitwarden's own cloud has a genuinely good free tier: unlimited passwords, unlimited devices, their ops team carrying the uptime and backup duty. Self-hosting trades that team for the backup habits this collection built, in exchange for keeping the most sensitive data in the house. Both are defensible. If the gate above gave you pause, the cloud is the right answer until it doesn't — this guide is for when you want the keys.
+
 ## Put it up
 
 ### Run the install script
@@ -99,13 +105,16 @@ Install the official Bitwarden app (App Store / Play Store) and browser extensio
 > [!NOTE]
 > Every signed-in device keeps a complete encrypted copy of the vault. Server down? Apps keep working in read-only mode — you can still look up the Proxmox root password to go fix the server holding it. The one rule: **lock, never log out.** Unlocking is local; logging back *in* needs the server.
 
+> [!NOTE]
+> Away from home, the vault syncs through the *Remote Access* guide's tunnel like everything else — never a port-forward; a password server has no business being reachable from the internet. One wrinkle: `vault.example.com` only resolves where AdGuard answers DNS, so remote syncing needs the *Reverse Proxy* guide's Tailscale-DNS wiring. And if you skip even that, nothing is lost day-to-day — the offline copies above carry you until you're home.
+
 > [!DETAILS] Instant sync on phones — the optional push relay
 > By default, mobile apps sync on login, periodically while unlocked, and on demand — fine for a household. If you want an edit on one phone to appear on another within seconds, Vaultwarden can use Bitwarden's push relay: request a free installation id and key at [bitwarden.com/host](https://bitwarden.com/host/), then add `PUSH_ENABLED=true`, `PUSH_INSTALLATION_ID=`, and `PUSH_INSTALLATION_KEY=` to `/opt/vaultwarden/.env` and restart. The honest trade: notification events now route through Bitwarden's servers (the vault contents stay end-to-end encrypted), and apps from F-Droid builds don't support it at all. Skipping it costs you nothing but immediacy.
 
 ## Run it like a vault
 
 ### Make sure the backups already cover it
-If the *Proxmox Backups* job was set to **Selection mode: All**, last night's run already archived this container — data, settings, everything — to the NAS, and every night will. What actually matters lives in `/opt/vaultwarden/data`: the wiki ranks `db.sqlite3` and `attachments/` as required, `config.json` and the `rsa_key*` files as recommended (losing the keys just signs everyone out once). Restoring is the *Proxmox Backups* drill: restore the container, vault returns as of the backup.
+If the *Proxmox Backups* job was set to **Selection mode: All**, last night's run already archived this container — data, settings, everything — to the NAS, and every night will. What actually matters lives in `/opt/vaultwarden/data`: the wiki ranks `db.sqlite3` and `attachments/` as required, `config.json` and the `rsa_key*` files as recommended (losing the keys just signs everyone out once). Restoring is the *Proxmox Backups* drill: restore the container, vault returns as of the backup — and for *this* container, run that drill for real once, into a spare ID you delete afterwards. The vault is the one guest where "probably restorable" isn't good enough.
 
 > [!DETAILS] A purist's database backup
 > The wiki's gold-standard copy uses SQLite's own backup command, safe while the service runs:
