@@ -105,7 +105,7 @@ upsc myups@localhost
 A healthy answer is a screenful of live variables. Three are worth knowing by name: `ups.status` (`OL` means on line power), `battery.charge` (percent), and `battery.runtime` (the UPS's own estimate of seconds remaining at the current load). You can also ask for one at a time: `upsc myups@localhost ups.status`.
 
 > [!DETAILS] Getting a stubborn driver going
-> If `upsc` has nothing to say, check `systemctl status nut-driver@myups`. Errors like "no appropriate HID device found" or permission denied usually mean a USB problem: reseat the cable first, then run `lsusb` and find the UPS's vendor:product ID. Debian's shipped udev rules cover hundreds of UPS IDs and are applied automatically, but an oddball unit may need a custom rule keyed to its ID — after adding one, replug the cable (or run `udevadm trigger`) and restart the driver.
+> If `upsc` has nothing to say, check `systemctl status nut-driver@myups`. If that unit doesn't *exist* at all, the per-UPS service was never generated from your `ups.conf` entry — `systemctl restart nut-driver-enumerator` creates it, then check again. Errors like "no appropriate HID device found" or permission denied usually mean a USB problem instead: reseat the cable first, then run `lsusb` and find the UPS's vendor:product ID. Debian's shipped udev rules cover hundreds of UPS IDs and are applied automatically, but an oddball unit may need a custom rule keyed to its ID — after adding one, replug the cable (or run `udevadm trigger`) and restart the driver.
 
 ## Make the shutdown automatic
 
@@ -142,6 +142,8 @@ upsmon -c fsd
 ```
 
 This raises the forced-shutdown flag exactly as a critical battery would, and the whole chain runs for real: guests down in order, host off, UPS output cut and restored (the machine may stay dark anywhere from seconds to a few minutes, depending on the unit), and — BIOS step done — the stack boots back up on its own. Time the run from command to powered-off; that is the number your battery's low-battery margin has to beat. When it's all back, glance over *Uptime Kuma* — anything that didn't make the round trip shows red.
+
+Once, ever, on a quiet day, there is a case for the unabridged version: pull the plug and let the battery actually drain until the UPS itself declares low battery and triggers everything. It is the only test that proves the `OB LB` trigger fires with margin to spare, at the cost of a battery cycle — worth doing one time so the timed drill above has a real-world anchor.
 
 > [!WARNING]
 > `upsmon -c fsd` is a real shutdown, not a simulation, and once the flag is set it cannot be withdrawn — there is no cancelling mid-drill. Pick a quiet moment and warn the household first.
