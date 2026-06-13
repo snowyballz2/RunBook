@@ -9,7 +9,7 @@ accent: azure
 ## What you are building
 
 ### Understand the job
-This collection now runs the house's DNS, files, photos, cameras, and automations — and so far the only monitoring is someone shouting that a thing stopped working. Uptime Kuma is the smoke detector for the rack: it checks each service on a schedule, draws the results on one dashboard, and sends an alert the moment something stops answering.
+This collection now runs the house's DNS, files, photos, cameras, and smart home — and so far the only monitoring is someone shouting that a thing stopped working. Uptime Kuma is the smoke detector for the rack: it checks each service on a schedule, draws the results on one dashboard, and sends an alert the moment something stops answering.
 
 > [!DETAILS] Knowing what's under the hood
 > A single Node.js application with an embedded SQLite database — small enough that the container below gets by on 1 CPU core and 1 GB of RAM. The 2.x line is the stable one now (2.0 went stable in October 2025); a fresh install today gets 2.4.0. It checks from *inside* your network, which is exactly right: it sees your services the way your devices do.

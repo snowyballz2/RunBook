@@ -261,7 +261,7 @@ mqtt:
 > The Frigate integration doesn't live in Home Assistant's built-in integration list — it's distributed through **HACS** (Home Assistant Community Store), a widely-used community add-on catalog that itself has to be installed once. Follow the official install steps at [hacs.xyz](https://hacs.xyz/docs/use/) (it walks you through adding it as an App and signing in with GitHub), restart Home Assistant, then open **HACS**, search for **Frigate**, download it, restart Home Assistant again, and add the Frigate integration under **Settings → Devices & services** — it asks for Frigate's address (`http://frigate-ip:5000`).
 
 > [!NOTE]
-> What you get: a live camera entity per camera, sensors for object counts and performance, switches to toggle detection, recordings, and snapshots, a motion binary sensor per camera and zone, and your recordings browsable in Home Assistant's media browser.
+> What you get: a live camera entity per camera, an *occupancy* binary sensor per camera per tracked object (on while a person is in frame — automation fuel), sensors for object counts and performance, switches to toggle detection, recordings, and snapshots, a motion binary sensor per camera and zone, and your recordings browsable in Home Assistant's media browser.
 
 > [!DETAILS] About the "Frigate App" you'll see in Home Assistant
 > Home Assistant also offers Frigate as an App — that route runs Frigate *inside* the HAOS VM instead of in its own container, and carries documented limits there (separate local storage for media isn't supported, and HAOS lacks drivers for some accelerators). Since yours already runs in its own container with the iGPU, skip the App entirely; the HACS integration is the only piece you need on the Home Assistant side.
