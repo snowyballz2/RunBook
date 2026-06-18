@@ -9,13 +9,42 @@ Frosted film turns the lower half of a bathroom window into privacy glass withou
 > [!WARNING]
 > Set expectations first. 3M does **not** recommend Fasara for windows where condensation constantly forms — and a shower window is exactly that. It will work and look sharp, but you are off the warranty, and the failure mode to plan around is moisture creeping under the edges over months. What fights that is *not* a bead of caulk — installers are adamant you should not seal frost film with silicone — but the boring fundamentals: a small gap left at the frame, edges pressed completely dry, and a full cure before the room gets steamy. The cut and cure steps explain each.
 
-## Gather and prep
+## Shop for the job
 
-### Confirm what you have on hand
-You need the cut film, a stainless-steel snap-off knife with fresh blades, a metal straightedge, a flat hardboard or MDF panel to cut on, a hard rubber squeegee, low-lint microfiber cloths, a stainless-steel razor scraper, mild dish soap, a spray bottle (a second one helps), a credit card or stiff plastic card, painter's tape, and a small level.
+### Size and order the film
+3M Fasara Frost Matte goes on by the piece — one per window, each the width of the glass by the height of your privacy band. Measure the real daylight opening (the visible glass) of every window first; don't assume they all match. Then order a roll at least as wide as your widest window, with about 30 percent extra length for templating, trimming, and the odd mistake.
 
 > [!NOTE]
-> Example — your job is four windows. Three are 30 inches wide with a 24 inch frost band, the bottom half of a 48 inch window. The fourth is 30 inches wide with a 10 inch band. The film is 3M Fasara Frost Matte.
+> The example job is four windows, all 30 inches wide: three with a 24-inch band (the bottom half of a 48-inch window) and one with a 10-inch band. That's 82 inches of band height in total, so ordering about 110 inches — roughly 3 yards — off a 36-inch-or-wider roll covers it with margin to practice on. The film is 3M Fasara Frost Matte.
+
+### Gather the tools and supplies
+Most of this you may already own; the rest is a quick trip.
+
+**Cutting**
+- Stainless-steel snap-off knife, plus a pack of stainless blades — snap a fresh segment often; stainless won't score glass
+- Rigid metal straightedge, 36 inches or longer
+- Self-healing cutting mat, or a hardboard/MDF panel
+
+**Prep and solution**
+- Stainless razor scraper, plus spare blades
+- White non-scratch pad
+- Mild non-lotion dish soap, or no-tears baby shampoo
+- Distilled water (a gallon or two)
+- Two clean spray bottles
+
+**Application**
+- Hard rubber squeegee
+- 8–12 low-lint microfiber cloths
+- A stiff plastic or credit card — it doubles as trim guide and gap spacer
+
+**The floating top edge**
+- Painter's tape
+- A small bubble level
+
+> [!WARNING]
+> Don't buy silicone or caulk for the edges — frost film should not be sealed that way. The only edge product worth considering for a wet window is a film edge-sealing pen, and only after the edge has dried a day.
+
+## Prep
 
 ### Mix the slip solution
 3M wants a weak detergent solution, not a sudsy one — about 0.1 to 0.2 percent, which works out to one teaspoon of mild, non-lotion dish soap per gallon of water. Mix it in the spray bottle.
