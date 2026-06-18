@@ -29,7 +29,7 @@ Most of this you may already own; the rest is a quick trip.
 - Stainless razor scraper, plus spare blades
 - White non-scratch pad
 - Mild non-lotion dish soap, or no-tears baby shampoo
-- Distilled water (a gallon or two)
+- Distilled water — only if your tap is hard (a gallon or two); tap water is fine otherwise
 - Two clean spray bottles
 
 **Application**
