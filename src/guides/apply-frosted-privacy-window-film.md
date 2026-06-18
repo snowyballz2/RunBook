@@ -4,18 +4,18 @@ subtitle: A bottom-half privacy band on existing glass, using 3M Fasara
 accent: azure
 ---
 
-Frosted film turns the lower half of a bathroom window into privacy glass without replacing anything: you cut a band of film to size, squeegee it onto the existing pane, and seal it. The steps below follow 3M's own method for Fasara, walked through on a four-window job.
+Frosted film turns the lower half of a bathroom window into privacy glass without replacing anything: you cut a band of film to size, float it onto the existing pane on a film of soapy water, squeegee it flat, and let it cure. The steps below follow 3M's method for Fasara plus the field technique experienced installers actually use, walked through on a four-window job.
 
 > [!WARNING]
-> Set expectations first. 3M does **not** recommend Fasara for windows where condensation constantly forms — and a shower window is exactly that. It will work and look sharp, but you are off the warranty, and the failure mode to plan around is moisture creeping under the edges over months. That is why the edge-sealing step at the end matters far more here than it would on a dry window.
+> Set expectations first. 3M does **not** recommend Fasara for windows where condensation constantly forms — and a shower window is exactly that. It will work and look sharp, but you are off the warranty, and the failure mode to plan around is moisture creeping under the edges over months. What fights that is *not* a bead of caulk — installers are adamant you should not seal frost film with silicone — but the boring fundamentals: a small breathing gap at the frame, edges pressed bone-dry, and a full cure before the room gets steamy.
 
-## Gather and mix
+## Gather and prep
 
 ### Confirm what you have on hand
-You need the cut film, a utility knife with fresh blades, a metal straightedge, a flat hardboard or MDF panel to cut on, a hard rubber squeegee, microfiber cloths, a stainless steel razor scraper, mild dish soap, a spray bottle, and a tube of neutral cure silicone.
+You need the cut film, a stainless-steel snap-off knife with fresh blades, a metal straightedge, a flat hardboard or MDF panel to cut on, a hard rubber squeegee, low-lint microfiber cloths, a stainless-steel razor scraper, mild dish soap, a spray bottle (a second one helps), a credit card or stiff plastic card, painter's tape, and a small level.
 
 > [!NOTE]
-> Example — your job is four windows. Three are 30 inches wide with a 24 inch frost band, which is the bottom half of a 48 inch window. The fourth is 30 inches wide with a 10 inch band. The film is 3M Fasara Frost Matte.
+> Example — your job is four windows. Three are 30 inches wide with a 24 inch frost band, the bottom half of a 48 inch window. The fourth is 30 inches wide with a 10 inch band. The film is 3M Fasara Frost Matte.
 
 ### Mix the slip solution
 3M wants a weak detergent solution, not a sudsy one — about 0.1 to 0.2 percent, which works out to one teaspoon of mild, non-lotion dish soap per gallon of water. Mix it in the spray bottle.
@@ -26,35 +26,42 @@ Slip solution
 ```
 
 > [!WARNING]
-> Keep to the ratio. Too much soap and the film floats around and won't seat or bond; too little and it grabs and streaks before you can slide it into place. Avoid any soap with lotion, wax, or moisturizer in it — 3M calls for plain mild detergent.
+> Keep it lean. Too much soap and the film floats and won't seat or bond; too little and it grabs and streaks before you can slide it into place. When in doubt, go leaner — over-soaping is the more common mistake.
+
+> [!DETAILS] Baby shampoo or dish soap? The installer debate
+> Both work, and pros are genuinely split. 3M's own spec is roughly a teaspoon of mild detergent per gallon. The baby-shampoo camp uses 3–5 drops of no-tears baby shampoo per quart because it rinses residue-free; the dish-soap camp uses a *single* drop of plain Dawn or Joy per quart — it's a stronger surfactant, so you need far less. The one rule everyone agrees on: plain soap only, nothing with lotion, dye, fragrance, or "antibacterial," which leave residue that hazes the film and weakens the bond. Use distilled water if yours is hard, to avoid mineral streaks.
 
 ### Bring the film to room temperature
-Let the film sit indoors until it reaches room temperature before you install it. Cold film is harder to position and seat.
+Let the film sit indoors until it reaches room temperature before you install it. Cold adhesive bonds poorly and cold film is harder to position and seat.
+
+### Settle the dust before you start
+Contamination trapped under the film is permanent, and frost shows every speck — so the room matters as much as your technique. Turn off any fan, HVAC, or AC that moves air, shut the door, and run the shower hot for a few minutes, then let the steam clear before you work. The humidity drops airborne dust to the floor and kills static. A light raked low across the glass makes specks show up before they get sealed in.
 
 ## Measure and cut
 
 ### Measure each window's glass opening
-Measure the visible glass, called the daylight opening, on each window. Do not assume it is exactly 30 inches. Record the real width for each window.
+Measure the visible glass — the daylight opening — on each window. Don't assume it's exactly 30 inches; record the real width for each. Frames are rarely perfectly square, so check the band height on both sides too.
 
-> [!WARNING]
-> Cut the width to the glass opening minus about one sixteenth of an inch total, roughly 29.9 inches on a 30 inch opening. If you cut to a full 30 inches and the opening is even slightly narrower anywhere, the edge rides up onto the frame and will not lie flat.
+### Set the top line with a level and tape
+The top edge of the band floats mid-pane with no frame to guide it, so its straightness is entirely on you — and a sagging line is the flaw you'll notice every single day. Two tricks make it foolproof. Keep the film's **factory-cut edge** as that top edge; it's cleaner than anything you'll cut by hand. And mark the height by measuring up *equally from the sill on both sides*, then press a line of painter's tape across the glass to butt the film against. Don't register off the frame — it's probably not level.
 
-### Mark and cut from the liner side
-Mark your measurements on the backing liner. Lay the straightedge on the mark, press it down hard so it cannot shift, and pull the blade in one smooth confident stroke against the straightedge. Cut on the hardboard panel, never on a counter or floor.
+### Cut the film to size
+Mark your measurements on the backing liner, lay the straightedge on the mark and press it down hard so it can't shift, and pull the blade in one smooth, confident stroke against it. Cut on the hardboard panel — never a counter, the floor, or the glass. Cut the first piece, check the fit on the glass, then use it as the template for the rest; consistency beats remeasuring each time.
 
 > [!TIP]
-> Snap to a fresh blade every few cuts. Film dulls a blade fast and a dull blade drags and tears instead of slicing clean.
+> Stainless snap-off blades only, and snap to a fresh segment the moment one starts to drag. Stainless is soft enough that it won't score glass if you brush the pane; a dull blade tears and fishmouths instead of slicing, and needs more pressure — which is exactly how glass gets scratched. Film dulls a blade fast.
 
-### Use your first piece as a template
-All four pieces are 30 inches wide, so cut the first one, check the fit on the glass, then use it to mark the rest. Consistency beats remeasuring each time.
-
-> [!NOTE]
-> Only the two side edges meet the frame, so that is where the 29.9 inch width matters. The top edge of the frost band floats on glass, so there is no fit constraint there. It only needs to be dead level.
+> [!DETAILS] Two ways to size the side edges — and which to pick
+> The two framed side edges can be done two ways. **3M's own method is oversize-and-trim-in-place:** leave about a quarter inch of film overlapping each side, mount and tack the film, then trim the overhang against the frame — 3M says trimming after squeegeeing actually improves how well the edges bond. Pros do this with a credit card or hard card held against the frame as both guide and spacer: the blade rides the card's edge so it never touches the frame or glass, and the card's thickness leaves a perfect gap.
+>
+> **The simpler DIY method is to precut slightly undersize** — cut each piece about a sixteenth of an inch narrower than the opening, so no blade ever goes near the installed film. This is the IWFA flat-glass standard and the easier, lower-risk route.
+>
+> For this job the honest installer answer is a hybrid: factory edge on top, precut the bottom (it hides at the sill), and on the two sides use whichever your hands trust. The card-guided trim gives the slightly better edge bond a wet window wants; precut-undersize keeps a blade off the glass entirely. **Either way, leave a small gap at the frame — never a tight fit.** A film cut tight and jammed against the frame is a top cause of edge-peel; the gap is a feature, and the cure step explains why.
 
 ## Clean the glass
 
 ### Scrape and wash the glass
-Wet the glass with slip solution, then scrape it with the stainless steel razor to lift dirt and contaminants. Use the white non scratch pad on stubborn spots.
+Wet the glass with slip solution, then scrape it with the stainless-steel razor to lift dirt and contaminants. Use the white non-scratch pad on stubborn spots, and clean right into the frame edges and corners where dust hides.
 
 > [!DANGER]
 > Scrape glass only. Never run the razor over a painted frame, a plastic part, or a coated surface. It will scratch, and the damage can show through the film.
@@ -71,44 +78,44 @@ Rinse the glass top to bottom with the sprayer, squeegee it down, and dry the gl
 ## Apply the film
 
 ### Wet the glass
-Spray the cleaned glass generously with slip solution so the film can slide into position.
+Spray the cleaned glass generously with slip solution so the film can slide into position. There's no such thing as too much water here.
 
-### Peel the liner the right way
-Peel back a few inches of the liner by pulling the liner away from the film, not the film off the liner. Spray the exposed adhesive with slip solution as you go, and keep peeling and spraying until the liner is off.
-
-> [!WARNING]
-> Pulling the film off the liner stretches it and leaves it distorted on the glass. Always pull the liner away from the film.
-
-### Position and align
-Lay the adhesive side onto the wet glass. Slide it so the top edge of the band lines up with your level mark. Then spray the front of the film with slip solution so the squeegee glides without scratching.
-
-### Squeegee from the center out
-Tack the film with a firm pass down the center, then work outward with overlapping strokes, pushing the water and air toward the edges. Wrap the squeegee in a microfiber for the final passes so you do not mar the frosted surface.
+### Peel the liner and wet the adhesive
+The film ships with a clear liner over its sticky side, and the trick is how you take it off. Pull the **liner away from the film**, never the film off the liner — pulling the film stretches it and it never lies flat again. As the sticky side is exposed, spray *that* side — the **adhesive**, not the frosted front — generously with slip solution, and keep peeling and spraying until the liner is off. Soaking the adhesive is what stops it grabbing crooked and lets it float instead.
 
 > [!TIP]
-> Frost Matte has a slight texture, so the microfiber wrapped pass on the surface is what keeps it from scuffing. This is your felt wrapped squeegee, no separate tool needed.
+> Can't get the liner started? Press a piece of tape onto the film's front and another onto the liner at the same corner, then pull the two tabs apart — they cleanly separate the layers. Static makes the clear liner cling, so peel slowly at a shallow angle, and a helper makes a big piece far easier.
 
-### Dry and trim the edges
-Dry the edges with a microfiber. Since each piece was cut slightly undersize, the edges should sit just shy of the frame already — if any needs a cleaner line, trim it in place against the straightedge with a fresh blade. Then make one firm final pass along every edge with the wrapped squeegee: it's that edge pressure, plus the cure that follows, that bonds the borders down.
+### Float it into position
+Lay the wet adhesive onto the wet glass and slide the film until its top edge meets your tape line. With both surfaces soaked it floats freely, so take your time lining it up. Handle it with **wet fingers** — dry fingertips leave oil that hazes the film and won't clear. Once it's placed, spray the front of the film so the squeegee glides without scratching.
 
-## Cure and seal
+### Squeegee from the center out
+Tack the film with one firm pass down the center, then work outward with overlapping strokes, pushing water and air toward the edges. A hard squeegee moves the most water; for the passes on the frosted face, wrap it in a low-lint microfiber so the texture doesn't scuff.
+
+> [!TIP]
+> A microfiber-wrapped hard squeegee beats a soft felt one here — felt won't push enough water out. And mist, don't drench: if the film still slides around under the squeegee, there's too much solution under it. Never run a dry squeegee over the frosted surface.
+
+### Dry and bump the edges
+Dry each edge with a microfiber. If you went the oversize route, trim the overhang now against your card guide; if you precut, the edges already sit just shy of the frame. Either way, finish with a firm pass along every edge using the cloth-wrapped card or squeegee — that edge pressure pushes the last water out and presses the border down. It's this bump, plus the cure that follows, that anchors the edges — not any sealant.
+
+## Cure and finish
 
 ### Let it cure and keep the shower dry
-Leave the window alone and keep the shower unused and dry for at least 48 hours — that is the minimum before any water touches it. Full cure takes about 30 days, so hold off on cleaning the film for a month.
+Leave the window alone and keep the shower unused and dry for at least 48 hours — that's the minimum before any water touches it, and longer is better in a steamy bathroom. Full cure takes about 30 days, so hold off on cleaning the film for a month.
 
 > [!NOTE]
-> The film looks hazy at first, with small trapped water pockets. That is normal: the moisture clears on its own as it evaporates, often within a few days, and longer in a cool or humid room. Don't chase the bubbles — they go away.
+> The film looks hazy at first, with small trapped water pockets. That's normal: the moisture evaporates out through the film as it cures, clearing on its own in a few days — longer in a cool or humid room. Don't chase the bubbles and never pop one with a pin; the hole just lets air and dust back in. They go away.
 
-### Seal the edges against the moisture
-This is the step that earns its keep on a shower window. Once the film is fully cured, run a thin bead of neutral-cure silicone along the film's two side edges where they meet the frame. On a dry window you could skip it; here it is the moisture barrier that keeps humidity from working under the edges and lifting them — the failure mode flagged at the top.
+### Leave the edge alone — don't caulk it
+Here's where the installer consensus overrides the instinct to seal: **don't run silicone over the frost film.** Frost film has no metal layer that sealing would protect, a tight bead can trap water against the edge, and pros warn that plain silicone can attack the film and its adhesive outright. What actually prevents edge-lift in a humid room is the unglamorous trio you've already done — a small breathing gap at the frame so install water escapes instead of wicking back, edges pressed bone-dry, and a full cure before the steam starts.
 
-> [!WARNING]
-> Use neutral-cure silicone only, sometimes labeled non-acetic. Standard (acetic-cure) silicone smells like vinegar, and that acid can attack the film, its adhesive, and the surrounding finishes over time. Run the bead along the film edge on the glass — you are sealing that seam, not caulking the whole frame.
+> [!NOTE]
+> Want extra insurance in a genuinely wet spot? The pro tool is a film **edge-sealing pen** made for the purpose, run along the edge after it has dried for a day — not a tube of caulk. Even then, treat frost film in a constantly-wet zone as a maintenance item: if an edge ever lifts, lift that section, clean it, re-wet, and re-squeegee.
 
 ## Ongoing care
 
 ### Clean it gently
-For routine cleaning, use mild soapy water and a soft cloth, then wipe gently. Avoid abrasive pads and harsh sprays so you do not scratch or cloud the finish.
+For routine cleaning, use mild soapy water and a soft cloth, then wipe gently. Avoid abrasive pads and harsh sprays so you don't scratch or cloud the finish.
 
 > [!TIP]
-> A squeegee and plain water handle most shower film cleaning. Save any spray cleaner for stubborn spots only.
+> A squeegee and plain water handle most shower-film cleaning. Save any spray cleaner for stubborn spots only.
