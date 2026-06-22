@@ -116,6 +116,56 @@ actions:
 > [!DETAILS] How trusting to be — Frigate's own honesty
 > Frigate's documentation is candid about these sensors: occupancy sensors run "fewer checks" so latency stays low enough for lights — which means an occasional false positive. For a porch light, who cares; a wrongly-lit porch costs nothing. For something you'd hate to have cry wolf — an alarm, a loud announcement — Frigate recommends triggering from its `frigate/events` MQTT topic instead, which carries full event data (and unlocks event-specific snapshot URLs in notifications). That's the graduate course; the occupancy sensor is the right first build.
 
+### Make a speaker greet the visitor
+Same trigger, a louder action: when Frigate sees someone, have a speaker chime, play a clip, or speak a line. The one catch is *which* speaker — Home Assistant can only drive one it controls as a media player, which means a **Sonos** or a **Google/Nest (Cast)** speaker. A HomePod can't be the target; Home Assistant can't push audio to it.
+
+```yaml
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.driveway_person_occupancy
+    to: "on"
+actions:
+  - action: media_player.volume_set
+    target:
+      entity_id: media_player.kitchen   # a Sonos or Cast speaker
+    data:
+      volume_level: 0.5
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.kitchen
+    data:
+      media_content_id: media-source://media_source/local/doorbell.mp3
+      media_content_type: music
+```
+
+The `volume_set` first is a kindness — it stops a late-night visitor from blasting the house. Point `media_content_id` at a sound file you dropped in your `config/media` folder, or a service-specific id (a Sonos favorite, a radio URL) for actual music.
+
+> [!DETAILS] Make it talk instead of chime
+> Swap the play-media action for text-to-speech and the same trigger announces in words, on the same speaker:
+>
+> ```yaml
+> actions:
+>   - action: tts.speak
+>     target:
+>       entity_id: tts.home_assistant_cloud   # whichever TTS engine you set up
+>     data:
+>       media_player_entity_id: media_player.kitchen
+>       message: "Someone is at the front door."
+> ```
+>
+> The TTS engine is whatever you configured — the cloud voice, or a fully-local one like Piper. Either way the speaker has to be a media player Home Assistant controls, so the Sonos-or-Cast rule still holds.
+
+> [!DETAILS] Trigger on the doorbell button instead
+> Person-detection fires when someone *appears*; the doorbell button fires only when they actually *press it* — intentional, and free of false alarms. Once your doorbell is in Home Assistant, its press shows up as an entity you trigger on the same way, usually an `event` entity that updates on each ring:
+>
+> ```yaml
+> triggers:
+>   - trigger: state
+>     entity_id: event.front_doorbell   # your doorbell's button-press entity
+> ```
+>
+> Everything below the trigger stays identical — only what *starts* it changes. In the visual editor you'd add this as **Device → your doorbell → button pressed**, which writes the trigger for you. Honest caveat for an Aqara G410: it's a HomeKit/Matter-first doorbell and Aqara's Home Assistant support is thin, so exactly how its press surfaces won't be certain until it's set up — but the automation around it doesn't change. Many people wire up both triggers: a soft chime on approach, the full announcement on the actual ring.
+
 ## Make it yours
 
 ### Scenes — set the room, not the devices
