@@ -226,7 +226,14 @@ A doorbell is the camera most people actually want, and the local-first pick is 
 On Reolink doorbells, plain RTSP video is **less reliable** — it drops and stutters — while video carried over **http-flv** (video over HTTP) is steady. But the two-way talk audio only rides on RTSP. So the trick is to pull *video* over http-flv for stability and add a *secondary RTSP stream just for the audio*, then let Frigate's built-in **go2rtc** (the restreamer from the last section) fuse them into one feed it can record, detect on, and talk back through.
 
 ### Prepare the doorbell in the Reolink app
-In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a username and password. If the options exist, set the bitrate to **"On, fluency first"** (that's constant bitrate, which Frigate prefers) and the **Interframe Space to 1×** (an I-frame interval matching the frame rate).
+In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a username and password. If the options exist, set the bitrate to **"On, fluency first"** (that's constant bitrate, which Frigate prefers) and the **Interframe Space to 1×** (an I-frame interval matching the frame rate). Pin the doorbell's IP with a DHCP reservation while you're at it (the *AdGuard Home* habit), so the config below never goes stale.
+
+> [!INPUT] doorbell-ip | Doorbell IP
+
+> [!INPUT] doorbell-user | Doorbell username
+
+> [!SECRET] doorbell-password | Doorbell password
+> The login you just set in the Reolink app — it goes into the `USER` / `PASS` slots of the config below.
 
 > [!WARNING]
 > Take the exact stream details from the Reolink app — don't guess them. In particular confirm **HTTP is enabled**, or the http-flv video path won't connect at all.
