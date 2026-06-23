@@ -218,6 +218,64 @@ Reload the web UI: your camera's live view should appear, and walking through th
 > [!TIP]
 > If the camera stays black, watch the logs while it starts: `journalctl -u frigate -f` in the container's console. A wrong RTSP path or password shows up there immediately. And if detection feels sluggish or the CPU is pinned, the iGPU probably isn't doing the work — re-check the `/dev/dri` passthrough and confirm the logs name the OpenVINO detector, not a CPU fallback.
 
+## Add a video doorbell
+
+A doorbell is the camera most people actually want, and the local-first pick is the **Reolink Video Doorbell** (the WiFi model runs off your existing doorbell transformer — see the camera notes at the top). But it doesn't behave like a plain RTSP camera, so it gets its own walkthrough. The worked example below is that doorbell; the same pattern applies to other Reolink models.
+
+### Understand why a doorbell is different
+On Reolink doorbells, plain RTSP video is **less reliable** — it drops and stutters — while video carried over **http-flv** (video over HTTP) is steady. But the two-way talk audio only rides on RTSP. So the trick is to pull *video* over http-flv for stability and add a *secondary RTSP stream just for the audio*, then let Frigate's built-in **go2rtc** (the restreamer from the last section) fuse them into one feed it can record, detect on, and talk back through.
+
+### Prepare the doorbell in the Reolink app
+In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a username and password. If the options exist, set the bitrate to **"On, fluency first"** (that's constant bitrate, which Frigate prefers) and the **Interframe Space to 1×** (an I-frame interval matching the frame rate).
+
+> [!WARNING]
+> Take the exact stream details from the Reolink app — don't guess them. In particular confirm **HTTP is enabled**, or the http-flv video path won't connect at all.
+
+### Add the doorbell to your config
+Add the doorbell's streams to a `go2rtc` block, then point a `doorbell` camera at the local restream. Swap in your `DOORBELL-IP`, `USER`, and `PASS`:
+
+```yaml
+go2rtc:
+  streams:
+    doorbell:
+      - "ffmpeg:http://DOORBELL-IP/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=USER&password=PASS#video=copy#audio=copy#audio=opus"
+      - "rtsp://USER:PASS@DOORBELL-IP/Preview_01_sub"
+    doorbell_sub:
+      - "ffmpeg:http://DOORBELL-IP/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=USER&password=PASS"
+
+cameras:
+  doorbell:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/doorbell
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/doorbell_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    live:
+      streams:
+        Doorbell: doorbell
+    objects:
+      track:
+        - person
+        - package
+```
+
+> [!NOTE]
+> Reading the odd parts: `channel0_main.bcs` is the full-resolution stream (recorded) and `channel0_ext.bcs` is the low-res sub stream (analyzed) — splitting them spares both the doorbell and your CPU. The trailing `#video=copy#audio=copy#audio=opus` is deliberate, not a typo: it passes the video through untouched, keeps the original audio for recording, *and* adds a second Opus audio track that the browser's live view needs. The bare `rtsp://…/Preview_01_sub` line is the two-way-audio path, and it must **not** carry an `ffmpeg:` prefix — go2rtc has to handle that stream directly for talk-back to work. The `live: streams:` block binds the live view (and its talk button) to that full `doorbell` stream rather than the detect substream.
+
+### Talk back through it
+To speak through the doorbell from the Frigate or Home Assistant live view, the page has to be served over **HTTPS** — browsers only allow microphone access on a secure connection (you may need Frigate's port `8971`). This is one more place the *Reverse Proxy* guide's real certificate earns its keep.
+
+> [!TIP]
+> Don't care about talking back? Drop the secondary `rtsp://…Preview_01_sub` line entirely and keep just the http-flv video. That's the simplest, most reliable doorbell setup — you still get full recording and person/package detection.
+
+### Mind the stream count
+Reolink doorbells have limited streaming capacity and dislike many simultaneous connections. Detecting on the sub stream, as above, keeps the load light. If you later add Reolink's own *Home Assistant* integration, that's another connection — running everything at once can cause dropouts, so add one thing at a time and watch the logs.
+
 ## Wire it into the build
 
 ### Set retention before the disk fills
