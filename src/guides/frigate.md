@@ -133,6 +133,51 @@ The `model:` block is not optional: unlike the CPU and Coral detector types, Ope
 >
 > You will also need to hand the USB device itself through to the container, which is its own fiddle — another reason the iGPU path is the default here.
 
+> [!DETAILS] Sharing one GPU with your containers
+> The iGPU above is the default and needs none of this. But if you already have a spare desktop GPU in the machine — an old gaming card, say — one card can serve Frigate's detection *and* later guides at the same time. The groundwork is shared, so it's worth doing once, properly.
+>
+> Install the **NVIDIA driver on the Proxmox host first** (not inside the container) — the host owns the hardware, and the LXC borrows it. Then share the card into the Frigate LXC. Because LXCs share the host's kernel, the card is *not* locked to one container the way a VM would claim it: the same GPU can drive Frigate, and later an Ollama or Whisper container for local voice, all at once. There is no exclusive lock to fight over.
+>
+> Pass the device through with Proxmox 8.1+'s `dev0:` syntax rather than hand-writing `lxc.cgroup2` device lines into the container config — the newer syntax is what Proxmox supports and survives upgrades. In the container's `.conf` on the host:
+>
+> ```ini
+> dev0: /dev/nvidia0,gid=44
+> dev1: /dev/nvidiactl,gid=44
+> dev2: /dev/nvidia-uvm,gid=44
+> ```
+>
+> Two more things keep it healthy. Enable the persistence daemon on the host so the driver stays initialised when nothing is actively using the card (otherwise the first detection after an idle stretch pays a wake-up cost):
+>
+> ```bash
+> systemctl enable --now nvidia-persistenced
+> ```
+>
+> And keep the **host driver and the in-container driver at matching versions** — the container ships its own userspace driver, and a mismatch against the host kernel module is the classic cause of "GPU vanished after an update." Bump both together.
+>
+> This same GPU setup is reused by the *Local Voice* guide — Ollama and Whisper lean on exactly this card — so doing it here pays off twice.
+
+> [!WARNING]
+> Do **not** VFIO-bind or blacklist the GPU to pass it to a *VM*. That hands the whole card to one virtual machine exclusively and breaks the LXC sharing above — the kernel can no longer touch it, so no container gets a look in. VFIO is the right tool for the TrueNAS HBA (the disk-controller card from the *TrueNAS* guide's PCIe-passthrough note), but that's a *separate* device: the HBA goes to the TrueNAS VM via VFIO while the GPU stays shared across LXCs, and the two arrangements coexist fine. Keep them straight — VFIO the HBA, share the GPU.
+
+> [!DETAILS] Detection on an NVIDIA GPU
+> With the card shared in (above), Frigate can run detection on it. Note the shape of this changed in 2025: Frigate 0.16+ **removed the standalone NVIDIA TensorRT detector** for desktop cards. NVIDIA GPUs now run the **ONNX detector on the CUDA execution provider**, which lives inside the `-tensorrt` image and is auto-detected — you point Frigate at ONNX and CUDA, and it finds the card. The config is short:
+>
+> ```yaml
+> detectors:
+>   onnx:
+>     type: onnx
+>
+> model:
+>   model_type: yolo-generic
+>   width: 320
+>   height: 320
+>   input_tensor: nchw
+>   input_dtype: float
+>   path: /config/model_cache/yolov9-t.onnx
+> ```
+>
+> A few requirements to check before you bother. The card needs **compute capability 5.0 or higher** (Maxwell or newer), the **NVIDIA driver at 545 or newer**, and **CUDA 12.x**. A GTX 1080 Ti — Pascal, compute capability 6.1 — clears all three and makes a perfectly good detector. Reach for a **YOLOv9** model; avoid RF-DETR on older Pascal cards, where it runs very slowly. As ever, the rule from above still holds: **detector types can't be mixed** — an `onnx` detector here means no `openvino` or `edgetpu` alongside it. Pick one.
+
 ## Add your first camera
 
 ### Describe your camera in the config

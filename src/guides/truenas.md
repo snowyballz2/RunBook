@@ -49,19 +49,34 @@ The part that makes it a *real* NAS: ZFS wants to manage whole physical drives, 
 lsblk -o +MODEL,SERIAL
 ls -l /dev/disk/by-id/
 
-# Attach each disk to the VM (here VM 101) on its own slot —
-# first data disk on scsi1, second on scsi2:
-qm set 101 -scsi1 /dev/disk/by-id/ata-FIRST-DISK-ID
-qm set 101 -scsi2 /dev/disk/by-id/ata-SECOND-DISK-ID
+# Attach each disk to the VM (here VM 101) on its own slot, and
+# hand it its real serial — the tail of the ata-MODEL_SERIAL name
+# from the listing above. First data disk on scsi1, second on scsi2:
+qm set 101 -scsi1 /dev/disk/by-id/ata-FIRST-DISK-ID,serial=FIRST_SERIAL
+qm set 101 -scsi2 /dev/disk/by-id/ata-SECOND-DISK-ID,serial=SECOND_SERIAL
 ```
 
-Reboot the VM. The disks appear under **Storage** in TrueNAS — build a pool there. With two disks, choose a **mirror**: one drive can die and your data survives.
+Why the `serial=`: without it, a passed-through disk reports a **blank serial** inside TrueNAS. Pass through two and TrueNAS sees two blanks — which it reads as the *same* drive twice and refuses pool creation with `Disks have duplicate serial numbers: ''`. Stamping each disk with its real serial clears that error, and it pays off later too: when a drive fails, the serial TrueNAS names is the one printed on the physical disk, so you pull the right one.
+
+> [!WARNING]
+> Each `serial=` must be **unique** and **20 characters or fewer** — Proxmox truncates at 20 bytes, and two disks truncated to the same string land you right back at the duplicate-serial error. It is safe to add `serial=` to disks already in a live pool: ZFS tracks vdevs by GUID, not serial, so the pool reattaches untouched. What `serial=` does *not* buy you is SMART — under per-disk passthrough TrueNAS only ever sees a *virtual* disk, so its SMART tests and temperature alerts are blind. Monitor drive health from the **Proxmox host** instead: `smartctl -a /dev/disk/by-id/ata-FIRST-DISK-ID`.
+
+**Stop and start** the VM (a full power cycle, not a guest reboot — that is what applies the `serial=`). The disks appear under **Storage** in TrueNAS — build a pool there. With two disks, choose a **mirror**: one drive can die and your data survives.
 
 > [!WARNING]
 > Use disks with nothing on them you care about — TrueNAS will claim them entirely.
 
 > [!NOTE]
 > For later: serious builds pass through a whole disk-controller card instead (PCIe passthrough — that is what the VT-d/IOMMU setting from the *Prep & BIOS* guide was for), but per-disk passthrough is the right starting point.
+
+> [!DETAILS] The better way for real data — pass through a whole HBA
+> Per-disk passthrough with `serial=` above is the right *no-extra-hardware* fallback, but it is a fallback. iXsystems' own recommendation for virtualizing TrueNAS is to give the VM a real disk controller: full **PCIe passthrough of an HBA in IT mode** — an LSI/Broadcom **9300-8i** (SATA/SAS) or the newer **9400-8i**. The card hands ZFS the raw disks exactly as bare metal would: genuine SMART, full per-drive health, and none of the silent power-loss corruption risk that per-disk RDM carries when the host loses power mid-write.
+>
+> Two things to get right when you buy and install it:
+> - **Buy it pre-flashed to IT mode**, not RAID/IR. IT-mode firmware turns the card into a plain pass-the-disks-through controller — which is what ZFS needs. A RAID/IR card hides the disks behind its own logic and defeats the point; reflashing one yourself is a fiddly detour, so pay the small premium for a card sold already in IT mode.
+> - **Put it in a chipset-attached PCIe slot** for a clean IOMMU group, then VFIO-pass the whole card to the TrueNAS VM. A card that shares an IOMMU group with other devices can't be isolated cleanly, and passthrough fails or drags neighbours along with it.
+>
+> This is exactly what the note above means by "serious builds pass through a whole disk-controller card" — and it is the same VT-d/IOMMU switch from the *Prep & BIOS* guide doing the work, just for a full card instead of a single device.
 
 ## Make storage
 
