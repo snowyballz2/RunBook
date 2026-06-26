@@ -31,6 +31,18 @@ The 9300-8i (IT mode) is already VFIO-passed from page 3 — no per-disk `serial
 > [!WARNING]
 > All three disks will be claimed by ZFS. Nothing I care about is on them — that's by design.
 
+> [!DETAILS] Which cable goes to which drive (do this during the physical build)
+> The wiring is what makes the passthrough above behave the way it does:
+>
+> - **HBA → the bottom `x4_3` slot** — the chipset-attached slot that gives the clean IOMMU group (the *PCIe Passthrough* page).
+> - **One SFF-8643 *forward* breakout cable** into one of the HBA's two ports → it fans out to **four SATA plugs**.
+> - **Breakout SATA 1 → mirror disk A**, **SATA 2 → mirror disk B**. The other two tails are spare (room to grow the pool later). Both mirror disks ride the HBA, so they belong to TrueNAS.
+> - **Footage disk → a motherboard SATA port — *not* the HBA.** The whole HBA goes to TrueNAS, so anything plugged into it vanishes from the host; Frigate runs on the host and needs its footage drive on the board.
+> - **NVMe → the board's M.2 slot** (Proxmox OS + Frigate cache).
+> - **Power:** a SATA-power lead from the PSU to each of the three drives.
+>
+> All three 3.5" drives sit in the View 71's front-bottom HDD cage; the ~300 mm 1080 Ti clears it, so the cage stays put.
+
 ## Build the pools
 
 ### Mirror two of the IronWolf disks
