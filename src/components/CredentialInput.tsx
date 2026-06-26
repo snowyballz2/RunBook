@@ -23,9 +23,13 @@ export function CredentialInput({
   hintHtml,
   compact = false,
 }: Props) {
-  const [value, setValue] = useState(
-    () => store.getCredential(fieldKey) || defaultValue || "",
-  );
+  // A field that ships a default is a FIXED, public value (e.g. `root`) that
+  // lives in the guide source. It is read-only on purpose: you can't type your
+  // own credential into it, so nothing private ever lands in a defaulted field.
+  // Your secrets go only into the blank (no-default) fields, which save locally.
+  const locked = defaultValue != null && defaultValue.trim() !== "";
+
+  const [value, setValue] = useState(() => store.getCredential(fieldKey) || "");
   const [revealed, setRevealed] = useState(false);
   const [flash, setFlash] = useState<"saved" | "copied" | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,18 +37,19 @@ export function CredentialInput({
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Stay in sync when the same key is edited elsewhere (reader <-> credentials
-  // view) — but never while this input is focused, or re-applying the default
-  // would fight the user mid-edit (clear, pause, type → merged text).
+  // view) — but never while this input is focused (would fight the user
+  // mid-edit), and never for locked fields (their value is fixed).
   useEffect(
     () =>
       store.onCredentialsChange(() => {
+        if (locked) return;
         if (inputRef.current && document.activeElement === inputRef.current) return;
         setValue((v) => {
-          const latest = store.getCredential(fieldKey) || defaultValue || "";
+          const latest = store.getCredential(fieldKey) || "";
           return latest === v ? v : latest;
         });
       }),
-    [fieldKey, defaultValue],
+    [fieldKey, locked],
   );
 
   useEffect(
@@ -70,10 +75,14 @@ export function CredentialInput({
     }, 400);
   };
 
+  // Locked fields always show their fixed default; editable fields show the
+  // value saved on this device.
+  const shownValue = locked ? (defaultValue as string) : value;
+
   const onCopy = async () => {
-    if (!value) return;
+    if (!shownValue) return;
     try {
-      await navigator.clipboard.writeText(value);
+      await navigator.clipboard.writeText(shownValue);
       showFlash("copied");
     } catch {
       /* clipboard unavailable */
@@ -96,36 +105,47 @@ export function CredentialInput({
         >
           {label}
         </label>
-        <span
-          aria-live="polite"
-          className={`ml-auto text-[10.5px] font-medium transition-opacity duration-300 ${
-            flash ? "opacity-100" : "opacity-0"
-          } ${flash === "copied" ? "text-accent" : "text-ink-faint"}`}
-        >
-          {flash === "copied" ? "Copied" : flash === "saved" ? "Saved on this device" : ""}
-        </span>
+        {locked ? (
+          <span className="ml-auto text-[10.5px] font-medium text-ink-faint" title="A fixed default from the guide — type your own values only into the blank fields.">
+            Fixed default
+          </span>
+        ) : (
+          <span
+            aria-live="polite"
+            className={`ml-auto text-[10.5px] font-medium transition-opacity duration-300 ${
+              flash ? "opacity-100" : "opacity-0"
+            } ${flash === "copied" ? "text-accent" : "text-ink-faint"}`}
+          >
+            {flash === "copied" ? "Copied" : flash === "saved" ? "Saved on this device" : ""}
+          </span>
+        )}
       </div>
 
       <div className="mt-1.5 flex items-center gap-1">
         <input
           ref={inputRef}
           id={`cred-${fieldKey}`}
-          type={secret && !revealed ? "password" : "text"}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={() =>
-            // A field left empty falls back to its saved value or default.
-            setValue((v) =>
-              v.trim() ? v : store.getCredential(fieldKey) || defaultValue || "",
-            )
+          type={!locked && secret && !revealed ? "password" : "text"}
+          value={shownValue}
+          readOnly={locked}
+          onChange={locked ? undefined : (e) => onChange(e.target.value)}
+          onBlur={
+            locked
+              ? undefined
+              : () =>
+                  // A field left empty falls back to its saved value.
+                  setValue((v) => (v.trim() ? v : store.getCredential(fieldKey) || ""))
           }
           placeholder={placeholder ?? (secret ? "••••••••" : "")}
           autoComplete="off"
           autoCapitalize="off"
           spellCheck={false}
-          className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 font-mono text-[13px] text-ink outline-none placeholder:text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]"
+          aria-readonly={locked || undefined}
+          className={`min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 font-mono text-[13px] outline-none placeholder:text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
+            locked ? "cursor-default text-ink-soft" : "text-ink"
+          }`}
         />
-        {secret && (
+        {secret && !locked && (
           <button
             type="button"
             onClick={() => setRevealed((r) => !r)}
@@ -139,7 +159,7 @@ export function CredentialInput({
         <button
           type="button"
           onClick={onCopy}
-          disabled={!value}
+          disabled={!shownValue}
           className="btn btn-quiet h-7 w-7 shrink-0 !px-0 disabled:opacity-30"
           aria-label={`Copy ${label}`}
           title="Copy"
