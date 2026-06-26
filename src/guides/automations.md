@@ -6,7 +6,7 @@ order: 18
 accent: violet
 ---
 
-Seventeen guides of infrastructure, and now the payoff they were quietly building toward: the devices from the *Home Assistant OS* guide start acting without you. An automation is one sentence — *when* something happens, *then* do something — and this guide builds four of them, each a pattern you'll reuse for years: a light that follows motion, lights that follow the sun, blinds that follow the dark, and a porch that notices people.
+Seventeen guides of infrastructure, and now the payoff they were quietly building toward: the devices from the *Home Assistant OS* guide start acting without you. An automation is one sentence — *when* something happens, *then* do something — and this guide builds a stack of them, each a pattern you'll reuse for years: a light that follows motion, lights that follow the sun, blinds that follow the dark, a porch that notices people — and then the ones that earn their keep on the worst day, when a leak sensor trips and the house shuts off its own water before you've read the alert.
 
 ## Learn the grammar
 
@@ -116,6 +116,32 @@ actions:
 > [!DETAILS] How trusting to be — Frigate's own honesty
 > Frigate's documentation is candid about these sensors: occupancy sensors run "fewer checks" so latency stays low enough for lights — which means an occasional false positive. For a porch light, who cares; a wrongly-lit porch costs nothing. For something you'd hate to have cry wolf — an alarm, a loud announcement — Frigate recommends triggering from its `frigate/events` MQTT topic instead, which carries full event data (and unlocks event-specific snapshot URLs in notifications). That's the graduate course; the occupancy sensor is the right first build.
 
+> [!DETAILS] The cry-wolf-proof upgrade — trigger on `frigate/events`
+> Here's the graduate course the note above promised. Frigate publishes every detection to the `frigate/events` MQTT topic the moment it's confident — and because you already ran the MQTT broker setup in the *Frigate* guide, Home Assistant can listen on it directly. The payload is JSON, so you trigger on the topic and read fields out of it with a template. The payoff: each event carries its own `id`, which Frigate turns into a permanent snapshot URL — so the notification shows the exact frame that fired it, not a live view of an empty driveway three seconds later.
+>
+> ```yaml
+> triggers:
+>   - trigger: mqtt
+>     topic: frigate/events
+> conditions:
+>   - condition: template
+>     value_template: "{{ trigger.payload_json['type'] == 'new' }}"
+>   - condition: template
+>     value_template: "{{ trigger.payload_json['after']['label'] == 'person' }}"
+> actions:
+>   - action: notify.mobile_app_your_iphone
+>     data:
+>       title: "Frigate"
+>       message: >-
+>         {{ trigger.payload_json['after']['label'] | title }} seen on
+>         {{ trigger.payload_json['after']['camera'] }}
+>       data:
+>         image: >-
+>           https://your-frigate-host:5000/api/events/{{ trigger.payload_json['after']['id'] }}/snapshot.jpg
+> ```
+>
+> The first condition keeps you to `type: new` so one person walking through doesn't notify you for every frame; the second filters to the label you care about. Swap `your-frigate-host` for however you reach Frigate (an internal IP, or its name behind the reverse proxy from the *Nginx Proxy Manager* guide). This is the same trigger that should feed any *loud* action — an alarm, a 2 a.m. announcement — for exactly the reason the note gave: it fires on Frigate's considered judgement, not its fast first guess.
+
 ### Make a speaker greet the visitor
 Same trigger, a louder action: when Frigate sees someone, have a speaker chime, play a clip, or speak a line. The one catch is *which* speaker — Home Assistant can only drive one it controls as a media player, which means a **Sonos** or a **Google/Nest (Cast)** speaker. A HomePod can't be the target; Home Assistant can't push audio to it.
 
@@ -165,6 +191,204 @@ The `volume_set` first is a kindness — it stops a late-night visitor from blas
 > ```
 >
 > Everything below the trigger stays identical — only what *starts* it changes. In the visual editor you'd add this as **Device → your doorbell → button pressed**, which writes the trigger for you. Honest caveat for an Aqara G410: it's a HomeKit/Matter-first doorbell and Aqara's Home Assistant support is thin, so exactly how its press surfaces won't be certain until it's set up — but the automation around it doesn't change. Many people wire up both triggers: a soft chime on approach, the full announcement on the actual ring.
+
+## Track who's home
+
+### Everybody left, everybody home
+The companion app you installed for notifications in the *Voice Control* guide quietly hands you something else for free: a **device tracker** per phone. Find it under **Settings → Devices & services → Entities** (search "tracker"); it reads `home` or `not_home` as your phone comes and goes, and it's the most reliable presence signal a home network has. Presence is the backbone the next two sections stand on — once Home Assistant knows whether anyone's in, the lock and the thermostat can stop guessing.
+
+Two automations, mirror images. Everybody-left runs when the *last* tracker flips away — so leave the front door behaving until the house is actually empty:
+
+```yaml
+alias: Everybody left
+triggers:
+  - trigger: state
+    entity_id:
+      - device_tracker.your_iphone
+      - device_tracker.partner_iphone
+    to: "not_home"
+conditions:
+  - condition: state
+    entity_id: device_tracker.your_iphone
+    state: "not_home"
+  - condition: state
+    entity_id: device_tracker.partner_iphone
+    state: "not_home"
+actions:
+  - action: light.turn_off
+    target:
+      entity_id: all
+  - action: lock.lock
+    target:
+      entity_id: lock.front_door
+  - action: climate.set_temperature
+    target:
+      entity_id: climate.downstairs
+    data:
+      temperature: 16
+```
+
+The trigger fires whenever *either* phone leaves, but the two conditions are the gate: the actions only run when *both* read `not_home`. Coming back is the easy half — trigger on the first phone reaching `home` and welcome it:
+
+```yaml
+alias: Somebody home
+triggers:
+  - trigger: state
+    entity_id:
+      - device_tracker.your_iphone
+      - device_tracker.partner_iphone
+    to: "home"
+actions:
+  - action: light.turn_on
+    target:
+      entity_id: light.entryway
+  - action: climate.set_temperature
+    target:
+      entity_id: climate.downstairs
+    data:
+      temperature: 21
+```
+
+> [!DETAILS] Auto-lock the Aqara U400
+> The lock from the *Home Assistant OS* guide can look after itself. Three patterns, each useful on its own. Auto-lock a few minutes after the door is shut — trigger on the door sensor reading closed and holding for the **For** duration, then `lock.lock`:
+>
+> ```yaml
+> alias: Auto-lock after door closes
+> triggers:
+>   - trigger: state
+>     entity_id: binary_sensor.front_door_contact
+>     to: "off"            # contact sensors read "off" when closed
+>     for: "00:05:00"
+> actions:
+>   - action: lock.lock
+>     target:
+>       entity_id: lock.front_door
+> ```
+>
+> Notify the moment it's *unlocked*, so an unexpected unlock reaches your phone — trigger on the lock's state going to `unlocked`:
+>
+> ```yaml
+> triggers:
+>   - trigger: state
+>     entity_id: lock.front_door
+>     to: "unlocked"
+> actions:
+>   - action: notify.mobile_app_your_iphone
+>     data:
+>       message: "Front door unlocked."
+> ```
+>
+> And a left-unlocked reminder — the same `to: "unlocked"` trigger with a **For** of, say, ten minutes, paired with a `lock.lock` action if you'd rather it just fixed itself at night. Swap `lock.front_door` and `binary_sensor.front_door_contact` for your own entity names; the U400 comes into Home Assistant over Matter as covered in the *Home Assistant OS* guide.
+
+> [!DETAILS] Climate setback on the ecobee
+> The away/home pair above already nudges the thermostat, but you can make climate its own automation and let presence drive it — `climate.set_temperature` is the action, and the ecobee surfaces as a `climate.` entity. The genuinely money-saving addition is pausing the system when a window or door is open, so you're not heating the street:
+>
+> ```yaml
+> alias: Pause HVAC on open window
+> triggers:
+>   - trigger: state
+>     entity_id: binary_sensor.living_room_window
+>     to: "on"             # contact sensors read "on" when open
+>     for: "00:02:00"
+> actions:
+>   - action: climate.set_hvac_mode
+>     target:
+>       entity_id: climate.downstairs
+>     data:
+>       hvac_mode: "off"
+> ```
+>
+> Pair it with the mirror automation — window closed, set the mode back to `heat` or `cool` — and the **For** keeps a quick airing-out from cycling the furnace. The two-minute hold is the same quiet hero from the motion light.
+
+## Protect the house
+
+Everything so far has been convenience — a light that saves you a switch, a porch that says hello. This section is different in kind: these run on the worst day, and the design rules invert. A porch light gated behind "only when we're away" is sensible. A safety action gated behind *anything* is a bug. The leak automation below is the showpiece of the whole guide for exactly that reason — it's the one that pays for the other seventeen.
+
+### Water leak — shut off the main and shout
+Your leak sensors and the water shut-off valve came online through the Zigbee2MQTT onboarding now in the *Home Assistant OS* guide. This automation wires them to each other: any sensor goes wet, the valve closes, and you find out loudly.
+
+```yaml
+alias: Water leak — shut off the main and alert
+triggers:
+  - trigger: state
+    entity_id:
+      - binary_sensor.under_sink_leak
+      - binary_sensor.water_heater_leak
+      - binary_sensor.washer_leak
+    to: "on"
+actions:
+  - action: valve.close_valve
+    target: { entity_id: valve.main_water }
+  - action: notify.mobile_app_your_iphone
+    data:
+      title: "💧 Water leak"
+      message: "Leak at {{ trigger.to_state.name }} — main water shut off."
+      data:
+        push:
+          interruption-level: critical
+          sound: { name: default, critical: 1, volume: 1.0 }
+  - action: tts.speak
+    target: { entity_id: tts.piper }
+    data:
+      media_player_entity_id: media_player.kitchen
+      message: "Water leak detected at {{ trigger.to_state.name }}. The main water has been shut off."
+mode: single
+```
+
+Why it works, top to bottom. The trigger lists every leak sensor under one roof — any one going `on` (wet) fires the whole thing, and `trigger.to_state.name` then carries *which* one into the alert, so the message and the spoken line both name the actual location without you writing three copies. The valve closes first, before any notification, because the point is to stop water, not to ask permission. Then two alerts in parallel registers: a **critical** push that reaches your phone wherever you are (next callout), and a `tts.speak` on the kitchen speaker for anyone home to hear it out loud — the local Piper voice from the *Voice Control* guide, so it works even if the internet is down with the leak.
+
+Two design notes that deliberately break the rules the porch light taught you:
+
+> [!WARNING]
+> **No conditions — on purpose.** The porch automation earned a "only when we're away" gate, and that was right. This one has *no* `conditions` block, and adding one would be the mistake. A leak at 3 a.m. with everyone home, a leak while you're on holiday, a leak during "guest mode" — every one of them needs the water off. A safety action must never be suppressed by presence, time, or any toggle. Drive the valve straight off the raw sensors and resist the urge to be clever.
+
+> [!DETAILS] The critical iOS notification recipe
+> This is the block any safety alert should reuse, and it's why the leak message breaks through where an ordinary notification wouldn't. A plain `notify` respects silent mode, Focus, and Do Not Disturb — exactly the modes your phone is in at 3 a.m., which is exactly when a leak can't wait. The iOS companion app honours a small `push` override that bypasses all of it:
+>
+> ```yaml
+> data:
+>   push:
+>     interruption-level: critical
+>     sound:
+>       name: default
+>       critical: 1
+>       volume: 1.0
+> ```
+>
+> `interruption-level: critical` is the iOS flag that pierces Focus and silent mode; the `critical: 1` on the sound forces it to play at the `volume` you set regardless of the ringer switch. (The first time you send one, iOS asks permission to deliver critical alerts for the app — grant it.) This is iOS-only, and it's reserved for things that genuinely can't wait: a leak, smoke, a security trip. Use it for those and your critical alerts stay credible.
+
+### Don't let a dead battery disarm your safety net
+The leak automation has one silent failure mode: a leak sensor whose battery died months ago reports nothing, so a real leak never trips it and the valve never closes. The automation looks fine in the list and protects nothing. The fix is a sweep that watches the watchers — every battery entity in the house, alerting before any of them goes flat:
+
+```yaml
+alias: Low battery sweep
+triggers:
+  - trigger: time
+    at: "09:00:00"
+conditions:
+  - condition: template
+    value_template: >-
+      {{ states.sensor
+         | selectattr('attributes.device_class', 'eq', 'battery')
+         | selectattr('state', 'is_number')
+         | selectattr('state', 'lt', 20)
+         | list | count > 0 }}
+actions:
+  - action: notify.mobile_app_your_iphone
+    data:
+      title: "🔋 Low battery"
+      message: >-
+        {{ states.sensor
+           | selectattr('attributes.device_class', 'eq', 'battery')
+           | selectattr('state', 'is_number')
+           | selectattr('state', 'lt', 20)
+           | map(attribute='name') | join(', ') }}
+```
+
+It runs once each morning, walks every sensor with a `battery` device class, keeps the ones reading below 20%, and only notifies if the list isn't empty — naming each low device so you know which coin cell to buy. No per-device setup: a battery sensor added next year is swept automatically. An ordinary notification is fine here; it's a chore reminder, not an emergency.
+
+> [!TIP]
+> Make the very first line of defence your leak and smoke sensors. A dead battery on a convenience sensor is an annoyance; a dead battery on the sensor guarding the valve quietly switches off the most important automation you own. Some people drop the threshold for those specific devices to 40% so the warning comes with plenty of runway.
 
 ## Make it yours
 

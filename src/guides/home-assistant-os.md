@@ -104,6 +104,13 @@ In **Settings > Devices & services > Add integration**: for Zigbee, add **Zigbee
 > [!NOTE]
 > ZHA is the built-in, simplest Zigbee path. Zigbee2MQTT is the more powerful app if you outgrow it later.
 
+> [!DETAILS] Zigbee2MQTT — the path this series actually takes
+> ZHA is fine, but **Zigbee2MQTT** (Z2M) is what we use here — broader device support and one tidy benefit: it speaks **MQTT**, the same message bus *Frigate* already publishes to. Install Z2M either as a Home Assistant add-on or in its own LXC, then point it at the **Mosquitto broker you already stood up for Frigate** rather than running a second one. Give Z2M its own MQTT **username and password** (don't reuse Frigate's — separate credentials make it obvious in the logs who's talking), and its messages stay out of Frigate's way because everything namespaces under `zigbee2mqtt/...`.
+>
+> For the radio, pass the **Home Assistant Connect ZBT-2** coordinator through to wherever Z2M runs (the USB passthrough from above) and select the **`ember`** driver in Z2M's settings — that's the one for this coordinator. With the broker connected and the radio adopted, put each device into pairing mode and join it: the **Zigbee leak sensors** and the **Aqara water shut-off valve**. Once paired, Z2M reports them over MQTT and Home Assistant's MQTT integration surfaces them as ordinary entities — the `binary_sensor.*_leak` sensors and the `valve.main_water` valve.
+>
+> That last part is the point: this onboarding is the prerequisite for the *Automations* guide's water-leak → valve automation. Until the leak sensors and the valve exist as HA entities, there's nothing for that automation to listen to or close.
+
 ## Connect the house
 
 ### Know the few ways devices arrive
@@ -117,6 +124,11 @@ Whatever the device — a light, a blind, a lock, a thermostat — it reaches Ho
 
 > [!DETAILS] Matter — and the phone it requires
 > Matter is the newer, vendor-neutral standard: local control, no manufacturer cloud. Two things to know before buying. Matter devices that use **Thread** need a *border router* on your network (some smart speakers and hubs double as one; Wi-Fi and Ethernet Matter devices need nothing extra). And commissioning a Matter device — scanning its QR code — happens in the **Home Assistant companion app on a phone with Bluetooth**; the web UI alone can't do it, which surprises people running HA in a VM with no Bluetooth at all. The phone bridges that gap.
+
+> [!DETAILS] Sharing a Matter lock you already set up in Apple Home
+> In an all-Apple house the natural first move is to commission the lock straight into **Apple Home** — that's what unlocks Home Key, and your HomePod mini is already acting as the Thread border router. The catch: that single-use QR code is now **spent**, so Home Assistant can't scan it again. Matter is built for this, though — a device can answer to several controllers at once (*multi-admin*), so you **share** the lock instead of re-pairing it.
+>
+> In the Apple **Home** app, open the accessory → **Settings** → **Turn On Pairing Mode**; Apple hands you a fresh setup code. Then in Home Assistant go to **Settings → Devices & services → Add → Matter** and enter that code (still from the companion app on a Bluetooth phone — same rule as above). Apple's control and Home Key stay exactly as they were; Home Assistant simply gains shared control of the same lock, which is what lets it appear in your automations and dashboards.
 
 > [!TIP]
 > When buying anything new, search "[device] home assistant" first and favor whatever works locally — Zigbee, Z-Wave, Matter, or a local hub. For motorized blinds specifically, check the power story: battery models recharge on your schedule, wired or solar ones don't ask.

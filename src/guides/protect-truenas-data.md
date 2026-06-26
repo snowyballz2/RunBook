@@ -88,8 +88,9 @@ Server-side, go to **Datasets**, select the dataset, and click **Manage Snapshot
 When a mirror disk fails, the pool drops to **Degraded** — the dashboard pool widget shows it, an alert fires (and now emails you), and the share keeps answering from the surviving disk. The drill on current TrueNAS:
 
 1. On the **Storage** dashboard, click **View VDEVs** on the pool's VDEVs widget. Expand the vdev (the pool's disk group), click the failed disk (often shown as **REMOVED**), and click **Offline** on its **ZFS Info** widget.
-2. Shut the VM down, swap the physical drive, rewire the passthrough (below), and boot.
-3. Back in TrueNAS, click **Replace** on the disk's **Disk Info** widget, pick the new drive from **Member Disk**, and click **Replace Disk**.
+2. **Verify the serial before you pull anything.** Note the failed disk's serial from its **Disk Info** widget (or the alert email), then confirm `lsblk -o +MODEL,SERIAL` on the Proxmox host maps that serial to the device you're about to remove. Two identical-looking drives in one bay group are easy to mix up, and pulling the *healthy* one drops a degraded mirror straight to dead. This is the same `serial=`-on-the-physical-label discipline the *TrueNAS* guide had you set up for exactly this moment.
+3. Shut the VM down, swap the physical drive (the one whose serial you just matched), rewire the passthrough (below), and boot.
+4. Back in TrueNAS, click **Replace** on the disk's **Disk Info** widget, pick the new drive from **Member Disk**, and click **Replace Disk**.
 
 ```bash
 # Proxmox host shell — drop the dead disk's passthrough entry,
@@ -132,10 +133,18 @@ Then make the copy private: under **Advanced Options**, select **Remote Encrypti
 > Put the encryption password and salt in your password manager now. Lose them and the offsite copy is unreadable — by anyone, including you — which is the one way an encrypted backup can fail you.
 
 > [!DETAILS] Choosing a provider — and the monthly bill
-> The provider list is long: Backblaze B2, Amazon S3, Google Cloud Storage, Google Drive, Dropbox, Microsoft OneDrive, Azure Blob, Box, pCloud, Storj, plus generic FTP, SFTP, WebDAV, and more. For pure backup storage, Backblaze B2 is the easy recommendation at roughly $7 per terabyte per month ($6.95 as of May 2026) (figures approximate — check current pricing), so a few hundred gigabytes of irreplaceable files costs a few dollars a month. Storj appears too (as Storj iX, with a streamlined TrueCloud Backup task type), but as of mid-2026 its pricing is moving to a $50 monthly minimum, which makes it a poor fit for small home backups. One more option to leave alone: **Filename Encryption** — current docs advise against it, since it caps filenames at 143 characters and still leaves the directory structure visible.
+> The provider list is long: Backblaze B2, Amazon S3, Google Cloud Storage, Google Drive, Dropbox, Microsoft OneDrive, Azure Blob, Box, pCloud, Storj, plus generic FTP, SFTP, WebDAV, and more. For pure backup storage, Backblaze B2 is the easy recommendation at roughly $7 per terabyte per month ($6.95 as of May 2026) (figures approximate — check current pricing), so a few hundred gigabytes of irreplaceable files costs a few dollars a month. Storj appears too (as Storj iX, with a streamlined TrueCloud Backup task type), but it moved to a $50 monthly minimum, effective July 1 2026, which makes it a poor fit for small home backups. One more option to leave alone: **Filename Encryption** — current docs advise against it, since it caps filenames at 143 characters and still leaves the directory structure visible.
 
 > [!DETAILS] Picking SYNC or COPY
 > **SYNC** makes the destination match the source — tidy, but a deletion at home (accidental or otherwise) propagates offsite on the next run. **COPY** only ever adds and updates files at the destination, so deleted files linger there as a safety net at the cost of slowly accumulating clutter. For irreplaceable data, COPY's paranoia is a reasonable default; either way, the snapshots from the first phase remain your fast undo.
+
+### Drill the offsite restore
+This guide drilled snapshots and a dead disk, but those rehearse the copies you can see. The offsite copy is the one you can't — and the *Practice recovery* phase's own rule, that an untested backup is a hope and not a backup, applies hardest right here. The encryption you just added is a second way to fail silently: a password that doesn't actually unlock the data is indistinguishable from a good backup until the afternoon you reach for it. So prove the whole leg end to end — pull a single real file back from the encrypted B2 copy and open it.
+
+The clean way is a one-off **PULL** task that never touches your live data. Go to **Data Protection → Add** on the **Cloud Sync Task** widget, set **Direction** to **PULL**, pick the same **Credential** and remote **Folder** as your push, and point the local **Folder** at an empty scratch dataset (`restore-test`, deleted afterwards). Under **Advanced Options**, re-enter the **Remote Encryption** password and salt — this is the part actually being tested. Run it once, then open a recovered file and confirm it's the file, not ciphertext. If the password or salt is wrong, the bytes come back scrambled — far better to learn that today than mid-disaster.
+
+> [!TIP]
+> Do this drill once when you set the offsite copy up, then once a year alongside the quarterly checks in the *Maintenance and Upkeep* guide. It's the only drill that also tests the encryption password you stashed in your password manager — which is exactly the secret most likely to have rotted by the time it matters.
 
 ### Count to 3-2-1
 The classic scorecard — the same framing TrueNAS's own backup guidance uses — is **3-2-1**: three copies of anything that matters, on at least two different kinds of hardware, one of them offsite. Count honestly: the mirror is one copy, because redundancy inside a single pool is not a second copy, and neither are snapshots. The Cloud Sync task gives your irreplaceable files a second copy that is also the offsite one, and the NAS itself holds second copies of every guest via the *Proxmox Backups* job. For a home server, that is a respectable score — and you know exactly where the gaps are.

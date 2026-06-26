@@ -99,6 +99,9 @@ An appliance should come back on its own after a power cut or a host reboot. In 
 qm set 100 -onboot 1
 ```
 
+> [!NOTE]
+> The same **Options** panel holds **Start/Shutdown order** and **Startup delay** — the knob for when one guest must come up before another (the *Containers* guide documents it from the LXC side). It matters here because VMs boot slower than containers: if a later service depends on something this VM provides, that service can start first and find nothing waiting. The classic case is the *Home Assistant OS* VM, which runs the Mosquitto MQTT broker that the *Frigate* container talks to — give the HA VM a lower order number so it starts first and the broker is ready before anything reaches for it.
+
 ### Grow the disk later
 When the disk fills up, adding space is a two-part job, and Proxmox only does the first part. From the host, grow the virtual disk — then, inside the guest, grow the partition and filesystem into the new space, because the guest knows nothing about it until you do. Shrinking is not supported, so size changes are one-way.
 

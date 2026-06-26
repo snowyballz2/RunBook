@@ -50,6 +50,9 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 >
 > Select the container in the tree and open **Console** to log in as `root` with the password you set.
 
+> [!DETAILS] Leave "Unprivileged container" ticked
+> On the **General** tab you'll see an **Unprivileged container** checkbox — leave it **ticked**, which is the secure default on PVE 9. An unprivileged container maps its root to an unprivileged user on the host, so a break-out from inside the container lands as nobody-in-particular rather than host root. That isolation is exactly what you want for an everyday Linux service, and the helper scripts the next guides use create unprivileged containers too. A few later jobs that reach for the host's hardware — sharing a GPU, or handing through the Zigbee USB coordinator — sometimes need an *un*privileged container loosened or a privileged one; those guides will tell you exactly when and why. Until one does, keep the box ticked.
+
 > [!DETAILS] The shortcut the next guides will use: helper scripts
 > Most service guides in this collection skip this wizard entirely: a one-command helper from the community-scripts catalog builds the container *and* installs the service in one pass, run from the node's **Shell**:
 >

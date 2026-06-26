@@ -381,5 +381,11 @@ Give the Frigate container a fixed IP via your router's DHCP reservation page �
 
 > [!INPUT] frigate-ip | Frigate container IP
 
+> [!WARNING]
+> If you wired in MQTT above, mind the **boot order**. The Mosquitto broker lives inside the *Home Assistant OS* VM, and this Frigate container points at it and starts at boot. After a power cut both come up together — but VMs boot slower than LXCs, so Frigate can be running before the broker exists. When that happens Frigate's MQTT connection never establishes and its occupancy and other Home Assistant entities stay dead until you restart the container. The fix is to make the VM start first: in Proxmox select the *Home Assistant OS* VM, open **Options → Start/Shutdown order**, and give it a lower order number (or a startup delay) than the Frigate container — the same ordering knob the *Containers* guide describes. Frigate keeps recording locally either way; only the Home Assistant side goes quiet, so this is about your automations seeing the cameras, not about losing footage.
+
+> [!NOTE]
+> Because this install doesn't update in place, **back up `/config/config.yml`**. That single file is the hand-built heart of your setup — the camera and go2rtc-doorbell blocks, the iGPU detector, the MQTT credentials — and rebuilding it from scratch is the painful part of any upgrade or lost container. Copy it somewhere off the container (a *Nextcloud* folder, the *TrueNAS* share, your laptop) whenever you change it, so a new version or a container that won't come back is a five-minute restore rather than a redo.
+
 > [!NOTE]
 > One quirk of this install to remember at upgrade time: the script builds Frigate 0.17.1 natively and does not update in place — its own update path says to create a new container and transfer your configuration. When a new Frigate version tempts you, take a snapshot first (the snapshot habit from the *Containers* guide), build the new container, and copy `/config` across.

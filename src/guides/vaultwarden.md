@@ -128,6 +128,9 @@ If the *Proxmox Backups* job was set to **Selection mode: All**, last night's ru
 ### Export the vault, off the server
 Add one layer the server can't take down with it: from the web vault, **Tools → Export vault**, format **.json (Encrypted)** with a file password. Save the file onto the NAS, in with the irreplaceable files that the *Protect TrueNAS Data* guide's Cloud Sync task pushes offsite nightly — a vault whose only copies sit in one house isn't finished. Repeat after big additions; the export is a snapshot, not a feed.
 
+> [!WARNING]
+> The encrypted-JSON export holds your logins and notes but **leaves out file attachments** — and Sends and trash with them. If you keep recovery-code images, scanned documents, or other files attached to vault items, that "complete copy" silently isn't. To capture the attachments too, also take a **.zip export** (the export screen offers it), which packages the attached files alongside the data. Store the .zip beside the JSON on the NAS, and treat it with the same care — it carries the unencrypted attachments inside.
+
 ### Give the watcher a watcher
 One more HTTP(s) monitor in *Uptime Kuma*, at `http://192.168.1.56:8000` — the direct address, per the *Reverse Proxy* guide's advice for monitors. The login may live behind the proxy, but the dot should not.
 

@@ -58,3 +58,41 @@ Open the backup storage in the left tree and go to its **Backups** view (or the 
 
 > [!DETAILS] The bigger hammer: Proxmox Backup Server
 > Proxmox makes a dedicated companion product, **Proxmox Backup Server**, that upgrades this job's full-archive approach to incremental, deduplicated backups with scheduled verification — after the first run only changed data moves, so dozens of restore points cost little more than one. The honest catch comes from its own documentation: "Installing the backup server directly on the hypervisor is not recommended" — PBS earns its keep on a separate machine, which is its own project. For a one-server home, the vzdump job above is right-sized; PBS is the upgrade path when your backups outgrow it.
+
+## Back up the host itself
+
+### Save the host's own config off-box
+Everything above protects your *guests*. None of it protects the **Proxmox host** — the hypervisor underneath. The backup job copies the VMs and containers as machines, but the host's own configuration lives on its boot disk, and `vzdump` never touches it. If that boot disk fails, you could restore every guest from the NAS and still be stranded: a fresh Proxmox install does not know your storage, your network, your passthrough, or your UPS wiring.
+
+> [!WARNING]
+> A pile of vzdump archives is not a complete recovery plan on its own. Restoring them needs a working host first, and the dozen settings that make *this* host work — the bridges, the IOMMU flags, the PCIe-passthrough commands — exist nowhere in those archives. Copy the host's config off the box now, while it still boots, or plan on rebuilding it from memory under pressure.
+
+Copy these off the host and onto the NAS share (the same one the backup job already uses), and put the short secrets in your password manager too:
+
+- **`/etc/pve`** — the cluster filesystem: every VM and container definition, plus your storage config. This is the heart of it.
+- **`/etc/network/interfaces`** — your bridges (`vmbr0` and friends) from the *Proxmox install* groundwork. Get this wrong on a rebuild and nothing reaches the network.
+- **`/etc/fstab`** — any mounts the host brings up at boot.
+- **`/etc/modprobe.d`** — the IOMMU/VFIO lines that make GPU and PCIe **passthrough** work, from the *Virtual machines* and GPU guides.
+- **`/etc/nut`** — the **UPS**/NUT configuration from the *UPS and safe shutdown* guide.
+
+> [!NOTE]
+> Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand, like the `serial=` line and the `hostpci` PCIe assignments. Those live only in `/etc/pve/qemu-server/<id>.conf`, which is inside `/etc/pve` above, but keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
+
+> [!DETAILS] A tiny job to copy it to the NAS
+> From the host **Shell**, roll the lot into one dated tarball on the backup share. The share is already mounted at `/mnt/pve/<name>` from the *Schedule it* step:
+>
+> ```bash
+> # One archive of the host's config, dated, onto the NAS share:
+> tar czf /mnt/pve/nas/host-config-$(hostname)-$(date +%F).tar.gz \
+>   /etc/pve /etc/network/interfaces /etc/fstab /etc/modprobe.d /etc/nut
+> ```
+>
+> Run it after any change to networking, storage, or passthrough — or drop it in a weekly `cron` job so it keeps pace on its own. It is small; keep a few generations. (`/etc/pve` is a live filesystem, so `tar` may warn that a file changed while reading — harmless for these config files.)
+
+> [!TIP]
+> The rebuild order after a **boot-disk failure**, once you have these copies:
+> 1. **Reinstall Proxmox** fresh on the new disk — same version, same hostname and IP.
+> 2. **Restore the `/etc` bits** from your tarball, then **re-run the passthrough commands** (the `qm set ... serial=` and PCIe lines) and reboot so the IOMMU/VFIO config takes.
+> 3. **Re-add the NAS storage** and **restore the guests** from vzdump, exactly as in *Know how to restore* above.
+>
+> Done in that order, the host comes back knowing its network, storage, and passthrough *before* the guests land on it — so the restored VMs and containers find the hardware they expect.
