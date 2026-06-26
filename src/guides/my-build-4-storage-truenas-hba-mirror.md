@@ -41,7 +41,7 @@ The 9300-8i (IT mode) is already VFIO-passed from page 3 — no per-disk `serial
 > - **NVMe → the board's M.2 slot** (Proxmox OS + Frigate cache).
 > - **Power:** a SATA-power lead from the PSU to each of the three drives.
 >
-> All three 3.5" drives sit in the View 71's front-bottom HDD cage; the ~300 mm 1080 Ti clears it, so the cage stays put.
+> All three 3.5" drives go in the View 71's drive trays. The **3 fixed trays behind the motherboard tray** hold exactly three 3.5" disks and don't depend on the removable front "pod" cages — so a missing pod isn't a blocker (check behind the rear side panel first). If those are gone too, a pair of universal stackable 3.5" brackets (~$30) bolt to the basement floor. The ~300 mm 1080 Ti clears the front cage area regardless.
 
 ## Build the pools
 
