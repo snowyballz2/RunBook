@@ -112,11 +112,11 @@ export function CredentialInput({
         ) : (
           <span
             aria-live="polite"
-            className={`ml-auto text-[10.5px] font-medium transition-opacity duration-300 ${
-              flash ? "opacity-100" : "opacity-0"
-            } ${flash === "copied" ? "text-accent" : "text-ink-faint"}`}
+            className={`ml-auto text-[10.5px] font-medium transition-colors duration-300 ${
+              flash === "copied" ? "text-accent" : "text-ink-faint"
+            }`}
           >
-            {flash === "copied" ? "Copied" : flash === "saved" ? "Saved on this device" : ""}
+            {flash === "copied" ? "Copied" : flash === "saved" ? "Saved on this device" : "Device only"}
           </span>
         )}
       </div>
