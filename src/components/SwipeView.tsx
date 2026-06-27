@@ -158,6 +158,20 @@ export function SwipeView({ guide, done, onToggleStep, onBack }: Props) {
 
               {slide.kind === "step" && (
                 <>
+                  {slide.phase.intro &&
+                    slide.phase.intro.length > 0 &&
+                    slide.phase.steps[0]?.id === slide.step.id && (
+                      <div className="mb-6 border-b border-line pb-6 text-ink-soft">
+                        {slide.phase.title && (
+                          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
+                            {slide.phase.title}
+                          </p>
+                        )}
+                        <div className="mt-3">
+                          <Blocks blocks={slide.phase.intro} />
+                        </div>
+                      </div>
+                    )}
                   <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
                     <span className="shrink-0 tabular-nums text-accent">
                       Step {slide.stepNo} of {total}
