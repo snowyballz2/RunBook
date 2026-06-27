@@ -8,7 +8,7 @@ accent: violet
 
 ## Create it
 
-### Spin up a generic VM
+### Spin up a generic VM (virtual machine)
 For anything that isn't a small Linux service — a Windows box, a full Linux desktop, an appliance OS — create a complete virtual machine with its own kernel. The *Home Assistant OS* and *TrueNAS* guides build on this one.
 
 ```bash
@@ -41,11 +41,11 @@ pct list
 >
 > - **General** — give it a name and accept the suggested VM ID (containers and VMs share one pool of ID numbers; the suggestion is the next free one).
 > - **OS** — pick your uploaded ISO from local storage.
-> - **System** — defaults are fine, but tick the **Qemu Agent** checkbox so Proxmox can see the VM's IP and shut it down cleanly.
+> - **System** — defaults are fine, but tick the **Qemu Agent** checkbox so Proxmox can see the VM's IP address and shut it down cleanly.
 > - **Disks** — size to suit the OS; 32 GB covers most Linux installs.
 > - **CPU** — 2 cores is a sensible start.
 > - **Memory** — 2048–4096 MB depending on the guest.
-> - **Network** — leave it on bridge **vmbr0** so the VM sits on your LAN like any other device.
+> - **Network** — leave it on bridge **vmbr0** so the VM sits on your LAN (local area network) like any other device.
 > - **Windows guests** — the VirtIO defaults make the Windows installer see no disk. Either pick **SATA** for the disk and **Intel E1000** for the network, or attach the [virtio-win drivers ISO](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso) as a second CD drive and load drivers during setup.
 >
 > Confirm, start the VM, and open **Console** to run the OS installer.
@@ -100,7 +100,7 @@ qm set 100 -onboot 1
 ```
 
 > [!NOTE]
-> The same **Options** panel holds **Start/Shutdown order** and **Startup delay** — the knob for when one guest must come up before another (the *Containers* guide documents it from the LXC side). It matters here because VMs boot slower than containers: if a later service depends on something this VM provides, that service can start first and find nothing waiting. The classic case is the *Home Assistant OS* VM, which runs the Mosquitto MQTT broker that the *Frigate* container talks to — give the HA VM a lower order number so it starts first and the broker is ready before anything reaches for it.
+> The same **Options** panel holds **Start/Shutdown order** and **Startup delay** — the knob for when one guest must come up before another (the *Containers* guide documents it from the LXC (Linux Containers) side). It matters here because VMs boot slower than containers: if a later service depends on something this VM provides, that service can start first and find nothing waiting. The classic case is the *Home Assistant OS* VM, which runs the Mosquitto MQTT (Message Queuing Telemetry Transport) broker that the *Frigate* container talks to — give the HA (Home Assistant) VM a lower order number so it starts first and the broker is ready before anything reaches for it.
 
 ### Grow the disk later
 When the disk fills up, adding space is a two-part job, and Proxmox only does the first part. From the host, grow the virtual disk — then, inside the guest, grow the partition and filesystem into the new space, because the guest knows nothing about it until you do. Shrinking is not supported, so size changes are one-way.

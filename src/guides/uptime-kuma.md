@@ -9,7 +9,7 @@ accent: azure
 ## What you are building
 
 ### Understand the job
-This collection now runs the house's DNS, files, photos, cameras, and smart home — and so far the only monitoring is someone shouting that a thing stopped working. Uptime Kuma is the smoke detector for the rack: it checks each service on a schedule, draws the results on one dashboard, and sends an alert the moment something stops answering.
+This collection now runs the house's DNS (Domain Name System), files, photos, cameras, and smart home — and so far the only monitoring is someone shouting that a thing stopped working. Uptime Kuma is the smoke detector for the rack: it checks each service on a schedule, draws the results on one dashboard, and sends an alert the moment something stops answering.
 
 > [!DETAILS] Knowing what's under the hood
 > A single Node.js application with an embedded SQLite database — small enough that the container below gets by on 1 CPU core and 1 GB of RAM. The 2.x line is the stable one now (2.0 went stable in October 2025); a fresh install today gets 2.4.0. It checks from *inside* your network, which is exactly right: it sees your services the way your devices do.
@@ -26,13 +26,13 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 Accept the defaults — an **unprivileged** container with **1 core, 1 GB RAM, and a 4 GB disk** on Debian 13. Monitoring is cheap; this is the lightest container in the collection.
 
 > [!DETAILS] Prefer Docker instead?
-> Upstream's primary documented install is Docker — one verbatim command from the project README, run on any Docker host (a Debian VM per the *Virtual machines* guide):
+> Upstream's primary documented install is Docker — one verbatim command from the project README, run on any Docker host (a Debian VM (virtual machine) per the *Virtual machines* guide):
 >
 > ```bash
 > docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:2
 > ```
 >
-> The native LXC above stays this collection's default — no Docker layer to manage, and updates are one command. The app is identical either way.
+> The native LXC (Linux Containers) above stays this collection's default — no Docker layer to manage, and updates are one command. The app is identical either way.
 
 > [!DETAILS] Knowing what the script sets up
 > It installs Node.js 22 and Chromium, downloads the latest Uptime Kuma release (2.4.0 at the time of writing) into `/opt/uptime-kuma`, builds the production dependencies, and writes a systemd service named `uptime-kuma` that starts with the container and restarts itself if it crashes. It records the installed version in `/root/.uptime-kuma` — the update mechanism reads that later. Port **3001** is Uptime Kuma's own default; the script leaves it alone.
@@ -48,7 +48,7 @@ The script prints the address when it finishes — `http://<ip>:3001`. There are
 > If you want a second factor on it, that exists too: the **Security** section of Settings has an **Enable 2FA** option, using codes from an authenticator app.
 
 ### Reserve its IP and start it at boot
-Two habits from earlier guides: pin the container's IP with a DHCP reservation on your router (the *AdGuard Home* habit), and enable **Options → Start at boot** in Proxmox (the *Containers* habit). A monitor that vanishes after a power cut, or wanders to a new address, is worse than none — you'd trust a dashboard that isn't there.
+Two habits from earlier guides: pin the container's IP with a DHCP (Dynamic Host Configuration Protocol) reservation on your router (the *AdGuard Home* habit), and enable **Options → Start at boot** in Proxmox (the *Containers* habit). A monitor that vanishes after a power cut, or wanders to a new address, is worse than none — you'd trust a dashboard that isn't there.
 
 > [!INPUT] kuma-ip | Uptime Kuma container IP
 
@@ -82,7 +82,7 @@ Your dashboard sits behind your login; a status page is the version everyone els
 A red bar on a dashboard nobody has open is not an alert. Go to **Settings → Notifications**, click **Set Up Notification**, and pick a **Notification Type** — an easy first one is **ntfy**: the ntfy app on your phone subscribes to a topic, you give Kuma that same **ntfy Topic**, and alerts push straight to your pocket. Tick **Default enabled** and **Apply on all existing monitors** so every monitor — including the ones you add later — uses it.
 
 > [!NOTE]
-> All of Kuma's notifiers push *outward* from the container — to the Telegram API, your mail server, an ntfy topic, a webhook. Nothing here needs a port-forward into your network. Keep it that way.
+> All of Kuma's notifiers push *outward* from the container — to the Telegram API (application programming interface), your mail server, an ntfy topic, a webhook. Nothing here needs a port-forward into your network. Keep it that way.
 
 > [!DETAILS] Reaching you other ways
 > The **Notification Type** list is long. The other well-worn options: **Telegram** (a bot you create that messages you directly), **Email (SMTP)** (sends through any mail account's SMTP server, with an **SMTP Security** option for TLS), and **Webhook** (an HTTP POST of the alert to any **Webhook URL** — the glue option for anything not on the list).

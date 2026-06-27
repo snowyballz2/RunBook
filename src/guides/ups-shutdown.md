@@ -9,7 +9,7 @@ accent: rose
 ## Why a UPS
 
 ### Know what the battery buys
-Every guide so far has quietly assumed the wall socket never falters. When it does — a half-second blip, a sagging brownout, a real outage — the server stops mid-write, which is the ending ZFS pools and databases handle worst. Usually everything journals its way back on reboot; occasionally something doesn't, and you don't get to pick which. A UPS — an uninterruptible power supply, a battery sitting between the wall and the server — fixes both halves: blips and brownouts are absorbed before anything notices, and in a real outage the battery buys the minutes needed to shut the whole stack down in good order.
+Every guide so far has quietly assumed the wall socket never falters. When it does — a half-second blip, a sagging brownout, a real outage — the server stops mid-write, which is the ending ZFS (Zettabyte File System) pools and databases handle worst. Usually everything journals its way back on reboot; occasionally something doesn't, and you don't get to pick which. A UPS — an uninterruptible power supply, a battery sitting between the wall and the server — fixes both halves: blips and brownouts are absorbed before anything notices, and in a real outage the battery buys the minutes needed to shut the whole stack down in good order.
 
 > [!NOTE]
 > Scope, honestly: a UPS buys minutes, not evenings. Vendor figures for a flagship 1500 VA unit are around ten minutes of runtime at half load, and Eaton's sizing guidance treats roughly ten minutes — enough for a complete clean shutdown — as the design target. A home server's few dozen watts stretch the window much further, but the plan stays the same: ride out the short stuff, shut down clean for the long stuff.
@@ -20,7 +20,7 @@ Every guide so far has quietly assumed the wall socket never falters. When it do
 ## Pick and plug it in
 
 ### Choose the UPS
-Three requirements, in order: a **line-interactive** design, a **USB data port** so the UPS can tell the server what is happening, and a **watt rating** comfortably above what you plug into it. The line-interactive consumer picks: APC **Back-UPS Pro**, CyberPower's CP/BR series, Eaton **Ellipse PRO** and 5S. Watch the entry models — the plain Back-UPS BE and Ellipse ECO are standby designs, so check the topology line on the spec sheet before paying. Before paying, look up the exact model on NUT's hardware compatibility list at `networkupstools.org/stable-hcl.html` — consumer USB units from these brands almost all appear with the `usbhid-ups` driver, which is the one this guide configures.
+Three requirements, in order: a **line-interactive** design, a **USB data port** so the UPS can tell the server what is happening, and a **watt rating** comfortably above what you plug into it. The line-interactive consumer picks: APC **Back-UPS Pro**, CyberPower's CP/BR series, Eaton **Ellipse PRO** and 5S. Watch the entry models — the plain Back-UPS BE and Ellipse ECO are standby designs, so check the topology line on the spec sheet before paying. Before paying, look up the exact model on NUT's (Network UPS Tools) hardware compatibility list at `networkupstools.org/stable-hcl.html` — consumer USB units from these brands almost all appear with the `usbhid-ups` driver, which is the one this guide configures.
 
 > [!WARNING]
 > The data port is the whole point. A battery-backed unit with no USB (or network) port keeps the server up until the battery dies, then drops it mid-write anyway — the same dirty power-off, just delayed. No data link, no shutdown signal.
@@ -110,7 +110,7 @@ A healthy answer is a screenful of live variables. Three are worth knowing by na
 ## Make the shutdown automatic
 
 ### Understand the shutdown chain
-From here the sequence is already wired, and it is deliberately patient. When the wall goes dead, the UPS reports on battery (`upsc` shows `OB`) and `upsmon` does nothing but wait — power usually comes back. Only when the UPS itself declares low battery (`OB LB`) does `upsmon` raise the forced-shutdown flag (`FSD`) and call `shutdown`. The host's shutdown stops the Proxmox guest service, which halts any running backup job (the *Proxmox Backups* schedule cannot wedge the exit) and asks every guest to shut down cleanly — in reverse startup order, with up to 180 seconds per VM and 60 per container before a stuck guest is stopped hard. Then the host powers off, and last of all NUT tells the UPS to cut its output, so the load stops draining the battery and everything gets a clean power-cycle when mains returns.
+From here the sequence is already wired, and it is deliberately patient. When the wall goes dead, the UPS reports on battery (`upsc` shows `OB`) and `upsmon` does nothing but wait — power usually comes back. Only when the UPS itself declares low battery (`OB LB`) does `upsmon` raise the forced-shutdown flag (`FSD`) and call `shutdown`. The host's shutdown stops the Proxmox guest service, which halts any running backup job (the *Proxmox Backups* schedule cannot wedge the exit) and asks every guest to shut down cleanly — in reverse startup order, with up to 180 seconds per VM (virtual machine) and 60 per container before a stuck guest is stopped hard. Then the host powers off, and last of all NUT tells the UPS to cut its output, so the load stops draining the battery and everything gets a clean power-cycle when mains returns.
 
 > [!NOTE]
 > Who decides "low"? The UPS does — the threshold is set in the device by its vendor, and `usbhid-ups` falls back to 30% only if the UPS reports nothing. The patience is by design; NUT's own FAQ puts it plainly: every extra minute on battery is another minute in which the power might return without anything having to stop.
@@ -154,7 +154,7 @@ Once, ever, on a quiet day, there is a case for the unabridged version: pull the
 ## Watch it from Home Assistant (optional)
 
 ### Let Home Assistant see the UPS
-So far `upsd` speaks only to this machine. Three edits open it to the LAN, read-only, and Home Assistant's native NUT integration does the rest.
+So far `upsd` speaks only to this machine. Three edits open it to the LAN (local area network), read-only, and Home Assistant's native NUT integration does the rest.
 
 ```ini
 # /etc/nut/nut.conf — change MODE once more:
@@ -173,7 +173,7 @@ LISTEN 192.168.1.50 3493
     password = a-different-long-password
 ```
 
-Swap in your Proxmox host's IP on the second `LISTEN` line, then `systemctl restart nut-server nut-monitor`. In Home Assistant — the VM from *Home Assistant OS* — go to **Settings → Devices & services**; the integration may already be waiting under discovered devices, otherwise add **Network UPS Tools (NUT)** and enter the host's IP, port `3493`, and the `hauser` credentials. The UPS appears as a device with **Battery charge** and **Status** sensors enabled out of the box — the latter reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime** and the rest arrive disabled; enable them per entity if you want them.
+Swap in your Proxmox host's IP address on the second `LISTEN` line, then `systemctl restart nut-server nut-monitor`. In Home Assistant — the VM from *Home Assistant OS* — go to **Settings → Devices & services**; the integration may already be waiting under discovered devices, otherwise add **Network UPS Tools (NUT)** and enter the host's IP address, port `3493`, and the `hauser` credentials. The UPS appears as a device with **Battery charge** and **Status** sensors enabled out of the box — the latter reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime** and the rest arrive disabled; enable them per entity if you want them.
 
 > [!TIP]
 > One automation earns its keep: trigger on the **Status** sensor changing to a state that contains "On Battery" (capital B — the match is case-sensitive), and send a phone notification (via the Home Assistant companion app on your phone, if you use it — otherwise the alert-email habit from *Protect TrueNAS Data* works here too). The server already looks after itself; this just turns a 3 am outage into a message you read at breakfast instead of a mystery in the logs.

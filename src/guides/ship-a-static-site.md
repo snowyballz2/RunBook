@@ -45,7 +45,7 @@ node --version > .nvmrc
 ## Phase 3 — Deploy
 
 ### Push to production
-Trigger the deploy. With a static host this is usually a push to the production branch or a single CLI command.
+Trigger the deploy. With a static host this is usually a push to the production branch or a single CLI (command-line interface) command.
 
 ```bash
 git push origin main
@@ -54,7 +54,7 @@ git push origin main
 > [!NOTE]
 > The first deploy of a new domain can take a few minutes while certificates are issued. A blank page or a TLS warning right after deploy is usually just propagation — wait before you panic.
 
-### Point DNS at the host
+### Point DNS (Domain Name System) at the host
 Add the records your host gives you. Lower the TTL *before* a planned cutover so changes propagate fast.
 
 ## Phase 4 — Verify

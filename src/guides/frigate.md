@@ -9,16 +9,16 @@ accent: azure
 ## Before you start
 
 ### Check your camera situation
-Frigate needs at least one camera that speaks **RTSP** — without one, there is nothing to record, and this guide can wait until a camera arrives. Cameras that output **H.264 video and AAC audio** offer the most compatibility, and wired beats wireless: Frigate's docs are blunt that WiFi cameras' streams are less reliable and cause connection loss or lost video.
+Frigate needs at least one camera that speaks **RTSP (Real-Time Streaming Protocol)** — without one, there is nothing to record, and this guide can wait until a camera arrives. Cameras that output **H.264 video and AAC (Advanced Audio Coding) audio** offer the most compatibility, and wired beats wireless: Frigate's docs are blunt that WiFi cameras' streams are less reliable and cause connection loss or lost video.
 
 > [!DETAILS] Choosing a camera, if you're still shopping
-> Frigate's hardware docs recommend restream-friendly brands in this order: **Dahua, Hikvision, Amcrest**. What matters most is that the camera offers *two* streams — a full-resolution main stream and a smaller substream — because Frigate uses them for different jobs: the substream is the only stream Frigate decodes for object detection, while the main stream is what gets recorded at full quality. Almost any wired PoE camera from those brands does this.
+> Frigate's hardware docs recommend restream-friendly brands in this order: **Dahua, Hikvision, Amcrest**. What matters most is that the camera offers *two* streams — a full-resolution main stream and a smaller substream — because Frigate uses them for different jobs: the substream is the only stream Frigate decodes for object detection, while the main stream is what gets recorded at full quality. Almost any wired PoE (Power over Ethernet) camera from those brands does this.
 
 ### Know what the iGPU is about to do
 Back in the *Prep & BIOS* guide you enabled the Intel iGPU partly for this moment. It has two jobs here: hardware-decoding every camera stream (instead of burning CPU), and running the object detection itself via OpenVINO — no extra AI hardware needed.
 
 > [!NOTE]
-> Frigate's stated minimum is any Intel CPU with AVX and AVX2 instructions. Running detection *on the iGPU* via OpenVINO needs a 6th-generation (Skylake) or newer Intel platform — anything you'd build this collection on qualifies.
+> Frigate's stated minimum is any Intel CPU with AVX (Advanced Vector Extensions) and AVX2 instructions. Running detection *on the iGPU* via OpenVINO needs a 6th-generation (Skylake) or newer Intel platform — anything you'd build this collection on qualifies.
 
 ## Create the Frigate container
 
@@ -32,7 +32,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 Accept the defaults — **8 cores, 4 GB RAM, a 20 GB disk** on Debian 12 — and let it work; it compiles Frigate 0.17.1 from source, so expect this to take a while. Same habit as always: read the script before piping it into a root shell (the download-read-run habit from the *Install Proxmox* guide).
 
 > [!WARNING]
-> Two honest caveats. First, this script builds a **privileged** container — weaker isolation from the host than the unprivileged containers the *Containers* guide prefers. Second, Frigate's own docs say running it in an LXC is unsupported territory: Proxmox recommends application containers like Frigate run inside a QEMU VM, and "Frigate does not officially support running inside of an LXC." This path is popular and works well, but if something breaks oddly, the officially supported route is the one in the expandable below.
+> Two honest caveats. First, this script builds a **privileged** container — weaker isolation from the host than the unprivileged containers the *Containers* guide prefers. Second, Frigate's own docs say running it in an LXC (Linux Containers) is unsupported territory: Proxmox recommends application containers like Frigate run inside a QEMU VM (virtual machine), and "Frigate does not officially support running inside of an LXC." This path is popular and works well, but if something breaks oddly, the officially supported route is the one in the expandable below.
 
 > [!TIP]
 > This is the fussiest script in the collection — it downloads large AI components and occasionally stumbles partway. If it errors, just re-run it; needing a second attempt is normal.
@@ -65,7 +65,7 @@ Accept the defaults — **8 cores, 4 GB RAM, a 20 GB disk** on Debian 12 — and
 >       - "8555:8555/udp"
 > ```
 >
-> The official example also sets `privileged: true` with a note that it "may not be necessary for all setups", and includes extra device lines for Corals and other hardware. The default 128 MB `shm_size` is fine for two cameras detecting at 720p; the docs give a per-camera formula for more. On this path the web UI lives on port **8971** — the authenticated one. If you go this way, the iGPU passthrough below happens at the VM level instead (PCIe passthrough of the iGPU to the VM), which is a deeper rabbit hole — one reason the LXC path stays the default here.
+> The official example also sets `privileged: true` with a note that it "may not be necessary for all setups", and includes extra device lines for Corals and other hardware. The default 128 MB `shm_size` is fine for two cameras detecting at 720p; the docs give a per-camera formula for more. On this path the web UI lives on port **8971** — the authenticated one. If you go this way, the iGPU passthrough below happens at the VM level instead (PCIe (Peripheral Component Interconnect Express) passthrough of the iGPU to the VM), which is a deeper rabbit hole — one reason the LXC path stays the default here.
 
 ### Open the web UI
 The script prints the container's address when it finishes — browse to it on port **5000** (lose it later? Your router's client list or the container's **Summary** tab in Proxmox both have it). You should see Frigate running with a single `test` camera looping a sample clip — proof the install works before any real camera exists.
@@ -157,10 +157,10 @@ The `model:` block is not optional: unlike the CPU and Coral detector types, Ope
 > This same GPU setup is reused by the *Local Voice* guide — Ollama and Whisper lean on exactly this card — so doing it here pays off twice.
 
 > [!WARNING]
-> Do **not** VFIO-bind or blacklist the GPU to pass it to a *VM*. That hands the whole card to one virtual machine exclusively and breaks the LXC sharing above — the kernel can no longer touch it, so no container gets a look in. VFIO is the right tool for the TrueNAS HBA (the disk-controller card from the *TrueNAS* guide's PCIe-passthrough note), but that's a *separate* device: the HBA goes to the TrueNAS VM via VFIO while the GPU stays shared across LXCs, and the two arrangements coexist fine. Keep them straight — VFIO the HBA, share the GPU.
+> Do **not** VFIO (Virtual Function I/O)-bind or blacklist the GPU to pass it to a *VM*. That hands the whole card to one virtual machine exclusively and breaks the LXC sharing above — the kernel can no longer touch it, so no container gets a look in. VFIO is the right tool for the TrueNAS HBA (host bus adapter) (the disk-controller card from the *TrueNAS* guide's PCIe-passthrough note), but that's a *separate* device: the HBA goes to the TrueNAS VM via VFIO while the GPU stays shared across LXCs, and the two arrangements coexist fine. Keep them straight — VFIO the HBA, share the GPU.
 
 > [!DETAILS] Detection on an NVIDIA GPU
-> With the card shared in (above), Frigate can run detection on it. Note the shape of this changed in 2025: Frigate 0.16+ **removed the standalone NVIDIA TensorRT detector** for desktop cards. NVIDIA GPUs now run the **ONNX detector on the CUDA execution provider**, which lives inside the `-tensorrt` image and is auto-detected — you point Frigate at ONNX and CUDA, and it finds the card. The config is short:
+> With the card shared in (above), Frigate can run detection on it. Note the shape of this changed in 2025: Frigate 0.16+ **removed the standalone NVIDIA TensorRT detector** for desktop cards. NVIDIA GPUs now run the **ONNX (Open Neural Network Exchange) detector on the CUDA (NVIDIA's GPU compute platform) execution provider**, which lives inside the `-tensorrt` image and is auto-detected — you point Frigate at ONNX and CUDA, and it finds the card. The config is short:
 >
 > ```yaml
 > detectors:
@@ -181,7 +181,7 @@ The `model:` block is not optional: unlike the CPU and Coral detector types, Ope
 ## Add your first camera
 
 ### Describe your camera in the config
-Replace the test camera in `/config/config.yml` with your real one — substream for detection, main stream for recording, MQTT off for now (Frigate runs fine standalone without it):
+Replace the test camera in `/config/config.yml` with your real one — substream for detection, main stream for recording, MQTT (Message Queuing Telemetry Transport) off for now (Frigate runs fine standalone without it):
 
 ```yaml
 mqtt:

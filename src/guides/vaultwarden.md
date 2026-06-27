@@ -23,7 +23,7 @@ The usual move — Proxmox node, **Shell**, the download-read-run habit from the
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/vaultwarden.sh)"
 ```
 
-Pick **Advanced**, accept the defaults — 4 cores, 6 GB RAM, a 20 GB disk on unprivileged Debian 13 — and set a **static IP**, say `192.168.1.56`. Then walk away: this script *compiles* Vaultwarden from source (it's a Rust program), announces "Building Vaultwarden (Patience)", and takes the better part of half an hour. It finishes with `https://<IP>:8000`.
+Pick **Advanced**, accept the defaults — 4 cores, 6 GB RAM, a 20 GB disk on unprivileged Debian 13 — and set a **static IP address**, say `192.168.1.56`. Then walk away: this script *compiles* Vaultwarden from source (it's a Rust program), announces "Building Vaultwarden (Patience)", and takes the better part of half an hour. It finishes with `https://<IP>:8000`.
 
 > [!INPUT] vaultwarden-ip | Vaultwarden container IP | 192.168.1.56
 
@@ -61,10 +61,10 @@ systemctl restart vaultwarden
 > `DOMAIN` is not cosmetic. Vaultwarden's own configuration notes warn that if it doesn't match the address you browse to, "certain functionality might not work, like attachment downloads, email links and U2F" — U2F being security-key two-factor login. Set it once, correctly, before any accounts exist.
 
 > [!DETAILS] Why deleting ROCKET_TLS is the right call
-> With that line gone, Vaultwarden serves plain HTTP on port 8000 — which sounds like a downgrade until you see who's calling: only the proxy, from inside your LAN, which re-wraps every byte in the real wildcard certificate before it reaches a browser. This is the wiki's recommended posture ("put vaultwarden behind a reverse proxy that handles HTTPS connections on behalf of vaultwarden"). The side effect to know about: browsing straight to `http://192.168.1.56:8000` afterwards shows the login but can't actually log in — the web vault's encryption needs the secure context only the proxied name provides. The name is the front door now; that's the point.
+> With that line gone, Vaultwarden serves plain HTTP on port 8000 — which sounds like a downgrade until you see who's calling: only the proxy, from inside your LAN (local area network), which re-wraps every byte in the real wildcard certificate before it reaches a browser. This is the wiki's recommended posture ("put vaultwarden behind a reverse proxy that handles HTTPS connections on behalf of vaultwarden"). The side effect to know about: browsing straight to `http://192.168.1.56:8000` afterwards shows the login but can't actually log in — the web vault's encryption needs the secure context only the proxied name provides. The name is the front door now; that's the point.
 
 ### Add the proxy host
-The *Reverse Proxy* routine: in NPM, **Hosts → Proxy Hosts → Add Proxy Host** — domain `vault.example.com`, Scheme `http`, forward to `192.168.1.56` port `8000`, **Websockets Support** on (Vaultwarden's live-sync notifications ride the same port and need the WebSocket headers passed through), then the wildcard certificate and **Force SSL** on the SSL tab. The wildcard DNS rewrite already covers the new name. Browse to `https://vault.example.com`: the web vault, with a padlock, no warnings.
+The *Reverse Proxy* routine: in NPM (Nginx Proxy Manager), **Hosts → Proxy Hosts → Add Proxy Host** — domain `vault.example.com`, Scheme `http`, forward to `192.168.1.56` port `8000`, **Websockets Support** on (Vaultwarden's live-sync notifications ride the same port and need the WebSocket headers passed through), then the wildcard certificate and **Force SSL** on the SSL tab. The wildcard DNS (Domain Name System) rewrite already covers the new name. Browse to `https://vault.example.com`: the web vault, with a padlock, no warnings.
 
 ## Make the household's accounts
 
@@ -114,7 +114,7 @@ Install the official Bitwarden app (App Store / Play Store) and browser extensio
 ## Run it like a vault
 
 ### Make sure the backups already cover it
-If the *Proxmox Backups* job was set to **Selection mode: All**, last night's run already archived this container — data, settings, everything — to the NAS, and every night will. What actually matters lives in `/opt/vaultwarden/data`: the wiki ranks `db.sqlite3` and `attachments/` as required, `config.json` and the `rsa_key*` files as recommended (losing the keys just signs everyone out once). Restoring is the *Proxmox Backups* drill: restore the container, vault returns as of the backup — and for *this* container, run that drill for real once, into a spare ID you delete afterwards. The vault is the one guest where "probably restorable" isn't good enough.
+If the *Proxmox Backups* job was set to **Selection mode: All**, last night's run already archived this container — data, settings, everything — to the NAS (network-attached storage), and every night will. What actually matters lives in `/opt/vaultwarden/data`: the wiki ranks `db.sqlite3` and `attachments/` as required, `config.json` and the `rsa_key*` files as recommended (losing the keys just signs everyone out once). Restoring is the *Proxmox Backups* drill: restore the container, vault returns as of the backup — and for *this* container, run that drill for real once, into a spare ID you delete afterwards. The vault is the one guest where "probably restorable" isn't good enough.
 
 > [!DETAILS] A purist's database backup
 > The wiki's gold-standard copy uses SQLite's own backup command, safe while the service runs:

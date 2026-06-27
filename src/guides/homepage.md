@@ -17,7 +17,7 @@ Same routine as *AdGuard Home* and *Uptime Kuma*: in the Proxmox web UI, click y
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/homepage.sh)"
 ```
 
-Pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 4 GB RAM, 6 GB disk, an unprivileged Debian 13 container — except networking: set a **static IP**, say `192.168.1.55`. Then settle in: the script announces "Installing Homepage (Patience)" and means it — it downloads the latest release's source code and compiles the page on the container's own CPU, which can take a quarter of an hour. It ends with the address: `http://<IP>:3000`.
+Pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 4 GB RAM, 6 GB disk, an unprivileged Debian 13 container — except networking: set a **static IP address**, say `192.168.1.55`. Then settle in: the script announces "Installing Homepage (Patience)" and means it — it downloads the latest release's source code and compiles the page on the container's own CPU, which can take a quarter of an hour. It ends with the address: `http://<IP>:3000`.
 
 > [!INPUT] homepage-ip | Homepage container IP | 192.168.1.55
 
@@ -97,7 +97,7 @@ Save, click the refresh icon, and the page is suddenly worth bookmarking.
 > Bare names like `proxmox.png` come from the community **Dashboard Icons** set, which has an icon for nearly everything self-hosted (`.png`, `.svg`, and `.webp` all work). No icon there? Prefix `mdi-` for any Material Design icon (`mdi-flask-outline`) or `si-` for brand logos from Simple Icons (`si-github`), optionally with a color suffix like `mdi-flask-#f0d453`. A full URL to any image works too.
 
 > [!DETAILS] Pointing at the pretty names instead
-> If the *Reverse Proxy* guide gave your services real names, the `href` lines can use `https://proxmox.example.com` and friends — every click lands on a padlock instead of a certificate warning, and the family stays off Frigate's wide-open port 5000 (that guide deliberately proxied Frigate through its authenticated port instead). The trade-off: every tile then depends on the proxy and the DNS rewrite being healthy, so the dashboard's links break precisely when the proxy is the thing that broke. Direct addresses keep it honest; pretty names make it friendlier. Pick one deliberately — and either way, keep the `siteMonitor` lines on direct addresses, so the dots keep telling the truth.
+> If the *Reverse Proxy* guide gave your services real names, the `href` lines can use `https://proxmox.example.com` and friends — every click lands on a padlock instead of a certificate warning, and the family stays off Frigate's wide-open port 5000 (that guide deliberately proxied Frigate through its authenticated port instead). The trade-off: every tile then depends on the proxy and the DNS (Domain Name System) rewrite being healthy, so the dashboard's links break precisely when the proxy is the thing that broke. Direct addresses keep it honest; pretty names make it friendlier. Pick one deliberately — and either way, keep the `siteMonitor` lines on direct addresses, so the dots keep telling the truth.
 
 ### The strip across the top
 `widgets.yaml` fills the page header. A search box and a clock are the two that earn their place:
@@ -117,7 +117,7 @@ Save, click the refresh icon, and the page is suddenly worth bookmarking.
 > You'll also see a `resources` widget in the samples — skip it. It reports the CPU and memory of the Homepage container itself, not the server. The real host numbers come from the Proxmox tile widget in the expandable below.
 
 > [!DETAILS] Live stats inside the tiles
-> Any tile can grow a `widget:` block showing live numbers — at the cost of pasting a credential into `services.yaml`. The most rewarding one is Proxmox: VM and container counts plus real host CPU and RAM. Create a dedicated read-only API token first — in the Proxmox UI: **Datacenter → Permissions → Users → Add** (user `api`, realm Linux PAM), then **API Tokens → Add** (user `api@pam`, Token ID `homepage`, Privilege Separation checked), then under **Permissions → Add** grant the **PVEAuditor** role at path `/` with Propagate checked — once for the user *and* once for the token. Copy the secret the token dialog shows, then extend the Proxmox tile:
+> Any tile can grow a `widget:` block showing live numbers — at the cost of pasting a credential into `services.yaml`. The most rewarding one is Proxmox: VM (virtual machine) and container counts plus real host CPU and RAM. Create a dedicated read-only API (application programming interface) token first — in the Proxmox UI: **Datacenter → Permissions → Users → Add** (user `api`, realm Linux PAM), then **API Tokens → Add** (user `api@pam`, Token ID `homepage`, Privilege Separation checked), then under **Permissions → Add** grant the **PVEAuditor** role at path `/` with Propagate checked — once for the user *and* once for the token. Copy the secret the token dialog shows, then extend the Proxmox tile:
 >
 > ```yaml
 >         widget:
@@ -127,7 +127,7 @@ Save, click the refresh icon, and the page is suddenly worth bookmarking.
 >           password: the-token-secret
 > ```
 >
-> AdGuard's is simpler — it reuses the dashboard login: `type: adguard`, `url`, plus your `username` and `password`. The rest, one line each: `homeassistant` wants a long-lived access token from your HA profile page; `truenas` an API key (add `version: 2` on 25.04 or newer); `uptimekuma` just the slug of the status page from the *Uptime Kuma* guide; `frigate` needs nothing at all — and gains a list of its latest detections if you add `enableRecentEvents: true`; `npm` the admin email and password; `nextcloud` the NC-Token from its **Settings → System** page. Exact recipes for all of them live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
+> AdGuard's is simpler — it reuses the dashboard login: `type: adguard`, `url`, plus your `username` and `password`. The rest, one line each: `homeassistant` wants a long-lived access token from your HA (Home Assistant) profile page; `truenas` an API key (add `version: 2` on 25.04 or newer); `uptimekuma` just the slug of the status page from the *Uptime Kuma* guide; `frigate` needs nothing at all — and gains a list of its latest detections if you add `enableRecentEvents: true`; `npm` the admin email and password; `nextcloud` the NC-Token from its **Settings → System** page. Exact recipes for all of them live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
 
 ### Bookmarks and the name on the door
 Two small files finish the job. `bookmarks.yaml` holds plain links — the router's admin page is the classic, the thing nobody can ever find when they need it:

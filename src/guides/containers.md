@@ -9,7 +9,7 @@ accent: azure
 ## Create it
 
 ### Create a Debian container
-Use a lightweight LXC container for services that don't need a full VM. From the web UI: **Create CT**, pick the Debian template, give it 2 cores and 2 GB of RAM to start.
+Use a lightweight LXC (Linux Containers) container for services that don't need a full VM (virtual machine). From the web UI: **Create CT**, pick the Debian template, give it 2 cores and 2 GB of RAM to start.
 
 > [!DETAILS] What would you actually run in one?
 > A container shares the host's kernel, so it starts in about a second and a fresh one idles in a few tens of megabytes — perfect for one small always-on service each. The home-server classics:
@@ -45,13 +45,13 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 > - **Disks** — around 8 GB is plenty to start; you can grow it later.
 > - **CPU** — 2 cores.
 > - **Memory** — 2048 MB.
-> - **Network** — set IPv4 to **DHCP** to start. Pin the address once the container earns a real job: anything other machines point *at* — DNS, a reverse proxy — must never move, or everything pointing at it breaks. A DHCP reservation on your router or a static IP here both do it.
+> - **Network** — set IPv4 to **DHCP (Dynamic Host Configuration Protocol)** to start. Pin the address once the container earns a real job: anything other machines point *at* — DNS (Domain Name System), a reverse proxy — must never move, or everything pointing at it breaks. A DHCP reservation on your router or a static IP address here both do it.
 > - **Confirm** — tick **Start after created** and finish.
 >
 > Select the container in the tree and open **Console** to log in as `root` with the password you set.
 
 > [!DETAILS] Leave "Unprivileged container" ticked
-> On the **General** tab you'll see an **Unprivileged container** checkbox — leave it **ticked**, which is the secure default on PVE 9. An unprivileged container maps its root to an unprivileged user on the host, so a break-out from inside the container lands as nobody-in-particular rather than host root. That isolation is exactly what you want for an everyday Linux service, and the helper scripts the next guides use create unprivileged containers too. A few later jobs that reach for the host's hardware — sharing a GPU, or handing through the Zigbee USB coordinator — sometimes need an *un*privileged container loosened or a privileged one; those guides will tell you exactly when and why. Until one does, keep the box ticked.
+> On the **General** tab you'll see an **Unprivileged container** checkbox — leave it **ticked**, which is the secure default on PVE (Proxmox Virtual Environment) 9. An unprivileged container maps its root to an unprivileged user on the host, so a break-out from inside the container lands as nobody-in-particular rather than host root. That isolation is exactly what you want for an everyday Linux service, and the helper scripts the next guides use create unprivileged containers too. A few later jobs that reach for the host's hardware — sharing a GPU, or handing through the Zigbee USB coordinator — sometimes need an *un*privileged container loosened or a privileged one; those guides will tell you exactly when and why. Until one does, keep the box ticked.
 
 > [!DETAILS] The shortcut the next guides will use: helper scripts
 > Most service guides in this collection skip this wizard entirely: a one-command helper from the community-scripts catalog builds the container *and* installs the service in one pass, run from the node's **Shell**:
@@ -67,7 +67,7 @@ Use a lightweight LXC container for services that don't need a full VM. From the
 ### Log in at the Console
 Select the container in the left tree and open **Console**. Log in as `root` with the password you set in the wizard — you're standing inside a small, fresh Debian machine.
 
-> [!DETAILS] How to reach it over SSH instead
+> [!DETAILS] How to reach it over SSH (Secure Shell) instead
 > The Debian standard template comes with an SSH server already running, but `ssh root@<ip>` with a **password** fails out of the box — Debian's sshd defaults root login to keys only (`PermitRootLogin prohibit-password`). Two honest paths:
 >
 > - If you filled in the **SSH Public Key** field in the Create CT wizard, key-based `ssh root@<ip>` already works. Done.
@@ -79,7 +79,7 @@ Select the container in the left tree and open **Console**. Log in as `root` wit
 > echo "ssh-ed25519 AAAA... you@laptop" >> /root/.ssh/authorized_keys
 > ```
 >
-> You *can* instead set `PermitRootLogin yes` in `/etc/ssh/sshd_config` and `systemctl restart ssh`, but a guessable root password on the network is a worse trade than a key, even on a home LAN. (If a leaner template ever lacks sshd: `apt install -y openssh-server`.)
+> You *can* instead set `PermitRootLogin yes` in `/etc/ssh/sshd_config` and `systemctl restart ssh`, but a guessable root password on the network is a worse trade than a key, even on a home LAN (local area network). (If a leaner template ever lacks sshd: `apt install -y openssh-server`.)
 
 ### Bring Debian up to date
 Templates are built ahead of time, so the packages inside are already a little stale. First command in any new container:

@@ -9,12 +9,12 @@ accent: spruce
 ## Why this comes third
 
 ### Understand the payoff
-Everything you have so far — a web UI at `https://192.168.1.50:8006` (or whatever IP you wrote down) — answers only at home. This guide fixes that now, while the server is still empty, because of the payoff: once it is done, the entire rest of this collection can be built from anywhere. Every later step happens in a browser or a shell, and after today both reach your server from the couch, the office, or a train — and every service you build later will be reachable the same way.
+Everything you have so far — a web UI at `https://192.168.1.50:8006` (or whatever IP address you wrote down) — answers only at home. This guide fixes that now, while the server is still empty, because of the payoff: once it is done, the entire rest of this collection can be built from anywhere. Every later step happens in a browser or a shell, and after today both reach your server from the couch, the office, or a train — and every service you build later will be reachable the same way.
 
 It also keeps the rule this collection lives by: **no router port-forwards, ever.** Your network stays exactly as closed to the internet as it is right now.
 
 > [!NOTE]
-> This guide assumes the *Install Proxmox* guide is done: the server is on Ethernet with a static IP, and you can log in to the web UI from a browser on your LAN.
+> This guide assumes the *Install Proxmox* guide is done: the server is on Ethernet with a static IP, and you can log in to the web UI from a browser on your LAN (local area network).
 
 > [!DETAILS] Understanding why no ports get opened
 > The traditional way to reach a home server is a port-forward: a router rule that says "anyone on the internet who knocks on this port gets sent to the server." It works, but that door stands open to the whole internet, around the clock.
@@ -67,7 +67,7 @@ apt-get install tailscale
 > ```
 
 > [!DETAILS] Running Proxmox VE 8 instead of 9
-> Proxmox VE 9 is built on Debian 13 "Trixie" — that is why the commands above say `trixie`, and if you installed PVE 9.2 in the last guide they are correct as written. Proxmox VE 8 is built on Debian 12 "Bookworm"; on PVE 8, swap the two repo lines:
+> Proxmox VE 9 is built on Debian 13 "Trixie" — that is why the commands above say `trixie`, and if you installed PVE (Proxmox Virtual Environment) 9.2 in the last guide they are correct as written. Proxmox VE 8 is built on Debian 12 "Bookworm"; on PVE 8, swap the two repo lines:
 >
 > ```bash
 > curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
@@ -76,7 +76,7 @@ apt-get install tailscale
 >
 > Then the same `apt-get update` and `apt-get install tailscale`.
 
-> [!DETAILS] Choosing the host over a VM or container
+> [!DETAILS] Choosing the host over a VM (virtual machine) or container
 > Tailscale's documentation for Proxmox is titled "Tailscale on a Proxmox host" — installing on the host itself is the officially documented path, with no caveats attached. You will also find community tutorials that put Tailscale inside a container instead; Tailscale's docs do not cover that approach, and it ties your remote access to a container that has to be running. On the host, remote access is up the moment the server is — even with nothing else built yet, which is exactly your situation today.
 >
 > If you prefer the container route anyway, the catch is the tunnel device: with the container stopped, add these two lines to its config at `/etc/pve/lxc/<id>.conf` on the host, then start it and install Tailscale inside as you would on any Debian:
@@ -172,7 +172,7 @@ Turn off Wi-Fi so the phone is genuinely on mobile data, check the Tailscale app
 > The [Machines page](https://login.tailscale.com/admin/machines) now lists both devices. Three things worth knowing:
 >
 > - **Tailscale IPs** — every device has an address in the `100.x.y.z` range, stable for as long as the device stays registered. `https://` followed by the server's `100.x` address and `:8006` reaches the web UI too.
-> - **MagicDNS names** — MagicDNS "automatically registers DNS names for devices in your network," on by default for new tailnets, in the form `machine-name.tailnet-name.ts.net`. Names come from each device's hostname, so the server appears as `pve` (or whatever you chose in the installer).
+> - **MagicDNS names** — MagicDNS "automatically registers DNS (Domain Name System) names for devices in your network," on by default for new tailnets, in the form `machine-name.tailnet-name.ts.net`. Names come from each device's hostname, so the server appears as `pve` (or whatever you chose in the installer).
 > - **Renaming** — rename any machine from this page, or on the device with `tailscale set --hostname=<name>`; its MagicDNS name follows.
 >
 > Day to day, keep using the LAN IP: thanks to the subnet route, it is the one address that reaches the server *and* everything else at home, from anywhere.

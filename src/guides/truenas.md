@@ -9,14 +9,14 @@ accent: violet
 ## Install it
 
 ### Install TrueNAS in a VM
-TrueNAS turns a pile of disks into a proper network-storage appliance — shared folders, snapshots, and the ZFS filesystem guarding your data. Unlike HAOS it ships as a normal installer ISO, so the wizard from the *Virtual machines* guide is your starting point.
+TrueNAS turns a pile of disks into a proper network-storage appliance — shared folders, snapshots, and the ZFS (Zettabyte File System) filesystem guarding your data. Unlike HAOS it ships as a normal installer ISO, so the wizard from the *Virtual machines* guide is your starting point.
 
 1. Download **TrueNAS Community Edition** from [truenas.com](https://www.truenas.com/download-truenas-community-edition/) and upload the ISO to Proxmox (the upload expandable in the *Virtual machines* guide).
-2. Run the Create VM wizard: 2 cores, **8192 MB memory** (TrueNAS is memory-hungry — ZFS uses RAM as cache; give it more if you can spare it), a 32 GB boot disk, network on `vmbr0`.
+2. Run the Create VM (virtual machine) wizard: 2 cores, **8192 MB memory** (TrueNAS is memory-hungry — ZFS uses RAM as cache; give it more if you can spare it), a 32 GB boot disk, network on `vmbr0`.
 3. Install from the console, then browse to the address the console prints.
 
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
-> The address the console prints after install. Pin it with a DHCP reservation on your router so it never moves.
+> The address the console prints after install. Pin it with a DHCP (Dynamic Host Configuration Protocol) reservation on your router so it never moves.
 
 > [!INPUT] truenas-admin-user | TrueNAS admin username | | truenas_admin
 > Current versions create `truenas_admin`; older installs used `admin` or `root` — edit to match yours.
@@ -42,7 +42,7 @@ TrueNAS turns a pile of disks into a proper network-storage appliance — shared
 > When the install finishes, detach the installer: **Hardware → CD/DVD Drive → Do not use any media** (the eject step from the *Virtual machines* guide). If the VM keeps landing back in the installer at every boot, that's why.
 
 ### Give it real disks — passthrough
-The part that makes it a *real* NAS: ZFS wants to manage whole physical drives, not virtual disks. In the **Proxmox host shell**:
+The part that makes it a *real* NAS (network-attached storage): ZFS wants to manage whole physical drives, not virtual disks. In the **Proxmox host shell**:
 
 ```bash
 # Find your data disks' stable IDs (match model + serial):
@@ -67,14 +67,14 @@ Why the `serial=`: without it, a passed-through disk reports a **blank serial** 
 > Use disks with nothing on them you care about — TrueNAS will claim them entirely.
 
 > [!NOTE]
-> For later: serious builds pass through a whole disk-controller card instead (PCIe passthrough — that is what the VT-d/IOMMU setting from the *Prep & BIOS* guide was for), but per-disk passthrough is the right starting point.
+> For later: serious builds pass through a whole disk-controller card instead (PCIe (Peripheral Component Interconnect Express) passthrough — that is what the VT-d (Intel Virtualization Technology for Directed I/O)/IOMMU (Input/Output Memory Management Unit) setting from the *Prep & BIOS* guide was for), but per-disk passthrough is the right starting point.
 
 > [!DETAILS] The better way for real data — pass through a whole HBA
-> Per-disk passthrough with `serial=` above is the right *no-extra-hardware* fallback, but it is a fallback. iXsystems' own recommendation for virtualizing TrueNAS is to give the VM a real disk controller: full **PCIe passthrough of an HBA in IT mode** — an LSI/Broadcom **9300-8i** (SATA/SAS) or the newer **9400-8i**. The card hands ZFS the raw disks exactly as bare metal would: genuine SMART, full per-drive health, and none of the silent power-loss corruption risk that per-disk RDM carries when the host loses power mid-write.
+> Per-disk passthrough with `serial=` above is the right *no-extra-hardware* fallback, but it is a fallback. iXsystems' own recommendation for virtualizing TrueNAS is to give the VM a real disk controller: full **PCIe passthrough of an HBA (host bus adapter) in IT mode (Initiator-Target mode)** — an LSI/Broadcom **9300-8i** (SATA (Serial ATA)/SAS (Serial Attached SCSI)) or the newer **9400-8i**. The card hands ZFS the raw disks exactly as bare metal would: genuine SMART, full per-drive health, and none of the silent power-loss corruption risk that per-disk RDM carries when the host loses power mid-write.
 >
 > Two things to get right when you buy and install it:
 > - **Buy it pre-flashed to IT mode**, not RAID/IR. IT-mode firmware turns the card into a plain pass-the-disks-through controller — which is what ZFS needs. A RAID/IR card hides the disks behind its own logic and defeats the point; reflashing one yourself is a fiddly detour, so pay the small premium for a card sold already in IT mode.
-> - **Put it in a chipset-attached PCIe slot** for a clean IOMMU group, then VFIO-pass the whole card to the TrueNAS VM. A card that shares an IOMMU group with other devices can't be isolated cleanly, and passthrough fails or drags neighbours along with it.
+> - **Put it in a chipset-attached PCIe slot** for a clean IOMMU group, then VFIO (Virtual Function I/O)-pass the whole card to the TrueNAS VM. A card that shares an IOMMU group with other devices can't be isolated cleanly, and passthrough fails or drags neighbours along with it.
 >
 > This is exactly what the note above means by "serious builds pass through a whole disk-controller card" — and it is the same VT-d/IOMMU switch from the *Prep & BIOS* guide doing the work, just for a full card instead of a single device.
 
@@ -84,12 +84,12 @@ Why the `serial=`: without it, a passed-through disk reports a **blank serial** 
 A pool is ZFS's big bucket: your physical disks fused into one storage unit. In the TrueNAS web interface, go to **Storage** and click **Create Pool** to open the Pool Creation Wizard — name the pool (lowercase, something like `tank`), set the **Layout** to **Mirror**, and select your two disks. The wizard ends on a **Review** screen; click **Create Pool** there to finalize.
 
 > [!DETAILS] How the wizard picks the disks
-> The **Automated Disk Selection** fields do the choosing for you: pick your drives' size in the **Disk Size** dropdown and set **Width** to 2, putting both disks in one mirrored vdev. Prefer to point at the disks yourself? Click **Manual Disk Selection** instead. The disks don't have to be identical, or even the same size — a mixed pair simply gives a mirror the *smaller* disk's capacity (pick the pair via Manual Disk Selection; Automated only groups same-size disks), and if you later replace the smaller disk with a matching big one, the pool grows to use it. Either way, usable space is one disk's worth — the other holds the live copy. Mixing brands at the same size is actually healthy: drives from the same batch like to fail together, which is the one failure a mirror can't absorb. The spec that *does* matter is recording technology — both disks should be **CMR**, not SMR; shingled (SMR) drives stall badly when ZFS rebuilds a mirror onto them. Pool names allow up to 50 lowercase alphanumeric characters.
+> The **Automated Disk Selection** fields do the choosing for you: pick your drives' size in the **Disk Size** dropdown and set **Width** to 2, putting both disks in one mirrored vdev. Prefer to point at the disks yourself? Click **Manual Disk Selection** instead. The disks don't have to be identical, or even the same size — a mixed pair simply gives a mirror the *smaller* disk's capacity (pick the pair via Manual Disk Selection; Automated only groups same-size disks), and if you later replace the smaller disk with a matching big one, the pool grows to use it. Either way, usable space is one disk's worth — the other holds the live copy. Mixing brands at the same size is actually healthy: drives from the same batch like to fail together, which is the one failure a mirror can't absorb. The spec that *does* matter is recording technology — both disks should be **CMR (conventional magnetic recording)**, not SMR (shingled magnetic recording); shingled (SMR) drives stall badly when ZFS rebuilds a mirror onto them. Pool names allow up to 50 lowercase alphanumeric characters.
 >
 > Only one spare disk? A single-disk pool works fine to start — just know it has zero redundancy until you add a mirror partner, so treat it accordingly.
 
 ### Add a dataset with the SMB preset
-Datasets are the folders-with-superpowers inside a pool — each carries its own settings, and snapshot tasks target them individually. Go to **Datasets**, select the pool's root dataset, and click **Add Dataset**: enter a **Name** (say `files` — you can add more later, one per purpose: `backups`, `media`) and set **Dataset Preset** to **SMB**, then save.
+Datasets are the folders-with-superpowers inside a pool — each carries its own settings, and snapshot tasks target them individually. Go to **Datasets**, select the pool's root dataset, and click **Add Dataset**: enter a **Name** (say `files` — you can add more later, one per purpose: `backups`, `media`) and set **Dataset Preset** to **SMB (Server Message Block)**, then save.
 
 > [!DETAILS] What the SMB preset actually changes
 > It tunes the dataset for Windows-style sharing: case-insensitive filenames and NFSv4 ACLs, the permission style SMB expects. It also auto-fills the share name with the dataset name when you create the share in a moment. For a dataset that will never be shared, **Generic** is the right preset instead.
@@ -110,7 +110,7 @@ SMB — served by Samba — is the network-drive protocol Macs and Windows PCs s
 Go to **Shares** and click **Add** on the **Windows (SMB) Shares** widget. Point the path at your dataset — the share name pre-fills from the dataset name, courtesy of the SMB preset — and save. When TrueNAS prompts to enable or restart the **SMB service**, accept: that is what puts the share on the network.
 
 ### Connect from your computers
-The share answers at the VM's IP. Enter your TrueNAS user's credentials when asked:
+The share answers at the VM's IP address. Enter your TrueNAS user's credentials when asked:
 
 ```bash
 # Windows — type into a File Explorer address bar:

@@ -10,14 +10,14 @@ This is my execution checklist, not a tutorial — the *Frigate* guide has the f
 
 ## The container and the detector
 
-### Build the Frigate LXC
-Run the community-scripts install per the *Frigate* guide — accept its defaults, expect the source build to take a while, re-run if it stumbles. Mine runs as a **privileged LXC**, started **after** the *Home Assistant OS* VM so the MQTT broker exists first (see Wire it in, below).
+### Build the Frigate LXC (Linux Containers)
+Run the community-scripts install per the *Frigate* guide — accept its defaults, expect the source build to take a while, re-run if it stumbles. Mine runs as a **privileged LXC**, started **after** the *Home Assistant OS* VM (virtual machine) so the MQTT (Message Queuing Telemetry Transport) broker exists first (see Wire it in, below).
 
 > [!INPUT] frigate-ip | Frigate container IP
 > Pin it with a DHCP reservation (the *AdGuard Home* habit) so HA and my bookmarks never lose it.
 
 ### Detect on the 1080 Ti, not the iGPU
-The general guide defaults to the Intel iGPU + OpenVINO; I do **not**. My build runs detection on the **EVGA GTX 1080 Ti** via the **NVIDIA GPU** path — follow the *Frigate* guide's "Detection on an NVIDIA GPU" section. The card is shared into the LXC from the **host driver** (per the *Frigate* GPU-sharing note and my *Prep & BIOS* / Proxmox setup), never VFIO'd to a VM.
+The general guide defaults to the Intel iGPU + OpenVINO; I do **not**. My build runs detection on the **EVGA GTX 1080 Ti** via the **NVIDIA GPU** path — follow the *Frigate* guide's "Detection on an NVIDIA GPU" section. The card is shared into the LXC from the **host driver** (per the *Frigate* GPU-sharing note and my *Prep & BIOS* / Proxmox setup), never VFIO (Virtual Function I/O)'d to a VM.
 
 ```yaml
 detectors:
@@ -34,15 +34,15 @@ model:
 ```
 
 > [!NOTE]
-> Pascal (compute 6.1) clears the ONNX/CUDA bar — driver 545+, CUDA 12.x. I use a **YOLOv9** model and avoid RF-DETR (slow on Pascal). One detector only: `onnx` here means no `openvino` block alongside it.
+> Pascal (compute 6.1) clears the ONNX (Open Neural Network Exchange)/CUDA (NVIDIA's GPU compute platform) bar — driver 545+, CUDA 12.x. I use a **YOLOv9** model and avoid RF-DETR (slow on Pascal). One detector only: `onnx` here means no `openvino` block alongside it.
 
 > [!WARNING]
-> The 1080 Ti is **shared across LXCs**, not handed to a VM — Frigate detection now, Ollama + faster-whisper later (*Local Voice*). Keep `nvidia-persistenced` enabled on the host and the host/in-container driver versions matched. VFIO is reserved for the HBA → TrueNAS VM (*TrueNAS*); the GPU stays shared.
+> The 1080 Ti is **shared across LXCs**, not handed to a VM — Frigate detection now, Ollama + faster-whisper later (*Local Voice*). Keep `nvidia-persistenced` enabled on the host and the host/in-container driver versions matched. VFIO is reserved for the HBA (host bus adapter) → TrueNAS VM (*TrueNAS*); the GPU stays shared.
 
 ## The Reolink doorbell
 
 ### Wire and prep it
-**Reolink Video Doorbell WiFi** (black — the 4:3 wide head-to-toe view), powered off the existing **doorbell transformer**, no battery. In the Reolink app: enable **HTTP and RTSP**, set bitrate to **"On, fluency first"**, **Interframe Space 1×**, and pin its IP with a DHCP reservation — all per the *Frigate* doorbell walkthrough.
+**Reolink Video Doorbell WiFi** (black — the 4:3 wide head-to-toe view), powered off the existing **doorbell transformer**, no battery. In the Reolink app: enable **HTTP and RTSP (Real-Time Streaming Protocol)**, set bitrate to **"On, fluency first"**, **Interframe Space 1×**, and pin its IP address with a DHCP (Dynamic Host Configuration Protocol) reservation — all per the *Frigate* doorbell walkthrough.
 
 > [!INPUT] doorbell-ip | Doorbell IP
 
@@ -126,7 +126,7 @@ cameras:
 ## Footage, retention, and the spare switch
 
 ### Record to the third IronWolf
-Detection runs on the NVMe-cached LXC, but recordings go to **bulk disk**: the **third Seagate IronWolf ST4000VN006 4TB** (the lone one — the other two are the *TrueNAS* ZFS mirror). Mount it to the host and hand it to the container at `/media/frigate`, per the *Frigate* "Putting recordings on storage" note, so retention math is against terabytes, not the 20 GB virtual disk.
+Detection runs on the NVMe (Non-Volatile Memory Express)-cached LXC, but recordings go to **bulk disk**: the **third Seagate IronWolf ST4000VN006 4TB** (the lone one — the other two are the *TrueNAS* ZFS (Zettabyte File System) mirror). Mount it to the host and hand it to the container at `/media/frigate`, per the *Frigate* "Putting recordings on storage" note, so retention math is against terabytes, not the 20 GB virtual disk.
 
 ```yaml
 record:
@@ -138,7 +138,7 @@ record:
 > [!WARNING]
 > Continuous recording eats disk fast — sizing the third IronWolf for it is the whole reason that drive is separate from the mirror. Watch actual usage for a few days and adjust `days:`.
 
-### The PoE switch is staged, not wired
+### The PoE (Power over Ethernet) switch is staged, not wired
 The **Netgear GS308EPP** managed PoE+ switch is in the rack ready for **future PoE cameras** — nothing on it yet. When a wired camera arrives it goes on the GS308EPP and into Frigate the plain-RTSP way (wired beats WiFi), no go2rtc http-flv gymnastics needed.
 
 ## Wire it into the build
@@ -160,7 +160,7 @@ mqtt:
 > [!SECRET] mqtt-password | MQTT password
 
 > [!WARNING]
-> **Boot order matters.** The *Home Assistant OS* VM holds the broker and boots slower than this LXC, so set its **Start/Shutdown order** lower than Frigate's — otherwise after a power cut Frigate comes up before the broker and its HA entities stay dead until a restart. Footage still records either way; only the *Automations* side goes quiet.
+> **Boot order matters.** The *Home Assistant OS* VM holds the broker and boots slower than this LXC, so set its **Start/Shutdown order** lower than Frigate's — otherwise after a power cut Frigate comes up before the broker and its Home Assistant (HA) entities stay dead until a restart. Footage still records either way; only the *Automations* side goes quiet.
 
 > [!NOTE]
 > Frigate here doesn't update in place — **back up `/config/config.yml`** (my hand-built detector + go2rtc + camera blocks) to a *Nextcloud* folder or the *TrueNAS* share after every change. Restoring it is five minutes; rebuilding it from memory is not.

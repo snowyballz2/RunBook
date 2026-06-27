@@ -15,10 +15,10 @@ Almost any 64-bit PC from the last decade can run Proxmox. You need: a CPU with 
 > [!DETAILS] The requirements, decoded
 > Proxmox's official *minimum* is tiny — 64-bit Intel/AMD CPU with Intel VT or AMD-V, 1 GB RAM, a hard drive, one network card. What actually matters for a pleasant home server:
 >
-> - **CPU** — anything 64-bit with virtualization (Intel VT-x or AMD-V). Practically every desktop CPU since ~2010 has it; it just may be switched off in the BIOS (next steps).
-> - **RAM** — Proxmox itself wants ~2 GB; every container and VM you run needs its own share. 8 GB is a workable start, 16 GB+ is comfortable.
+> - **CPU** — anything 64-bit with virtualization (Intel VT-x (Virtual Machine Extensions) or AMD-V). Practically every desktop CPU since ~2010 has it; it just may be switched off in the BIOS (next steps).
+> - **RAM** — Proxmox itself wants ~2 GB; every container and VM (virtual machine) you run needs its own share. 8 GB is a workable start, 16 GB+ is comfortable.
 > - **Disk** — an SSD makes everything feel dramatically better than a hard drive. 128 GB+ gives you room for several VMs. The install **wipes the whole drive**. If the machine has several drives, decide *now* which one Proxmox gets: a common build is a small SSD for Proxmox and its guests plus bigger drives left alone for data (the *TrueNAS* guide hands those over later) — the installer will ask which drive to erase, and you want a ready answer.
-> - **Network** — one wired Gigabit port. For PCIe passthrough later (GPU, disk controllers) the CPU/board also needs VT-d (Intel) or AMD-Vi/IOMMU — most do.
+> - **Network** — one wired Gigabit port. For PCIe (Peripheral Component Interconnect Express) passthrough later (GPU, disk controllers) the CPU/board also needs VT-d (Intel Virtualization Technology for Directed I/O) (Intel) or AMD-Vi/IOMMU (Input/Output Memory Management Unit) — most do.
 > - **Old laptops, mini PCs, ex-office desktops** (Dell OptiPlex, HP EliteDesk, Lenovo ThinkCentre) are all excellent candidates and very common Proxmox hosts.
 
 ### Save anything off the PC first
@@ -50,7 +50,7 @@ Installing Proxmox wipes the drive, Windows and all. Pull any files you want to 
 > - **Any spare USB stick** — even a small one works if you move files in batches, prioritising the irreplaceable stuff first.
 
 ### Set BIOS for virtualization
-Enter the BIOS and switch on the virtualization features Proxmox relies on. The names differ by platform — Intel calls them **VT-x** and **VT-d**; AMD calls them **SVM** and **IOMMU** — but the job is the same. Find your machine in the expandable sections below.
+Enter the BIOS and switch on the virtualization features Proxmox relies on. The names differ by platform — Intel calls them **VT-x** and **VT-d**; AMD calls them **SVM** (Secure Virtual Machine, AMD's hardware virtualization) and **IOMMU** — but the job is the same. Find your machine in the expandable sections below.
 
 > [!TIP]
 > VT-d / IOMMU is what makes PCIe passthrough work later — handing a GPU, a disk controller, or a whole USB controller to a VM. Enable it now; it is easy to forget and annoying to discover missing.

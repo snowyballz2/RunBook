@@ -28,7 +28,7 @@ A dead sensor battery silently disarms the leak net, so build the *Automations* 
 ## Doors and presence
 
 ### U400 auto-lock + unlock notify
-Build both lock patterns from the guide's "Auto-lock the Aqara U400" callout for each of my **three** U400 locks (commissioned in Apple Home, shared to HA over Matter): auto-lock when the door contact holds `off`/closed for `00:05:00` → `lock.lock`; and notify when a lock goes `to: "unlocked"`. Do it for `lock.front_door`, `lock.back_door`, `lock.side_door` (real names from **Entities**), each watching its own Third Reality contact sensor where one exists.
+Build both lock patterns from the guide's "Auto-lock the Aqara U400" callout for each of my **three** U400 locks (commissioned in Apple Home, shared to Home Assistant (HA) over Matter): auto-lock when the door contact holds `off`/closed for `00:05:00` → `lock.lock`; and notify when a lock goes `to: "unlocked"`. Do it for `lock.front_door`, `lock.back_door`, `lock.side_door` (real names from **Entities**), each watching its own Third Reality contact sensor where one exists.
 
 ### Presence — everybody left / somebody home
 Build the guide's mirror pair off the **companion-app device trackers** (`device_tracker.chris_iphone`, `device_tracker.partner_iphone`) — the most reliable presence signal the house has. The away half triggers on *either* phone leaving but **conditions require both** `not_home` before acting (lights off, lock the U400s, ecobee setback); the home half fires on the first to arrive `to: "home"`.
@@ -39,7 +39,7 @@ Build the guide's mirror pair off the **companion-app device trackers** (`device
 The presence pair already nudges the **two ecobees** via `climate.set_temperature` on their `climate.*` entities. Add the money-saver from the guide's "Climate setback on the ecobee" callout: a window/door contact holding `on`/open for `00:02:00` → `climate.set_hvac_mode: "off"`, with the mirror automation (closed → back to `heat`/`cool`). Point both at the upstairs and downstairs ecobee entities.
 
 ### Frigate person alerts
-For the **Reolink doorbell + RLC-510WA**, skip the quick occupancy-sensor trigger and build the guide's graduate version — trigger on the **`frigate/events`** MQTT topic, filter to `type: new` and `label: person`. It fires on Frigate's considered judgement (not its fast first guess) and carries the event `id` for a permanent snapshot in the push. Reach Frigate by its LAN address or its NPM name in the snapshot URL.
+For the **Reolink doorbell + RLC-510WA**, skip the quick occupancy-sensor trigger and build the guide's graduate version — trigger on the **`frigate/events`** MQTT (Message Queuing Telemetry Transport) topic, filter to `type: new` and `label: person`. It fires on Frigate's considered judgement (not its fast first guess) and carries the event `id` for a permanent snapshot in the push. Reach Frigate by its LAN (local area network) address or its NPM (Nginx Proxy Manager) name in the snapshot URL.
 
 > [!NOTE]
 > A doorbell **press** is separate from person detection — also build the guide's "Trigger on the doorbell button" variant off the Reolink doorbell's button-press entity, for the intentional, false-alarm-free ring. Soft awareness on approach, the real alert on the actual press. The speaker-on-doorbell announcement has its own worked example in this collection's doorbell page — build it there, not twice.

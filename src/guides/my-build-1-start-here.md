@@ -12,16 +12,16 @@ This collection is my own house build of the *Proxmox Home Server* guides — no
 
 One box runs everything. **Proxmox VE** is the host on the bare metal, and every service is a guest on top of it:
 
-- **Home Assistant OS** runs in its own **VM** — the brain of the house, talking to Zigbee, Matter, Lutron, and the cameras.
-- **TrueNAS** runs in a **VM** too, and owns the storage: the **LSI 9300-8i HBA is passed through whole** (VFIO) so ZFS sees the raw disks, not virtual ones.
-- Everything else runs as a lightweight **LXC** — Frigate, AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, Uptime Kuma.
+- **Home Assistant OS** runs in its own **VM** (virtual machine) — the brain of the house, talking to Zigbee, Matter, Lutron, and the cameras.
+- **TrueNAS** runs in a **VM** too, and owns the storage: the **LSI 9300-8i HBA (host bus adapter) is passed through whole** (VFIO, Virtual Function I/O, the kernel feature that hands a whole device to one VM) so ZFS (Zettabyte File System) sees the raw disks, not virtual ones.
+- Everything else runs as a lightweight **LXC** (Linux Containers) — Frigate, AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, Uptime Kuma.
 - The **GTX 1080 Ti stays on the host**: the NVIDIA driver lives on Proxmox and is *shared into* the LXCs that need it (Frigate detection, Ollama, faster-whisper). It is **not** VFIO'd to any VM — only the HBA is.
 
 > [!NOTE]
 > The one passthrough rule for this build: **VFIO the HBA to TrueNAS, share the GPU into LXCs.** Mixing those up is the mistake to avoid — see *Frigate* for the host-driver/LXC sharing and *TrueNAS* for the HBA passthrough.
 
 > [!TIP]
-> Boot order matters: the **HA VM starts before the Frigate LXC**, because Frigate depends on HA's MQTT broker. Set the start/shutdown order in Proxmox so it survives a reboot.
+> Boot order matters: the **HA (Home Assistant) VM starts before the Frigate LXC**, because Frigate depends on HA's MQTT (Message Queuing Telemetry Transport) broker. Set the start/shutdown order in Proxmox so it survives a reboot.
 
 ## The parts
 
@@ -38,7 +38,7 @@ One box runs everything. **Proxmox VE** is the host on the bare metal, and every
 > - **3x Seagate IronWolf ST4000VN006 (4 TB)** — two form the TrueNAS ZFS mirror, one is the Frigate footage drive
 > - **LSI/Broadcom 9300-8i HBA** — IT mode, pre-flashed; passed through to TrueNAS
 >
-> Slot plan: 1080 Ti in the top x16 slot; HBA in the bottom x4_3 slot, set to x4 in BIOS (chipset-attached = clean IOMMU group).
+> Slot plan: 1080 Ti in the top x16 slot; HBA in the bottom x4_3 slot, set to x4 in BIOS (chipset-attached = clean IOMMU (Input/Output Memory Management Unit) group).
 
 > [!DETAILS] Network, power, and radios
 > - **Netgear GS308EPP** managed PoE+ switch (for future PoE cameras)
@@ -61,4 +61,4 @@ One box runs everything. **Proxmox VE** is the host on the bare metal, and every
 > - **Sensitive values are credential fields.** IPs, drive serials, usernames, passwords, and tokens live in **device-local fields** on the page — they never get committed and never leave this device. Hardware and choices are plain text. My real synced secret store is **Vaultwarden**; these fields are just convenience.
 > - **The order is the plan.** This collection is laid out in the sequence I'm actually doing the work — top to bottom. Start at the top and follow the order numbers.
 
-When you're ready, head to **page 2** — the hardware prep and BIOS settings (my specific slot plan, the VT-d/x4 switches), keyed to the *Prep & BIOS* general guide.
+When you're ready, head to **page 2** — the hardware prep and BIOS settings (my specific slot plan, the VT-d (Intel Virtualization Technology for Directed I/O)/x4 switches), keyed to the *Prep & BIOS* general guide.

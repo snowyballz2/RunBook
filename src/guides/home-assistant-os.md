@@ -9,7 +9,7 @@ accent: violet
 ## Create the VM
 
 ### Create the HAOS VM
-The workload many home servers exist for, with one trap: HAOS ships as a ready-made disk image, **not** an installer ISO — so skip the Create VM wizard and use one of the two paths below.
+The workload many home servers exist for, with one trap: HAOS ships as a ready-made disk image, **not** an installer ISO — so skip the Create VM (virtual machine) wizard and use one of the two paths below.
 
 > [!DETAILS] The quick way — helper script
 > The community-scripts helper downloads the official HAOS image and builds the VM for you. Run it in the Proxmox shell and accept the defaults — **2 cores, 4 GB RAM, a 32 GB disk** — which are enough to start:
@@ -52,13 +52,13 @@ The workload many home servers exist for, with one trap: HAOS ships as a ready-m
 ## First boot
 
 ### First contact
-Give it a few minutes on first boot — HAOS sets itself up unattended. Then browse to `http://homeassistant.local:8123`, or find the VM's IP in Proxmox (the VM's **Summary** tab shows it, thanks to the guest agent — and the VM's own console banner prints the same address once it's up). From there the onboarding wizard takes over.
+Give it a few minutes on first boot — HAOS sets itself up unattended. Then browse to `http://homeassistant.local:8123`, or find the VM's IP address in Proxmox (the VM's **Summary** tab shows it, thanks to the guest agent — and the VM's own console banner prints the same address once it's up). From there the onboarding wizard takes over.
 
 > [!NOTE]
 > Home Assistant can show high RAM use right after boot. That is normal — it uses free memory for caching.
 
 ### Pin its address
-Give the VM a fixed IP before you go further: use your router's DHCP reservation page (the same trick as the *AdGuard Home* guide), or set a static address inside Home Assistant itself under **Settings → System → Network**. Either works; pick one. Phone apps, dashboards, and other devices will all point at this address, and `homeassistant.local` doesn't resolve reliably on every network.
+Give the VM a fixed IP before you go further: use your router's DHCP (Dynamic Host Configuration Protocol) reservation page (the same trick as the *AdGuard Home* guide), or set a static address inside Home Assistant itself under **Settings → System → Network**. Either works; pick one. Phone apps, dashboards, and other devices will all point at this address, and `homeassistant.local` doesn't resolve reliably on every network.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
@@ -105,11 +105,11 @@ In **Settings > Devices & services > Add integration**: for Zigbee, add **Zigbee
 > ZHA is the built-in, simplest Zigbee path. Zigbee2MQTT is the more powerful app if you outgrow it later.
 
 > [!DETAILS] Zigbee2MQTT — the path this series actually takes
-> ZHA is fine, but **Zigbee2MQTT** (Z2M) is what we use here — broader device support and one tidy benefit: it speaks **MQTT**, the same message bus *Frigate* already publishes to. Install Z2M either as a Home Assistant add-on or in its own LXC, then point it at the **Mosquitto broker you already stood up for Frigate** rather than running a second one. Give Z2M its own MQTT **username and password** (don't reuse Frigate's — separate credentials make it obvious in the logs who's talking), and its messages stay out of Frigate's way because everything namespaces under `zigbee2mqtt/...`.
+> ZHA is fine, but **Zigbee2MQTT** (Z2M) is what we use here — broader device support and one tidy benefit: it speaks **MQTT** (Message Queuing Telemetry Transport), the same message bus *Frigate* already publishes to. Install Z2M either as a Home Assistant add-on or in its own LXC (Linux Containers), then point it at the **Mosquitto broker you already stood up for Frigate** rather than running a second one. Give Z2M its own MQTT **username and password** (don't reuse Frigate's — separate credentials make it obvious in the logs who's talking), and its messages stay out of Frigate's way because everything namespaces under `zigbee2mqtt/...`.
 >
 > For the radio, pass the **Home Assistant Connect ZBT-2** coordinator through to wherever Z2M runs (the USB passthrough from above) and select the **`ember`** driver in Z2M's settings — that's the one for this coordinator. With the broker connected and the radio adopted, put each device into pairing mode and join it: the **Zigbee leak sensors** and the **Aqara water shut-off valve**. Once paired, Z2M reports them over MQTT and Home Assistant's MQTT integration surfaces them as ordinary entities — the `binary_sensor.*_leak` sensors and the `valve.main_water` valve.
 >
-> That last part is the point: this onboarding is the prerequisite for the *Automations* guide's water-leak → valve automation. Until the leak sensors and the valve exist as HA entities, there's nothing for that automation to listen to or close.
+> That last part is the point: this onboarding is the prerequisite for the *Automations* guide's water-leak → valve automation. Until the leak sensors and the valve exist as Home Assistant (HA) entities, there's nothing for that automation to listen to or close.
 
 ## Connect the house
 
@@ -123,7 +123,7 @@ Whatever the device — a light, a blind, a lock, a thermostat — it reaches Ho
 > Smart locks sound like the scariest category, but the Z-Wave route keeps everything in the house: the lock pairs with your Z-Wave radio, control stays local, and the keypad and physical key keep working exactly as before — Home Assistant is an *addition*, not a replacement. Two well-trodden examples: the Yale Assure line accepts a plug-in Z-Wave module, and the Schlage Connect ships with Z-Wave built in.
 
 > [!DETAILS] Matter — and the phone it requires
-> Matter is the newer, vendor-neutral standard: local control, no manufacturer cloud. Two things to know before buying. Matter devices that use **Thread** need a *border router* on your network (some smart speakers and hubs double as one; Wi-Fi and Ethernet Matter devices need nothing extra). And commissioning a Matter device — scanning its QR code — happens in the **Home Assistant companion app on a phone with Bluetooth**; the web UI alone can't do it, which surprises people running HA in a VM with no Bluetooth at all. The phone bridges that gap.
+> Matter is the newer, vendor-neutral standard: local control, no manufacturer cloud. Two things to know before buying. Matter devices that use **Thread** need a *border router* on your network (some smart speakers and hubs double as one; Wi-Fi and Ethernet Matter devices need nothing extra). And commissioning a Matter device — scanning its QR (quick response) code — happens in the **Home Assistant companion app on a phone with Bluetooth**; the web UI alone can't do it, which surprises people running HA in a VM with no Bluetooth at all. The phone bridges that gap.
 
 > [!DETAILS] Sharing a Matter lock you already set up in Apple Home
 > In an all-Apple house the natural first move is to commission the lock straight into **Apple Home** — that's what unlocks Home Key, and your HomePod mini is already acting as the Thread border router. The catch: that single-use QR code is now **spent**, so Home Assistant can't scan it again. Matter is built for this, though — a device can answer to several controllers at once (*multi-admin*), so you **share** the lock instead of re-pairing it.

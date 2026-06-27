@@ -9,7 +9,7 @@ accent: azure
 ## Create the container
 
 ### Run the install script
-The quickest path: a helper script builds a ready-to-go AdGuard container in about two minutes. In the Proxmox web interface, click your node in the left sidebar, then click **Shell** — the script runs on the Proxmox host itself, not inside a VM or container. Paste this and press Return:
+The quickest path: a helper script builds a ready-to-go AdGuard container in about two minutes. In the Proxmox web interface, click your node in the left sidebar, then click **Shell** — the script runs on the Proxmox host itself, not inside a VM (virtual machine) or container. Paste this and press Return:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"
@@ -19,7 +19,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > This uses the Proxmox community helper scripts — the successor to the well-known tteck scripts. Same habit as always: read a script before piping it into a root shell (the download-read-run habit from the *Install Proxmox* guide).
 
 > [!DETAILS] Prefer no scripts at all? Install it by hand
-> The truly manual route, straight from AdGuard's own docs — no piped scripts anywhere. Make a container yourself as in the *Containers* guide (2 cores and 2 GB is plenty) and give it a **fixed IP** (set a static address in the container's Network config, or use your router's DHCP reservation page). Then, in the container's **Console**:
+> The truly manual route, straight from AdGuard's own docs — no piped scripts anywhere. Make a container yourself as in the *Containers* guide (2 cores and 2 GB is plenty) and give it a **fixed IP address** (set a static address in the container's Network config, or use your router's DHCP (Dynamic Host Configuration Protocol) reservation page). Then, in the container's **Console**:
 >
 > ```bash
 > # Get the official release and unpack it under /opt:
@@ -41,7 +41,7 @@ This happens *while the script runs*: when it asks **Default or Advanced**, pick
 > [!INPUT] adguard-ip | AdGuard container IP | 192.168.1.53
 
 > [!WARNING]
-> AdGuard is about to become your network's DNS server, and its address must never change. A static IP is essential — if it ever moves, the whole house loses name resolution.
+> AdGuard is about to become your network's DNS (Domain Name System) server, and its address must never change. A static IP is essential — if it ever moves, the whole house loses name resolution.
 
 > [!DETAILS] How to pick a safe number
 > Same rules as the server's own address: keep the first three numbers identical to your router's, and choose a final number **outside** your router's DHCP range so it can never be handed to another device. The static-IP expandable in the *Install Proxmox* guide walks through finding your gateway and DHCP range.
@@ -64,7 +64,7 @@ Leave the **Admin Web Interface** on its default port, and leave the **DNS serve
 > Port 53 is the standard DNS port, and "all interfaces" means all of the *container's* interfaces — which live on your home network. None of this is reachable from the internet: your router blocks unsolicited inbound traffic by default.
 
 > [!WARNING]
-> Keep it that way — never create a router port-forward to this container. A DNS server exposed to the internet (an "open resolver") gets found and abused for attacks within hours. AdGuard should serve your LAN only.
+> Keep it that way — never create a router port-forward to this container. A DNS server exposed to the internet (an "open resolver") gets found and abused for attacks within hours. AdGuard should serve your LAN (local area network) only.
 
 ### Create your admin login
 Set a username and a strong password for the dashboard, then finish the wizard. The dashboard now lives at the container's IP (no `:3000` needed anymore).
@@ -110,7 +110,7 @@ Then open the **Query Log** in the dashboard. You should see live queries from y
 ## Keep it resilient
 
 ### Plan for the box going down
-Now that AdGuard handles DNS for the whole house, the server going down means no name resolution for anyone. Two cheap mitigations: the public-fallback choice you made above, and a small UPS so the server rides out power blips.
+Now that AdGuard handles DNS for the whole house, the server going down means no name resolution for anyone. Two cheap mitigations: the public-fallback choice you made above, and a small UPS (uninterruptible power supply) so the server rides out power blips.
 
 ### Optional: run a second AdGuard
 For true redundancy you can run a second AdGuard instance on another machine (a Raspberry Pi is the classic choice) and list it as the secondary DNS, so if one is down the other answers. The open-source [adguardhome-sync](https://github.com/bakito/adguardhome-sync) tool keeps the two configurations identical.

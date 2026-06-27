@@ -6,12 +6,12 @@ order: 4
 accent: emerald
 ---
 
-This is the execution checklist for my own build — each step points at the general guide for the full how-to, then states my specific value or choice. The HBA was already VFIO-passed to the TrueNAS VM back on the *PCIe Passthrough* page, so TrueNAS sees the raw IronWolf disks the moment it boots. Follow *TrueNAS* for the screens and *Protect TrueNAS Data* for the safety nets.
+This is the execution checklist for my own build — each step points at the general guide for the full how-to, then states my specific value or choice. The HBA (host bus adapter) was already VFIO (Virtual Function I/O)-passed to the TrueNAS VM (virtual machine) back on the *PCIe Passthrough* page, so TrueNAS sees the raw IronWolf disks the moment it boots. Follow *TrueNAS* for the screens and *Protect TrueNAS Data* for the safety nets.
 
 ## Stand up the VM
 
 ### Create the TrueNAS VM
-Build it from the normal installer ISO per *TrueNAS* (the Create VM wizard lives in *Virtual machines*). My VM: **2 cores, 8192 MB RAM** (ZFS lives on RAM — it's the one VM I'd give more if I had it spare), a **32 GB boot disk**, network on `vmbr0`. Install from the console, then detach the installer ISO so it stops re-launching at boot.
+Build it from the normal installer ISO per *TrueNAS* (the Create VM wizard lives in *Virtual machines*). My VM: **2 cores, 8192 MB RAM** (ZFS (Zettabyte File System) lives on RAM — it's the one VM I'd give more if I had it spare), a **32 GB boot disk**, network on `vmbr0`. Install from the console, then detach the installer ISO so it stops re-launching at boot.
 
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
 > The address the console prints after install. Pin it with a DHCP reservation on the router so it never moves.
@@ -23,7 +23,7 @@ Build it from the normal installer ISO per *TrueNAS* (the Create VM wizard lives
 > Set during install — the web UI login.
 
 ### Confirm the HBA is doing its job
-The 9300-8i (IT mode) is already VFIO-passed from page 3 — no per-disk `serial=` plumbing on this build, which is the whole reason the card exists. Boot the VM and check **Storage → Disks**: I should see all **three Seagate IronWolf ST4000VN006 4TB** drives by their real model and serial, with genuine SMART, exactly as bare metal would.
+The 9300-8i (IT mode (Initiator-Target mode)) is already VFIO-passed from page 3 — no per-disk `serial=` plumbing on this build, which is the whole reason the card exists. Boot the VM and check **Storage → Disks**: I should see all **three Seagate IronWolf ST4000VN006 4TB** drives by their real model and serial, with genuine SMART, exactly as bare metal would.
 
 > [!NOTE]
 > Because the whole controller is passed through, SMART reaches TrueNAS directly — no "monitor from the host" blind spot like per-disk passthrough has. The *Protect TrueNAS Data* disk-health steps work from TrueNAS's own UI here.
@@ -34,12 +34,12 @@ The 9300-8i (IT mode) is already VFIO-passed from page 3 — no per-disk `serial
 > [!DETAILS] Which cable goes to which drive (do this during the physical build)
 > The wiring is what makes the passthrough above behave the way it does:
 >
-> - **HBA → the bottom `x4_3` slot** — the chipset-attached slot that gives the clean IOMMU group (the *PCIe Passthrough* page).
-> - **One SFF-8643 *forward* breakout cable** into one of the HBA's two ports → it fans out to **four SATA plugs**.
+> - **HBA → the bottom `x4_3` slot** — the chipset-attached slot that gives the clean IOMMU (Input/Output Memory Management Unit) group (the *PCIe Passthrough* page).
+> - **One SFF-8643 *forward* breakout cable** into one of the HBA's two ports → it fans out to **four SATA (Serial ATA) plugs**.
 > - **Breakout SATA 1 → mirror disk A**, **SATA 2 → mirror disk B**. The other two tails are spare (room to grow the pool later). Both mirror disks ride the HBA, so they belong to TrueNAS.
 > - **Footage disk → a motherboard SATA port — *not* the HBA.** The whole HBA goes to TrueNAS, so anything plugged into it vanishes from the host; Frigate runs on the host and needs its footage drive on the board.
-> - **NVMe → the board's M.2 slot** (Proxmox OS + Frigate cache).
-> - **Power:** a SATA-power lead from the PSU to each of the three drives.
+> - **NVMe (Non-Volatile Memory Express) → the board's M.2 slot** (Proxmox OS + Frigate cache).
+> - **Power:** a SATA-power lead from the PSU (power supply unit) to each of the three drives.
 >
 > All three 3.5" drives go in the View 71's drive trays. The **3 fixed trays behind the motherboard tray** hold exactly three 3.5" disks and don't depend on the removable front "pod" cages — so a missing pod isn't a blocker (check behind the rear side panel first). If those are gone too, a pair of universal stackable 3.5" brackets (~$30) bolt to the basement floor. The ~300 mm 1080 Ti clears the front cage area regardless.
 
@@ -52,10 +52,10 @@ In **Storage → Create Pool**, build the data pool per *TrueNAS*: name it `tank
 > Same model, same batch — the one failure a mirror can't absorb is both disks dying together. I accept that risk here because the irreplaceable data also goes offsite (below); bulk data is replaceable.
 
 ### Keep the third IronWolf off the mirror — it's Frigate's footage drive
-The **third** ST4000VN006 is **not** part of `tank`. It's the dedicated **Frigate footage drive** (see *Frigate*) — camera recordings are bulk, replaceable, write-heavy data that has no business churning a mirror or eating snapshot space. Leave it as its own single-disk pool (or hand it to the Frigate LXC directly per the *Frigate* page). Either way: **no redundancy, no offsite, by choice.**
+The **third** ST4000VN006 is **not** part of `tank`. It's the dedicated **Frigate footage drive** (see *Frigate*) — camera recordings are bulk, replaceable, write-heavy data that has no business churning a mirror or eating snapshot space. Leave it as its own single-disk pool (or hand it to the Frigate LXC (Linux Containers) directly per the *Frigate* page). Either way: **no redundancy, no offsite, by choice.**
 
 ### Add a dataset for the share
-On `tank`, add a dataset with the **SMB preset** per *TrueNAS* — `files` for general use, and a separate `backups` dataset so the build's safety copies stay out of my file snapshots.
+On `tank`, add a dataset with the **SMB (Server Message Block) preset** per *TrueNAS* — `files` for general use, and a separate `backups` dataset so the build's safety copies stay out of my file snapshots.
 
 ## Share it
 
@@ -66,15 +66,15 @@ TrueNAS needs one local SMB user before it'll share anything (*TrueNAS* covers t
 
 > [!SECRET] smb-password | SMB share password
 
-Then create the **Windows (SMB) Share** on the `files` dataset and accept the prompt to start the SMB service. It answers at the VM's IP — connect from a Mac with `smb://` + my TrueNAS IP.
+Then create the **Windows (SMB) Share** on the `files` dataset and accept the prompt to start the SMB service. It answers at the VM's IP address — connect from a Mac with `smb://` + my TrueNAS IP.
 
 ## Make it the backup hub
 
-### Land the Proxmox backups on the NAS
+### Land the Proxmox backups on the NAS (network-attached storage)
 Point both the **vzdump guest backups** and the **host-config backup** at a `backups` dataset on the share — the *Proxmox Backups* guide walks through mounting the share and aiming the job. This keeps every guest's archive on different disks than the guest itself.
 
 > [!NOTE]
-> HA needs one extra step the *Proxmox Backups* guide doesn't: in HA, **Settings → System → Storage**, add the SMB share as network storage with **Usage → backups**, then pick it in the backup settings. Until then HA backups sit on the VM's own disk.
+> Home Assistant (HA) needs one extra step the *Proxmox Backups* guide doesn't: in HA, **Settings → System → Storage**, add the SMB share as network storage with **Usage → backups**, then pick it in the backup settings. Until then HA backups sit on the VM's own disk.
 
 ### Snapshots, scrub, and disk health
 Turn on the *Protect TrueNAS Data* safety nets on `tank`: periodic snapshots (a frequent short-lived task plus a daily long-lived one), confirm the default Sunday scrub, and let Drive Health Management watch the disks. Wire alerts to my email and **press both test buttons** — an untested alert chain is the silent failure I'm trying to avoid.

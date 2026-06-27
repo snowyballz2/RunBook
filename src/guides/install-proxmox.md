@@ -13,7 +13,7 @@ accent: spruce
 Get the ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads) — click **Proxmox Virtual Environment**, then the top item, **Proxmox VE 9.2 ISO Installer**. It is free, needs no account, and is about 1.7 GB.
 
 > [!DETAILS] Verify the download (optional but smart)
-> Hash the file and compare it against the SHA256 shown next to the download link. A match means the file arrived intact and untampered.
+> Hash the file and compare it against the SHA256 (a cryptographic checksum) shown next to the download link. A match means the file arrived intact and untampered.
 >
 > ```bash
 > # macOS
@@ -54,7 +54,7 @@ Write the ISO to a USB stick (4 GB or larger) with **one** of the two tools belo
 > The same "format this disk?" popup can appear afterwards — Cancel it here too.
 
 ### Run the installer
-Plug the machine into your router with an **Ethernet cable** first — Proxmox cannot use Wi-Fi for management out of the box. Then boot from the stick, pick **Install Proxmox VE (Graphical)**, and follow the prompts. The answers worth thinking about beforehand are the hostname, a **static IP** on your LAN, and the root password — record them here as you decide; you will need the IP constantly.
+Plug the machine into your router with an **Ethernet cable** first — Proxmox cannot use Wi-Fi for management out of the box. Then boot from the stick, pick **Install Proxmox VE (Graphical)**, and follow the prompts. The answers worth thinking about beforehand are the hostname, a **static IP address** on your LAN (local area network), and the root password — record them here as you decide; you will need the IP constantly.
 
 > [!INPUT] proxmox-ip | Proxmox server IP | 192.168.1.50
 > The static address you pick in the expandable below. Every guide that follows starts from this number.
@@ -86,10 +86,10 @@ https://your-ip:8006
 
 > [!DETAILS] Every prompt the installer shows, in order
 > 1. **EULA** — read or skim, click I agree.
-> 2. **Target disk** — the drive Proxmox will erase and install onto (the one you decided on in the *Prep & BIOS* guide). The **Options** button picks the filesystem; the default (ext4 on LVM) is right for a single drive. With two identical drives you could pick **ZFS RAID1** instead to mirror the whole system — nice, but strictly optional.
+> 2. **Target disk** — the drive Proxmox will erase and install onto (the one you decided on in the *Prep & BIOS* guide). The **Options** button picks the filesystem; the default (ext4 on LVM) is right for a single drive. With two identical drives you could pick **ZFS (Zettabyte File System) RAID1** instead to mirror the whole system — nice, but strictly optional.
 > 3. **Country, time zone, keyboard layout** — usually auto-detected; confirm and move on.
 > 4. **Password, confirm, email address** — this is the root password (8 characters minimum, longer is better) and an email for system notifications.
-> 5. **Management network** — the form your prepared answers go into: the network **interface** (pick the wired port), the **hostname** you chose, the **IP address** you picked for the server, and your router's address in both the **Gateway** and **DNS server** fields. The two blocks below walk through exactly where each number comes from.
+> 5. **Management network** — the form your prepared answers go into: the network **interface** (pick the wired port), the **hostname** you chose, the **IP address** you picked for the server, and your router's address in both the **Gateway** and **DNS (Domain Name System) server** fields. The two blocks below walk through exactly where each number comes from.
 > 6. **Summary** — review everything, click Install, and the machine reboots on its own when done. When the reboot starts, unplug the USB stick — and if you changed the BIOS boot order earlier, set the internal drive back to first, or you will boot straight back into the installer.
 
 > [!DETAILS] How to pick the hostname
@@ -120,7 +120,7 @@ https://your-ip:8006
 >
 > On macOS you can also use System Settings → Wi-Fi → **Details** next to your network, and read the Router address. It is usually something like `192.168.1.1`. That one number fills both the Gateway and DNS fields.
 >
-> **Step 2 — pick the server's address.** Keep the first three numbers the same as the router's and change only the last one. The catch: your router automatically hands out addresses to phones and laptops as they join, from a block called the **DHCP range** (often `.100` and up). If you pick a number from that block, the router may later hand the *same* number to another device — and both will misbehave. Two safe ways around it:
+> **Step 2 — pick the server's address.** Keep the first three numbers the same as the router's and change only the last one. The catch: your router automatically hands out addresses to phones and laptops as they join, from a block called the **DHCP (Dynamic Host Configuration Protocol) range** (often `.100` and up). If you pick a number from that block, the router may later hand the *same* number to another device — and both will misbehave. Two safe ways around it:
 >
 > - **Easiest** — browse to the router's address and log in (the admin password is usually on a sticker on the router, or in your ISP's app). Find the DHCP range under the LAN or DHCP settings, and pick a number *below* it — if the range is `.100`–`.254`, something like `.50` is perfect.
 > - **Alternative** — on that same router page, use **DHCP reservation** (sometimes called *static lease* or *address reservation*) to permanently assign your chosen number to the server, so the router never gives it to anything else.
@@ -179,7 +179,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 >
 > - Disables the enterprise package repo, which errors without a paid subscription
 > - Enables the free no-subscription repo so updates work
-> - Corrects the apt source lists for your PVE version
+> - Corrects the apt source lists for your PVE (Proxmox Virtual Environment) version
 > - Removes the "No valid subscription" login popup, and keeps it removed after updates
 > - May offer to disable the High-Availability services — accepting is fine on a single machine like this; they only matter when several Proxmox servers work as a cluster
 > - Optionally runs a full update and reboots

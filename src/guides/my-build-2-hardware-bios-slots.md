@@ -13,17 +13,17 @@ accent: azure
 The core of the build is a Z370 platform I already own, with two add-in cards that matter for passthrough later.
 
 - **Board / CPU / RAM** — ASUS ROG Maximus X Hero (Z370) + i7-8700K + 32 GB RAM.
-- **PSU** — EVGA 850W GQ (Gold). Ample for a 1080 Ti plus a pile of spinning disks; no concerns.
+- **PSU (power supply unit)** — EVGA 850W GQ (Gold). Ample for a 1080 Ti plus a pile of spinning disks; no concerns.
 - **Case** — Thermaltake View 71 full tower.
 - **GPU** — EVGA GTX 1080 Ti FTW (~300 mm long).
-- **HBA** — LSI/Broadcom 9300-8i, IT mode, bought pre-flashed (white-box). This is the card that gets VFIO'd to TrueNAS.
-- **Coordinator / UPS / switch (not slot-related, just going in the build)** — HA Connect ZBT-2 Zigbee coordinator, CyberPower CP1500PFCLCD UPS, Netgear GS308EPP PoE+ switch.
+- **HBA (host bus adapter)** — LSI/Broadcom 9300-8i, IT mode (Initiator-Target mode), bought pre-flashed (white-box). This is the card that gets VFIO (Virtual Function I/O)'d to TrueNAS.
+- **Coordinator / UPS (uninterruptible power supply) / switch (not slot-related, just going in the build)** — HA Connect ZBT-2 Zigbee coordinator, CyberPower CP1500PFCLCD UPS, Netgear GS308EPP PoE+ (Power over Ethernet) switch.
 
 > [!NOTE]
 > The 1080 Ti is ~300 mm. In the View 71 it clears the HDD cage fine — no need to pull or move the cage. If a future longer card ever changes that, the cage is modular.
 
-### The PCIe slot plan
-Two cards, two goals: give the GPU full bandwidth, and land the HBA in a clean IOMMU group so it passes through to the TrueNAS VM by itself.
+### The PCIe (Peripheral Component Interconnect Express) slot plan
+Two cards, two goals: give the GPU full bandwidth, and land the HBA in a clean IOMMU (Input/Output Memory Management Unit) group so it passes through to the TrueNAS VM (virtual machine) by itself.
 
 - **GTX 1080 Ti → top x16 slot** (`PCIEX16/X8_1`). Runs at x16 with nothing else contending. The NVIDIA driver lives on the Proxmox **host** and is shared into the LXCs (Frigate, Ollama, faster-whisper) — see *Frigate* — so this card is **not** passed through to any VM.
 - **9300-8i HBA → bottom x4 slot** (`PCIEX4_3`). This slot is **chipset-attached**, which is exactly what gives a clean IOMMU group for VFIO passthrough — the point the *TrueNAS* guide makes about putting the HBA in a chipset slot.
@@ -35,8 +35,8 @@ Two cards, two goals: give the GPU full bandwidth, and land the HBA in a clean I
 Enter the BIOS (`Del` on this ASUS board) and set these. The *Prep & BIOS* guide has the menu paths for ASUS Z-series boards; here are my specific values.
 
 1. **Update the BIOS first.** Do this before anything else so the toggles below sit on current firmware.
-2. **Intel Virtualization (VMX)** — *Advanced → CPU Configuration*. Newer ASUS BIOSes label it **Intel (VMX) Virtualization Technology**. Set **Enabled**.
-3. **Intel VT-d** — *Advanced → System Agent (SA) Configuration* (a different submenu than VMX, so don't stop after the first toggle). Set **Enabled**. This is what makes HBA passthrough possible.
+2. **Intel Virtualization (VMX)** (Virtual Machine Extensions) — *Advanced → CPU Configuration*. Newer ASUS BIOSes label it **Intel (VMX) Virtualization Technology**. Set **Enabled**.
+3. **Intel VT-d (Intel Virtualization Technology for Directed I/O)** — *Advanced → System Agent (SA) Configuration* (a different submenu than VMX, so don't stop after the first toggle). Set **Enabled**. This is what makes HBA passthrough possible.
 4. **Set `PCIEX4_3` to x4 mode** — in the onboard-devices / PCIe configuration section, force the bottom slot to **x4**. This keeps the HBA's lane allocation clean and predictable in its chipset-attached group.
 
 Save with `F10` and confirm on exit.

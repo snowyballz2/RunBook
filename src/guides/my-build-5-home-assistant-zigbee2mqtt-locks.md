@@ -10,14 +10,14 @@ This is the brain of the house. Follow the *Home Assistant OS* guide for every s
 
 ## Stand up Home Assistant
 
-### Build the HA OS VM
-Create the Home Assistant OS VM the way *Home Assistant OS* describes — HAOS ships as a disk image, not an ISO, so use the helper script or the five manual `qm` commands there. My values: **2 cores, 8 GB RAM** (I have it to spare, and apps like more room), 32 GB disk. Start it **before** the Frigate LXC every boot — Frigate's broker is fine first, but HA owning MQTT first keeps the dependency order clean.
+### Build the HA (Home Assistant) OS VM (virtual machine)
+Create the Home Assistant OS VM the way *Home Assistant OS* describes — HAOS ships as a disk image, not an ISO, so use the helper script or the five manual `qm` commands there. My values: **2 cores, 8 GB RAM** (I have it to spare, and apps like more room), 32 GB disk. Start it **before** the Frigate LXC (Linux Containers) every boot — Frigate's broker is fine first, but HA owning MQTT (Message Queuing Telemetry Transport) first keeps the dependency order clean.
 
 > [!NOTE]
-> Don't VFIO anything to this VM. The 1080 Ti stays on the Proxmox host (shared into LXCs); the only PCIe passthrough in my build is the HBA → TrueNAS. HA reaches the GPU services over the LAN.
+> Don't VFIO (Virtual Function I/O) anything to this VM. The 1080 Ti stays on the Proxmox host (shared into LXCs); the only PCIe (Peripheral Component Interconnect Express) passthrough in my build is the HBA (host bus adapter) → TrueNAS. HA reaches the GPU services over the LAN (local area network).
 
 ### Pin its address
-Give the VM a fixed IP (DHCP reservation on the router, or static under **Settings → System → Network**) before anything else points at it. This is the address the phone apps, dashboards, and the *Frigate*/MQTT links all use.
+Give the VM a fixed IP address (DHCP (Dynamic Host Configuration Protocol) reservation on the router, or static under **Settings → System → Network**) before anything else points at it. This is the address the phone apps, dashboards, and the *Frigate*/MQTT links all use.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
@@ -31,7 +31,7 @@ Give the VM a fixed IP (DHCP reservation on the router, or static under **Settin
 ## Zigbee2MQTT on the ZBT-2
 
 ### Pass the coordinator through
-I run **Zigbee2MQTT, not ZHA** — broader device support, and it speaks the same MQTT bus *Frigate* already publishes to. Pass the **HA Connect ZBT-2** through to wherever Z2M runs (the USB passthrough step in *Home Assistant OS*), on a short extension cable to keep it away from the case.
+I run **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broader device support, and it speaks the same MQTT bus *Frigate* already publishes to. Pass the **HA Connect ZBT-2** through to wherever Z2M runs (the USB passthrough step in *Home Assistant OS*), on a short extension cable to keep it away from the case.
 
 ### Point Z2M at Frigate's broker
 Install Z2M and connect it to the **Mosquitto broker already running for Frigate** — I don't stand up a second broker. Give Z2M its **own** MQTT username and password (not Frigate's `mqtt-user`) so the logs make it obvious who's talking; everything namespaces under `zigbee2mqtt/...` and stays out of Frigate's way. In Z2M's settings, select the **`ember`** driver — that's the one for the ZBT-2.
@@ -60,7 +60,7 @@ Once paired, Z2M reports them over MQTT and HA's MQTT integration surfaces them 
 ## Locks — Apple Home first, then share
 
 ### Commission the 3× Aqara U400 into Apple Home
-These are **Matter-over-Thread**. In an all-Apple house I commission each U400 straight into **Apple Home** first — that's what lights up **Home Key**, and the **HomePod mini** is already my Thread border router. Scan each lock's QR in the **Home app on the phone** (Bluetooth does the commissioning).
+These are **Matter-over-Thread**. In an all-Apple house I commission each U400 straight into **Apple Home** first — that's what lights up **Home Key**, and the **HomePod mini** is already my Thread border router. Scan each lock's QR (quick response) in the **Home app on the phone** (Bluetooth does the commissioning).
 
 ### Share each lock to HA via Matter multi-admin
 That QR code is now spent, so HA can't scan it again — Matter is built for this. **Share** each lock instead of re-pairing, exactly as *Home Assistant OS* covers:

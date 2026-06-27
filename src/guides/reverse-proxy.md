@@ -9,14 +9,14 @@ accent: emerald
 ## Why names and locks
 
 ### Understand the one front door
-Look at what your bookmarks bar has become: `https://192.168.1.50:8006` with a certificate warning, `http://192.168.1.51:8123`, a TrueNAS IP, a Frigate port, a Nextcloud address every new device objects to. Each guide so far ended the same way — an IP, a port, and a warning this collection kept calling fine *for now*. This guide is where "for now" ends.
+Look at what your bookmarks bar has become: `https://192.168.1.50:8006` with a certificate warning, `http://192.168.1.51:8123`, a TrueNAS IP, a Frigate port, a Nextcloud address every new device objects to. Each guide so far ended the same way — an IP address, a port, and a warning this collection kept calling fine *for now*. This guide is where "for now" ends.
 
 A reverse proxy is one small container that becomes the only address you browse to. You ask for `https://proxmox.example.com`; it reads the name, forwards the request to `192.168.1.50:8006` behind the scenes, and hands back the answer — over a connection covered by one real, browser-trusted certificate that serves every name at once. The tool here is **Nginx Proxy Manager** (NPM): nginx doing the proxying, with a web UI instead of config files.
 
-Two rules survive untouched. The proxy serves your LAN (and, through the *Remote Access* guide, your tailnet) — **no router port-forwards, not for this, not ever**. And the certificate will arrive without exposing anything, which is the cleverest part of the whole guide.
+Two rules survive untouched. The proxy serves your LAN (local area network) (and, through the *Remote Access* guide, your tailnet) — **no router port-forwards, not for this, not ever**. And the certificate will arrive without exposing anything, which is the cleverest part of the whole guide.
 
 > [!NOTE]
-> This guide leans on the stack you have built: AdGuard Home from the *AdGuard Home* guide must be the house DNS, because that is how the new names will resolve, and the *Remote Access* subnet route is what carries them beyond your walls.
+> This guide leans on the stack you have built: AdGuard Home from the *AdGuard Home* guide must be the house DNS (Domain Name System), because that is how the new names will resolve, and the *Remote Access* subnet route is what carries them beyond your walls.
 
 > [!DETAILS] Knowing what the proxy listens on — and what stays shut
 > NPM's documentation describes three ports: **80** ("Public HTTP Port"), **443** ("Public HTTPS Port"), and **81** ("Admin Web Port"). "Public" there means "the side browsers connect to" — the docs assume some people host internet-facing sites and even suggest forwarding 80 and 443 at the router. You will not. Every port stays LAN-only, the certificate arrives over DNS in phase three with nothing reachable from outside, and your router's settings never change. Port 81 is the admin UI, for you alone.
@@ -33,7 +33,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 2 GB RAM, an 8 GB disk, an unprivileged Debian 12 container — except networking: set a **static IP**, say `192.168.1.54`, the *AdGuard Home* move. The script finishes by printing "Access it using the following URL:" and `http://<IP>:81`. Before you open that, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
 
 > [!WARNING]
-> Every bookmark, certificate, and DNS rewrite below points at this one address. Pin it — static IP or DHCP reservation — and never let it move.
+> Every bookmark, certificate, and DNS rewrite below points at this one address. Pin it — static IP or DHCP (Dynamic Host Configuration Protocol) reservation — and never let it move.
 
 > [!INPUT] proxy-ip | Proxy container IP | 192.168.1.54
 
@@ -66,7 +66,7 @@ So the *Install Proxmox* hostname advice splits cleanly in two, and both halves 
 > And the third honest answer is to not chase certificates at all: plain-HTTP addresses on your own LAN, wrapped in the already-encrypted tunnel from the *Remote Access* guide when you're away, is a defensible place to stop. The browser warnings are the only cost — the rest of this guide is for when you decide they've annoyed you enough.
 
 ### Get the domain — and DNS with an API
-Buy the name at any registrar. The requirement that actually matters is not where you buy but where the domain's **DNS is hosted**: the next step needs NPM's built-in Certbot (the program that talks to Let's Encrypt) to publish a DNS record through an API. NPM ships support for 86 providers at the time of writing — Cloudflare, Porkbun, and deSEC are in the list, alongside Route 53, OVH, GoDaddy, Namecheap, and more — so register somewhere on that list, or point the domain's nameservers at a host that is. Then create an **API token** allowed to edit this domain's DNS, per your provider's docs, scoped as tightly as the provider allows.
+Buy the name at any registrar. The requirement that actually matters is not where you buy but where the domain's **DNS is hosted**: the next step needs NPM's built-in Certbot (the program that talks to Let's Encrypt) to publish a DNS record through an API (application programming interface). NPM ships support for 86 providers at the time of writing — Cloudflare, Porkbun, and deSEC are in the list, alongside Route 53, OVH, GoDaddy, Namecheap, and more — so register somewhere on that list, or point the domain's nameservers at a host that is. Then create an **API token** allowed to edit this domain's DNS, per your provider's docs, scoped as tightly as the provider allows.
 
 > [!INPUT] domain-name | Your domain | example.com
 

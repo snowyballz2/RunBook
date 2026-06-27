@@ -114,7 +114,7 @@ actions:
 > The notification action exists once the Home Assistant companion app is installed on your phone with notification permission granted — it appears as `notify.mobile_app_` plus your phone's name, underscored. `message` is the only required field. The nested `image` line attaches a live camera snapshot — that form is Android's; on an iPhone the companion docs attach the camera stream instead, with `entity_id: camera.driveway` in place of the `image` line.
 
 > [!DETAILS] How trusting to be — Frigate's own honesty
-> Frigate's documentation is candid about these sensors: occupancy sensors run "fewer checks" so latency stays low enough for lights — which means an occasional false positive. For a porch light, who cares; a wrongly-lit porch costs nothing. For something you'd hate to have cry wolf — an alarm, a loud announcement — Frigate recommends triggering from its `frigate/events` MQTT topic instead, which carries full event data (and unlocks event-specific snapshot URLs in notifications). That's the graduate course; the occupancy sensor is the right first build.
+> Frigate's documentation is candid about these sensors: occupancy sensors run "fewer checks" so latency stays low enough for lights — which means an occasional false positive. For a porch light, who cares; a wrongly-lit porch costs nothing. For something you'd hate to have cry wolf — an alarm, a loud announcement — Frigate recommends triggering from its `frigate/events` MQTT (Message Queuing Telemetry Transport) topic instead, which carries full event data (and unlocks event-specific snapshot URLs in notifications). That's the graduate course; the occupancy sensor is the right first build.
 
 > [!DETAILS] The cry-wolf-proof upgrade — trigger on `frigate/events`
 > Here's the graduate course the note above promised. Frigate publishes every detection to the `frigate/events` MQTT topic the moment it's confident — and because you already ran the MQTT broker setup in the *Frigate* guide, Home Assistant can listen on it directly. The payload is JSON, so you trigger on the topic and read fields out of it with a template. The payoff: each event carries its own `id`, which Frigate turns into a permanent snapshot URL — so the notification shows the exact frame that fired it, not a live view of an empty driveway three seconds later.
@@ -140,7 +140,7 @@ actions:
 >           https://your-frigate-host:5000/api/events/{{ trigger.payload_json['after']['id'] }}/snapshot.jpg
 > ```
 >
-> The first condition keeps you to `type: new` so one person walking through doesn't notify you for every frame; the second filters to the label you care about. Swap `your-frigate-host` for however you reach Frigate (an internal IP, or its name behind the reverse proxy from the *Nginx Proxy Manager* guide). This is the same trigger that should feed any *loud* action — an alarm, a 2 a.m. announcement — for exactly the reason the note gave: it fires on Frigate's considered judgement, not its fast first guess.
+> The first condition keeps you to `type: new` so one person walking through doesn't notify you for every frame; the second filters to the label you care about. Swap `your-frigate-host` for however you reach Frigate (an internal IP address, or its name behind the reverse proxy from the *Nginx Proxy Manager* guide). This is the same trigger that should feed any *loud* action — an alarm, a 2 a.m. announcement — for exactly the reason the note gave: it fires on Frigate's considered judgement, not its fast first guess.
 
 ### Make a speaker greet the visitor
 Same trigger, a louder action: when Frigate sees someone, have a speaker chime, play a clip, or speak a line. The one catch is *which* speaker — Home Assistant can only drive one it controls as a media player, which means a **Sonos** or a **Google/Nest (Cast)** speaker. A HomePod can't be the target; Home Assistant can't push audio to it.
@@ -179,7 +179,7 @@ The `volume_set` first is a kindness — it stops a late-night visitor from blas
 >       message: "Someone is at the front door."
 > ```
 >
-> The TTS engine is whatever you configured — the cloud voice, or a fully-local one like Piper. Either way the speaker has to be a media player Home Assistant controls, so the Sonos-or-Cast rule still holds.
+> The TTS (text-to-speech) engine is whatever you configured — the cloud voice, or a fully-local one like Piper. Either way the speaker has to be a media player Home Assistant controls, so the Sonos-or-Cast rule still holds.
 
 > [!DETAILS] Trigger on the doorbell button instead
 > Person-detection fires when someone *appears*; the doorbell button fires only when they actually *press it* — intentional, and free of false alarms. Once your doorbell is in Home Assistant, its press shows up as an entity you trigger on the same way, usually an `event` entity that updates on each ring:
