@@ -70,10 +70,15 @@ Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name
 - **Vaultwarden, Homepage, Nginx Proxy Manager** — one **HTTP(s)** monitor each, at their own LXC addresses.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
+
 > [!INPUT] adguard-ip | AdGuard container IP | 192.168.1.53
+
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
+
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
+
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
+
 > [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.58
 
 > [!NOTE]
@@ -86,6 +91,7 @@ Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name
 The Reolink Video Doorbell and the RLC-510WA are the two devices most likely to drop off Wi-Fi unnoticed, and a doorbell that stopped recording is exactly the kind of silent failure this dashboard exists to catch. Add a **Ping** monitor for each at its camera IP — Ping is right here because the cameras speak RTSP (Real-Time Streaming Protocol) and http-flv into Frigate rather than serving a plain web page, so a successful ping is the cleanest "it is still on the network" signal.
 
 > [!INPUT] doorbell-ip | Reolink doorbell IP | 192.168.1.70
+
 > [!INPUT] camera-ip | Reolink RLC-510WA IP | 192.168.1.71
 
 > [!TIP]

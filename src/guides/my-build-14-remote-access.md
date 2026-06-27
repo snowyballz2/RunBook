@@ -60,6 +60,7 @@ tailscale up
 The output prints a URL. Open it in the browser on your MacBook (the server has no desktop of its own), sign in with the account from the first step, and the host joins your tailnet. Confirm with `tailscale ip -4`, which prints the host's new `100.x` Tailscale address.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
+
 > [!SECRET] proxmox-root-password | Proxmox root password
 
 > [!DETAILS] What the host just received
@@ -123,7 +124,9 @@ Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app 
 Served to a phone nowhere near the house, through zero opened ports.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
+
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
+
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
 
 > [!NOTE]

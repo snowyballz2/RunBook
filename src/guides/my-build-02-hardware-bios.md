@@ -73,6 +73,7 @@ The build has three Seagate IronWolf ST4000VN006 4 TB drives. Two of them become
 > Label the two mirror drives now and record their serials below. ZFS identifies disks by serial, and you will want to know which physical drive is which when one eventually fails. The footage drive can stay unlabelled — it is the lone one on a board SATA port.
 
 > [!INPUT] zfs-mirror-disk1-serial | IronWolf mirror disk 1 serial
+
 > [!INPUT] zfs-mirror-disk2-serial | IronWolf mirror disk 2 serial
 
 ### Fit the radio, switch, and UPS
@@ -185,7 +186,12 @@ The footage drive and the NVMe both ride the board; only the two mirror disks ha
 Enter the BIOS by tapping `Del` repeatedly the moment the screen lights up on power-on. Work through these in order — the toggles live in different submenus, so do not stop after the first one.
 
 ### Update the BIOS first
-Flash the latest Maximus X Hero firmware before touching any toggle, so the settings below sit on current microcode. Use the board's built-in **EZ Flash** utility (under the *Tool* menu) with the firmware file on a FAT32 USB stick. Reboot back into the BIOS after it finishes.
+Flash the latest Maximus X Hero firmware before touching any toggle, so the settings below sit on current microcode. This needs its own USB stick — it is **not** the Proxmox installer stick you make later.
+
+1. On another computer, open the ASUS support page for the **ROG Maximus X Hero** (asus.com → Support → search "Maximus X Hero" → **Driver & Tools → BIOS & Firmware**) and download the **latest BIOS** file. Note the version number — you will confirm it after the flash.
+2. Unzip the download. ASUS firmware must carry the exact filename EZ Flash expects, so run the bundled **BIOSRenamer** utility (included in the same zip) once — it renames the file for you.
+3. Format a USB stick as **FAT32** and copy the renamed BIOS file to its **root** (not inside a folder).
+4. Plug the stick into the server, enter the BIOS (`Del` on power-on), and open **EZ Flash 3** under the *Tool* menu. Point it at the file on the stick and confirm. The board flashes, reboots itself, and lands back in the BIOS — where you carry on with the toggles below.
 
 > [!WARNING]
 > Do not interrupt the flash or cut power during it. A failed BIOS update on this board means a recovery dance you want to avoid — let EZ Flash run to completion.

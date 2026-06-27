@@ -95,6 +95,7 @@ While you are in the quarterly mood, check the two long-game protections:
 - **Disk health** — read the latest ZFS scrub result and the S.M.A.R.T. status on the **Storage** dashboard's health widgets. The two mirror IronWolfs report genuine S.M.A.R.T. data because the whole HBA is passed through to TrueNAS with VFIO (Virtual Function I/O), so there is no emulation in the way. Watch Frigate's footage disk from the Proxmox **Disks** view, since it lives on the host side, not on the HBA.
 
 > [!INPUT] zfs-mirror-disk1-serial | IronWolf mirror disk 1 serial
+
 > [!INPUT] zfs-mirror-disk2-serial | IronWolf mirror disk 2 serial
 > Knowing the two mirror serials in advance turns a degraded-pool panic into a careful swap — the ST4000VN006s are identical at a glance, so the serial is the only safe way to tell which one to pull from the View 71's rear trays.
 
