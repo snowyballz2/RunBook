@@ -67,12 +67,16 @@ Check you have everything before you start — the later pages assume each piece
 > - **Leak protection:** 12x Third Reality leak sensors, an Aqara Valve Controller T1 on the main shutoff lever, and Third Reality smart plugs acting as Zigbee routers
 > - **Already in the house:** Lutron Caseta lights and shades (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge
 
-### Save your files and line up a second computer
-Two things to handle before any hardware goes together — both easy to forget, both painful to discover late.
+### Do all the PC-side prep before you wipe anything
+Once Proxmox is installed, the machine you are building becomes a **headless server** and the NVMe that held Windows is erased. From that point on, the server downloads everything itself and you only need a browser to drive it. But a few things must be done first, on a **working computer that has a web browser and a USB port** — get all of them out of the way before the install:
 
-**The 500 GB NVMe currently has Windows and your files on it.** It becomes the Proxmox boot drive, and the install **erases the whole drive**. Copy anything you want to keep onto another machine or an external disk *before* you start — there is no undo once the installer runs.
+1. **Back up the NVMe.** The 500 GB NVMe currently has Windows and your files on it, and the Proxmox install **erases the whole drive**. Copy anything you want to keep onto another machine or an external disk first — there is no undo. (Checklist below.)
+2. **Make the Proxmox installer USB.** Download the Proxmox VE ISO and write it to a 4 GB+ USB stick with balenaEtcher. (The Install Proxmox page has the full steps — do them now, while you still have a working PC.)
+3. **Make the BIOS-update USB.** Download the latest Maximus X Hero BIOS, run ASUS's BIOSRenamer, and copy it onto a FAT32 USB stick. (The Hardware & BIOS page has the full steps.)
+4. **Round up a monitor and keyboard** to plug into the server for the install itself. You unplug them once Proxmox is up and run everything from a browser after that.
 
-**You also need a second, working computer nearby** — in this all-Apple house, your Mac. The server has no operating system yet, so every download and prep task happens on that other machine: fetching the Proxmox installer, downloading the board's BIOS, and writing the USB sticks. You also borrow a **monitor and keyboard** plugged straight into the server for the install itself, then unplug them and run everything from the Mac's browser once Proxmox is up.
+> [!NOTE]
+> After the install there is nothing more to download on a PC. The server pulls the rest over its own network connection — the TrueNAS installer, the Home Assistant image, every service container, the GPU driver — so from then on any device with a browser (a laptop, an iPad, even a phone) is enough to reach `https://`-the-server-IP-`:8006` and keep building. The two USB sticks above are the only things that strictly need a full PC, because you cannot write them from a phone.
 
 > [!WARNING]
 > Wiping the NVMe is irreversible. Confirm your files are copied off — and that a few of them actually open from the copy — before you reach the install.

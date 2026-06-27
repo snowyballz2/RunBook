@@ -1,4 +1,4 @@
-import { parseGuide } from "./parseGuide";
+import { parseGuide, slugify } from "./parseGuide";
 import type { Guide } from "./types";
 
 /**
@@ -17,10 +17,23 @@ export type BundledGuide = { guide: Guide; markdown: string; file: string };
 
 export function loadBundledGuides(): BundledGuide[] {
   const out: BundledGuide[] = [];
+  const usedIds = new Set<string>();
   for (const [path, raw] of Object.entries(modules)) {
     const file = path.split("/").pop() ?? path;
     try {
       const guide = parseGuide(raw, { fallbackTitle: file.replace(/\.md$/, "") });
+      // The route + progress id must be unique per guide. parseGuide derives it
+      // from slugify(title), which collides when two collections share a guide
+      // title (e.g. both "Proxmox Home Server" and "My Build" have an "Install
+      // Proxmox"): the hash route then resolved to whichever file sorted first,
+      // so one collection's page silently rendered the other's content. Qualify
+      // the id with the collection, with a counter as a final uniqueness guard.
+      let id = guide.collection
+        ? `${slugify(guide.collection)}-${slugify(guide.title)}`
+        : guide.id;
+      for (let n = 2; usedIds.has(id); n++) id = `${id}-${n}`;
+      usedIds.add(id);
+      guide.id = id;
       out.push({ guide, markdown: raw, file });
     } catch (err) {
       // A broken built-in guide must never take down the whole library.
