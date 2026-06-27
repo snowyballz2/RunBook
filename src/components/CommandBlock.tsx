@@ -78,7 +78,7 @@ export function CommandBlock({ language, code }: Props) {
             <span
               key={i}
               className={`block whitespace-pre ${
-                isComment(line) ? "text-white/35" : "text-[var(--color-cmd-fg)]"
+                isComment(line) ? "text-white/60" : "text-[var(--color-cmd-fg)]"
               }`}
             >
               {line.length ? line : " "}
