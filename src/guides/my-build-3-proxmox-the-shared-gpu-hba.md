@@ -19,7 +19,7 @@ Per *Install Proxmox*: flash the ISO, boot, install. My target disk is the **500
 > Web UI at `https://`-my-ip-`:8006`, log in as **root@pam** with the password I set during install (stored in *Install Proxmox* as `proxmox-root-password` and in Vaultwarden). Then run the post-install cleanup script to switch to the no-subscription repo.
 
 ### Enable IOMMU (Input/Output Memory Management Unit)
-Per *Prep & BIOS* I already turned on **Intel VT-d (Intel Virtualization Technology for Directed I/O) + Virtualization (VMX)** (Virtual Machine Extensions) and set the **x4_3 slot to x4 mode**. On the host, finish the job: enable IOMMU so the HBA (host bus adapter) can be isolated for passthrough.
+Per *Prep & BIOS* I already turned on **Intel VT-d (Intel Virtualization Technology for Directed I/O) + Virtualization (VMX)** and set the **x4_3 slot to x4 mode**. On the host, finish the job: enable IOMMU so the HBA (host bus adapter) can be isolated for passthrough.
 
 ```bash
 # This board is Intel — add intel_iommu to the kernel cmdline.
@@ -38,7 +38,7 @@ dmesg | grep -e DMAR -e IOMMU
 The **1080 Ti** is shared, not passed through. Per the *Frigate* guide's *Sharing one GPU with your containers* section: install the **NVIDIA driver on the Proxmox host**, then lend the card into LXCs (Linux Containers). Because LXCs share the host kernel, one card drives **Frigate detection + Ollama + faster-whisper** all at once — no exclusive lock.
 
 > [!WARNING]
-> Do **not** VFIO-bind or blacklist the 1080 Ti, and do not pass it to a VM (virtual machine). That hands the whole card to one guest and breaks the LXC sharing. The GPU stays on the host; Home Assistant (HA) (in its VM) reaches detection/voice over the LAN (local area network).
+> Do **not** VFIO-bind or blacklist the 1080 Ti, and do not pass it to a VM (virtual machine). That hands the whole card to one guest and breaks the LXC sharing. The GPU stays on the host; Home Assistant (HA), in its VM reaches detection/voice over the LAN (local area network).
 
 ```bash
 # On the HOST: keep the driver initialised when idle so the first

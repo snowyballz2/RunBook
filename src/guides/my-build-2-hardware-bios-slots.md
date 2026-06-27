@@ -35,7 +35,7 @@ Two cards, two goals: give the GPU full bandwidth, and land the HBA in a clean I
 Enter the BIOS (`Del` on this ASUS board) and set these. The *Prep & BIOS* guide has the menu paths for ASUS Z-series boards; here are my specific values.
 
 1. **Update the BIOS first.** Do this before anything else so the toggles below sit on current firmware.
-2. **Intel Virtualization (VMX)** (Virtual Machine Extensions) — *Advanced → CPU Configuration*. Newer ASUS BIOSes label it **Intel (VMX) Virtualization Technology**. Set **Enabled**.
+2. **Intel Virtualization (VMX)** — *Advanced → CPU Configuration*. Newer ASUS BIOSes label it **Intel (VMX) Virtualization Technology**. Set **Enabled**.
 3. **Intel VT-d (Intel Virtualization Technology for Directed I/O)** — *Advanced → System Agent (SA) Configuration* (a different submenu than VMX, so don't stop after the first toggle). Set **Enabled**. This is what makes HBA passthrough possible.
 4. **Set `PCIEX4_3` to x4 mode** — in the onboard-devices / PCIe configuration section, force the bottom slot to **x4**. This keeps the HBA's lane allocation clean and predictable in its chipset-attached group.
 

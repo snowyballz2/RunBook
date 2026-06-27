@@ -18,7 +18,7 @@ Almost any 64-bit PC from the last decade can run Proxmox. You need: a CPU with 
 > - **CPU** — anything 64-bit with virtualization (Intel VT-x (Virtual Machine Extensions) or AMD-V). Practically every desktop CPU since ~2010 has it; it just may be switched off in the BIOS (next steps).
 > - **RAM** — Proxmox itself wants ~2 GB; every container and VM (virtual machine) you run needs its own share. 8 GB is a workable start, 16 GB+ is comfortable.
 > - **Disk** — an SSD makes everything feel dramatically better than a hard drive. 128 GB+ gives you room for several VMs. The install **wipes the whole drive**. If the machine has several drives, decide *now* which one Proxmox gets: a common build is a small SSD for Proxmox and its guests plus bigger drives left alone for data (the *TrueNAS* guide hands those over later) — the installer will ask which drive to erase, and you want a ready answer.
-> - **Network** — one wired Gigabit port. For PCIe (Peripheral Component Interconnect Express) passthrough later (GPU, disk controllers) the CPU/board also needs VT-d (Intel Virtualization Technology for Directed I/O) (Intel) or AMD-Vi/IOMMU (Input/Output Memory Management Unit) — most do.
+> - **Network** — one wired Gigabit port. For PCIe (Peripheral Component Interconnect Express) passthrough later (GPU, disk controllers) the CPU/board also needs VT-d (Intel Virtualization Technology for Directed I/O) or AMD-Vi/IOMMU (Input/Output Memory Management Unit) — most do.
 > - **Old laptops, mini PCs, ex-office desktops** (Dell OptiPlex, HP EliteDesk, Lenovo ThinkCentre) are all excellent candidates and very common Proxmox hosts.
 
 ### Save anything off the PC first

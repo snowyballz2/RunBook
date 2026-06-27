@@ -13,7 +13,7 @@ Look at what your bookmarks bar has become: `https://192.168.1.50:8006` with a c
 
 A reverse proxy is one small container that becomes the only address you browse to. You ask for `https://proxmox.example.com`; it reads the name, forwards the request to `192.168.1.50:8006` behind the scenes, and hands back the answer — over a connection covered by one real, browser-trusted certificate that serves every name at once. The tool here is **Nginx Proxy Manager** (NPM): nginx doing the proxying, with a web UI instead of config files.
 
-Two rules survive untouched. The proxy serves your LAN (local area network) (and, through the *Remote Access* guide, your tailnet) — **no router port-forwards, not for this, not ever**. And the certificate will arrive without exposing anything, which is the cleverest part of the whole guide.
+Two rules survive untouched. The proxy serves your LAN (local area network, plus your tailnet via the *Remote Access* guide) — **no router port-forwards, not for this, not ever**. And the certificate will arrive without exposing anything, which is the cleverest part of the whole guide.
 
 > [!NOTE]
 > This guide leans on the stack you have built: AdGuard Home from the *AdGuard Home* guide must be the house DNS (Domain Name System), because that is how the new names will resolve, and the *Remote Access* subnet route is what carries them beyond your walls.
