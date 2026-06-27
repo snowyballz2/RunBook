@@ -67,6 +67,23 @@ Check you have everything before you start — the later pages assume each piece
 > - **Leak protection:** 12x Third Reality leak sensors, an Aqara Valve Controller T1 on the main shutoff lever, and Third Reality smart plugs acting as Zigbee routers
 > - **Already in the house:** Lutron Caseta lights and shades (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge
 
+### Save your files and line up a second computer
+Two things to handle before any hardware goes together — both easy to forget, both painful to discover late.
+
+**The 500 GB NVMe currently has Windows and your files on it.** It becomes the Proxmox boot drive, and the install **erases the whole drive**. Copy anything you want to keep onto another machine or an external disk *before* you start — there is no undo once the installer runs.
+
+**You also need a second, working computer nearby** — in this all-Apple house, your Mac. The server has no operating system yet, so every download and prep task happens on that other machine: fetching the Proxmox installer, downloading the board's BIOS, and writing the USB sticks. You also borrow a **monitor and keyboard** plugged straight into the server for the install itself, then unplug them and run everything from the Mac's browser once Proxmox is up.
+
+> [!WARNING]
+> Wiping the NVMe is irreversible. Confirm your files are copied off — and that a few of them actually open from the copy — before you reach the install.
+
+> [!DETAILS] What to pull off the NVMe before it is wiped
+> Most of what matters lives in a handful of places — work down this list on the Windows machine, then copy it all to an external drive or another PC and spot-check that it opens:
+> - **Personal files** — `Documents`, `Desktop`, `Downloads`, `Pictures`, `Videos`. Downloads is the one people forget.
+> - **Browser bookmarks and saved passwords** — export them from each browser's settings (delete any exported password file once it is safely imported elsewhere).
+> - **License keys** — pull keys for paid software from purchase emails or each app's About/Account screen while you can still open it.
+> - **App data** — paste `%APPDATA%` into a File Explorer address bar and skim for email clients, chat history, and configs worth keeping.
+
 ### Set the server's address
 The whole collection starts from one number — the static address you give the Proxmox host. Set it now and every later page reuses it.
 

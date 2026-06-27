@@ -22,23 +22,23 @@ The platform is a Z370 build: an ASUS ROG Maximus X Hero board with an Intel i7-
 <text x="46" y="84" style="fill:var(--color-ink-soft);font-size:10px">ASUS Maximus X Hero · rear I/O at left edge</text>
 <rect x="46" y="92" width="150" height="24" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="121" y="108" text-anchor="middle" style="fill:currentColor">ZBT-2 · USB (use extension)</text>
-<rect x="120" y="130" width="190" height="34" rx="4" style="fill:var(--color-accent);fill-opacity:0.14;stroke:var(--color-accent)"/>
+<rect x="120" y="130" width="190" height="34" rx="4" style="fill:#10b981;fill-opacity:0.14;stroke:#10b981"/>
 <text x="215" y="151" text-anchor="middle" style="fill:currentColor">GTX 1080 Ti · top x16</text>
 <rect x="120" y="176" width="104" height="22" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="172" y="191" text-anchor="middle" style="fill:currentColor">NVMe (M.2)</text>
-<rect x="120" y="276" width="190" height="32" rx="4" style="fill:var(--color-note);fill-opacity:0.16;stroke:var(--color-note)"/>
+<rect x="120" y="276" width="190" height="32" rx="4" style="fill:#6366f1;fill-opacity:0.16;stroke:#6366f1"/>
 <text x="215" y="296" text-anchor="middle" style="fill:currentColor">9300-8i HBA · bottom x4</text>
 <rect x="30" y="326" width="286" height="44" rx="4" style="fill:var(--color-ink-faint);fill-opacity:0.12;stroke:var(--color-line-strong)"/>
 <text x="173" y="352" text-anchor="middle" style="fill:currentColor">EVGA 850W GQ · PSU (basement)</text>
 <rect x="330" y="72" width="156" height="238" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="338" y="88" style="fill:var(--color-ink-soft);font-size:10px">Fixed rear trays</text>
-<rect x="340" y="98" width="136" height="58" rx="4" style="fill:var(--color-note);fill-opacity:0.16;stroke:var(--color-note)"/>
+<rect x="340" y="98" width="136" height="58" rx="4" style="fill:#6366f1;fill-opacity:0.16;stroke:#6366f1"/>
 <text x="408" y="122" text-anchor="middle" style="fill:currentColor">IronWolf #1</text>
 <text x="408" y="138" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">mirror → HBA</text>
-<rect x="340" y="162" width="136" height="58" rx="4" style="fill:var(--color-note);fill-opacity:0.16;stroke:var(--color-note)"/>
+<rect x="340" y="162" width="136" height="58" rx="4" style="fill:#6366f1;fill-opacity:0.16;stroke:#6366f1"/>
 <text x="408" y="186" text-anchor="middle" style="fill:currentColor">IronWolf #2</text>
 <text x="408" y="202" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">mirror → HBA</text>
-<rect x="340" y="226" width="136" height="58" rx="4" style="fill:var(--color-warning);fill-opacity:0.18;stroke:var(--color-warning)"/>
+<rect x="340" y="226" width="136" height="58" rx="4" style="fill:#f59e0b;fill-opacity:0.18;stroke:#f59e0b"/>
 <text x="408" y="250" text-anchor="middle" style="fill:currentColor">IronWolf #3</text>
 <text x="408" y="266" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">footage → board SATA</text>
 <rect x="508" y="66" width="158" height="74" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
@@ -47,11 +47,11 @@ The platform is a Z370 build: an ASUS ROG Maximus X Hero board with an Intel i7-
 <rect x="508" y="152" width="158" height="56" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="587" y="184" text-anchor="middle" style="fill:currentColor">GS308EPP switch</text>
 <text x="508" y="232" style="fill:var(--color-ink-soft);font-size:10px">↑ external to the case</text>
-<rect x="20" y="404" width="14" height="14" rx="3" style="fill:var(--color-accent);fill-opacity:0.14;stroke:var(--color-accent)"/>
+<rect x="20" y="404" width="14" height="14" rx="3" style="fill:#10b981;fill-opacity:0.14;stroke:#10b981"/>
 <text x="40" y="415" style="fill:var(--color-ink-soft);font-size:10.5px">host-shared (GPU)</text>
-<rect x="178" y="404" width="14" height="14" rx="3" style="fill:var(--color-note);fill-opacity:0.16;stroke:var(--color-note)"/>
+<rect x="178" y="404" width="14" height="14" rx="3" style="fill:#6366f1;fill-opacity:0.16;stroke:#6366f1"/>
 <text x="198" y="415" style="fill:var(--color-ink-soft);font-size:10.5px">TrueNAS — mirror on the HBA</text>
-<rect x="410" y="404" width="14" height="14" rx="3" style="fill:var(--color-warning);fill-opacity:0.18;stroke:var(--color-warning)"/>
+<rect x="410" y="404" width="14" height="14" rx="3" style="fill:#f59e0b;fill-opacity:0.18;stroke:#f59e0b"/>
 <text x="430" y="415" style="fill:var(--color-ink-soft);font-size:10.5px">Frigate footage (on the board)</text>
 </svg>
 
@@ -92,7 +92,7 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 <text x="20" y="27" style="fill:currentColor;font-size:14px;font-weight:600">PCIe slot plan — Maximus X Hero</text>
 <rect x="18" y="42" width="644" height="160" rx="10" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="40" y="74" style="fill:currentColor">PCIEX16_1 · CPU lanes · x16</text>
-<rect x="360" y="57" width="282" height="26" rx="4" style="fill:var(--color-accent);fill-opacity:0.14;stroke:var(--color-accent)"/>
+<rect x="360" y="57" width="282" height="26" rx="4" style="fill:#10b981;fill-opacity:0.14;stroke:#10b981"/>
 <text x="501" y="74" text-anchor="middle" style="fill:currentColor">GTX 1080 Ti — stays on host</text>
 <text x="40" y="112" style="fill:var(--color-ink-soft)">PCIEX16_2 · CPU lanes · x8</text>
 <rect x="360" y="95" width="282" height="26" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
@@ -101,7 +101,7 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 <rect x="360" y="133" width="282" height="26" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="501" y="150" text-anchor="middle" style="fill:currentColor">500 GB NVMe — OS + Frigate cache</text>
 <text x="40" y="188" style="fill:currentColor">PCIEX4_3 · chipset · x4</text>
-<rect x="360" y="171" width="282" height="26" rx="4" style="fill:var(--color-note);fill-opacity:0.16;stroke:var(--color-note)"/>
+<rect x="360" y="171" width="282" height="26" rx="4" style="fill:#6366f1;fill-opacity:0.16;stroke:#6366f1"/>
 <text x="501" y="188" text-anchor="middle" style="fill:currentColor">9300-8i HBA — passed to TrueNAS</text>
 <text x="20" y="228" style="fill:var(--color-ink-soft);font-size:10.5px">Bottom chipset slot lands in its own clean IOMMU group — seat the HBA here, then force it to x4 in the BIOS.</text>
 </svg>
@@ -132,10 +132,10 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 <rect x="24" y="62" width="120" height="128" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="84" y="122" text-anchor="middle" style="fill:currentColor">EVGA 850W</text>
 <text x="84" y="140" text-anchor="middle" style="fill:currentColor">GQ PSU</text>
-<line x1="144" y1="92" x2="378" y2="80" style="stroke:var(--color-warning);stroke-width:2"/>
-<line x1="144" y1="120" x2="378" y2="124" style="stroke:var(--color-warning);stroke-width:2"/>
-<line x1="144" y1="150" x2="378" y2="169" style="stroke:var(--color-warning);stroke-width:2"/>
-<rect x="378" y="64" width="204" height="32" rx="4" style="fill:var(--color-accent);fill-opacity:0.14;stroke:var(--color-accent)"/>
+<line x1="144" y1="92" x2="378" y2="80" style="stroke:#f43f5e;stroke-width:2"/>
+<line x1="144" y1="120" x2="378" y2="124" style="stroke:#f43f5e;stroke-width:2"/>
+<line x1="144" y1="150" x2="378" y2="169" style="stroke:#f43f5e;stroke-width:2"/>
+<rect x="378" y="64" width="204" height="32" rx="4" style="fill:#10b981;fill-opacity:0.14;stroke:#10b981"/>
 <text x="480" y="84" text-anchor="middle" style="fill:currentColor">GTX 1080 Ti — 2× PCIe 8-pin</text>
 <rect x="378" y="108" width="204" height="32" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="480" y="128" text-anchor="middle" style="fill:currentColor">Board — 24-pin + 8-pin CPU</text>
@@ -143,18 +143,18 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 <text x="480" y="173" text-anchor="middle" style="fill:currentColor">3× IronWolf — 1 SATA-power each</text>
 <line x1="18" y1="208" x2="662" y2="208" style="stroke:var(--color-line)"/>
 <text x="20" y="232" style="fill:currentColor;font-size:12px;font-weight:600">② Data — from the board and the HBA</text>
-<rect x="24" y="248" width="140" height="58" rx="6" style="fill:var(--color-note);fill-opacity:0.14;stroke:var(--color-note)"/>
+<rect x="24" y="248" width="140" height="58" rx="6" style="fill:#6366f1;fill-opacity:0.14;stroke:#6366f1"/>
 <text x="94" y="272" text-anchor="middle" style="fill:currentColor">9300-8i HBA</text>
 <text x="94" y="290" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">1× SFF-8643 port</text>
 <rect x="212" y="248" width="104" height="58" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="264" y="272" text-anchor="middle" style="fill:currentColor">SFF-8643 →</text>
 <text x="264" y="290" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">4× SATA breakout</text>
-<line x1="164" y1="277" x2="212" y2="277" style="stroke:var(--color-note);stroke-width:2"/>
-<line x1="316" y1="266" x2="470" y2="262" style="stroke:var(--color-note);stroke-width:2"/>
-<line x1="316" y1="292" x2="470" y2="302" style="stroke:var(--color-note);stroke-width:2"/>
-<rect x="470" y="246" width="188" height="32" rx="4" style="fill:var(--color-note);fill-opacity:0.16;stroke:var(--color-note)"/>
+<line x1="164" y1="277" x2="212" y2="277" style="stroke:#6366f1;stroke-width:2"/>
+<line x1="316" y1="266" x2="470" y2="262" style="stroke:#6366f1;stroke-width:2"/>
+<line x1="316" y1="292" x2="470" y2="302" style="stroke:#6366f1;stroke-width:2"/>
+<rect x="470" y="246" width="188" height="32" rx="4" style="fill:#6366f1;fill-opacity:0.16;stroke:#6366f1"/>
 <text x="564" y="266" text-anchor="middle" style="fill:currentColor">IronWolf #1 — mirror</text>
-<rect x="470" y="286" width="188" height="32" rx="4" style="fill:var(--color-note);fill-opacity:0.16;stroke:var(--color-note)"/>
+<rect x="470" y="286" width="188" height="32" rx="4" style="fill:#6366f1;fill-opacity:0.16;stroke:#6366f1"/>
 <text x="564" y="306" text-anchor="middle" style="fill:currentColor">IronWolf #2 — mirror</text>
 <text x="322" y="332" style="fill:var(--color-ink-soft);font-size:10px">+ 2 tails spare (grow later)</text>
 <rect x="24" y="360" width="140" height="150" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
@@ -162,20 +162,20 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 <text x="36" y="412" style="fill:var(--color-ink-soft);font-size:10.5px">SATA port</text>
 <text x="36" y="440" style="fill:var(--color-ink-soft);font-size:10.5px">M.2 slot</text>
 <text x="36" y="468" style="fill:var(--color-ink-soft);font-size:10.5px">USB</text>
-<line x1="164" y1="406" x2="470" y2="390" style="stroke:var(--color-accent);stroke-width:2"/>
-<line x1="164" y1="436" x2="470" y2="431" style="stroke:var(--color-accent);stroke-width:2"/>
-<line x1="164" y1="464" x2="470" y2="471" style="stroke:var(--color-accent);stroke-width:2"/>
-<rect x="470" y="374" width="188" height="32" rx="4" style="fill:var(--color-warning);fill-opacity:0.18;stroke:var(--color-warning)"/>
+<line x1="164" y1="406" x2="470" y2="390" style="stroke:#10b981;stroke-width:2"/>
+<line x1="164" y1="436" x2="470" y2="431" style="stroke:#10b981;stroke-width:2"/>
+<line x1="164" y1="464" x2="470" y2="471" style="stroke:#10b981;stroke-width:2"/>
+<rect x="470" y="374" width="188" height="32" rx="4" style="fill:#f59e0b;fill-opacity:0.18;stroke:#f59e0b"/>
 <text x="564" y="394" text-anchor="middle" style="fill:currentColor">IronWolf #3 — footage</text>
 <rect x="470" y="416" width="188" height="30" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="564" y="435" text-anchor="middle" style="fill:currentColor">500 GB NVMe</text>
 <rect x="470" y="456" width="188" height="30" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="564" y="475" text-anchor="middle" style="fill:currentColor">ZBT-2 coordinator</text>
-<rect x="22" y="512" width="14" height="11" rx="2" style="fill:var(--color-warning)"/>
+<rect x="22" y="512" width="14" height="11" rx="2" style="fill:#f43f5e"/>
 <text x="42" y="521" style="fill:var(--color-ink-soft);font-size:10.5px">PSU power</text>
-<rect x="150" y="512" width="14" height="11" rx="2" style="fill:var(--color-note)"/>
+<rect x="150" y="512" width="14" height="11" rx="2" style="fill:#6366f1"/>
 <text x="170" y="521" style="fill:var(--color-ink-soft);font-size:10.5px">HBA → mirror (SAS)</text>
-<rect x="330" y="512" width="14" height="11" rx="2" style="fill:var(--color-accent)"/>
+<rect x="330" y="512" width="14" height="11" rx="2" style="fill:#10b981"/>
 <text x="350" y="521" style="fill:var(--color-ink-soft);font-size:10.5px">motherboard data (SATA / M.2 / USB)</text>
 </svg>
 

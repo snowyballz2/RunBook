@@ -14,7 +14,7 @@ This is the bare-metal install of **Proxmox VE** — the hypervisor that hosts e
 ## Make the installer USB
 
 ### Download the Proxmox VE ISO
-Get the ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads) — click **Proxmox Virtual Environment**, then the top entry, the **Proxmox VE 9.2 ISO Installer**. It is free, needs no account, and is about 1.7 GB.
+Do this on your everyday Mac — the server has no operating system yet, so the download and the USB-writing both happen on another computer. Get the ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads) — click **Proxmox Virtual Environment**, then the top entry, the **Proxmox VE 9.2 ISO Installer**. It is free, needs no account, and is about 1.7 GB.
 
 > [!DETAILS] Verify the download (optional but smart)
 > Hash the file and compare it against the SHA256 checksum shown next to the download link. A match means the file arrived intact and untampered. On macOS — the household is all-Apple, so this is the line you will use:
@@ -63,7 +63,7 @@ At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts.
 
 > [!DETAILS] Every prompt the installer shows, in order
 > 1. **EULA** — read or skim, click I agree.
-> 2. **Target disk** — select the **500 GB NVMe**. This drive holds the Proxmox OS and, later, the Frigate cache; the three IronWolf 4 TB spinners stay untouched here. Leave the **Options** filesystem at the default (ext4 on LVM) — this is a single boot drive, not a mirror.
+> 2. **Target disk** — select the **500 GB NVMe**. The install **wipes this whole drive**, so be certain you already copied its Windows files off (the prep step before you began). This drive holds the Proxmox OS and, later, the Frigate cache; the three IronWolf 4 TB spinners stay untouched here. Leave the **Options** filesystem at the default (ext4 on LVM) — this is a single boot drive, not a mirror.
 > 3. **Country, time zone, keyboard layout** — usually auto-detected; confirm and move on.
 > 4. **Password, confirm, email address** — the root password above, plus an email for system notifications.
 > 5. **Management network** — pick the **wired interface**, enter the **hostname** you chose, the **static IP** you picked for the server, and your router's address in both the **Gateway** and **DNS (Domain Name System) server** fields.
