@@ -1,0 +1,111 @@
+---
+title: TrueNAS Storage
+subtitle: A ZFS mirror on the passed-through HBA, plus the Frigate footage drive
+collection: My Build
+order: 7
+accent: amber
+---
+
+TrueNAS turns the three Seagate IronWolf spinners into a proper network-storage appliance — shared folders, snapshots, and the ZFS (Zettabyte File System) filesystem guarding your data. This build does it the way iXsystems recommends: instead of plumbing disks through one at a time, the whole LSI/Broadcom 9300-8i HBA (host bus adapter) was VFIO (Virtual Function I/O)-passed to this VM (virtual machine) earlier, so ZFS sees the raw drives exactly as bare metal would — genuine SMART, full per-drive health, none of the silent power-loss corruption risk that per-disk passthrough carries.
+
+## Wire the drives first
+
+### Cable each drive to the right place
+Do this during the physical build, before the VM ever boots — the wiring is what makes the passthrough below behave:
+
+- **HBA → the bottom `x4_3` PCIe (Peripheral Component Interconnect Express) slot**, set to x4 in BIOS. That chipset-attached slot is what gives the card a clean IOMMU (Input/Output Memory Management Unit) group so it can be isolated and passed through whole.
+- **One SFF-8643 *forward* breakout cable** into one of the HBA's two internal ports → it fans out to **four SATA (Serial ATA) plugs**.
+- **Breakout SATA 1 → mirror disk A** (one ST4000VN006), **SATA 2 → mirror disk B** (the second ST4000VN006). The remaining two tails are spare — room to grow the pool later. Both mirror disks ride the HBA, so they belong to TrueNAS.
+- **Footage disk → a motherboard SATA port, *not* the HBA.** The third ST4000VN006 is Frigate's. The whole HBA goes to this VM, so anything plugged into it vanishes from the Proxmox host — and the footage drive has to stay on a board port the host can still see, because the host is what hands that disk into the Frigate container.
+- **NVMe (Non-Volatile Memory Express) → the board's M.2 slot** (Proxmox OS plus the Frigate cache — untouched by TrueNAS).
+- **Power:** a SATA-power lead from the EVGA 850W PSU (power supply unit) to each of the three 4 TB drives.
+
+> [!NOTE]
+> All three 3.5" IronWolfs mount in the Thermaltake View 71's **three fixed drive trays behind the motherboard tray** — the removable front "pod" cages aren't required. Check behind the rear side panel first; if those trays are missing too, a pair of universal stackable 3.5" brackets bolt to the basement floor. The roughly 300 mm 1080 Ti clears the front cage area regardless.
+
+> [!WARNING]
+> All three disks get claimed entirely — the two by ZFS, the third by Frigate. Nothing you care about can be on them. That is by design here.
+
+## Stand up the VM
+
+### Create the TrueNAS VM
+TrueNAS ships as a normal installer ISO, so use the standard Create VM wizard.
+
+1. Download **TrueNAS Community Edition** from [truenas.com](https://www.truenas.com/download-truenas-community-edition/) and upload the ISO to Proxmox.
+2. Run the Create VM wizard: **2 cores, 8192 MB memory** (ZFS is memory-hungry — it uses RAM as cache; give it more if you can spare it), a **32 GB boot disk**, network on `vmbr0`.
+3. Boot the VM, pick **Install/Upgrade**, and install onto the only disk offered — the virtual boot disk. The IronWolf drives are not attached as virtual disks here, and that is deliberate: they arrive through the passed-through HBA instead.
+4. The installer asks you to set a password for the administrative account (current versions name it `truenas_admin`). When the VM reboots, the console prints the web address — log in there.
+5. Detach the installer so it stops re-launching at boot: **Hardware → CD/DVD Drive → Do not use any media**.
+
+> [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
+> The address the console prints after install. Pin it with a DHCP (Dynamic Host Configuration Protocol) reservation on the router so it never moves.
+
+> [!INPUT] truenas-admin-user | TrueNAS admin username | | truenas_admin
+> Current versions create `truenas_admin` — leave as-is unless yours differs.
+
+> [!SECRET] truenas-admin-password | TrueNAS admin password
+> Set during install — the web UI login.
+
+> [!NOTE]
+> ECC RAM is ideal for ZFS data integrity but not required at home — this board takes standard 32 GB non-ECC, and that is fine.
+
+### Attach the HBA to this VM
+The 9300-8i was already VFIO-bound on the host and the whole card assigned to this VM during PCIe passthrough setup. There is no per-disk `serial=` plumbing on this build — passing the entire controller is the whole reason the card exists. If the card is not yet on the VM, in the VM's **Hardware** tab: **Add → PCI Device → the 9300-8i**, tick **All Functions**, and add it to the TrueNAS VM only.
+
+> [!WARNING]
+> VFIO is for the HBA only. The GTX 1080 Ti is *shared* across the service containers from the host driver and must never be VFIO-bound or handed to a VM. Keep the two policies straight: the HBA locks to this one VM; the GPU never locks to anyone.
+
+### Confirm the raw disks appear
+Boot the VM and open **Storage → Disks**. You should see all **three Seagate IronWolf ST4000VN006 4 TB** drives by their real model and serial, each reporting genuine SMART — exactly as if TrueNAS were running on bare metal.
+
+> [!NOTE]
+> Because the whole controller is passed through, SMART reaches TrueNAS directly. There is no "monitor from the host" blind spot like per-disk passthrough has — TrueNAS's own Drive Health Management watches these disks.
+
+> [!DETAILS] If a disk is missing from the list
+> A drive that does not appear is almost always a cabling or power miss, not a TrueNAS fault. Power the VM fully off, then check: the breakout cable is seated in the HBA port, the SATA-power lead reaches every drive, and the disk is one of the two on the HBA (the footage disk lives on a motherboard port and will *not* show here — that is correct). On the Proxmox host, `lspci -nnk | grep -A3 -i -e LSI -e SAS -e Broadcom` shows the card with `Kernel driver in use: vfio-pci`, confirming it is bound for passthrough to the VM.
+
+## Build the pools
+
+### Mirror two of the IronWolf disks
+A pool is ZFS's big bucket: physical disks fused into one storage unit. In the TrueNAS web interface go to **Storage** and click **Create Pool** to open the wizard. Name the pool `tank` (lowercase), set **Layout → Mirror**, and select **two** of the three IronWolf drives. End on the **Review** screen and click **Create Pool**.
+
+With a mirror, one drive can die and the data survives; usable space is one disk's worth — roughly **4 TB**. The second disk holds the live copy.
+
+> [!NOTE]
+> Both mirror disks are the same model from the same batch — the one failure a mirror can't absorb is both dying together. That risk is accepted here because the irreplaceable data also goes offsite (below) and bulk data is replaceable. The spec that genuinely matters is recording technology: the ST4000VN006 is **CMR (conventional magnetic recording)**, not SMR (shingled magnetic recording), so it rebuilds a mirror cleanly.
+
+### Keep the third IronWolf off the mirror
+The **third** ST4000VN006 is **not** part of `tank`. It is the dedicated **Frigate footage drive** — camera recordings are bulk, replaceable, write-heavy data that has no business churning a mirror or eating snapshot space. That disk lives on a motherboard SATA port and is mounted into the Frigate container directly after this collection's camera work, so it does not belong to a TrueNAS pool at all. Either way it gets **no redundancy and no offsite, by choice.**
+
+### Add a dataset with the SMB preset
+Datasets are the folders-with-superpowers inside a pool — each carries its own settings, and snapshot tasks target them individually. Go to **Datasets**, select the `tank` root dataset, click **Add Dataset**, and create:
+
+- **`files`** — general household storage. Set **Dataset Preset → SMB (Server Message Block)** so it gets case-insensitive names and NFSv4 ACLs, the permission style SMB expects.
+- **`backups`** — a separate dataset (also SMB preset) so the build's safety copies stay out of your file snapshots.
+
+## Share it
+
+### Create the SMB user
+SMB — served by Samba — is the network-drive protocol Macs speak natively, and TrueNAS requires at least one local SMB user before it will create any share. You cannot connect as root or a built-in account. Go to **Credentials → Users → Add**, fill in a Full Name, a username, and a strong password, and leave **SMB User** ticked (it is by default) — that checkbox is what makes these credentials valid for share access.
+
+> [!INPUT] smb-user | SMB share username
+> One shared household user is fine to start; add per-person users later.
+
+> [!SECRET] smb-password | SMB share password
+> The password typed on every Mac and phone that connects.
+
+### Create the SMB share
+Go to **Shares** and click **Add** on the **Windows (SMB) Shares** widget. Point the path at the `tank/files` dataset — the share name pre-fills from the dataset name, courtesy of the SMB preset — and save. When TrueNAS prompts to enable or restart the **SMB service**, accept: that is what puts the share on the network.
+
+### Connect from your Macs
+The share answers at the VM's IP address. In Finder, choose **Go → Connect to Server** and enter the address, then your SMB user's credentials when asked:
+
+```bash
+# macOS — Finder > Go > Connect to Server:
+smb://192.168.1.20
+```
+
+Swap in your own TrueNAS IP. This is an all-Apple household, so the `files` share showing up in every Finder sidebar is the goal.
+
+> [!NOTE]
+> This share is also the landing zone for the build's backups — the Proxmox vzdump archives and the host-config backup point at the `backups` dataset after the storage is up. Snapshots, scrubs, disk-health alerts, and the offsite copy to Backblaze B2 get their own steps later in this collection.
