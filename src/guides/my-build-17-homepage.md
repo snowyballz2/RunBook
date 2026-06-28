@@ -36,8 +36,8 @@ This happens *while the script runs*. When it asks **Default or Advanced**, pick
 > [!DETAILS] What the script actually builds
 > Node.js and the pnpm package manager; the source of the latest Homepage release unpacked to `/opt/homepage`; then a full `pnpm install` and `pnpm build` — the compile step is why the RAM default is a generous 4 GB and the install is slow. It runs as a systemd service named `homepage` on port 3000, seeds starter config into `/opt/homepage/config/`, and writes one more file worth remembering: `/opt/homepage/.env`, containing `HOMEPAGE_ALLOWED_HOSTS=localhost:3000,`-your-IP-`:3000`. That is the allow-list from the warning above, and it comes back when you wire in a proxy name.
 
-### Set it to start at boot
-A front door that vanishes after a power cut teaches the family to stop using it. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
+### Confirm it loaded, then set it to start at boot
+First, browse to `http://192.168.1.55:3000` and confirm the default page with its sample tiles loads — that proves the install succeeded, and everything below is editing that into your own page. Then make it permanent: a front door that vanishes after a power cut teaches the family to stop using it. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
 
 ```bash
 pct set 108 -onboot 1        # swap in the container's actual ID
@@ -118,7 +118,7 @@ Save, click the refresh icon, and the page is suddenly worth bookmarking.
 > Bare names like `proxmox.png` come from the community **Dashboard Icons** set, which has an icon for nearly everything self-hosted (`.png`, `.svg`, and `.webp` all work). No icon there? Prefix `mdi-` for any Material Design icon (`mdi-flask-outline`) or `si-` for a brand logo from Simple Icons (`si-github`), optionally with a color suffix like `mdi-flask-#5b8f7a`. A full URL to any image works too.
 
 > [!DETAILS] Pointing at the pretty names instead
-> Once Nginx Proxy Manager gives your services real names, the `href` lines can use `https://proxmox.home.lan` and friends — every click lands on a padlock instead of a certificate warning, and the family stays off Frigate's wide-open port 5000. The trade-off: every tile then depends on the proxy and the AdGuard DNS (Domain Name System) rewrite staying healthy, so the dashboard's links break precisely when the proxy is the thing that broke. Direct addresses keep it honest; pretty names make it friendlier. Either way, keep the `siteMonitor` lines on direct addresses so the dots keep telling the truth.
+> Once Nginx Proxy Manager gives your services real names, the `href` lines can use `https://proxmox.example.com` and friends — every click lands on a padlock instead of a certificate warning, and the family stays off Frigate's wide-open port 5000. The trade-off: every tile then depends on the proxy and the AdGuard DNS (Domain Name System) rewrite staying healthy, so the dashboard's links break precisely when the proxy is the thing that broke. Direct addresses keep it honest; pretty names make it friendlier. Either way, keep the `siteMonitor` lines on direct addresses so the dots keep telling the truth.
 
 ### The strip across the top
 `widgets.yaml` fills the page header. A search box and a clock are the two that earn their place:
@@ -148,7 +148,7 @@ Save, click the refresh icon, and the page is suddenly worth bookmarking.
 >           password: paste-the-token-secret
 > ```
 >
-> The others, one line each: `homeassistant` wants a long-lived access token from your Home Assistant profile page; `adguard` reuses the dashboard login; `truenas` an API key; `uptimekuma` the slug of a status page; `frigate` needs nothing at all and gains a list of latest detections if you add `enableRecentEvents: true`; `npm` the admin email and password. Exact recipes live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
+> The others, one line each: `homeassistant` wants a long-lived access token from your Home Assistant profile page; `adguard` reuses the dashboard login (`type: adguard`, `url`, plus `username` and `password`); `truenas` an API key (add `version: 2` on TrueNAS Scale 25.04 or newer, which this build runs); `uptimekuma` the slug of a status page; `frigate` needs nothing at all and gains a list of latest detections if you add `enableRecentEvents: true`; `npm` the admin email and password; `nextcloud` the NC-Token from its **Settings → System** page. Exact recipes live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
 
 > [!SECRET] homepage-proxmox-token | Proxmox API token secret (api@pam!homepage)
 
@@ -174,18 +174,18 @@ Save, click the refresh icon, done.
 ## Wire it into the build
 
 ### Give it a name behind the proxy
-Add one more proxy host in Nginx Proxy Manager, the same routine used for the other services: **Hosts → Proxy Hosts → Add Proxy Host**, domain `home.home.lan`, Scheme `http`, forwarding to the Homepage IP on port `3000`, **Websockets Support** on, then the certificate and **Force SSL** on the SSL tab. The wildcard DNS rewrite in AdGuard already answers for any new name, so there is nothing to add there. But there *is* one step unique to Homepage — teaching it to answer to the new name. In the container's console, edit `/opt/homepage/.env`:
+Add one more proxy host in Nginx Proxy Manager, the same routine used for the other services: **Hosts → Proxy Hosts → Add Proxy Host**, domain `home.example.com`, Scheme `http`, forwarding to the Homepage IP on port `3000`, **Websockets Support** on, then the wildcard certificate and **Force SSL** on the SSL tab. The wildcard `*.example.com` DNS rewrite in AdGuard already answers for any new name, so there is nothing to add there. But there *is* one step unique to Homepage — teaching it to answer to the new name. In the container's console, edit `/opt/homepage/.env`:
 
 ```ini
 # /opt/homepage/.env — add the name to the allow-list (comma-separated, no spaces)
-HOMEPAGE_ALLOWED_HOSTS=localhost:3000,192.168.1.55:3000,home.home.lan
+HOMEPAGE_ALLOWED_HOSTS=localhost:3000,192.168.1.55:3000,home.example.com
 ```
 
 ```bash
 systemctl restart homepage
 ```
 
-Then `https://home.home.lan` greets you with a padlock and your tiles.
+Then `https://home.example.com` greets you with a padlock and your tiles.
 
 > [!WARNING]
 > Skip the `.env` edit and the new name answers with "Host validation failed. See logs for more details." That is not the proxy misbehaving — it is Homepage checking the browser's Host header against its allow-list, a deliberate safety feature. Add the host exactly as the error logs it, restart the service, done.
@@ -197,7 +197,7 @@ Add one more HTTP monitor in Uptime Kuma, pointed at the direct address `http://
 When you choose to take a new release, type `update` in the container's console. It fetches the newest source, rebuilds (patience again), and preserves your config files and `.env`. Take a Proxmox snapshot first — the same habit used for the rest of these containers — so rollback is instant if a release misbehaves.
 
 ### Make it the start page
-The actual point: on the family's devices, set `https://home.home.lan` — or the plain `http://192.168.1.55:3000` — as the browser's start page, or at least the first bookmark on the bar. The build now opens like an appliance.
+The actual point: on the family's devices, set `https://home.example.com` — or the plain `http://192.168.1.55:3000` — as the browser's start page, or at least the first bookmark on the bar. The build now opens like an appliance.
 
 > [!NOTE]
 > Away from home, the dashboard works through the Tailscale tunnel exactly as-is: subnet routing delivers you to `192.168.1.55:3000`, which the allow-list already admits. The tiles' direct-address links just work; the pretty names also need your phone's DNS pointed back at AdGuard over the tunnel, which the remote-access setup already covers.

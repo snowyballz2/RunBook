@@ -45,7 +45,7 @@ smartctl -a /dev/sda
 > The third IronWolf — Frigate's footage disk — is *not* on the HBA; it sits on a motherboard SATA (Serial ATA) port and belongs to the host. Watch its health from the Proxmox node's **Disks** view (it shows a S.M.A.R.T. column), or with the same `smartctl` calls from the **Proxmox host shell**. That disk holds replaceable camera recordings, so it never goes offsite — but a dying drive is still worth knowing about early.
 
 > [!TIP]
-> Keep disk-intensive tasks apart: if you schedule a recurring LONG test, never put it on Sunday with the scrub, and pick low-usage hours. A weekly SHORT plus a monthly LONG is a sensible cadence on top of the automatic polling.
+> Keep disk-intensive tasks apart: if you schedule a recurring LONG test, never put it on Sunday with the scrub, and pick low-usage hours. A weekly SHORT plus a monthly LONG is a sensible cadence on top of the automatic polling. To make those recur instead of running them by hand, add them as **Cron Jobs** under **System → Advanced Settings** — for example a weekly `smartctl -t short /dev/sda` and a monthly `smartctl -t long /dev/sda` (and the same for the second mirror disk), keeping the LONG test off Sunday so it never overlaps the scrub.
 
 ## Make alerts reach you
 
@@ -92,6 +92,9 @@ The replacement must be the same 4TB capacity or larger, and TrueNAS wipes it. R
 > [!WARNING]
 > Replace a failed IronWolf as soon as you can. A degraded two-way mirror has no margin left — the next failure takes the pool, and with it everything that has not yet reached the offsite copy below.
 
+> [!DETAILS] If TrueNAS refuses partway through the drill
+> Two walls a brand-new IronWolf can hit: if **Offline** fails with *"no valid replicas"*, run a **Scrub** from the **ZFS Health** widget and retry once it finishes. If **Replace** is refused because the new ST4000VN006 carries old partitions or data (these drives may be from the same batch or previously used), the **Force** option in the **Replacing disk** dialog overrides the safety check — and erases whatever is on that disk.
+
 ## Get a copy off the property
 
 ### Reserve offsite for the irreplaceable
@@ -101,17 +104,17 @@ The discipline that keeps the bill sane: bulk, replaceable data — the camera f
 Go to **Data Protection** and click **Add** on the **Cloud Sync Task** widget. Pick a **Credential** for Backblaze B2 or click **Add New** (credentials live under **Credentials → Backup Credentials → Cloud Credentials**; B2 needs an Application Key ID and its key). Set **Direction** to **PUSH**, point the source at the irreplaceable dataset, click the folder icon on the remote **Folder** field to pick the bucket, choose a **Transfer Mode**, and give it a schedule — nightly is plenty.
 
 > [!DETAILS] SYNC or COPY, and the monthly bill
-> **SYNC** makes the bucket match the source — tidy, but a deletion at home propagates offsite on the next run. **COPY** only ever adds and updates, so deleted files linger as a safety net at the cost of slow clutter. For irreplaceable data, COPY's paranoia is the right default; the snapshots from the first phase remain your fast undo either way. Backblaze B2 runs around $6–7 per terabyte per month, so a few hundred gigabytes of photos and documents costs a few dollars — check current pricing, but it stays small as long as the footage never goes up.
+> **SYNC** makes the bucket match the source — tidy, but a deletion at home propagates offsite on the next run. **COPY** only ever adds and updates, so deleted files linger as a safety net at the cost of slow clutter. For irreplaceable data, COPY's paranoia is the right default; the snapshots from the first phase remain your fast undo either way. Backblaze B2 runs roughly $7 per terabyte per month ($6.95 as of May 2026 — check current pricing), so a few hundred gigabytes of photos and documents costs a few dollars, and it stays small as long as the footage never goes up.
 
 ### Encrypt it before it leaves the house
-Make the copy private so Backblaze only ever stores ciphertext. Under the task's **Advanced Options**, turn on **Remote Encryption** and set an **Encryption Password** and **Encryption Salt** — TrueNAS encrypts with rclone before the bytes leave the NAS. Use the field values below for these, and put the *same* two values in Vaultwarden as the source of truth.
+Make the copy private so Backblaze only ever stores ciphertext. Under the task's **Advanced Options**, turn on **Remote Encryption** and set an **Encryption Password** and **Encryption Salt** — TrueNAS encrypts with rclone before the bytes leave the NAS. Use the field values below for these, and record the same two values in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). The fields below are your durable record until then.
 
 > [!SECRET] b2-encryption-password | Backblaze B2 remote-encryption password
 
 > [!SECRET] b2-encryption-salt | Backblaze B2 remote-encryption salt
 
 > [!WARNING]
-> Put the encryption password and salt in Vaultwarden now, before the first run. Lose them and the offsite copy is unreadable by anyone, including you — the one way an encrypted backup fails you completely. Leave **Filename Encryption** off; current docs advise against it, and the directory structure stays visible regardless.
+> Record the encryption password and salt now, before the first run — capture them in the fields above and in your password manager (move them into Vaultwarden once it exists later in this build). Lose them and the offsite copy is unreadable by anyone, including you — the one way an encrypted backup fails you completely. Leave **Filename Encryption** off; current docs advise against it, and the directory structure stays visible regardless.
 
 ### Drill the offsite restore
 The snapshot and dead-disk drills rehearse copies you can see. The B2 copy is the one you cannot — and the encryption you just added is a second way to fail silently: a password that does not actually unlock the data looks identical to a good backup until the afternoon you reach for it. So prove the whole leg end to end.
@@ -119,7 +122,16 @@ The snapshot and dead-disk drills rehearse copies you can see. The B2 copy is th
 Use a one-off **PULL** task that never touches live data. Go to **Data Protection → Add** on the **Cloud Sync Task** widget, set **Direction** to **PULL**, pick the same **Credential** and remote **Folder** as the push, and point the local **Folder** at an empty scratch dataset (`restore-test`, deleted afterward). Under **Advanced Options**, re-enter the **Remote Encryption** password and salt — this is the part actually being tested. Run it once, then open a recovered photo and confirm it is the file, not scrambled bytes. If the password or salt is wrong, the data comes back garbled — far better to learn that today.
 
 > [!TIP]
-> Do this drill once when you set the offsite copy up, then once a year alongside the quarterly check. It is the only drill that also tests the encryption secret in Vaultwarden — which is exactly the value most likely to have rotted by the time it matters.
+> Do this drill once when you set the offsite copy up, then once a year alongside the quarterly check. It is the only drill that also tests the encryption secret you recorded above — which is exactly the value most likely to have rotted by the time it matters.
+
+### Point Home Assistant's backups at the NAS
+Home Assistant takes its own scheduled backups, but they default to the VM's own disk — so a dead HA VM disk takes its config and history with it. Redirect them to the share so they land on the mirror like everything else. In Home Assistant, go to **Settings → System → Storage**, click **Add network storage**, point it at the TrueNAS IP and the `backups` dataset's SMB share (the share you published when you set up TrueNAS storage), and set **Usage** to **Backups**. Then under **Settings → System → Backups**, select that network location as the backup target.
+
+> [!NOTE]
+> Until you do this, Home Assistant's backups sit only on the HA VM's own disk — they are not part of the Proxmox guest backups (those capture the VM as a machine, not HA's internal config snapshots). Redirecting them here is what makes the second on-site copy of Home Assistant's configuration real.
 
 ### Count to 3-2-1
 The scorecard is **3-2-1**: three copies of anything that matters, on at least two kinds of hardware, one of them offsite. Count honestly — the mirror is *one* copy, because redundancy inside a single pool is not a second copy, and neither are snapshots. The B2 Cloud Sync task gives the irreplaceable files their second copy, which is also the offsite one, and the scheduled Proxmox guest backups land second copies of every guest on this same NAS. For a home server, that is a respectable score, and you now know exactly where the gaps are.
+
+> [!DETAILS] Closing the third-copy gap without the cloud
+> Two routes beyond Backblaze, both pointed at the irreplaceable dataset from the first section here. **Replication** (**Data Protection → Replication Tasks**) sends ZFS snapshots of the dataset to a second ZFS system — ideally another TrueNAS box at a relative's house — over SSH (Secure Shell). The first run transfers everything; after that only incremental changes move, and because it ships snapshots themselves, the destination keeps the same point-in-time history a file-level cloud copy cannot. The humblest variant needs no subscription and no second box: copy the irreplaceable dataset to an external USB drive now and then, and keep that drive somewhere that isn't your house.

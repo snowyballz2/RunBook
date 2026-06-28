@@ -116,6 +116,8 @@ go2rtc:
 cameras:
   doorbell:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
       inputs:
         - path: rtsp://127.0.0.1:8554/doorbell
           input_args: preset-rtsp-restream
@@ -135,10 +137,16 @@ cameras:
 ```
 
 > [!NOTE]
-> Reading the odd parts: `channel0_main.bcs` is the full-resolution stream (recorded) and `channel0_ext.bcs` is the low-res sub stream (analyzed) — splitting them spares both the doorbell and the detector. The trailing `#video=copy#audio=copy#audio=opus` is deliberate: it passes the video through untouched, keeps the original audio for recording, *and* adds a second Opus audio track the browser live view needs. The bare `rtsp://…/Preview_01_sub` line is the talk-back path, and it must **not** carry an `ffmpeg:` prefix — go2rtc has to handle that stream directly for two-way audio to work.
+> Reading the odd parts: `channel0_main.bcs` is the full-resolution stream (recorded) and `channel0_ext.bcs` is the low-res sub stream (analyzed) — splitting them spares both the doorbell and the detector. The trailing `#video=copy#audio=copy#audio=opus` is deliberate: it passes the video through untouched, keeps the original audio for recording, *and* adds a second Opus audio track the browser live view needs. On the camera, `output_args: record: preset-record-generic-audio-copy` is what actually copies that original audio into the saved files — without it the recordings drop sound. The bare `rtsp://…/Preview_01_sub` line is the talk-back path, and it must **not** carry an `ffmpeg:` prefix — go2rtc has to handle that stream directly for two-way audio to work. The `live: streams:` block binds the live view (and its talk button) to that full `doorbell` stream rather than the detect substream.
 
 > [!TIP]
 > Talk-back needs the page served over **HTTPS** — browsers only allow microphone access on a secure connection (use Frigate's authenticated port `8971`). The reverse proxy's real certificate covers this, and the doorbell drives the speaker announcements set up in the automations work.
+
+> [!TIP]
+> Not interested in talking back? Drop the secondary `rtsp://…/Preview_01_sub` line entirely and keep just the http-flv video. That is the simplest, most reliable doorbell setup — you still get full recording and person/package detection, without the most fragile part of the config.
+
+> [!WARNING]
+> Reolink doorbells have limited streaming capacity and dislike many simultaneous connections. Detecting on the sub stream, as above, keeps the load light — but every extra consumer is another connection, and adding Reolink's own Home Assistant integration is a common one. Running everything at once can cause dropouts, so add one thing at a time and watch the logs.
 
 ## Add the RLC-510WA
 
@@ -178,7 +186,7 @@ cameras:
 ```
 
 > [!NOTE]
-> `h264Preview_01_main` / `_sub` is the usual RLC spelling, but confirm it from the Reolink app rather than trusting the example. Detecting on the sub stream is correct anyway — frames get resized down to the model's small input, so a high-resolution detect stream loses the extra detail for nothing. Frigate tracks `person` by default; add an `objects: track:` list to watch for `car`, `dog`, and friends.
+> `h264Preview_01_main` / `_sub` is the usual RLC spelling, but confirm it from the Reolink app rather than trusting the example. Detecting on the sub stream is correct anyway — frames get resized down to the model's small input, so a high-resolution detect stream loses the extra detail for nothing. Aim the detect stream at roughly 720p and **5 fps** (the recommended rate; 10 fps is the maximum worth using for most setups) — anything higher just burns effort on frames the model downscales away. Frigate tracks `person` by default; add an `objects: track:` list to watch for `car`, `dog`, and friends.
 
 > [!WARNING]
 > WiFi cameras drop more than wired ones — Frigate's docs are blunt that wireless streams are less reliable. If the RLC-510WA stutters, that is the link, not Frigate. The **Netgear GS308EPP** managed PoE (Power over Ethernet) switch is staged in the rack for future wired cameras; a camera on it joins Frigate the plain-RTSP way, no http-flv gymnastics needed.
@@ -186,7 +194,7 @@ cameras:
 ## Footage and retention
 
 ### Record to the dedicated footage drive
-Detection runs in the NVMe (Non-Volatile Memory Express)-cached container, but recordings are bulk, write-heavy data that belongs on a spinning disk. They go to the **third Seagate IronWolf ST4000VN006 4 TB** — the lone footage drive on a motherboard SATA (Serial ATA) port, deliberately kept off the two-disk TrueNAS ZFS (Zettabyte File System) mirror. Frigate writes everything under `/media/frigate` inside the container, so mount that drive on the host and hand it to the container as a mount point at `/media/frigate`. Then set retention explicitly — out of the box continuous recording is off:
+Detection runs in the NVMe (Non-Volatile Memory Express)-cached container, but recordings are bulk, write-heavy data that belongs on a spinning disk. They go to the **third Seagate IronWolf ST4000VN006 4 TB** — the lone footage drive on a motherboard SATA (Serial ATA) port, deliberately kept off the two-disk TrueNAS ZFS (Zettabyte File System) mirror. Frigate writes everything under `/media/frigate` inside the container — `recordings`, `clips` (snapshots), and `exports` — so mount that drive on the host and hand it to the container as a mount point at `/media/frigate`. Get the basic setup working on the container's local disk first, then move storage; that way a stream problem is never tangled up with a mount problem. Then set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time):
 
 ```yaml
 record:
@@ -196,6 +204,9 @@ record:
 ```
 
 Restart Frigate to apply. A lighter middle ground is a `motion:` block with a `days:` value instead of `continuous:`, keeping only the stretches where something moved.
+
+> [!WARNING]
+> The recordings tree under `/media/frigate` (`YYYY-MM-DD/HH/<camera>/MM.SS.mp4`, in UTC) is managed **entirely by Frigate** — retention is config-driven, so never browse in and delete clips by hand to reclaim space. Doing so corrupts Frigate's own bookkeeping. Change the `days:` values instead and let Frigate prune.
 
 > [!WARNING]
 > Continuous recording eats disk fast — sizing the footage drive for it is the whole reason that disk sits apart from the mirror, on a board SATA port the host can still see (the HBA and its two mirror disks belong to the TrueNAS VM and vanish from the host). Frigate has a safety valve — when under an hour of space remains it deletes the oldest hour — but watch actual usage for a few days and size `days:` from that. The footage drive gets no redundancy and no offsite, by choice.
@@ -213,7 +224,10 @@ mqtt:
   password: your-mqtt-password
 ```
 
-Then install the Frigate integration in the Home Assistant OS VM through HACS (the Home Assistant Community Store), restart Home Assistant, and add it under **Settings → Devices & services** — it asks for Frigate's address (`http://frigate-ip:5000`). You get a live entity per camera, occupancy and motion binary sensors per camera and zone, object-count and performance sensors, and the recordings browsable in Home Assistant's media browser — the raw material for the automations later in this build.
+Then install the Frigate integration in the Home Assistant OS VM through **HACS (the Home Assistant Community Store)**, which itself has to be installed once first. You get a live entity per camera, occupancy and motion binary sensors per camera and zone, object-count and performance sensors, and the recordings browsable in Home Assistant's media browser — the raw material for the automations later in this build.
+
+> [!DETAILS] Install HACS first, then the Frigate integration
+> The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog that must be installed once before any community integration can be downloaded. Follow the official install steps at [hacs.xyz](https://hacs.xyz/docs/use/) — they walk you through adding HACS as an Add-on and signing in with a GitHub account — then **restart Home Assistant**. Now open **HACS**, search for **Frigate**, download it, and **restart Home Assistant again**. Only then add the Frigate integration under **Settings → Devices & services**; it asks for Frigate's address (`http://frigate-ip:5000`).
 
 > [!INPUT] mqtt-user | MQTT username | | mqtt-user
 > The dedicated user Frigate logs in as — `mqtt-user` matches the example; edit if named differently.

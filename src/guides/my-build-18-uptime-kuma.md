@@ -81,6 +81,12 @@ Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name
 
 > [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.58
 
+> [!INPUT] vaultwarden-ip | Vaultwarden container IP | 192.168.1.56
+
+> [!INPUT] homepage-ip | Homepage container IP | 192.168.1.55
+
+> [!INPUT] proxy-ip | Nginx Proxy Manager container IP | 192.168.1.54
+
 > [!NOTE]
 > Each new monitor checks every 60 seconds, and **Retries** defaults to 0 — the first failed check marks the service down and alerts immediately. Setting Retries to 1 or 2 rides out a momentary blip before alerting; the monitor shows a pending state while it retries. On a home network with one Wi-Fi doorbell and a 5 MP Wi-Fi camera, a small retry value cuts down on noise from brief radio hiccups.
 
@@ -108,8 +114,11 @@ Your dashboard sits behind your login; a status page is the version everyone els
 ### Make alerts find your phone
 A red bar on a dashboard nobody has open is not an alert. Go to **Settings → Notifications**, click **Set Up Notification**, and pick a **Notification Type**. An easy first one is **ntfy**: install the ntfy app on your iPhone, subscribe to a topic, give Kuma that same **ntfy Topic**, and alerts push straight to your pocket. Tick **Default enabled** and **Apply on all existing monitors** so every monitor — including ones you add later — uses it.
 
+> [!DETAILS] Reaching you other ways
+> The **Notification Type** list is long. The other well-worn options: **Telegram** (a bot you create that messages you directly), **Email (SMTP)** (sends through any mail account's SMTP (Simple Mail Transfer Protocol) server, with an **SMTP Security** option for TLS (Transport Layer Security)), and **Webhook** (an HTTP POST of the alert to any **Webhook URL** — the glue option for anything not on the list).
+
 > [!DETAILS] Wiring alerts into Home Assistant
-> Since HA already drives this house, you can route Kuma's alerts through it: choose the built-in **Home Assistant** notification type, give it the HA URL and a **Long-Lived Access Token**, and it calls a notify service so alerts can fan out to the Nest speakers and HomePod mini as spoken TTS (text-to-speech) announcements over Cast. The reverse also exists — Home Assistant ships an official **Uptime Kuma** integration that polls this instance and creates per-monitor sensors — but for plain "tell me when it breaks", ntfy or this notify path is enough.
+> Since HA already drives this house, you can route Kuma's alerts through it: choose the built-in **Home Assistant** notification type, give it the HA URL and a **Long-Lived Access Token**, and it calls a notify service (the name defaults to `notify`, and alerts arrive titled "Uptime Kuma") so they can fan out to the Nest speakers and HomePod mini as spoken TTS (text-to-speech) announcements over Cast. The reverse also exists — Home Assistant 2025.8 added an official **Uptime Kuma** core integration that polls this instance every 30 seconds and creates per-monitor sensors — but for plain "tell me when it breaks", ntfy or this notify path is enough. If you find older write-ups pointing at a HACS (Home Assistant Community Store) integration, skip it: that project was archived in August 2025 and its author recommends the core integration.
 
 > [!WARNING]
 > All of Kuma's notifiers push *outward* from the container — to an ntfy topic, the Telegram API (application programming interface), a mail server, a webhook, or Home Assistant. None of them needs an inbound port-forward into your network. Keep it that way; this build opens no ports, and remote access runs over Tailscale.
@@ -128,4 +137,4 @@ Take a Proxmox snapshot first — the snapshot-before-changes habit from earlier
 > [!WARNING]
 > Do not re-run the install one-liner on the Proxmox *host* to update — on the host, that command begins the create-a-new-container flow. The same command behaves differently by location: pasted inside the container, `update` updates in place. It is pre-installed for you.
 
-Everything that matters — monitors, their history, notification settings, the SQLite database — lives in `/opt/uptime-kuma/data`. The Proxmox vzdump job that already backs this box up to the TrueNAS share (and onward to Backblaze B2) captures the whole container in one pass, so this monitor is covered by the same routine as everything else. If you ever copy that folder by hand, stop the service first (`systemctl stop uptime-kuma`) so the database file is consistent.
+Everything that matters — monitors, their history, notification settings, the SQLite database — lives in `/opt/uptime-kuma/data`. The Proxmox vzdump job that already backs this box up to the TrueNAS ZFS mirror captures the whole container in one pass, so this monitor is covered by the same on-site backup routine as every other guest. (Those guest archives stay on the NAS; only the irreplaceable files dataset goes offsite to Backblaze B2, not the container backups.) If you ever copy that folder by hand, stop the service first (`systemctl stop uptime-kuma`) so the database file is consistent. The project's own migration guide repeats "backup your `data` directory" three times in a row — take the hint.

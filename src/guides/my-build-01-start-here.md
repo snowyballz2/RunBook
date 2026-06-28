@@ -70,10 +70,11 @@ Check you have everything before you start — the later pages assume each piece
 ### Do all the PC-side prep before you wipe anything
 Once Proxmox is installed, the machine you are building becomes a **headless server** and the NVMe that held Windows is erased. From that point on, the server downloads everything itself and you only need a browser to drive it. But a few things must be done first, on a **working computer that has a web browser and a USB port** — get all of them out of the way before the install:
 
-1. **Back up the NVMe.** The 500 GB NVMe currently has Windows and your files on it, and the Proxmox install **erases the whole drive**. Copy anything you want to keep onto another machine or an external disk first — there is no undo. (Checklist below.)
-2. **Make the Proxmox installer USB.** Download the Proxmox VE ISO and write it to a 4 GB+ USB stick with balenaEtcher. (The Install Proxmox page has the full steps — do them now, while you still have a working PC.)
-3. **Make the BIOS-update USB.** Download the latest Maximus X Hero BIOS, run ASUS's BIOSRenamer, and copy it onto a FAT32 USB stick. (The Hardware & BIOS page has the full steps.)
-4. **Round up a monitor and keyboard** to plug into the server for the install itself. You unplug them once Proxmox is up and run everything from a browser after that.
+1. **Get wired Ethernet to the server's final spot.** Proxmox cannot use Wi-Fi for its management interface, so the box must be plugged into the router with a cable. If the spot where the quiet box will live is far from the router, get a long Ethernet cable or a powerline adapter (both work) **before** you start — this is the one networking thing you cannot fix from a browser later, and discovering it after the wipe means the server is unreachable.
+2. **Back up the NVMe.** The 500 GB NVMe currently has Windows and your files on it, and the Proxmox install **erases the whole drive**. Copy anything you want to keep onto another machine or an external disk first — there is no undo. (Checklist below.)
+3. **Make the Proxmox installer USB.** Download the Proxmox VE ISO and write it to a 4 GB+ USB stick with balenaEtcher. (The Install Proxmox page has the full steps — do them now, while you still have a working PC.)
+4. **Make the BIOS-update USB.** Download the latest Maximus X Hero BIOS, run ASUS's BIOSRenamer, and copy it onto a FAT32 USB stick. (The Hardware & BIOS page has the full steps.)
+5. **Round up a monitor and keyboard** to plug into the server for the install itself. You unplug them once Proxmox is up and run everything from a browser after that.
 
 > [!NOTE]
 > After the install there is nothing more to download on a PC. The server pulls the rest over its own network connection — the TrueNAS installer, the Home Assistant image, every service container, the GPU driver — so from then on any device with a browser (a laptop, an iPad, even a phone) is enough to reach `https://`-the-server-IP-`:8006` and keep building. The two USB sticks above are the only things that strictly need a full PC, because you cannot write them from a phone.
@@ -81,12 +82,22 @@ Once Proxmox is installed, the machine you are building becomes a **headless ser
 > [!WARNING]
 > Wiping the NVMe is irreversible. Confirm your files are copied off — and that a few of them actually open from the copy — before you reach the install.
 
+> [!TIP]
+> While Windows is still on the machine, you can confirm hardware virtualization is on: press `Ctrl+Shift+Esc` for Task Manager → **Performance → CPU** — the right-hand column should read **Virtualization: Enabled**. (You set the BIOS toggles for this on the Hardware & BIOS page; after the wipe the Proxmox installer also warns loudly if it is missing, so a missed switch surfaces there too.)
+
 > [!DETAILS] What to pull off the NVMe before it is wiped
 > Most of what matters lives in a handful of places — work down this list on the Windows machine, then copy it all to an external drive or another PC and spot-check that it opens:
 > - **Personal files** — `Documents`, `Desktop`, `Downloads`, `Pictures`, `Videos`. Downloads is the one people forget.
-> - **Browser bookmarks and saved passwords** — export them from each browser's settings (delete any exported password file once it is safely imported elsewhere).
+> - **Browser bookmarks** — Chrome `chrome://bookmarks`, Edge `edge://favorites`, Firefox *Bookmarks → Manage Bookmarks → Export Bookmarks to HTML*.
+> - **Saved passwords** — each browser's password settings → *Export* (Chrome `chrome://settings/passwords` saves a CSV — treat it carefully and delete it once it is safely imported elsewhere).
+> - **Game saves** — many live outside Steam's cloud. Check `Documents\My Games`, `%APPDATA%`, `%LOCALAPPDATA%`, and `C:\Program Files (x86)\Steam\userdata`.
 > - **License keys** — pull keys for paid software from purchase emails or each app's About/Account screen while you can still open it.
 > - **App data** — paste `%APPDATA%` into a File Explorer address bar and skim for email clients, chat history, and configs worth keeping.
+
+> [!DETAILS] How to copy it off (and what if you have no external drive)
+> **With an external drive:** plug it in, press `Win+E` to open File Explorer, open `C:\Users\`-your-name, select the folders you are keeping (`Ctrl`+click for several), `Ctrl+C`, then open the external drive and `Ctrl+V`. When the copy finishes, open a few files from the external drive to confirm they work — then click the USB icon in the system tray and choose **Eject** before unplugging. Skipping the eject can leave a half-written, corrupted copy of the very files you are trying to save.
+>
+> **No external drive?** Use a cloud free tier (Google Drive 15 GB, OneDrive 5 GB, Dropbox 2 GB — fine for documents and photos, too small for big game folders), or copy to another PC on your network: on the receiving PC right-click a folder → *Properties → Sharing → Share* and grant write access, then on the old PC type `\\OTHER-PC-NAME` into the File Explorer address bar and copy files in. Both machines must be on the same network.
 
 ### Set the server's address
 The whole collection starts from one number — the static address you give the Proxmox host. Set it now and every later page reuses it.

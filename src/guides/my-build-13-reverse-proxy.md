@@ -11,7 +11,7 @@ By now your bookmarks bar is a wall of IPs and certificate warnings: `https://19
 The tool here is **Nginx Proxy Manager** (NPM): nginx doing the proxying, with a web interface instead of config files. It runs as another service container on this Proxmox host, alongside AdGuard, Nextcloud, Vaultwarden, and the rest. Two rules hold throughout: the proxy serves only your LAN (and your tailnet, once remote access is in) — **no router port-forwards, not for this, ever** — and the certificate arrives without exposing anything to the internet.
 
 > [!NOTE]
-> This page leans on the stack already built. AdGuard must be the house DNS (Domain Name System) — that is how the new names resolve — and your services (Proxmox at `proxmox-ip`, Home Assistant at `ha-ip`, TrueNAS at `truenas-ip`, Nextcloud, Uptime Kuma, and the Frigate LXC) need to be up and reachable at their direct addresses first.
+> This page leans on the stack already built. AdGuard must be the house DNS (Domain Name System) — that is how the new names resolve — and the services you proxy now (Proxmox at `proxmox-ip`, Home Assistant at `ha-ip`, TrueNAS at `truenas-ip`, and the Frigate LXC) need to be up and reachable at their direct addresses first. Nextcloud and Uptime Kuma do not exist yet — you build them later in this build — so their proxy hosts get added when those containers come up; the same Add-Proxy-Host pattern below applies unchanged.
 
 ## Stand up the proxy
 
@@ -30,11 +30,14 @@ When it asks **Default or Advanced**, pick **Advanced** and press Enter through 
 > [!NOTE]
 > The catalog also carries `npmplus.sh`, a different project despite the similar name. The script above, `nginxproxymanager.sh`, is the one this page is written against.
 
+> [!DETAILS] What the proxy listens on — and what stays shut
+> NPM's documentation describes three ports: **80** (its "Public HTTP Port"), **443** ("Public HTTPS Port"), and **81** (the "Admin Web Port"). "Public" there means "the side browsers connect to" — the docs assume some people host internet-facing sites and even suggest forwarding 80 and 443 at the router. You will not. Every port stays LAN-only, the certificate arrives over DNS later with nothing reachable from outside, and your router's settings never change. Port 81 is the admin interface, for you alone.
+
 > [!DETAILS] What's inside the container — and how to update it
 > Not Docker, despite most NPM tutorials. The script builds everything from source inside the Debian container: OpenResty (the nginx flavor that does the proxying), the NPM app on Node.js, and Certbot — the Let's Encrypt client with DNS plugins — running as the `openresty` and `npm` systemd services. Settings live in a SQLite file at `/data/database.sqlite`. Two consequences: Docker advice from the wider internet does not apply, and updating has its own command — open the container's **Console** and run `update`. Snapshot the container first.
 
 ### Create your admin account
-Browse to the proxy at `http://<proxy-ip>:81`. A welcome screen asks you to create the admin account — **Full Name**, **Email address**, **New Password**. This login controls where every name in your house points, so give it a strong password and store it in Vaultwarden.
+Browse to the proxy at `http://<proxy-ip>:81`. A welcome screen asks you to create the admin account — **Full Name**, **Email address**, **New Password**. This login controls where every name in your house points, so give it a strong password and record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
 
 > [!INPUT] npm-email | NPM admin email
 
@@ -70,11 +73,21 @@ Create no other records. No A record with your home IP — nothing about this do
 In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Encrypt via DNS**. In the dialog:
 
 - **Domain Names** — `*.example.com`, your own domain swapped in.
+- **Key Type** — leave the default.
 - **DNS Provider** — pick yours from the list.
 - **Credentials File Content** — the box pre-fills a template for the chosen provider; replace the placeholder with your real `dns-api-token`.
 - **Propagation Seconds** — leave empty for the plugin's default.
 
 Save, and after a short wait the certificate appears, valid for every name under your domain. If it fails on timing, set **Propagation Seconds** to something patient like `120` and try again.
+
+> [!NOTE]
+> The dialog warns that these credentials are stored as plaintext in NPM's database and in a file. That is the trade for hands-off issuance and renewal: the proxy keeps your DNS token. A tightly scoped token and a strong NPM admin password are the mitigations.
+
+> [!NOTE]
+> If your NPM shows **SSL Certificates** in the menu and a **Use a DNS Challenge** toggle, plus email and terms-of-service boxes, you are on the pre-November-2025 interface — same ideas, older labels. Run the container's `update` command (Console → `update`) to come current.
+
+> [!DETAILS] Covering the bare domain too
+> A wildcard covers `anything.example.com` but not plain `example.com`. Every service on this page lives on a subdomain, so you may never care — but if you want the bare name to work, add `example.com` alongside `*.example.com` in the same certificate's Domain Names, and add a second, exact DNS rewrite for it in AdGuard (the next phase). Skip this on DuckDNS, where the one-TXT-record limit makes the combined request unreliable.
 
 > [!DETAILS] Why no ports opened for this
 > What ran was a **DNS-01 challenge**: Certbot used your token to publish a temporary TXT record at `_acme-challenge.example.com`, Let's Encrypt looked it up in public DNS, confirmed you control the domain, and issued. No connection to your network was ever attempted. DNS-01 is also the only challenge that can issue wildcards — and the only one that needs no inbound port, which is exactly why this build uses it. Renewals repeat the dance with the stored token, untouched by you.
@@ -125,14 +138,12 @@ http:
 Save, restart Home Assistant, and reload `https://ha.example.com` — the normal dashboard, behind a real lock.
 
 > [!DETAILS] Reading the 400 if it persists
-> The browser only shows the bare 400; the explanation is in Home Assistant's log. "Not set-up for reverse proxies" means the `http:` block is missing or not loaded — restart again. "Received X-Forwarded-For header from an untrusted proxy" means the IP in `trusted_proxies` does not match the proxy's address. Two trip wires: YAML indentation is two spaces exactly, and a whole subnet must be written as the network address (`192.168.1.0/24`). The pattern generalizes — if a service errors through its new name but works by IP, hunt its settings for a "trusted proxy" or "allowed hosts" option.
+> The browser only shows the bare 400; the explanation is in Home Assistant's log. "Not set-up for reverse proxies" means the `http:` block is missing or not loaded — restart again. "Received X-Forwarded-For header from an untrusted proxy" means the IP in `trusted_proxies` does not match the proxy's address. Two trip wires: YAML indentation is two spaces exactly, and a whole subnet must be written as the network address (`192.168.1.0/24`). These settings only apply on a full Home Assistant restart — there is no hot reload, so reloading the page or reloading YAML alone will not pick them up. The pattern generalizes — if a service errors through its new name but works by IP, hunt its settings for a "trusted proxy" or "allowed hosts" option.
 
 ### Work down the rack
-More proxy hosts, same dialog. Every one gets the wildcard certificate and **Force SSL** on the SSL tab, and **Websockets Support** on — some need it outright and it is harmless elsewhere:
+More proxy hosts, same dialog. Every one gets the wildcard certificate and **Force SSL** on the SSL tab, and **Websockets Support** on — some need it outright and it is harmless elsewhere. The two services up at this point:
 
 - **TrueNAS** — `nas.example.com`, forwarding to your `truenas-ip`. A bare-IP HTTP address means Scheme `http`, port `80`; if yours serves HTTPS with a self-signed certificate, `https` and `443`. The proxy accepts either.
-- **Nextcloud** — `cloud.example.com`, Scheme `https`, your Nextcloud IP, port `443`. The first visit stops at **Access through untrusted domain**; the fix is below.
-- **Uptime Kuma** — `status.example.com`, Scheme `http`, your Kuma IP, port `3001`. It is built on WebSocket, so with the toggle off the dashboard never loads.
 - **Frigate** — `frigate.example.com`, Scheme `http`, the Frigate LXC's IP, port **`8971`** — deliberately *not* `5000`. The warning below is why.
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
@@ -140,6 +151,11 @@ More proxy hosts, same dialog. Every one gets the wildcard certificate and **For
 
 > [!WARNING]
 > Frigate splits its two ports: **8971** is the authenticated UI and API that reverse proxies should use, while **5000** is internal, unauthenticated access treated as admin regardless of login. Proxying 5000 would hand admin to anything that can resolve the name. Use 8971, and leave 5000 as the internal address the Home Assistant integration talks to.
+
+Two more proxy hosts get added later, once their containers exist — come back and repeat this exact Add-Proxy-Host pattern then:
+
+- **Nextcloud** (built later in this build) — `cloud.example.com`, Scheme `https`, the Nextcloud IP, port `443`. The first visit stops at **Access through untrusted domain**; the fix is in the Nextcloud page (and recapped below for when you reach it).
+- **Uptime Kuma** (built later in this build) — `status.example.com`, Scheme `http`, the Kuma IP, port `3001`. It is built on WebSocket, so with the toggle off the dashboard never loads — leave **Websockets Support** on.
 
 > [!DETAILS] Frigate's "plain HTTP request was sent to HTTPS port"
 > If `frigate.example.com` answers with a 400 carrying that phrase, Frigate's own TLS (Transport Layer Security) is on at port 8971 while the proxy speaks plain HTTP to it. Turn Frigate's TLS off and let the proxy own encryption — in Frigate's config editor:
@@ -152,8 +168,8 @@ More proxy hosts, same dialog. Every one gets the wildcard certificate and **For
 >
 > Restart Frigate and try the name again.
 
-> [!DETAILS] Telling Nextcloud about its new name
-> Two settings, both from the Nextcloud container's console at `/var/www/nextcloud` via the `occ` tool. First, the untrusted-domain page — add the new name at the next free index:
+> [!DETAILS] Telling Nextcloud about its new name (for when you build it)
+> Nextcloud comes later in this build; keep this for then. Two settings, both from the Nextcloud container's console at `/var/www/nextcloud` via the `occ` tool. First, the untrusted-domain page — add the new name at the next free index:
 >
 > ```bash
 > sudo -E -u www-data php occ config:system:get trusted_domains
@@ -171,10 +187,10 @@ More proxy hosts, same dialog. Every one gets the wildcard certificate and **For
 > Existing sync clients signed in against the IP keep working as long as that IP stays in `trusted_domains`; set up new devices with the new name.
 
 > [!TIP]
-> Once Uptime Kuma sits behind the proxy, tell it so: **Settings → Reverse Proxy**, and under HTTP Headers set **Trust Proxy** on — its logs and rate limiting then see real client IPs instead of the proxy's.
+> When you later build Uptime Kuma and put it behind the proxy, tell it so: **Settings → Reverse Proxy**, and under HTTP Headers set **Trust Proxy** on — its logs and rate limiting then see real client IPs instead of the proxy's.
 
 ### Decide what keeps its number
-Walk the bookmarks bar and replace: `proxmox.`, `ha.`, `nas.`, `cloud.`, `status.`, `frigate.` — six names, one lock, and Force SSL means even a typed `http://` lands on HTTPS. Three addresses deliberately stay raw, because they are the system's own foundations:
+Walk the bookmarks bar and replace what you have today: `proxmox.`, `ha.`, `nas.`, `frigate.` — `cloud.` and `status.` join the set when Nextcloud and Uptime Kuma come up later, making six names behind one lock, and Force SSL means even a typed `http://` lands on HTTPS. Three addresses deliberately stay raw, because they are the system's own foundations:
 
 - **NPM's admin interface** at `http://<proxy-ip>:81`. When the proxy is the thing that is sick, a name routed through itself is no way to reach its controls.
 - **AdGuard's dashboard** at its IP. The names are answered there — if AdGuard is down, every name is down with it.

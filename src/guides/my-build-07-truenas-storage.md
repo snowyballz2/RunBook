@@ -13,7 +13,7 @@ TrueNAS turns the three Seagate IronWolf spinners into a proper network-storage 
 ### Cable each drive to the right place
 Do this during the physical build, before the VM ever boots — the wiring is what makes the passthrough below behave:
 
-- **HBA → the bottom `x4_3` PCIe (Peripheral Component Interconnect Express) slot**, set to x4 in BIOS. That chipset-attached slot is what gives the card a clean IOMMU (Input/Output Memory Management Unit) group so it can be isolated and passed through whole.
+- **HBA → the bottom `PCIEX4_3` PCIe (Peripheral Component Interconnect Express) slot**, set to x4 in BIOS. That chipset-attached slot is what gives the card a clean IOMMU (Input/Output Memory Management Unit) group so it can be isolated and passed through whole.
 - **One SFF-8643 *forward* breakout cable** into one of the HBA's two internal ports → it fans out to **four SATA (Serial ATA) plugs**.
 - **Breakout SATA 1 → mirror disk A** (one ST4000VN006), **SATA 2 → mirror disk B** (the second ST4000VN006). The remaining two tails are spare — room to grow the pool later. Both mirror disks ride the HBA, so they belong to TrueNAS.
 - **Footage disk → a motherboard SATA port, *not* the HBA.** The third ST4000VN006 is Frigate's. The whole HBA goes to this VM, so anything plugged into it vanishes from the Proxmox host — and the footage drive has to stay on a board port the host can still see, because the host is what hands that disk into the Frigate container.
@@ -26,19 +26,18 @@ Do this during the physical build, before the VM ever boots — the wiring is wh
 > [!WARNING]
 > All three disks get claimed entirely — the two by ZFS, the third by Frigate. Nothing you care about can be on them. That is by design here.
 
-## Stand up the VM
+## Recap what is already built
 
-### Create the TrueNAS VM
-TrueNAS ships as a normal installer ISO, so use the standard Create VM wizard.
+### The VM and the HBA already exist
+By the time you reach this page, two earlier steps in the build have done the heavy lifting — there is nothing to download and no VM to create here:
 
-1. Download **TrueNAS Community Edition** from [truenas.com](https://www.truenas.com/download-truenas-community-edition/) and upload the ISO to Proxmox.
-2. Run the Create VM wizard: **2 cores, 8192 MB memory** (ZFS is memory-hungry — it uses RAM as cache; give it more if you can spare it), a **32 GB boot disk**, network on `vmbr0`.
-3. Boot the VM, pick **Install/Upgrade**, and install onto the only disk offered — the virtual boot disk. The IronWolf drives are not attached as virtual disks here, and that is deliberate: they arrive through the passed-through HBA instead.
-4. The installer asks you to set a password for the administrative account (current versions name it `truenas_admin`). When the VM reboots, the console prints the web address — log in there.
-5. Detach the installer so it stops re-launching at boot: **Hardware → CD/DVD Drive → Do not use any media**.
+- **The TrueNAS VM** was built on the **Virtual Machines** page: the Create VM wizard with **2 cores, 8192 MB memory** (ZFS is memory-hungry — it uses RAM as cache), a **32 GB boot disk** on `vmbr0`, TrueNAS Community Edition installed from the console, the administrative password set, the installer ISO ejected, and the VM's IP captured. The ISO was pulled by the server itself (**local → ISO Images → Download from URL**), never uploaded from a laptop.
+- **The 9300-8i HBA** was VFIO (Virtual Function I/O)-bound on the host and the whole card attached to this VM on the **GPU Sharing & HBA Passthrough** page (**Hardware → Add → PCI Device → 9300-8i → All Functions**). There is no per-disk `serial=` plumbing on this build — passing the entire controller is the whole reason the card exists.
+
+So this page picks up after both of those: it confirms the raw disks arrived, then builds the pools and shares. Do **not** re-create the VM or re-download the ISO.
 
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
-> The address the console prints after install. Pin it with a DHCP (Dynamic Host Configuration Protocol) reservation on the router so it never moves.
+> The address the console printed after install (captured on the Virtual Machines page). Pin it with a DHCP (Dynamic Host Configuration Protocol) reservation on the router so it never moves.
 
 > [!INPUT] truenas-admin-user | TrueNAS admin username | | truenas_admin
 > Current versions create `truenas_admin` — leave as-is unless yours differs.
@@ -48,9 +47,6 @@ TrueNAS ships as a normal installer ISO, so use the standard Create VM wizard.
 
 > [!NOTE]
 > ECC RAM is ideal for ZFS data integrity but not required at home — this board takes standard 32 GB non-ECC, and that is fine.
-
-### Attach the HBA to this VM
-The 9300-8i was already VFIO-bound on the host and the whole card assigned to this VM during PCIe passthrough setup. There is no per-disk `serial=` plumbing on this build — passing the entire controller is the whole reason the card exists. If the card is not yet on the VM, in the VM's **Hardware** tab: **Add → PCI Device → the 9300-8i**, tick **All Functions**, and add it to the TrueNAS VM only.
 
 > [!WARNING]
 > VFIO is for the HBA only. The GTX 1080 Ti is *shared* across the service containers from the host driver and must never be VFIO-bound or handed to a VM. Keep the two policies straight: the HBA locks to this one VM; the GPU never locks to anyone.
@@ -83,6 +79,9 @@ Datasets are the folders-with-superpowers inside a pool — each carries its own
 - **`files`** — general household storage. Set **Dataset Preset → SMB (Server Message Block)** so it gets case-insensitive names and NFSv4 ACLs, the permission style SMB expects.
 - **`backups`** — a separate dataset (also SMB preset) so the build's safety copies stay out of your file snapshots.
 
+> [!NOTE]
+> The SMB preset tunes a dataset for network sharing — case-insensitive filenames and NFSv4 ACLs. Both datasets here get exposed over the network (the `backups` dataset receives the Proxmox vzdump archives over SMB), so SMB is the right choice for both. If you ever add a dataset that stays internal and is never shared, pick the **Generic** preset instead.
+
 ## Share it
 
 ### Create the SMB user
@@ -94,8 +93,8 @@ SMB — served by Samba — is the network-drive protocol Macs speak natively, a
 > [!SECRET] smb-password | SMB share password
 > The password typed on every Mac and phone that connects.
 
-### Create the SMB share
-Go to **Shares** and click **Add** on the **Windows (SMB) Shares** widget. Point the path at the `tank/files` dataset — the share name pre-fills from the dataset name, courtesy of the SMB preset — and save. When TrueNAS prompts to enable or restart the **SMB service**, accept: that is what puts the share on the network.
+### Create the SMB shares
+Go to **Shares** and click **Add** on the **Windows (SMB) Shares** widget, and add **two** shares — one per dataset. Point the first at the `tank/files` dataset and the second at `tank/backups`; each share name pre-fills from its dataset name, courtesy of the SMB preset. Save each. When TrueNAS prompts to enable or restart the **SMB service**, accept: that is what puts the shares on the network. The `files` share is for everyday household storage; the `backups` share is where the Proxmox backups land later in the build, so it must exist now.
 
 ### Connect from your Macs
 The share answers at the VM's IP address. In Finder, choose **Go → Connect to Server** and enter the address, then your SMB user's credentials when asked:
@@ -107,5 +106,8 @@ smb://192.168.1.20
 
 Swap in your own TrueNAS IP. This is an all-Apple household, so the `files` share showing up in every Finder sidebar is the goal.
 
+> [!TIP]
+> Make the mount stick across reboots so the share is there at every login. With the share mounted, open **System Settings → General → Login Items & Extensions → Open at Login**, click **+**, and pick the mounted `files` share. macOS re-mounts it automatically each time that Mac logs in — otherwise the share drops out of the sidebar after every restart or logout.
+
 > [!NOTE]
-> This share is also the landing zone for the build's backups — the Proxmox vzdump archives and the host-config backup point at the `backups` dataset after the storage is up. Snapshots, scrubs, disk-health alerts, and the offsite copy to Backblaze B2 get their own steps later in this collection.
+> The `backups` share you just created is the landing zone for the build's safety copies — the Proxmox vzdump archives and the host-config backup point at it once the storage is up. Snapshots, scrubs, disk-health alerts, and the offsite copy to Backblaze B2 get their own steps later in this collection.

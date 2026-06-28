@@ -191,10 +191,13 @@ Flash the latest Maximus X Hero firmware before touching any toggle, so the sett
 1. On another computer, open the ASUS support page for the **ROG Maximus X Hero** (asus.com → Support → search "Maximus X Hero" → **Driver & Tools → BIOS & Firmware**) and download the **latest BIOS** file. Note the version number — you will confirm it after the flash.
 2. Unzip the download. ASUS firmware must carry the exact filename EZ Flash expects, so run the bundled **BIOSRenamer** utility (included in the same zip) once — it renames the file for you.
 3. Format a USB stick as **FAT32** and copy the renamed BIOS file to its **root** (not inside a folder).
-4. Plug the stick into the server, enter the BIOS (`Del` on power-on), and open **EZ Flash 3** under the *Tool* menu. Point it at the file on the stick and confirm. The board flashes, reboots itself, and lands back in the BIOS — where you carry on with the toggles below.
+4. Plug the stick into the server, enter the BIOS (`Del` on power-on), and open **EZ Flash 3** under the *Tool* menu. Point it at the file on the stick and confirm. The board flashes, reboots itself, and lands back in the BIOS — where you carry on with the toggles below. After the flash, the BIOS version shows on the **EZ Mode** main screen (and is listed in EZ Flash 3 itself) — confirm it matches the version you downloaded before continuing.
 
 > [!WARNING]
 > Do not interrupt the flash or cut power during it. A failed BIOS update on this board means a recovery dance you want to avoid — let EZ Flash run to completion.
+
+> [!TIP]
+> A firmware update occasionally moves or renames a toggle, so if one isn't where it's written below, use the BIOS search — press `F9` (or click the magnifier in Advanced Mode) and search for `VMX`, `VT-d`, or the slot name `PCIEX4_3` to jump straight to it.
 
 ### Enable Intel Virtualization (VMX)
 1. Go to *Advanced → CPU Configuration*.
@@ -215,6 +218,9 @@ Press `F10`, confirm, and let the board reboot. Leave the monitor and keyboard a
 
 > [!TIP]
 > C-states (under *CPU Power Management*) are worth leaving on Enabled or Auto. This box idles 24/7, so the watts saved over a year add up. They are not load-bearing for passthrough, just good housekeeping.
+
+> [!DETAILS] Confirm the toggles actually took
+> Windows is still on the NVMe at this point — you do not wipe it until the OS install — so you can verify virtualization from the existing install: boot into Windows, press `Ctrl+Shift+Esc` for Task Manager → **Performance → CPU**, and the right-hand column should read **Virtualization: Enabled**. If you would rather not boot Windows, no stress — the Proxmox installer on the next stage warns loudly if hardware virtualization is missing, so a missed VMX or VT-d toggle surfaces there too.
 
 > [!DETAILS] Why x4 mode and a chipset slot matter
 > Passthrough hands an entire IOMMU group to one VM. If the HBA shares a group with other devices, passthrough either fails outright or yanks those neighbours into the VM with it. The CPU-attached x16 slots on this board commonly group with the GPU and other system-agent devices; the chipset-attached `PCIEX4_3` slot tends to sit alone. Pinning it to x4 keeps that grouping stable across reboots and firmware quirks. You will verify the actual group from the host shell once Proxmox is installed, before binding the card to VFIO.

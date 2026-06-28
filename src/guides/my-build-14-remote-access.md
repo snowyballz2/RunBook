@@ -14,7 +14,7 @@ The payoff fits this all-Apple, local-first household exactly: one mesh VPN (vir
 > This page assumes Proxmox VE (Proxmox Virtual Environment) is installed on the 500 GB NVMe (Non-Volatile Memory Express) drive, the i7-8700K server is on Ethernet through the Netgear GS308EPP switch with a static IP, and you can already log in to the web UI from a browser on the LAN.
 
 > [!DETAILS] Why no ports get opened
-> A port-forward is a router rule that sends anyone on the internet who knocks on a port straight to your server — a door held open to the whole internet, around the clock. Tailscale inverts that: every device makes only *outbound* connections and finds its peers with NAT (Network Address Translation) traversal, falling back to Tailscale's DERP relays only when a direct path is impossible. The result is that Proxmox and every guest behind it are reachable solely by devices signed in to your private tailnet, and the router's settings never change.
+> A port-forward is a router rule that sends anyone on the internet who knocks on a port straight to your server — a door held open to the whole internet, around the clock. Tailscale inverts that: every device makes only *outbound* connections and finds its peers with NAT (Network Address Translation) traversal, falling back to Tailscale's DERP relays only when a direct path is impossible. The result is that Proxmox and every guest behind it are reachable solely by devices signed in to your private tailnet, and the router's settings never change. Once the host is connected, `tailscale status` in the host shell lists each peer and whether the path to it is `direct` or `relayed` — your first check if remote access ever feels slow.
 
 ## Put the host on a tailnet
 
@@ -38,6 +38,23 @@ curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.lis
 apt-get update
 apt-get install tailscale
 ```
+
+> [!DETAILS] Why this method, and not the install script
+> Note what those two `curl` commands do *not* do: execute anything. One downloads a signing key, the other a one-line repo definition (open the `.list` URL in a browser and read it — it is genuinely one line), and then apt installs a normally signed package. Nothing is piped into a root shell, which is why this is the default here.
+>
+> Tailscale also offers an official one-liner that detects the OS and does the same setup:
+>
+> ```bash
+> curl -fsSL https://tailscale.com/install.sh | sh
+> ```
+>
+> It works fine — but it is still a script piped into a root shell, so apply the download-read-run habit used elsewhere in this build: fetch it to a file, read it, then run it.
+>
+> ```bash
+> curl -fsSL https://tailscale.com/install.sh -o tailscale-install.sh
+> less tailscale-install.sh
+> sh tailscale-install.sh
+> ```
 
 > [!DETAILS] Why the host, not a container or VM
 > It is tempting to drop Tailscale into one of the service LXCs, but the host is the right home for it here. Install it on the host and remote access is up the moment the i7-8700K is — independent of whether any guest is running, and able to route to *all* of them at once. A container-bound install ties your only way in to one container that has to stay up, and on this build the host is what you most need to reach when something has gone wrong. (Frigate, Home Assistant OS, and TrueNAS each keep their own normal LAN IPs; the subnet route below reaches every one of them without installing Tailscale inside any of them.)
@@ -111,7 +128,7 @@ Advertised routes do nothing until an admin — you — approves them, so a stra
 ## Prove it from your iPhone
 
 ### Put Tailscale on your phone
-A phone on cellular data is the cleanest test: a device that is definitely not on your network, reaching addresses that should only exist on your network. Install Tailscale from the App Store, open it, choose **Get Started**, and **Log in** with the same account you used for the host. iOS will ask permission to add a VPN configuration — accepting that prompt is what switches the connection on.
+A phone on cellular data is the cleanest test: a device that is definitely not on your network, reaching addresses that should only exist on your network. Install Tailscale from the App Store (iOS 15 or later), open it, choose **Get Started**, and **Log in** with the same account you used for the host. iOS will ask permission to add a VPN configuration — accepting that prompt is what switches the connection on.
 
 ### Reach every service from anywhere
 Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app shows connected, then browse to each service on its normal LAN address — no Tailscale install needed on any of them, because the subnet route carries them all:
@@ -144,6 +161,8 @@ Served to a phone nowhere near the house, through zero opened ports.
 >   ```bash
 >   tailscale serve --bg https+insecure://localhost:8006
 >   ```
+>
+>   Tailscale's "on a Proxmox host" guide also documents a second route — installing a Tailscale-issued HTTPS certificate directly into Proxmox, kept current with a cron job. Serve is the simpler, self-contained option and is plenty here.
 
 > [!DETAILS] Confirming this stays free
 > Everything here runs on Tailscale's free Personal plan: $0 forever, up to 6 users, unlimited devices for those users — subnet routing and **Disable Key Expiry** included. If you read elsewhere that the free plan is "3 users / 100 devices," that is the old limit; the current Personal plan allows 6 users with free, unlimited user devices.

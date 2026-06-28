@@ -9,7 +9,7 @@ accent: emerald
 The infrastructure is finished, and this is where the house starts doing things on its own. An automation is one sentence — *when* something happens, *then* do something — and this page builds a stack of them on the exact devices already onboarded: the dozen Third Reality leak sensors and the Aqara valve from the Zigbee mesh, the three Aqara U400 locks shared in over Matter, the two ecobees, the Reolink doorbell and camera through Frigate, and the Google/Nest speakers for announcements. The showpiece is the first one — a leak trips, the main water shuts off, and you find out loudly — and it is the automation that earns the other twenty pages.
 
 > [!WARNING]
-> Build the **water-leak** automation first, the day the valve is paired, before any convenience rule. It is the one that pays for the whole build. Everything else can wait.
+> Build the **water-leak** automation first, the day the valve is paired, before any convenience rule. It is the one that pays for the whole build. Everything else can wait. The valve-close and the critical iPhone push work the moment you save it; the spoken announcement depends on Piper text-to-speech and a Cast speaker, which you set up later on the Voice page of this build — until then that one step quietly does nothing, so build the rule now anyway.
 
 ## Learn the editor
 
@@ -57,6 +57,9 @@ mode: single
 ```
 
 Why it works, top to bottom. The trigger lists every leak sensor under one roof, so any one going `on` (wet) fires the whole thing, and `trigger.to_state.name` carries *which* sensor into the alert — so the push and the spoken line both name the actual location without you writing twelve copies. The valve closes **first**, before any notification, because the point is to stop water, not to ask permission. Then two alerts fire in parallel: a **critical** push that reaches your iPhone wherever you are, and a `tts.speak` on a Google/Nest speaker so anyone home hears it out loud. The speech uses the **local Piper** TTS (text-to-speech) engine running on the shared GTX 1080 Ti rather than a cloud voice, so it still talks during the internet outage a burst pipe might cause.
+
+> [!NOTE]
+> The spoken `tts.speak` step needs two things this build sets up later, on the Voice page: the **Piper** text-to-speech engine (which becomes the `tts.piper` entity) and a Google/Nest **Cast** speaker added to Home Assistant as a `media_player.*` entity. Until both exist, that one action fails silently while the valve-close and the critical push — the parts that actually matter — work from the moment you save. Build the rule the day the valve is paired; the spoken line starts working once you finish the Voice page. Your Google/Nest speakers are not in Home Assistant just because they are on the network: add them through **Settings → Devices & services → Add integration → Google Cast** so they surface as `media_player.*` targets (a HomePod cannot be a target — Home Assistant cannot push audio to it).
 
 > [!WARNING]
 > **No `conditions` block — on purpose.** A leak at 3 a.m. with everyone home, a leak while you are away, a leak during any "guest mode" — every one of them needs the water off. A safety action must never be suppressed by presence, time, or a toggle. Drive the valve straight off the raw sensors and resist the urge to be clever.
@@ -115,21 +118,23 @@ It walks every sensor with a `battery` device class, keeps the ones under 20%, a
 ## Doors and presence
 
 ### Auto-lock the U400s and notify on unlock
-The three **Aqara U400** deadbolts were commissioned into Apple Home for Home Key, then shared into Home Assistant over Matter's multi-admin, so each surfaces as a `lock.*` entity. Two patterns per lock. First, auto-lock a few minutes after the door is shut — trigger on the door's Third Reality contact sensor reading closed and holding, then `lock.lock`:
+The three **Aqara U400** deadbolts were commissioned into Apple Home for Home Key, then shared into Home Assistant over Matter's multi-admin, so each surfaces as a `lock.*` entity. This build has **no door or window contact sensors** — the only Third Reality devices here are the leak sensors and the router plugs — so these rules trigger off the lock's *own* reported state instead of an external sensor. Three patterns per lock.
+
+First, auto-lock a few minutes after the lock is opened — trigger on the lock holding `unlocked` for a few minutes, then re-lock it. This stands in for a door-closed sensor: if the deadbolt is left open, it secures itself.
 
 ```yaml
 alias: Auto-lock front door
 triggers:
   - trigger: state
-    entity_id: binary_sensor.front_door_contact
-    to: "off"            # contact sensors read "off" when closed
+    entity_id: lock.front_door
+    to: "unlocked"
     for: "00:05:00"
 actions:
   - action: lock.lock
     target: { entity_id: lock.front_door }
 ```
 
-Second, notify the moment a lock goes to `unlocked`, so an unexpected unlock reaches your phone:
+Second, notify the moment a lock goes to `unlocked`, so an unexpected unlock reaches your phone right away:
 
 ```yaml
 triggers:
@@ -142,7 +147,25 @@ actions:
       message: "Front door unlocked."
 ```
 
-Repeat both for `lock.back_door` and `lock.side_door` too (your real names from **Entities**), each watching its own contact sensor where one exists.
+Third, a longer left-unlocked reminder — the same `unlocked` trigger held for, say, ten minutes, paired with a push so you get nudged (or just let the auto-lock above handle it silently). Pick whichever fits each door:
+
+```yaml
+alias: Front door left unlocked
+triggers:
+  - trigger: state
+    entity_id: lock.front_door
+    to: "unlocked"
+    for: "00:10:00"
+actions:
+  - action: notify.mobile_app_chris_iphone
+    data:
+      message: "Front door has been unlocked for 10 minutes."
+```
+
+Repeat the patterns you want for `lock.back_door` and `lock.side_door` too (your real names from **Entities**).
+
+> [!TIP]
+> If you later add an Aqara door/window **contact sensor** to the Zigbee mesh and pair it (the same way you joined the leak sensors), you can swap the auto-lock trigger to fire on the *door* closing and holding (`binary_sensor.front_door_contact` reading `off` `for: "00:05:00"`) for a more natural "lock after the door is shut" behaviour. The build does not ship one, so the lock-state version above is the default.
 
 ### Presence — everybody left, somebody home
 The companion app on each iPhone hands you a **device tracker** for free — find them under **Entities** (search "tracker"); each reads `home` or `not_home` and is the most reliable presence signal a home network has. Build two mirror-image rules. Everybody-left triggers when *either* phone leaves, but the **conditions require both** to read `not_home` before acting, so the house only goes to away-mode when it is actually empty:
@@ -174,23 +197,26 @@ Coming home is the easy half — trigger on the first phone reaching `home`, no 
 
 ## Comfort and awareness
 
-### ecobee setback and open-window pause
-The presence pair above already nudges the **two ecobees** through `climate.set_temperature` on their `climate.*` entities — point them at the upstairs and downstairs ecobee. The money-saving addition is pausing a system when a window or door is open, so you are not heating the street. Trigger on a contact sensor holding open and turn the mode off:
+### ecobee setback and an optional open-window pause
+The presence pair above already nudges the **two ecobees** through `climate.set_temperature` on their `climate.*` entities — point them at the upstairs and downstairs ecobee. That setback alone is the comfort-and-savings win this build ships with.
 
-```yaml
-alias: Pause HVAC on open window
-triggers:
-  - trigger: state
-    entity_id: binary_sensor.living_room_window
-    to: "on"             # contact sensors read "on" when open
-    for: "00:02:00"
-actions:
-  - action: climate.set_hvac_mode
-    target: { entity_id: climate.downstairs }
-    data: { hvac_mode: "off" }
-```
-
-Pair it with the mirror automation — window closed, set the mode back to `heat` or `cool` — and the two-minute **For** keeps a quick airing-out from cycling the furnace.
+> [!NOTE]
+> **Optional, needs a sensor you do not have yet.** A money-saving extra is pausing a system when a window or door is open, so you are not heating the street — but this build includes **no window or door contact sensors**. If you want this rule, first add an Aqara door/window **contact sensor**, pair it into the Zigbee mesh the same way you joined the leak sensors, and rename it to something like `binary_sensor.living_room_window`. Then trigger on it holding open and turn the mode off:
+>
+> ```yaml
+> alias: Pause HVAC on open window
+> triggers:
+>   - trigger: state
+>     entity_id: binary_sensor.living_room_window
+>     to: "on"             # contact sensors read "on" when open
+>     for: "00:02:00"
+> actions:
+>   - action: climate.set_hvac_mode
+>     target: { entity_id: climate.downstairs }
+>     data: { hvac_mode: "off" }
+> ```
+>
+> Pair it with the mirror automation — window closed, set the mode back to `heat` or `cool` — and the two-minute **For** keeps a quick airing-out from cycling the furnace.
 
 ### Frigate person alerts
 The **Reolink doorbell** and **RLC-510WA** run through Frigate with detection on the 1080 Ti. The Frigate integration gives you a quick `binary_sensor.*_person_occupancy` per camera, which is fine for switching a porch light — but for a *notification* build the graduate version that triggers on the **`frigate/events`** MQTT (Message Queuing Telemetry Transport) topic. It fires on Frigate's considered judgement rather than its fast first guess, and each event carries its own `id`, which Frigate turns into a permanent snapshot URL — so the push shows the exact frame that fired, not a live view of an empty driveway three seconds later. Frigate already shares Mosquitto with Zigbee2MQTT, so Home Assistant is listening on this topic.
@@ -224,7 +250,7 @@ The first condition keeps you to `type: new`, so one person walking through does
 > A doorbell **press** is separate from person detection — intentional, and free of false alarms. The Reolink doorbell's button surfaces as an `event` entity you trigger the same way (`trigger: state` on `event.front_doorbell`), and everything below the trigger stays identical. Many people wire both: soft awareness on approach, the full announcement on the actual ring. The speaker-on-doorbell announcement is the worked example in the next callout below — reuse that pattern with this trigger.
 
 > [!DETAILS] Make a speaker greet a visitor
-> The same trigger can drive an announcement alongside the push. Home Assistant can only push audio to a media player it controls, which on this build means a **Google/Nest (Cast)** speaker — the HomePod mini cannot be a target. Set the volume first as a kindness to a late-night visitor, then speak with the local Piper voice so it still announces if the internet is down:
+> The same trigger can drive an announcement alongside the push. Home Assistant can only push audio to a media player it controls, which on this build means a **Google/Nest (Cast)** speaker added via **Settings → Devices & services → Add integration → Google Cast** so it surfaces as a `media_player.*` entity — the HomePod mini cannot be a target. This relies on the same Piper engine and Cast speaker the leak rule's spoken line does, both set up on the Voice page later in this build. Set the volume first as a kindness to a late-night visitor, then speak with the local Piper voice so it still announces if the internet is down:
 >
 > ```yaml
 > actions:
@@ -237,8 +263,24 @@ The first condition keeps you to `type: new`, so one person walking through does
 >       media_player_entity_id: media_player.kitchen_speaker
 >       message: "Someone is at the front door."
 > ```
+>
+> Prefer a simple ding over a spoken line? Swap the `tts.speak` action for `media_player.play_media`, pointing `media_content_id` at a sound file you dropped in Home Assistant's `config/media` folder:
+>
+> ```yaml
+>   - action: media_player.play_media
+>     target: { entity_id: media_player.kitchen_speaker }
+>     data:
+>       media_content_id: media-source://media_source/local/doorbell.mp3
+>       media_content_type: music
+> ```
 
 ## Make it yours
+
+### Scenes — set the room, not the devices
+A **scene** is a saved room state — these lights at these brightnesses, the Lutron Caseta dimmers just so — that any automation can recall by name. On **Settings → Automations & scenes**, the scenes view's **Add scene** button (lower right) opens an editor: add the devices, set them how "movie night" should look, and save. Then any automation's **Then do** can activate it with the `scene.turn_on` action — so a single trigger paints a whole room instead of switching one light.
+
+> [!WARNING]
+> The scene editor is **live**: while you edit, it actually drives the real devices to the scene's states so you can see what you are building, and restores them when you leave. Do not panic when the room changes around you — that is the editor showing its work, not an automation firing.
 
 ### Test without waiting for real events
 Two tools live in each automation's three-dot menu. **Run actions** executes the Then-do half immediately, skipping triggers and conditions — the fast way to confirm the valve, the critical push, and the spoken line all fire. **Traces** keeps a step-by-step record of the last few runs, drawn as a graph showing exactly which path ran and where it stopped; the first time a rule "didn't work," the trace almost always shows it worked precisely as written, just not as intended.

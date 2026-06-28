@@ -55,11 +55,17 @@ At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts.
 
 > [!INPUT] proxmox-hostname | Server hostname (FQDN) | pve.home.arpa
 
+> [!DETAILS] How to pick the hostname
+> The installer wants a **fully qualified domain name** — a name for the machine, a dot, and a domain, like `pve.home.arpa`. Both halves are your choice:
+>
+> - **The first part** — `pve` is just a convention (short for *Proxmox Virtual Environment*). Call it anything: `server`, `homelab`, `vault`. Lowercase letters, digits, and hyphens; keep it short, because it becomes the node name you see everywhere in the UI. Renaming a Proxmox node later is genuinely annoying, so pick something you are happy with now.
+> - **The domain part** — `home.arpa` is the domain officially reserved for home networks (RFC 8375), so it can never clash with the real internet — that is why it is the safe default. Avoid two things: `.local` (reserved for **mDNS (multicast DNS)** per RFC 6762 — macOS hands those lookups to Bonjour, so on this all-Apple household they resolve unreliably) and any real domain you do not own. Accepting the `pve.home.arpa` default is fine.
+
 > [!INPUT] proxmox-user | Proxmox web UI username | | root
 > Not a choice — Proxmox is Linux underneath, and `root` is its built-in administrator account.
 
 > [!SECRET] proxmox-root-password | Proxmox root password
-> Set during install — 8 characters minimum, longer is better. Save the real value in Vaultwarden too.
+> Set during install — 8 characters minimum, longer is better. Record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build), but write it here too so this checklist stands on its own.
 
 > [!DETAILS] Every prompt the installer shows, in order
 > 1. **EULA** — read or skim, click I agree.
@@ -74,7 +80,9 @@ At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts.
 >
 > - **Gateway** — *found*. It is your router's address. On macOS, read it from `netstat -nr | grep default` (the `en0` line) or System Settings → Wi-Fi → Details → Router. Usually something like `192.168.1.1`.
 > - **DNS server** — enter the router's address again, or `1.1.1.1` for Cloudflare.
-> - **IP address** — *picked by you*. Keep the first three numbers the same as the router and change the last. Pick a number **below** the router's DHCP range (often `.100` and up) so it is never handed to another device — `192.168.1.50/24` is a fine choice. The `/24` just means a standard home network.
+> - **IP address** — *picked by you*. Keep the first three numbers the same as the router and change the last. Pick a number **below** the router's DHCP range (often `.100` and up) so it is never handed to another device — `192.168.1.50/24` is a fine choice. The `/24` just means a standard home network. The other safe method is a **DHCP reservation** (sometimes called a *static lease*): on the router's LAN/DHCP page, permanently assign your chosen number to the server so the router never gives it to anything else.
+>
+> Can't get into the router at all? Pick a high number like `.250` and ping it first — if nothing answers, it is almost certainly free.
 
 ### Log in to the web UI for the first time
 Proxmox has no desktop of its own — you administer it from a browser. From your Mac on the same LAN, browse to:
@@ -96,6 +104,23 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > [!DANGER]
 > Only pipe a script straight into a root shell when you trust the source and have read it. This one is widely used and open, but make that judgement yourself.
 
+> [!DETAILS] How to check a script yourself before running it
+> Piping `curl` to `bash` runs whatever the server sends at that exact moment. The safer habit costs one minute — download, read, then run the copy you read:
+>
+> ```bash
+> # 1. Download to a file instead of executing it:
+> curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh -o post-install.sh
+>
+> # 2. Read it (press q to quit). Skim for the URLs it contacts
+> #    and anything it deletes or installs:
+> less post-install.sh
+>
+> # 3. Run the exact copy you just read:
+> bash post-install.sh
+> ```
+>
+> This project is open source with a large, active maintainer community, but it is community-run — not official Proxmox software. The same habit applies to every other one-liner the internet hands you.
+
 > [!DETAILS] What the script changes — answer yes to all of these for this build
 > - Disables the enterprise package repo (which errors without a paid subscription).
 > - Enables the free no-subscription repo so updates work.
@@ -105,7 +130,28 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > - Optionally runs a full update and reboots — let it.
 
 > [!DETAILS] Prefer no script? Do the same by hand
-> In the web UI, select your node → **Updates → Repositories**. Disable the two *enterprise* entries, then use **Add** to add the **No-Subscription** repository. Then in the node's Shell:
+> **Easiest: use the web UI.** Select your node → **Updates → Repositories**. Disable the two *enterprise* entries, then use **Add** to add the **No-Subscription** repository.
+>
+> **Or edit the files in the node's Shell.** Disable the enterprise repos by adding a line `Enabled: no` to each of these two files (open them with `nano <file>`):
+>
+> ```bash
+> nano /etc/apt/sources.list.d/pve-enterprise.sources
+> nano /etc/apt/sources.list.d/ceph.sources
+> ```
+>
+> Then create `/etc/apt/sources.list.d/proxmox.sources` with the free repo:
+>
+> ```bash
+> cat > /etc/apt/sources.list.d/proxmox.sources <<'EOF'
+> Types: deb
+> URIs: http://download.proxmox.com/debian/pve
+> Suites: trixie
+> Components: pve-no-subscription
+> Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+> EOF
+> ```
+>
+> Either way, finish by updating from the node's Shell:
 >
 > ```bash
 > apt update && apt full-upgrade -y

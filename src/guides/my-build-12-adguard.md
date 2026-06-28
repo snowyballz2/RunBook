@@ -49,7 +49,7 @@ This happens *while the script runs*. When it asks **Default or Advanced**, pick
 > AdGuard is about to become the whole network's DNS server, and its address must never change. A static IP is mandatory — if it ever moves, every device in the house loses name resolution at once.
 
 > [!DETAILS] How to pick a safe number
-> Keep the first three octets identical to the rest of the LAN (matching the Proxmox host at `192.168.1.50`), and choose a final number **outside** the router's DHCP range so it can never be handed out to another device. The memorable `.53` mirrors DNS port 53 and is easy to remember later.
+> Keep the first three octets identical to the rest of the LAN (matching the Proxmox host at `192.168.1.50`), and choose a final number **outside** the router's DHCP range so it can never be handed out to another device. You found this range when picking the Proxmox host address: it lives on the router's DHCP settings page, which lists the start and end of the pool (often `.100` and up) — pick anything below it. The memorable `.53` mirrors DNS port 53 and is easy to remember later.
 
 ### Set it to start at boot
 DNS for the entire house cannot depend on you remembering to start a container after a power cut. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
@@ -82,7 +82,7 @@ Leave the **Admin Web Interface** on its default port, and leave the **DNS serve
 > Never create a router port-forward to this container. A DNS server exposed to the internet — an "open resolver" — gets found and abused for amplification attacks within hours. AdGuard serves the LAN only. For remote access, reach it over Tailscale instead of opening a port.
 
 ### Create the admin login
-Set a username and a strong password for the dashboard, then finish the wizard. The dashboard now lives at the container's IP with no `:3000` suffix. Store both in Vaultwarden once that container is up.
+Set a username and a strong password for the dashboard, then finish the wizard. The dashboard now lives at the container's IP with no `:3000` suffix. Record both in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build), and capture them in the fields below so this page stands on its own.
 
 > [!INPUT] adguard-admin-user | AdGuard admin username
 
@@ -123,7 +123,7 @@ Then open the **Query Log** in the dashboard. You should see live queries from t
 > If a site you trust breaks, open the Query Log, find the blocked domain, and click to allow it. That is the normal way to fix the occasional false block — far better than disabling a whole list.
 
 ### Make a local name for it
-Once Nginx Proxy Manager is up and giving services tidy hostnames, AdGuard is also where you point those names at the right container. In **Filters → DNS rewrites**, map a name like `home.lan` to the proxy's IP so internal hostnames resolve on the LAN. For now, just note that this dashboard is the place that work happens.
+Once the reverse proxy is up and giving services tidy hostnames, AdGuard is also where you point those names at the right container. In **Filters → DNS rewrites**, map a wildcard like `*.example.com` to the proxy's IP so internal hostnames resolve on the LAN. You do not do this yet — the proxy does not exist at this point in the build, and the Reverse Proxy page walks through adding the rewrite when it stands up. For now, just note that this dashboard is the place that work happens.
 
 > [!NOTE]
 > That is the whole lifecycle for this container: unprivileged, pinned static IP, start-at-boot, run the wizard, point the router at it, verify in the Query Log. Snapshot it before any blocklist experiment or upgrade — rollback is instant if a new list breaks something.

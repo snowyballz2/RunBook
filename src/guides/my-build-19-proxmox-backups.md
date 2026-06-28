@@ -13,9 +13,12 @@ This box runs a lot of machines: the Home Assistant and TrueNAS VMs (virtual mac
 
 ## Send backups to the NAS, not the boot disk
 
-### Add the TrueNAS share as backup storage
-The 500GB NVMe (Non-Volatile Memory Express) boot drive holds the Proxmox OS and Frigate's cache — it is the last place backups belong, because a backup on the same disk as everything it protects dies with that disk. The natural home is the `backups` dataset on the TrueNAS ZFS (Zettabyte File System) mirror: different drives, a different failure domain, reached over SMB (Server Message Block). Once the mirror exists and that dataset is shared, add it to Proxmox.
+### Confirm the `backups` share is published on TrueNAS
+The 500GB NVMe (Non-Volatile Memory Express) boot drive holds the Proxmox OS and Frigate's cache — it is the last place backups belong, because a backup on the same disk as everything it protects dies with that disk. The natural home is the `backups` dataset on the TrueNAS ZFS (Zettabyte File System) mirror: different drives, a different failure domain, reached over SMB (Server Message Block). The **My Build: TrueNAS Storage** page created two datasets — `tank/files` and `tank/backups` — and published an SMB share for each.
 
+Before you point Proxmox at it, confirm the `backups` share actually exists. In the TrueNAS web interface, go to **Shares → Windows (SMB) Shares** and check that a share whose path is `tank/backups` is listed and enabled. If only `files` is there, add it now: click **Add** on that widget, set the path to the `tank/backups` dataset, save, and accept the prompt to restart the **SMB service** so the share goes live. Without this share, the `backups` entry will not appear in Proxmox's **Share** dropdown in the next step.
+
+### Add the TrueNAS share as backup storage
 In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacenter → Storage → Add → SMB/CIFS**. Give it an ID like `nas-backups`, enter the TrueNAS address as the **Server**, pick the `backups` **Share**, fill in the SMB **Username** and **Password**, and under **Content** tick **VZDump backup file** (and **Disk image** only if you want it as general storage too). Proxmox mounts it under `/mnt/pve/nas-backups`.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
@@ -33,6 +36,9 @@ In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacent
 
 ### Schedule automatic vzdump of every guest
 Go to **Datacenter → Backup** and click **Add**. Set **Storage** to `nas-backups`, choose a schedule from the dropdown — a quiet hour like `02:30` daily works on this build — and set **Selection mode** to **All** so any guest you create later is covered without touching the job again.
+
+> [!WARNING]
+> Proxmox offers `local` as a storage choice out of the box — but `local` is a directory on the **NVMe boot disk**, the exact disk holding the Proxmox OS and Frigate's cache that everything on this page is meant to survive. A backup job pointed at `local` dies with the disk it is supposed to protect. Make sure **Storage** reads `nas-backups`, never `local`.
 
 > [!NOTE]
 > The defaults are right here: **ZSTD** compression is fast and effective, and **Snapshot** mode backs up running guests with the least downtime. For the Home Assistant and TrueNAS VMs, the QEMU guest agent briefly freezes the filesystem during backup for a cleaner, more consistent archive.
@@ -64,6 +70,9 @@ Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's
 > [!NOTE]
 > Scope worth keeping straight: this job protects your *guests* — the VMs and containers as machines. The files *inside* TrueNAS (documents, photos) are in none of these archives, and the TrueNAS VM's backup carries only its small boot disk, not the passed-through mirror data. Protecting what is on the NAS — snapshots, the Sunday scrub, the offsite copy — is handled separately for the storage itself.
 
+> [!DETAILS] The bigger hammer, if you ever outgrow this
+> Proxmox makes a companion product, **Proxmox Backup Server (PBS)**, that upgrades these full-archive vzdumps to incremental, deduplicated backups with scheduled verification — after the first run only changed data moves, so dozens of restore points cost little more than one. The catch comes from its own documentation: "Installing the backup server directly on the hypervisor is not recommended," so PBS earns its keep on a *separate* machine. For this one-server home the vzdump job above is right-sized; PBS is the upgrade path if your backups ever outgrow it.
+
 ## Back up the host itself
 
 ### Save the host's own config off-box
@@ -80,6 +89,9 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 - **`/etc/modprobe.d`** — the VFIO bind line `options vfio-pci ids=...` that claims the LSI 9300-8i HBA for the TrueNAS VM, keeping it out of a host SAS (Serial Attached SCSI) driver's hands.
 - **`/etc/modules`** — the early-load `vfio`, `vfio_iommu_type1`, and `vfio_pci` modules that bring the VFIO stack up at boot.
 - **`/etc/nut`** — the NUT (Network UPS Tools) configuration that talks to the CyberPower CP1500PFCLCD over USB and shuts the host down cleanly on a long outage.
+
+> [!NOTE]
+> `/etc/nut` only gains this build's settings after the **My Build: UPS & Safe Shutdown** page, which comes later than this one. If you run the host-config tarball below on your first pass through the build, that directory is still empty or default — so re-run the tarball once the UPS and safe-shutdown step is done, and treat *that* copy as the first complete one.
 
 > [!NOTE]
 > Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand. The HBA assignment to the TrueNAS VM (`qm set <truenas-vmid> -hostpci0 0000:01:00.0,pcie=1`) lives inside `/etc/pve/qemu-server/<id>.conf`, and the GPU `dev0: /dev/nvidia0` shares live in `/etc/pve/lxc/<ctid>.conf` for the Frigate, Ollama, and faster-whisper containers — both are inside `/etc/pve` above. But keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
@@ -101,7 +113,7 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 After a boot-disk failure, the order matters: bring the host back knowing its hardware *before* the guests land on it, so the restored VMs and containers find what they expect.
 
 1. **Reinstall Proxmox** fresh on a new NVMe — same version, and re-enter the host IP, hostname, and root password from your records.
-2. **Redo the BIOS groundwork** if the board was reset: VT-d (Intel's IOMMU) and Virtualization (VMX) enabled, and the bottom `x4_3` slot set to x4 — the HBA's clean IOMMU group depends on it.
+2. **Redo the BIOS groundwork** if the board was reset: VT-d (Intel's IOMMU) and Virtualization (VMX) enabled, and the bottom `PCIEX4_3` slot set to x4 — the HBA's clean IOMMU group depends on it.
 3. **Restore the `/etc` bits** from the host-config tarball, then **re-run the passthrough commands**: the `qm set ... -hostpci0` HBA line for TrueNAS and a `update-initramfs -u` so the VFIO bind takes. Reboot, and confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
 4. **Reinstall the NVIDIA driver on the host** and confirm `nvidia-smi`, so the GPU `dev0:` shares into Frigate, Ollama, and faster-whisper work once those containers return.
 5. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage), then **restore the guests** from vzdump.

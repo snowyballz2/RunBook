@@ -46,7 +46,7 @@ On the **General** tab, keep the **Unprivileged container** box ticked — the s
 > The one exception is **Frigate**. Sharing the **GTX 1080 Ti** into it for ONNX (Open Neural Network Exchange) / CUDA (NVIDIA's GPU compute platform) detection means the container needs the host's NVIDIA device nodes, which an unprivileged mapping blocks. The Frigate LXC is therefore **privileged**, with the GPU lent in by `dev0:` device lines after the driver is on the host. That is the only privileged container here — keep the box ticked everywhere else.
 
 > [!TIP]
-> Most service guides skip this wizard entirely and use a one-command community helper script from the node's **Shell** that builds the container *and* installs the service in one pass. Knowing the wizard first means you always understand what the shortcut just did. A container built that way updates by typing `update` in its *own* console later — never by re-running the script on the host, which starts building a brand-new container.
+> Most service guides skip this wizard entirely and use a one-command community helper script from the node's **Shell** that builds the container *and* installs the service in one pass. These scripts are community-maintained, not made by Proxmox — read any script before piping it into a root shell, the same download-read-run habit used everywhere in this build. Each one prompts **Default** or **Advanced**; choose **Advanced** to set cores, RAM, and the **static IP** this build needs (Default leaves the container on DHCP). Knowing the wizard first means you always understand what the shortcut just did. A container built that way updates by typing `update` in its *own* console later — never by re-running the script on the host, which starts building a brand-new container.
 
 ## Get inside and settle it
 
@@ -64,12 +64,14 @@ dpkg-reconfigure tzdata   # match the container's clock to yours
 `full-upgrade` also adds or removes packages when dependencies have shifted since the template was built — the right tool for a first sync. For routine updates later, plain `apt upgrade` is the more conservative habit.
 
 ### Reach it over SSH instead of the Console
-The Debian standard template runs an SSH (Secure Shell) server, but `ssh root@<ip>` with a **password** fails out of the box — Debian defaults root login to keys only. Either fill the **SSH Public Key** field in the wizard up front, or get in once via the Console / `pct enter` and add your key:
+The Debian standard template runs an SSH (Secure Shell) server, but `ssh root@<ip>` with a **password** fails out of the box — Debian's sshd defaults root login to keys only (`PermitRootLogin prohibit-password`). Either fill the **SSH Public Key** field in the wizard up front, or get in once via the Console / `pct enter` and add your key:
 
 ```bash
 mkdir -p /root/.ssh && chmod 700 /root/.ssh
 echo "ssh-ed25519 AAAA... you@laptop" >> /root/.ssh/authorized_keys
 ```
+
+A helper-script container may be built from a leaner template that does not ship an SSH server. If `ssh` refuses to connect at all, install one from inside via the Console: `apt install -y openssh-server`.
 
 > [!TIP]
 > Day to day you will reach these services by their **web UIs at their static IPs**, not SSH — and from anywhere over Tailscale once that subnet route is up. The SSH key is for the occasional `apt` pass and config edit.
@@ -86,7 +88,7 @@ pct set 100 -onboot 1      # swap in the container's ID
 Enable this on **every** service container so the whole stack reassembles itself after mains returns.
 
 > [!NOTE]
-> The same **Options** panel holds **Start/Shutdown order**, which matters once on this build: the **Home Assistant OS VM must start before the Frigate LXC**, because Frigate points at the Mosquitto MQTT (Message Queuing Telemetry Transport) broker inside that VM. Give the HA VM a lower order number than Frigate so the broker is up first; the plain service containers can stay at the default.
+> The same **Options** panel holds **Start/Shutdown order**, which matters once on this build: the **Home Assistant OS VM must start before the Frigate LXC**, because Frigate points at the Mosquitto MQTT (Message Queuing Telemetry Transport) broker inside that VM. Give the HA VM a lower order number than Frigate so the broker is up first; the plain service containers can stay at the default. The same panel also has a **Startup delay** — useful here because a VM boots slower than a container, so a few seconds of delay gives the HA VM time to bring its broker up before Frigate starts. On host shutdown, Proxmox asks each guest to stop cleanly and waits up to 60 seconds by default before moving on.
 
 ### Grow the disk, cores, or memory live
 That 8 GB starter disk enlarges with no downtime — in **Resources**, select the **Root Disk** row, then **Volume Action → Resize**, or:
@@ -97,7 +99,7 @@ pct set 100 -cores 4
 pct set 100 -memory 4096   # MB
 ```
 
-The filesystem inside grows along with the disk — unlike a VM, where the guest has to be resized separately. Proxmox hot-plugs most core and memory changes into the running container instantly.
+The filesystem inside grows along with the disk — unlike a VM, where the guest has to be resized separately. Proxmox hot-plugs most core and memory changes into the running container instantly; the rare change that cannot apply live shows in red as a pending value until the next restart.
 
 > [!WARNING]
 > Disk growth is one-way: shrinking a container disk is not supported. Grow in modest increments rather than one generous guess — Nextcloud is the one most likely to want more room over time.

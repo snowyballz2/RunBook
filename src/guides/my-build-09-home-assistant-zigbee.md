@@ -26,7 +26,7 @@ Home Assistant OS ships as a ready-made disk image, **not** an installer ISO —
 > You are piping a script into a root shell, so download it and read it first, then make that call yourself.
 
 > [!DETAILS] The manual way — no scripts
-> Four commands in the host shell, official sources only. Check the [HA OS releases page](https://github.com/home-assistant/operating-system/releases) for the current version and substitute it for `17.3` below. Replace `110` with a **free VM ID** (`qm list` and `pct list` show the taken ones) and `local-lvm` with your storage name if it differs:
+> Four commands in the host shell, official sources only. Check the [HA OS releases page](https://github.com/home-assistant/operating-system/releases) for the current version and substitute it for `17.3` below. Replace `110` with a **free VM ID** (`qm list` and `pct list` show the taken ones — the next free number is whatever the web UI's Create wizard would suggest) and `local-lvm` with your storage name if it differs:
 >
 > ```bash
 > # 1. Download and unpack the official image:
@@ -60,6 +60,9 @@ Give the VM a fixed IP before anything else points at it: a DHCP (Dynamic Host C
 
 ### Walk the onboarding
 Give it a few minutes on first boot — Home Assistant OS sets itself up unattended. Then browse to `http://homeassistant.local:8123` (or the pinned IP). The first screen is **Preparing Home Assistant** while it downloads the latest version (roughly 700 MB) — this can take twenty minutes, so let it work. Then choose **Create my smart home** and the wizard walks you through the owner account, your home location (it sets time zone, units, and currency), and an analytics choice, ending with **Finish**.
+
+> [!NOTE]
+> Home Assistant can show high RAM use right after boot — that is normal; it uses free memory for caching, not a sign the 8 GB is too small.
 
 > [!WARNING]
 > The owner account is the one account that cannot be recovered. It is also kept in Vaultwarden, but record it below too so this checklist stands on its own — save it before you click **Create account**.
@@ -96,6 +99,9 @@ Install Z2M — either as a Home Assistant add-on or in its own LXC — and conn
 ### Surface Z2M in Home Assistant
 Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT integration**. In **Settings → Devices & services**, add **MQTT** if it is not already there and point it at the same broker with Home Assistant's own MQTT credentials. With both Z2M and Home Assistant on the broker, every device Z2M reports shows up as an ordinary Home Assistant entity automatically — no per-device wiring.
 
+> [!NOTE]
+> The non-Zigbee devices on this build — the Lutron Caséta bridge, the ecobee thermostats, the Reolink cameras, and the rest — arrive the same way, under **Settings → Devices & services** after onboarding (many auto-detected in the **Discovered** section). An empty Discovered list right after setup is normal; their integrations are added on their own pages.
+
 ## Pair the mesh
 
 ### Lay down the routers first
@@ -111,7 +117,7 @@ With routers in place, pair the **12× Third Reality 3RWS18BZ** siren leak senso
 > Name each sensor as you pair it — "Water Heater Leak", "Dishwasher Leak" — and drop it in its Area on the spot. Twelve identical sensors paired silently are impossible to tell apart later; named-as-you-go takes seconds.
 
 ### Join the shut-off valve
-Pair the **Aqara Valve Controller T1** last. It is the clamp-on actuator on the **quarter-turn lever** main water valve — it physically turns the lever, so there are no plumbing changes. Put it in pairing mode, join it in Z2M, and it surfaces as a `valve.*` entity in Home Assistant.
+Pair the **Aqara Valve Controller T1** last. It is the clamp-on actuator on the **quarter-turn lever** main water valve — it physically turns the lever, so there are no plumbing changes. Put it in pairing mode, join it in Z2M, then **rename it so it surfaces as the `valve.main_water` entity** in Home Assistant — that exact entity ID is what the leak-to-valve automation built later in this collection targets, so a default name like `valve.aqara_valve_controller_t1` would leave that automation pointing at nothing.
 
 > [!WARNING]
 > Before trusting it, confirm the T1 throws the lever through its **full travel** — fully open to fully closed. Mount it so closed is genuinely closed; a clamp that slips is worse than no automation at all.
@@ -119,10 +125,18 @@ Pair the **Aqara Valve Controller T1** last. It is the clamp-on actuator on the 
 > [!NOTE]
 > When pairing is done, turn **Permit join off** in Z2M. Leaving the network open invites stray devices and is a small but real security gap on an otherwise locked-down, local-first build.
 
+## Keep it backed up
+
+### Turn on Home Assistant's own backups
+Home Assistant keeps its own backups separate from the whole-VM copy Proxmox takes. Turn them on now under **Settings → System → Backups → Set up backups**: pick a **daily** schedule and **System optimal** for the time, and Home Assistant handles it from then on. These local backups are the fast in-app undo — one click to roll back a bad add-on or a broken automation.
+
+> [!NOTE]
+> Home Assistant's local backups live on the VM's own disk by default, so they are not a disaster copy on their own. On this build the off-device copy is the **nightly Proxmox vzdump of the whole VM** (set up on the Proxmox Backups page) — that is what survives a dead disk and feeds the restore drill later in the build. The two layers do different jobs: HA's backups are the quick undo, the vzdump is the rebuild-from-scratch copy.
+
 ## Where this leads
 
 ### Confirm the entities exist
-Open **Settings → Devices & services → Entities** and filter for the new arrivals: twelve `binary_sensor.*_leak` sensors, the `valve.*` actuator, and the smart-plug switches and power readings. Each should sit in its Area with a human-readable name. That inventory is the prerequisite for the leak-to-valve automation built later in this collection — until the sensors and the valve exist as entities, there is nothing for that rule to listen to or close.
+Open **Settings → Devices & services → Entities** and filter for the new arrivals: twelve `binary_sensor.*_leak` sensors, the `valve.main_water` actuator, and the smart-plug switches and power readings. Each should sit in its Area with a human-readable name. That inventory is the prerequisite for the leak-to-valve automation built later in this collection — until the sensors and the valve exist as entities, there is nothing for that rule to listen to or close.
 
 > [!TIP]
 > The Lutron Caséta lights and shades, the ecobee thermostats, the Reolink cameras through Frigate, and the Aqara U400 locks join Home Assistant through their own integrations rather than Zigbee — those are covered on their own pages. This page's job is the Zigbee mesh and the safety devices riding it.

@@ -22,7 +22,7 @@ Open the Proxmox web interface at the host (log in as **root@pam**), click the n
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nextcloudpi.sh)"
 ```
 
-Accept the defaults — an **unprivileged** container with **2 cores, 2 GB RAM, and an 8 GB disk** on Debian 12. Nextcloud has no reason to touch host hardware, so unlike the TrueNAS VM (virtual machine) it stays unprivileged, the secure default on this build.
+Accept the defaults — an **unprivileged** container with **2 cores, 2 GB RAM, and an 8 GB disk** on Debian 12 (at the time of writing NCP ships Nextcloud 33 on PHP 8.3, a handy way to confirm the install landed on a current stack rather than a stale image). Nextcloud has no reason to touch host hardware, so unlike the TrueNAS VM (virtual machine) it stays unprivileged, the secure default on this build.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The node these containers live on. Reach the web UI at `https://`-this-ip-`:8006`.
@@ -47,7 +47,7 @@ Browse to the printed address. Plain `http://` redirects to HTTPS, and the brows
 > NCP's docs mention `https://nextcloudpi.local`, an mDNS name that may not resolve to this unprivileged container from another Mac. The IP always works, and lives on the container's **Summary** tab if you lose it.
 
 ### Save both passwords, then Activate
-The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (or use the **Print** button and Vaultwarden), then click **Activate**: the page opens `https://<IP>:4443` (the second certificate warning), landing you in the NCP panel.
+The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (the **Print** button captures them too), recording them in your password manager for now — you will consolidate these into Vaultwarden when you set it up later in this build. Then click **Activate**: the page opens `https://<IP>:4443` (the second certificate warning), landing you in the NCP panel.
 
 > [!INPUT] nextcloud-user | Nextcloud / NCP username | | ncp
 > The same `ncp` user signs in to both — only the passwords differ.
@@ -66,7 +66,7 @@ The activation page generates two random passwords for a user named **ncp** — 
 Back at `https://<IP>/`, log in as **ncp** with the Nextcloud password. There is no first-run wizard — NCP already created the account and the stack behind it — so you land straight in your files.
 
 > [!DETAILS] Fixing "Access through untrusted domain"
-> Reach Nextcloud by any name or address it doesn't already know and it stops with that heading. It's a security check, not breakage. From the container's console, list what it trusts, then add the new name at the next free index:
+> Reach Nextcloud by any name or address it doesn't already know and it stops with that heading. It's a security check, not breakage: the `trusted_domains` setting in `config/config.php` lists the names and addresses this instance will answer to, and specifying them prevents host-header poisoning. From the container's console, list what it trusts, then add the new name at the next free index:
 >
 > ```bash
 > cd /var/www/nextcloud
@@ -77,7 +77,7 @@ Back at `https://<IP>/`, log in as **ncp** with the Nextcloud password. There is
 ## Point the storage at the ZFS pool
 
 ### Add accounts for the household
-Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account**, enter a name and password, and click **Add new account** — one per person, so everyone gets their own files, photos, and password. Files, Activity, and Photos come enabled; Calendar, Contacts, and Notes wait on the **Apps** page behind an **Enable** button.
+Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account**, enter a name and password, and click **Add new account** — one per person, so everyone gets their own files, photos, and password. Files, Activity, and Photos come enabled; Calendar, Contacts, and Notes wait on the **Apps** page behind an **Enable** button. If an app isn't already bundled, clicking **Enable** downloads it from the Nextcloud app store, installs, and enables it in one step — so a brief install pause is expected, not a fault.
 
 ### Decide where the bytes live
 Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root disk — fine to start, tiny against a camera roll across the whole household. There are two ways to give it room, and this build uses both:
@@ -135,7 +135,7 @@ Nextcloud's docs list five things a backup must retain: the config folder, custo
 > The External Storage archive lives on the ZFS pool, so it is protected by the pool's own snapshots and the weekly scrub — not by the vzdump job, which only sees the container's local disk. That's the right split: the small, sync-critical data rides vzdump; the bulk archive rides the pool's protections. Photos you can't lose belong on the irreplaceable dataset that the Backblaze B2 push covers, so they also leave the property.
 
 > [!DETAILS] Backing up by hand, the documented way
-> Useful if you ever migrate off the container. From `/var/www/nextcloud` in the console: turn on maintenance mode, dump the database, copy the folders, turn maintenance off.
+> Useful if you ever migrate off the container. From `/var/www/nextcloud` in the console: turn on maintenance mode (it locks logged-in sessions and blocks new logins so the database dump and folder copy stay consistent), dump the database, copy the folders, turn maintenance off.
 >
 > ```bash
 > sudo -E -u www-data php occ maintenance:mode --on

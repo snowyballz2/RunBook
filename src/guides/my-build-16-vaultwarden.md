@@ -9,7 +9,7 @@ accent: rose
 Every page in this build has told you to put a value in your password manager — the Proxmox root password, the TrueNAS admin login, the camera and doorbell credentials, the MQTT (Message Queuing Telemetry Transport) users, the Backblaze encryption secrets. **Vaultwarden** is where all of that finally lives. It is a lightweight, fully compatible Bitwarden server, so the official Bitwarden apps and browser extensions on every iPhone, iPad, and Mac in this all-Apple household sync against this box instead of someone else's cloud. End-to-end encrypted, autofill everywhere, two-factor codes included — and the features Bitwarden sells as Premium work here, because Vaultwarden simply implements them with nothing to license. This is the synced secret store the rest of the build assumed all along.
 
 > [!NOTE]
-> One gate before anything else: the moment passwords move in, you become the household's backup department. The nightly Proxmox vzdump job to the TrueNAS share should already exist and have produced at least one archive you have actually seen — verify that first, not after. A vault with no proven backup is a single drive away from a household lockout.
+> One gate before anything else: the moment passwords move in, you become the household's backup department. The nightly Proxmox vzdump job to the TrueNAS share — set up later in this build, on the Proxmox Backups page — must be running and have produced at least one archive you have actually seen before you trust real credentials to this vault. If you have not reached that page yet, you can stand the container up now, but do not move secrets in until that backup job exists and has proven itself. A vault with no proven backup is a single drive away from a household lockout.
 
 > [!DETAILS] The honest alternative — not self-hosting this one
 > Bitwarden's own cloud has a genuinely good free tier: unlimited passwords, unlimited devices, their ops team carrying the uptime and backup duty. Self-hosting trades that team for the backup discipline this build already runs, in exchange for keeping the most sensitive data in the house — which is the whole local-first point of this server. Both are defensible. If the gate above gave you pause, the cloud is the right answer until it doesn't.
@@ -40,11 +40,16 @@ When the script asks **Default or Advanced**, pick **Advanced**, and accept the 
 > [!DETAILS] What the script builds
 > A Rust toolchain plus a release build of the latest Vaultwarden into `/opt/vaultwarden/bin`, the prebuilt web vault into `/opt/vaultwarden/web-vault`, settings in `/opt/vaultwarden/.env`, your data in `/opt/vaultwarden/data`, all run by a systemd service named `vaultwarden` on port 8000. It starts with HTTPS already on, using a self-signed certificate — that is why the printed address says `https`, and why your browser will object once.
 
+> [!DETAILS] Why the half-hour wait — and the fast path you are skipping
+> The community catalog also carries an `alpine-vaultwarden.sh` variant that installs a prebuilt package into a tiny 1-core, 256 MB, 1 GB container in seconds, no compiler involved. The trade: versions arrive on Alpine's packaging schedule rather than straight from the project, and its configuration paths differ from every `/opt/vaultwarden/...` path on this page. The i7-8700K with 32 GB is nowhere near starved, so the Debian compiled build is the documented mainline here — the half-hour compile is expected, not a fault.
+
 > [!DETAILS] How to pick a safe number
 > Keep the first three octets identical to the rest of the LAN (matching the Proxmox host at `192.168.1.50`, AdGuard at `192.168.1.53`), and choose a final number **outside** the router's DHCP range so it can never be handed to another device. The `.56` used here just continues the run of service containers.
 
-### Set it to start at boot
-A password manager that does not survive a power cut is a household incident — you would be locked out of the very credentials needed to fix the server. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
+### Confirm it is alive, then set it to start at boot
+After a half-hour compile, prove it actually came up before going further. Browse to `https://192.168.1.56:8000`, click through the self-signed certificate warning your browser shows (expected — the install script's own certificate, replaced by a real one two steps from now), and the Bitwarden web vault login screen should appear. Do **not** create an account yet: in two steps this container gets its proper proxied address, and accounts made before that point are born with the wrong links.
+
+Once you have seen the login, make it permanent. A password manager that does not survive a power cut is a household incident — you would be locked out of the very credentials needed to fix the server. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
 
 ```bash
 pct set 108 -onboot 1        # swap in the container's actual ID
@@ -122,10 +127,31 @@ Install the official Bitwarden app from the App Store and the browser extension 
 > [!NOTE]
 > Away from home, the vault syncs through the same Tailscale tunnel as everything else on this build — never a port-forward; a password server has no business being reachable from the internet. One wrinkle: `vault.example.com` only resolves where AdGuard answers DNS, so remote syncing needs the Tailscale-DNS wiring. Skip even that and nothing is lost day-to-day — the offline copies above carry you until you are home.
 
+> [!DETAILS] Instant sync between phones — the optional push relay
+> By default the apps sync on login, periodically while unlocked, and on demand — fine for a household. If you want an edit on one iPhone to appear on another within seconds, Vaultwarden can use Bitwarden's push relay: request a free installation id and key at [bitwarden.com/host](https://bitwarden.com/host/), then add three lines to `/opt/vaultwarden/.env` in the container's console and restart:
+>
+> ```ini
+> # /opt/vaultwarden/.env — append:
+> PUSH_ENABLED=true
+> PUSH_INSTALLATION_ID=
+> PUSH_INSTALLATION_KEY=
+> ```
+>
+> The honest trade: notification events now route through Bitwarden's servers (the vault contents stay end-to-end encrypted). The one documented downside — F-Droid app builds do not support it — is moot here, since this all-Apple household runs the official App Store Bitwarden apps. Skipping the relay costs nothing but immediacy.
+
 ## Run it like a vault
 
 ### Make sure the backups already cover it
-If the Proxmox guest-backup job runs in **Selection mode: All**, last night's vzdump already archived this container — data, settings, everything — to the TrueNAS share, and every night will. What actually matters lives in `/opt/vaultwarden/data`: the wiki ranks `db.sqlite3` and `attachments/` as required, `config.json` and the `rsa_key*` files as recommended (losing the keys just signs everyone out once). Restoring is the standard Proxmox drill: restore the container, the vault returns as of the backup. For *this* container, run that drill for real once, into a spare ID you delete afterwards — the vault is the one guest where "probably restorable" is not good enough.
+Once the Proxmox guest-backup job (set up on the Proxmox Backups page, in **Selection mode: All**) is running, each night's vzdump archives this container — data, settings, everything — to the TrueNAS share. What actually matters lives in `/opt/vaultwarden/data`: the wiki ranks `db.sqlite3` and `attachments/` as required, `config.json` and the `rsa_key*` files as recommended (losing the keys just signs everyone out once). Restoring is the standard Proxmox drill: restore the container, the vault returns as of the backup. For *this* container, run that drill for real once, into a spare ID you delete afterwards — the vault is the one guest where "probably restorable" is not good enough. If that backup job is not in place yet, set it up before trusting real credentials to the vault.
+
+> [!DETAILS] A purist's database backup
+> The wiki's gold-standard copy uses SQLite's own backup command, which is safe to run while the service is up:
+>
+> ```bash
+> sqlite3 /opt/vaultwarden/data/db.sqlite3 ".backup '/root/vw-db-backup.sqlite3'"
+> ```
+>
+> The nightly container archive makes this optional, but it earns its keep just before a risky change — run it right before an `update`, for instance. Restoring from it is the one direction that requires the `vaultwarden` service stopped first.
 
 ### Export the vault, off the server
 Add one layer the server cannot take down with it: from the web vault, go to **Tools → Export vault**, format **.json (Encrypted)** with a file password. Save the file onto the TrueNAS mirror, in with the irreplaceable files that the nightly Backblaze B2 Cloud Sync task pushes offsite — a vault whose only copies sit in one house is not finished. Repeat after big additions; the export is a snapshot, not a feed.
