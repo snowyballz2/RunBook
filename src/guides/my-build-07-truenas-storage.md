@@ -63,7 +63,12 @@ Boot the VM and open **Storage → Disks**. You should see all **three Seagate I
 ## Build the pools
 
 ### Mirror two of the IronWolf disks
-A pool is ZFS's big bucket: physical disks fused into one storage unit. In the TrueNAS web interface go to **Storage** and click **Create Pool** to open the wizard. Name the pool `tank` (lowercase), set **Layout → Mirror**, and select **two** of the three IronWolf drives. End on the **Review** screen and click **Create Pool**.
+A pool is ZFS's big bucket: physical disks fused into one storage unit. In the TrueNAS web interface go to **Storage** and click **Create Pool** to open the wizard. Name the pool `tank` (lowercase), set **Layout → Mirror**, and pick exactly **two** of the three IronWolf drives — see the next paragraph for how. End on the **Review** screen and click **Create Pool**.
+
+How you pick those two matters here, because all three drives are identical ST4000VN006 4 TB and only two belong in the mirror. Use **Manual Disk Selection** to point at exactly the two mirror disks by their serials, OR under **Automated Disk Selection** set **Disk Size** to **4 TB** and **Width** to **2** so the wizard pulls only two of the three same-size drives into the vdev. Do not let it grab all three.
+
+> [!WARNING]
+> With three identical 4 TB drives present, the Automated selector will happily pull **all three** into the mirror if you leave Width at its default — and the third ST4000VN006 is Frigate's footage drive, which must stay out of `tank`. Confirm the Review screen lists exactly two disks before you click **Create Pool**. If you see three, back up and set **Width** to **2** (or switch to Manual Disk Selection and deselect the footage disk by its serial).
 
 With a mirror, one drive can die and the data survives; usable space is one disk's worth — roughly **4 TB**. The second disk holds the live copy.
 

@@ -37,6 +37,9 @@ Write the ISO to a USB stick of 4 GB or larger with **balenaEtcher**, which runs
 4. Click **Select target** and pick the USB stick — check the size matches.
 5. Click **Flash** and wait. Etcher validates the write afterwards; let it finish.
 
+> [!NOTE]
+> After flashing, macOS may pop up **"The disk you inserted was not readable by this computer."** Click **Ignore** (or **Eject**) — do **not** click **Initialize**, which would reformat the stick and destroy the installer you just wrote. The popup is normal: macOS cannot read the Linux filesystem on the stick, but the server's BIOS can boot from it fine.
+
 ## Install Proxmox to the NVMe
 
 ### Boot the installer

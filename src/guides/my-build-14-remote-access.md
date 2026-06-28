@@ -6,7 +6,7 @@ order: 14
 accent: azure
 ---
 
-Everything you have built so far answers only at home: the Proxmox web UI, Home Assistant, TrueNAS, Frigate, the AdGuard and Nextcloud and Vaultwarden LXCs (Linux containers), Homepage, Uptime Kuma — all of it lives on the `192.168.1.x` LAN (local area network) and stops at the front door. This guide fixes that for the entire build at once by putting **Tailscale on the Proxmox host** and turning that host into a *subnet router* for the whole home network.
+Everything you have built so far answers only at home: the Proxmox web UI, Home Assistant, TrueNAS, Frigate, the AdGuard LXC (Linux container), and the hostnames the Nginx Proxy Manager LXC serves — all of it lives on the `192.168.1.x` LAN (local area network) and stops at the front door. This guide fixes that for the entire build at once by putting **Tailscale on the Proxmox host** and turning that host into a *subnet router* for the whole home network. Every service you build on later pages — Nextcloud, Vaultwarden, Homepage, Uptime Kuma — becomes reachable the same way the moment it gets a LAN IP, with no extra remote-access setup per service.
 
 The payoff fits this all-Apple, local-first household exactly: one mesh VPN (virtual private network), built from outbound connections only, with **no router port-forwards, ever.** Your network stays as closed to the internet as it is right now. Every guest stays on its normal LAN IP, and every one of them becomes reachable from your iPhone, MacBook, or HomePod-adjacent travels — through the single subnet route this host advertises.
 
@@ -17,6 +17,9 @@ The payoff fits this all-Apple, local-first household exactly: one mesh VPN (vir
 > A port-forward is a router rule that sends anyone on the internet who knocks on a port straight to your server — a door held open to the whole internet, around the clock. Tailscale inverts that: every device makes only *outbound* connections and finds its peers with NAT (Network Address Translation) traversal, falling back to Tailscale's DERP relays only when a direct path is impossible. The result is that Proxmox and every guest behind it are reachable solely by devices signed in to your private tailnet, and the router's settings never change. Once the host is connected, `tailscale status` in the host shell lists each peer and whether the path to it is `direct` or `relayed` — your first check if remote access ever feels slow.
 
 ## Put the host on a tailnet
+
+> [!NOTE]
+> Before you start, have the household Apple ID ready — the same account behind Apple Home, the Home Key locks, and the HomePod mini. The same identity signs in the host (in a browser on the MacBook, which may ask you to re-authenticate) and later the iPhone, so keep its password and a two-factor device within reach. Make sure the iPhone is already signed in to that Apple ID and the App Store before the phone step at the end.
 
 ### Create your Tailscale account
 Tailscale calls your private network a *tailnet*; it is created the moment you first sign in. Go to [tailscale.com](https://tailscale.com/) and sign up — the Personal plan is $0, free forever. There is no Tailscale password to invent: you sign in with an identity you already own. For this household, **Apple** is the natural choice — it is the same account behind Apple Home, the Home Key locks, and the HomePod mini — but Google, Microsoft, GitHub, or a passkey work too.
@@ -136,9 +139,10 @@ Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app 
 - **Proxmox** — `https://192.168.1.50:8006` (the same self-signed certificate warning as on the LAN; **Advanced**, then **Proceed**).
 - **Home Assistant** — the HA (Home Assistant) dashboard at the HA VM's IP.
 - **TrueNAS** — the storage UI at the TrueNAS VM's IP.
-- **Frigate, AdGuard, Nextcloud, Vaultwarden, Homepage, Uptime Kuma** — each at its own LXC IP, exactly as on the couch.
+- **Frigate and AdGuard** — each at its own LXC IP, exactly as on the couch.
+- **Nginx Proxy Manager** — its admin UI, plus any hostnames it already serves.
 
-Served to a phone nowhere near the house, through zero opened ports.
+Served to a phone nowhere near the house, through zero opened ports. Nextcloud, Vaultwarden, Homepage, and Uptime Kuma join this same list automatically as you build them in the pages ahead — no extra remote-access setup per service.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 

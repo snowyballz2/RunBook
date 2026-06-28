@@ -102,7 +102,7 @@ In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a 
 > Take the exact stream details from the Reolink app — do not guess them. In particular confirm **HTTP is enabled**, or the http-flv video path will not connect at all.
 
 ### Add the doorbell to the config
-Add the doorbell's streams to a `go2rtc` block, then point a `doorbell` camera at the local restream. Swap in the doorbell's IP, username, and password:
+There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the second camera you add later (the RLC-510WA) gets folded into these same two blocks rather than starting fresh ones. Add the doorbell first: its streams go under `go2rtc: streams:`, and the `doorbell:` camera goes under `cameras:`. Swap in the doorbell's IP, username, and password:
 
 ```yaml
 go2rtc:
@@ -153,6 +153,8 @@ cameras:
 ### Add the second camera
 The **Reolink RLC-510WA** (5MP WiFi) is added the same restream way, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Pin its IP with a DHCP reservation first, then take the exact stream paths from the Reolink app.
 
+These entries join the blocks you already have — they do **not** start a second `go2rtc:` or a second `cameras:`. Add the two `rlc510` streams as siblings under your existing `go2rtc: streams:` (right alongside `doorbell` and `doorbell_sub`), and add the `rlc510:` camera as a sibling under your existing `cameras:` (right alongside `doorbell:`). A duplicate top-level `go2rtc:` or `cameras:` is invalid YAML — the later one wins and the doorbell silently disappears. The snippet below shows the new entries with their parent keys for placement only; merge them in, do not paste a fresh copy of `go2rtc:`/`cameras:`.
+
 > [!INPUT] camera-ip | Reolink RLC-510WA IP
 
 > [!INPUT] camera-user | RLC-510WA username
@@ -160,6 +162,7 @@ The **Reolink RLC-510WA** (5MP WiFi) is added the same restream way, so its sing
 > [!SECRET] camera-password | RLC-510WA password
 
 ```yaml
+# add these two streams under your EXISTING go2rtc: streams: map
 go2rtc:
   streams:
     rlc510:
@@ -167,6 +170,7 @@ go2rtc:
     rlc510_sub:
       - "rtsp://CAMERA-USER:CAMERA-PASS@CAMERA-IP:554/h264Preview_01_sub"
 
+# add this camera under your EXISTING cameras: map (sibling of doorbell:)
 cameras:
   rlc510:
     ffmpeg:
@@ -184,6 +188,9 @@ cameras:
     record:
       enabled: true
 ```
+
+> [!NOTE]
+> If you would rather see the whole picture at once, the finished file has a single `go2rtc: streams:` with four entries (`doorbell`, `doorbell_sub`, `rlc510`, `rlc510_sub`) and a single `cameras:` with two entries (`doorbell:`, `rlc510:`). The `detectors:`, `model:`, `ffmpeg:`, `record:`, and `mqtt:` blocks from the other sections each appear once at the top level too.
 
 > [!NOTE]
 > `h264Preview_01_main` / `_sub` is the usual RLC spelling, but confirm it from the Reolink app rather than trusting the example. Detecting on the sub stream is correct anyway — frames get resized down to the model's small input, so a high-resolution detect stream loses the extra detail for nothing. Aim the detect stream at roughly 720p and **5 fps** (the recommended rate; 10 fps is the maximum worth using for most setups) — anything higher just burns effort on frames the model downscales away. Frigate tracks `person` by default; add an `objects: track:` list to watch for `car`, `dog`, and friends.

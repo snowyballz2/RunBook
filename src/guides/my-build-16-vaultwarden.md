@@ -52,7 +52,7 @@ After a half-hour compile, prove it actually came up before going further. Brows
 Once you have seen the login, make it permanent. A password manager that does not survive a power cut is a household incident — you would be locked out of the very credentials needed to fix the server. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
 
 ```bash
-pct set 108 -onboot 1        # swap in the container's actual ID
+pct set 106 -onboot 1        # swap in the container's actual ID
 ```
 
 > [!NOTE]
@@ -160,7 +160,7 @@ Add one layer the server cannot take down with it: from the web vault, go to **T
 > The encrypted-JSON export holds your logins and notes but **leaves out file attachments** — and Sends and trash with them. If you keep recovery-code images, scanned documents, or the like attached to vault items, that "complete copy" silently is not. To capture the attachments too, also take a **.zip export** (the export screen offers it), which packages the attached files alongside the data. Store the .zip beside the JSON on the NAS (network-attached storage), and treat it with the same care — it carries the unencrypted attachments inside.
 
 ### Give the watcher a watcher
-Add one HTTP(s) monitor in Uptime Kuma, pointed at the direct address `http://192.168.1.56:8000` rather than the proxied name — the login may live behind the proxy, but the dot should not. If the vault ever stops answering, this is how you find out before a family member does.
+When you build Uptime Kuma later in this build, give it an HTTP(s) monitor pointed at the direct address `http://192.168.1.56:8000` rather than the proxied name — the login may live behind the proxy, but the dot should not. If the vault ever stops answering, that is how you find out before a family member does.
 
 ### Update on purpose
 Snapshot the container first (the standard habit before any change), then type `update` in the container's console — it recompiles the new release (patience, again) and leaves your data and settings alone. Vaultwarden's releases sometimes carry security fixes, so when the project says update, take it promptly.

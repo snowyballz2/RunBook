@@ -94,7 +94,7 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 > `/etc/nut` only gains this build's settings after the **My Build: UPS & Safe Shutdown** page, which comes later than this one. If you run the host-config tarball below on your first pass through the build, that directory is still empty or default — so re-run the tarball once the UPS and safe-shutdown step is done, and treat *that* copy as the first complete one.
 
 > [!NOTE]
-> Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand. The HBA assignment to the TrueNAS VM (`qm set <truenas-vmid> -hostpci0 0000:01:00.0,pcie=1`) lives inside `/etc/pve/qemu-server/<id>.conf`, and the GPU `dev0: /dev/nvidia0` shares live in `/etc/pve/lxc/<ctid>.conf` for the Frigate, Ollama, and faster-whisper containers — both are inside `/etc/pve` above. But keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
+> Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand. The HBA assignment to the TrueNAS VM (`qm set <truenas-vmid> -hostpci0 <hba-pci-address>,pcie=1`) lives inside `/etc/pve/qemu-server/<id>.conf`, and the GPU `dev0: /dev/nvidia0` shares live in `/etc/pve/lxc/<ctid>.conf` for the Frigate, Ollama, and faster-whisper containers — both are inside `/etc/pve` above. The `<hba-pci-address>` is the chipset-side bus you captured from `lspci` (e.g. `0000:02:00.0`), **not** `0000:01:00.0`, which on this board is the top x16 slot where the 1080 Ti lives. But keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
 
 > [!DETAILS] A tiny job to copy it to the NAS
 > From the host **Shell**, roll the lot into one dated tarball on the backup share, already mounted at `/mnt/pve/nas-backups`:
@@ -114,7 +114,7 @@ After a boot-disk failure, the order matters: bring the host back knowing its ha
 
 1. **Reinstall Proxmox** fresh on a new NVMe — same version, and re-enter the host IP, hostname, and root password from your records.
 2. **Redo the BIOS groundwork** if the board was reset: VT-d (Intel's IOMMU) and Virtualization (VMX) enabled, and the bottom `PCIEX4_3` slot set to x4 — the HBA's clean IOMMU group depends on it.
-3. **Restore the `/etc` bits** from the host-config tarball, then **re-run the passthrough commands**: the `qm set ... -hostpci0` HBA line for TrueNAS and a `update-initramfs -u` so the VFIO bind takes. Reboot, and confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
+3. **Restore the `/etc` bits** from the host-config tarball, then **re-run the passthrough commands**: the `qm set ... -hostpci0` HBA line for TrueNAS and a `update-initramfs -u -k all` so the VFIO bind takes. Reboot, and confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
 4. **Reinstall the NVIDIA driver on the host** and confirm `nvidia-smi`, so the GPU `dev0:` shares into Frigate, Ollama, and faster-whisper work once those containers return.
 5. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage), then **restore the guests** from vzdump.
 6. **Mind the dependency order on first boot**: start the Home Assistant VM before the Frigate LXC so the MQTT broker is up first.

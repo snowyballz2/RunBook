@@ -21,12 +21,22 @@ Because of this, the driver lives on the **Proxmox host**, which owns the hardwa
 ### Install the NVIDIA driver on the host
 Do this on the **host**, not inside any container, and install it from Debian's package archive — never a `.run` installer downloaded from nvidia.com. The packaged driver builds its kernel module through **DKMS (Dynamic Kernel Module Support)** against the headers you install below and rebuilds itself automatically on every kernel update; a `.run` installer does not, and it silently breaks the card after the next Proxmox upgrade (exactly the "GPU vanished after an update" failure this page warns about). The server pulls everything over its own network connection — nothing to download on another PC.
 
-First enable Debian's **non-free** and **non-free-firmware** components (the NVIDIA driver lives there), then install the headers and the driver from the Proxmox node shell:
+First enable Debian's **non-free** and **non-free-firmware** components (the NVIDIA driver lives there). On Proxmox 8/9 the apt sources are **deb822 `.sources` files** under `/etc/apt/sources.list.d/`, and the old single-file `/etc/apt/sources.list` is usually empty — so the primary path is to edit the Debian `.sources` file's `Components:` line. First find which file holds the Debian entry:
 
 ```bash
-# Enable non-free / non-free-firmware so the NVIDIA packages are visible.
-# Append them to each Debian line in the apt sources, then refresh.
-sed -i 's/ main$/ main contrib non-free non-free-firmware/' /etc/apt/sources.list
+# Where is the Debian repo defined? On stock PVE 8/9 this is a .sources file.
+grep -rl 'non-free\|Components:\|deb http' /etc/apt/sources.list /etc/apt/sources.list.d/
+```
+
+Open the Debian `.sources` file that matches (typically `/etc/apt/sources.list.d/debian.sources`) and edit its `Components:` line so it reads:
+
+```
+Components: main contrib non-free non-free-firmware
+```
+
+Then refresh and install the headers and driver from the Proxmox node shell:
+
+```bash
 apt update
 
 # Headers matching the running Proxmox kernel, plus the driver and persistence daemon.
@@ -40,7 +50,10 @@ nvidia-smi
 `nvidia-smi` should print the 1080 Ti with a driver version. **Write that version down** — it has to match the userspace driver inside each container.
 
 > [!NOTE]
-> If `apt install -y nvidia-driver` cannot find the package, the non-free components are not enabled — re-check that line was added to your apt sources (Proxmox uses `.sources` files under `/etc/apt/sources.list.d/` on newer releases; add `non-free non-free-firmware` to the `Components:` line there if `/etc/apt/sources.list` has no Debian entry to edit). The `nvidia-persistenced` package ships the persistence daemon's systemd unit; install it alongside the driver so the next step has a unit to enable.
+> Legacy fallback only: if your host still uses the old single-file format and `/etc/apt/sources.list` has an uncommented Debian `main` line (the `grep` above shows it there, not in a `.sources` file), you can append the components in one shot instead — `sed -i 's/ main$/ main contrib non-free non-free-firmware/' /etc/apt/sources.list` then `apt update`. On a stock PVE 8/9 install this `sed` matches nothing, which is why the deb822 `.sources` edit above is the working path.
+
+> [!NOTE]
+> If `apt install -y nvidia-driver` still cannot find the package, the non-free components are not enabled — re-check that you edited the `Components:` line in the right `.sources` file and ran `apt update`. The `nvidia-persistenced` package ships the persistence daemon's systemd unit; install it alongside the driver so the next step has a unit to enable.
 
 > [!NOTE]
 > The 1080 Ti is Pascal — compute capability 6.1 — which clears Frigate's detection bar (compute capability 5.0+, NVIDIA driver 545 or newer, CUDA 12.x). Install a 545+ driver so the same card can run the ONNX/CUDA detector later. A YOLOv9 model is the right pick on this card; RF-DETR runs very slowly on Pascal, so avoid it.
@@ -92,7 +105,7 @@ The card is already the right tool: a 9300-8i in **IT mode (Initiator-Target mod
 Passthrough needs the card isolated in its own **IOMMU (Input/Output Memory Management Unit)** group. The HBA is in the bottom **PCIEX4_3 chipset-attached slot** (set to x4 in BIOS) precisely so it lands in a group by itself. Verify before binding anything:
 
 ```bash
-# IOMMU must be active (VT-d enabled in BIOS, intel_iommu=on on the cmdline)
+# IOMMU must be active (VT-d enabled in BIOS, intel_iommu=on iommu=pt on the cmdline)
 dmesg | grep -e DMAR -e IOMMU
 
 # Find the HBA's PCI address and its vendor:device IDs
