@@ -249,8 +249,8 @@ actions:
       temperature: 21
 ```
 
-> [!DETAILS] Auto-lock the Aqara U400
-> The lock from the *Home Assistant OS* guide can look after itself. Three patterns, each useful on its own. Auto-lock a few minutes after the door is shut — trigger on the door sensor reading closed and holding for the **For** duration, then `lock.lock`:
+> [!DETAILS] Auto-lock a smart lock
+> A smart lock (set up in the *Home Assistant OS* guide) can look after itself. Three patterns, each useful on its own. Auto-lock a few minutes after the door is shut — trigger on the door sensor reading closed and holding for the **For** duration, then `lock.lock`:
 >
 > ```yaml
 > alias: Auto-lock after door closes
@@ -278,10 +278,10 @@ actions:
 >       message: "Front door unlocked."
 > ```
 >
-> And a left-unlocked reminder — the same `to: "unlocked"` trigger with a **For** of, say, ten minutes, paired with a `lock.lock` action if you'd rather it just fixed itself at night. Swap `lock.front_door` and `binary_sensor.front_door_contact` for your own entity names; the U400 comes into Home Assistant over Matter as covered in the *Home Assistant OS* guide.
+> And a left-unlocked reminder — the same `to: "unlocked"` trigger with a **For** of, say, ten minutes, paired with a `lock.lock` action if you'd rather it just fixed itself at night. Swap `lock.front_door` and `binary_sensor.front_door_contact` for your own entity names; a Matter or Z-Wave lock comes into Home Assistant as covered in the *Home Assistant OS* guide.
 
-> [!DETAILS] Climate setback on the ecobee
-> The away/home pair above already nudges the thermostat, but you can make climate its own automation and let presence drive it — `climate.set_temperature` is the action, and the ecobee surfaces as a `climate.` entity. The genuinely money-saving addition is pausing the system when a window or door is open, so you're not heating the street:
+> [!DETAILS] Climate setback on a smart thermostat
+> The away/home pair above already nudges the thermostat, but you can make climate its own automation and let presence drive it — `climate.set_temperature` is the action, and your thermostat surfaces as a `climate.` entity. The genuinely money-saving addition is pausing the system when a window or door is open, so you're not heating the street:
 >
 > ```yaml
 > alias: Pause HVAC on open window
