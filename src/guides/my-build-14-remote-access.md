@@ -140,7 +140,7 @@ Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app 
 - **Home Assistant** — the HA (Home Assistant) dashboard at the HA VM's IP.
 - **TrueNAS** — the storage UI at the TrueNAS VM's IP.
 - **Frigate and AdGuard** — each at its own LXC IP, exactly as on the couch.
-- **Nginx Proxy Manager** — its admin UI, plus any hostnames it already serves.
+- **Nginx Proxy Manager** — its admin UI at its LXC IP. The `*.example.com` hostnames it serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System): on the admin console's [DNS page](https://login.tailscale.com/admin/dns), add AdGuard's LAN IP (`192.168.1.53`) under **Global nameservers** and enable **Override DNS servers** — the step previewed on the Reverse Proxy page. After that, `https://proxmox.example.com` and the rest work from anywhere too.
 
 Served to a phone nowhere near the house, through zero opened ports. Nextcloud, Vaultwarden, Homepage, and Uptime Kuma join this same list automatically as you build them in the pages ahead — no extra remote-access setup per service.
 
@@ -151,7 +151,7 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
 
 > [!NOTE]
-> One honest limitation: every remote path runs through this single host. If the i7-8700K is powered off, crashed, or wedged mid-boot while you are away, remote access is down with it. Tailscale can fail over between two subnet routers, but that needs a second always-on machine; on a one-server build, a dead host means a trip home — or a housemate and the power button. The CyberPower UPS (uninterruptible power supply) and NUT (Network UPS Tools) shutdown handling cover the *power-blip* case, not a hard crash.
+> One honest limitation: every remote path runs through this single host. If the i7-8700K is powered off, crashed, or wedged mid-boot while you are away, remote access is down with it. Tailscale can fail over between two subnet routers, but that needs a second always-on machine; on a one-server build, a dead host means a trip home — or a housemate and the power button. The CyberPower UPS (uninterruptible power supply) and the NUT (Network UPS Tools) shutdown handling you will set up later in this build, on the UPS & Safe Shutdown page, cover the *power-blip* case, not a hard crash.
 
 > [!DETAILS] MagicDNS and the day-to-day habit
 > The [Machines page](https://login.tailscale.com/admin/machines) now lists both devices, and MagicDNS (on by default for new tailnets) gives each a name like `pve.<tailnet>.ts.net`, drawn from its hostname — so `https://pve.<tailnet>.ts.net:8006` also reaches the web UI. Day to day, keep using the LAN IPs: thanks to the subnet route, they are the addresses that reach the host *and* every guest, both at home and away, with nothing to remember per service.

@@ -8,7 +8,7 @@ accent: spruce
 
 By now the build answers at a dozen addresses, and nobody in an all-Apple, local-first household should have to remember any of them. **Homepage** puts everything on one fast page: a tile per service, a live up/down dot on each, an optional strip of host stats across the top. No accounts, no database, nothing to log into — just a few **YAML (YAML Ain't Markup Language)** files you edit once. Set it as the start page on the family's devices and the server finally has a front door.
 
-This is one more small service **LXC (Linux Container)** on the Proxmox host, alongside AdGuard, Nginx Proxy Manager, Nextcloud, Vaultwarden, and Uptime Kuma. Build it last, once the others exist, so its tiles point at things that are actually running.
+This is one more small service **LXC (Linux Container)** on the Proxmox host, alongside AdGuard, Nginx Proxy Manager, Nextcloud, and Vaultwarden — with Uptime Kuma joining on the next page. Build it after the services above exist, so its tiles point at things that are actually running.
 
 ## Create the container
 
@@ -83,7 +83,7 @@ Replace the sample content of `services.yaml` with the build itself — two grou
     - Uptime Kuma:
         icon: uptime-kuma.png
         href: http://192.168.1.57:3001
-        description: The monitor of record
+        description: The monitor of record (built on the next page)
         siteMonitor: http://192.168.1.57:3001
 
 - Apps:
@@ -104,21 +104,21 @@ Replace the sample content of `services.yaml` with the build itself — two grou
         siteMonitor: https://192.168.1.58
     - Vaultwarden:
         icon: vaultwarden.png
-        href: https://192.168.1.56
+        href: https://vault.example.com
         description: The synced secret store
-        siteMonitor: https://192.168.1.56
+        siteMonitor: http://192.168.1.56:8000
 ```
 
-Save, click the refresh icon, and the page is suddenly worth bookmarking.
+Save, click the refresh icon, and the page is suddenly worth bookmarking. One exception on purpose: the Uptime Kuma tile's dot sits red until the next page builds it. And one tile breaks the direct-address pattern: Vaultwarden's `href` is its proxy name because its login only works through `https://vault.example.com`, while its `siteMonitor` watches the plain HTTP (Hypertext Transfer Protocol) port 8000 the service actually listens on — both per the Vaultwarden page.
 
 > [!NOTE]
-> The `siteMonitor` lines give each tile a live up/down dot with a response time — Homepage quietly sends each address a request and reports what came back. Two things to know: it is a glance, not an alarm — Uptime Kuma remains the thing that actually notifies you — and it skips certificate checking entirely, which is why the self-signed Proxmox, Nextcloud, and Vaultwarden can be watched here without any ignore-certificate toggle. A green dot proves the service answers, not that its certificate is healthy.
+> The `siteMonitor` lines give each tile a live up/down dot with a response time — Homepage quietly sends each address a request and reports what came back. Two things to know: it is a glance, not an alarm — Uptime Kuma, built on the next page, is the thing that actually notifies you — and it skips certificate checking entirely, which is why the self-signed Proxmox and Nextcloud can be watched here without any ignore-certificate toggle. A green dot proves the service answers, not that its certificate is healthy.
 
 > [!DETAILS] How the icons work
 > Bare names like `proxmox.png` come from the community **Dashboard Icons** set, which has an icon for nearly everything self-hosted (`.png`, `.svg`, and `.webp` all work). No icon there? Prefix `mdi-` for any Material Design icon (`mdi-flask-outline`) or `si-` for a brand logo from Simple Icons (`si-github`), optionally with a color suffix like `mdi-flask-#5b8f7a`. A full URL to any image works too.
 
 > [!DETAILS] Pointing at the pretty names instead
-> Once Nginx Proxy Manager gives your services real names, the `href` lines can use `https://proxmox.example.com` and friends — every click lands on a padlock instead of a certificate warning, and the family stays off Frigate's wide-open port 5000. The trade-off: every tile then depends on the proxy and the AdGuard DNS (Domain Name System) rewrite staying healthy, so the dashboard's links break precisely when the proxy is the thing that broke. Direct addresses keep it honest; pretty names make it friendlier. Either way, keep the `siteMonitor` lines on direct addresses so the dots keep telling the truth.
+> Once Nginx Proxy Manager gives your services real names, the `href` lines can use `https://proxmox.example.com` and friends — every click lands on a padlock instead of a certificate warning, and nobody has to remember a port number. The trade-off: every tile then depends on the proxy and the AdGuard DNS (Domain Name System) rewrite staying healthy, so the dashboard's links break precisely when the proxy is the thing that broke. Direct addresses keep it honest; pretty names make it friendlier. Either way, keep the `siteMonitor` lines on direct addresses so the dots keep telling the truth.
 
 ### The strip across the top
 `widgets.yaml` fills the page header. A search box and a clock are the two that earn their place:
@@ -191,7 +191,7 @@ Then `https://home.example.com` greets you with a padlock and your tiles.
 > Skip the `.env` edit and the new name answers with "Host validation failed. See logs for more details." That is not the proxy misbehaving — it is Homepage checking the browser's Host header against its allow-list, a deliberate safety feature. Add the host exactly as the error logs it, restart the service, done.
 
 ### Give the watcher a watcher
-Add one more HTTP monitor in Uptime Kuma, pointed at the direct address `http://192.168.1.55:3000`. The install's allow-list already admits that address, so the monitor works untouched — and now the page that watches everything is itself watched.
+Uptime Kuma is built on the next page. Once it exists, give it an HTTP monitor pointed at the direct address `http://192.168.1.55:3000` — the install's allow-list already admits that address, so the monitor works untouched, and the page that watches everything is itself watched. The next page's monitor list includes exactly this entry, so working in order covers it.
 
 ### Update on purpose
 When you choose to take a new release, type `update` in the container's console. It fetches the newest source, rebuilds (patience again), and preserves your config files and `.env`. Take a Proxmox snapshot first — the same habit used for the rest of these containers — so rollback is instant if a release misbehaves.

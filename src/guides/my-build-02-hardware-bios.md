@@ -21,7 +21,7 @@ The platform is a Z370 build: an ASUS ROG Maximus X Hero board with an Intel i7-
 <rect x="30" y="68" width="8" height="250" style="fill:var(--color-ink-faint);fill-opacity:0.45"/>
 <text x="46" y="84" style="fill:var(--color-ink-soft);font-size:10px">ASUS Maximus X Hero · rear I/O at left edge</text>
 <rect x="46" y="92" width="150" height="24" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="121" y="108" text-anchor="middle" style="fill:currentColor">ZBT-2 · USB (use extension)</text>
+<text x="121" y="108" text-anchor="middle" style="fill:currentColor">ZBT-2 · USB (later)</text>
 <rect x="120" y="130" width="190" height="34" rx="4" style="fill:#10b981;fill-opacity:0.14;stroke:#10b981"/>
 <text x="215" y="151" text-anchor="middle" style="fill:currentColor">GTX 1080 Ti · top x16</text>
 <rect x="120" y="176" width="104" height="22" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
@@ -65,7 +65,7 @@ The platform is a Z370 build: an ASUS ROG Maximus X Hero board with an Intel i7-
 The build has three Seagate IronWolf ST4000VN006 4 TB drives. Two of them become a TrueNAS ZFS (Zettabyte File System) mirror; the third holds Frigate footage.
 
 1. Mount all three IronWolfs in the View 71's **fixed rear drive trays** behind the motherboard tray. The removable front pods are not required for this build.
-2. Cable the **two mirror drives to the LSI/Broadcom 9300-8i HBA (host bus adapter)**. These belong to the TrueNAS VM (virtual machine) and must hang off the HBA, not the board.
+2. The **two mirror drives belong on the LSI/Broadcom 9300-8i HBA (host bus adapter)**, not the board — they follow the HBA into the TrueNAS VM (virtual machine). Leave their data connectors empty for now; you cable them once the HBA is seated below.
 3. Cable the **single footage drive to a motherboard SATA (Serial Advanced Technology Attachment) port**. The host and the Frigate container need direct access to it, so it stays on the board — never on the HBA.
 4. Mount the 500 GB NVMe (Non-Volatile Memory Express) drive on the board's M.2 slot. This is the Proxmox OS plus Frigate cache disk.
 
@@ -79,7 +79,7 @@ The build has three Seagate IronWolf ST4000VN006 4 TB drives. Two of them become
 ### Fit the radio, switch, and UPS
 These are not slot-related, but they go in with the build:
 
-- **HA Connect ZBT-2** Zigbee coordinator — leave it boxed for now; it plugs into USB once the host is up.
+- **HA Connect ZBT-2** Zigbee coordinator — leave it boxed for now; it plugs into USB via a short extension lead once the host is up (keeps the radio away from case interference).
 - **Netgear GS308EPP** managed PoE (Power over Ethernet) switch — for future PoE cameras; wire the server's Ethernet through it.
 - **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply) — the server and switch plug into it; its USB data cable goes to the host for NUT (Network UPS Tools) monitoring later.
 
@@ -109,10 +109,10 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 *The two CPU-attached x16 slots feed the GPU; the chipset-attached bottom x4 slot is where the HBA isolates cleanly for passthrough.*
 
 ### Seat the GTX 1080 Ti in the top slot
-1. Install the EVGA GTX 1080 Ti FTW in the **top x16 slot** (`PCIEX16/X8_1`). With nothing contending, it runs at full x16.
+1. Install the EVGA GTX 1080 Ti FTW in the **top x16 slot** (`PCIEX16_1`). With nothing contending, it runs at full x16.
 2. Connect both PCIe power leads from the EVGA PSU to the card.
 
-The 1080 Ti is roughly 300 mm long. In the View 71 it clears the rear drive trays with room to spare, so there is no need to move anything for it.
+The 1080 Ti is roughly 300 mm long. In the View 71 it clears the front drive-cage area with room to spare, so there is no need to remove the front pods for it.
 
 > [!WARNING]
 > The 1080 Ti is **not** passed through to any VM. The NVIDIA driver lives on the Proxmox host and is shared into the containers that need it (Frigate detection, Ollama, faster-whisper). Do not VFIO the GPU — only the HBA gets VFIO'd. Mixing these two up is the easy mistake in this build.
@@ -120,7 +120,7 @@ The 1080 Ti is roughly 300 mm long. In the View 71 it clears the rear drive tray
 ### Seat the 9300-8i HBA in the bottom slot
 1. Install the LSI/Broadcom 9300-8i (already flashed to IT mode, Initiator-Target mode) in the **bottom x4 slot** (`PCIEX4_3`).
 2. This slot is **chipset-attached**, which is exactly what produces a clean IOMMU group for passthrough — the CPU-attached upper slots tend to share groups with other devices.
-3. Connect the two SAS-to-SATA (Serial Attached SCSI) fan-out cables from the HBA to the two mirror IronWolfs you cabled earlier.
+3. Connect **one SFF-8643-to-4× SATA forward breakout cable** from one of the HBA's two internal SAS (Serial Attached SCSI) ports to the two mirror IronWolfs — two of its four tails are used; the other two stay spare for growing the pool later.
 
 ### Wire the power and data
 With both cards seated, run every cable. The rule of thumb: **power comes from the PSU, data comes from the board — except the two mirror disks, whose data comes from the HBA.**
@@ -145,7 +145,7 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 <text x="20" y="232" style="fill:currentColor;font-size:12px;font-weight:600">② Data — from the board and the HBA</text>
 <rect x="24" y="248" width="140" height="58" rx="6" style="fill:#6366f1;fill-opacity:0.14;stroke:#6366f1"/>
 <text x="94" y="272" text-anchor="middle" style="fill:currentColor">9300-8i HBA</text>
-<text x="94" y="290" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">1× SFF-8643 port</text>
+<text x="94" y="290" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">2× SFF-8643 ports · 1 used</text>
 <rect x="212" y="248" width="104" height="58" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="264" y="272" text-anchor="middle" style="fill:currentColor">SFF-8643 →</text>
 <text x="264" y="290" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">4× SATA breakout</text>
@@ -164,13 +164,13 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 <text x="36" y="468" style="fill:var(--color-ink-soft);font-size:10.5px">USB</text>
 <line x1="164" y1="406" x2="470" y2="390" style="stroke:#10b981;stroke-width:2"/>
 <line x1="164" y1="436" x2="470" y2="431" style="stroke:#10b981;stroke-width:2"/>
-<line x1="164" y1="464" x2="470" y2="471" style="stroke:#10b981;stroke-width:2"/>
+<line x1="164" y1="464" x2="470" y2="471" stroke-dasharray="4 3" style="stroke:#10b981;stroke-width:2"/>
 <rect x="470" y="374" width="188" height="32" rx="4" style="fill:#f59e0b;fill-opacity:0.18;stroke:#f59e0b"/>
 <text x="564" y="394" text-anchor="middle" style="fill:currentColor">IronWolf #3 — footage</text>
 <rect x="470" y="416" width="188" height="30" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="564" y="435" text-anchor="middle" style="fill:currentColor">500 GB NVMe</text>
 <rect x="470" y="456" width="188" height="30" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="564" y="475" text-anchor="middle" style="fill:currentColor">ZBT-2 coordinator</text>
+<text x="564" y="475" text-anchor="middle" style="fill:currentColor">ZBT-2 (later)</text>
 <rect x="22" y="512" width="14" height="11" rx="2" style="fill:#f43f5e"/>
 <text x="42" y="521" style="fill:var(--color-ink-soft);font-size:10.5px">PSU power</text>
 <rect x="150" y="512" width="14" height="11" rx="2" style="fill:#6366f1"/>
@@ -186,7 +186,7 @@ The footage drive and the NVMe both ride the board; only the two mirror disks ha
 Enter the BIOS by tapping `Del` repeatedly the moment the screen lights up on power-on. Work through these in order — the toggles live in different submenus, so do not stop after the first one.
 
 ### Update the BIOS first
-Flash the latest Maximus X Hero firmware before touching any toggle, so the settings below sit on current microcode. This needs its own USB stick — it is **not** the Proxmox installer stick you make later.
+Flash the latest Maximus X Hero firmware before touching any toggle, so the settings below sit on current microcode. This needs its own USB stick — it is **not** the Proxmox installer stick you made during the Start Here prep.
 
 1. On another computer, open the ASUS support page for the **ROG Maximus X Hero** (asus.com → Support → search "Maximus X Hero" → **Driver & Tools → BIOS & Firmware**) and download the **latest BIOS** file. Note the version number — you will confirm it after the flash.
 2. Unzip the download. ASUS firmware must carry the exact filename EZ Flash expects, so run the bundled **BIOSRenamer** utility (included in the same zip) once — it renames the file for you.

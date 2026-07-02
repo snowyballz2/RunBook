@@ -9,18 +9,18 @@ accent: rose
 Voice is the convenience layer over everything the earlier pages built — the leak sensors, the locks, the Lutron lights and shades, the scripts and scenes. There are two honest ways to talk to this house, and this build runs both. The **Apple path** uses the iPhones, iPads, Apple Watches, and the HomePod mini already in the house as the microphone, with Siri saying the words and your scripts and scenes as the targets — no extra software, no subscription, and it rides the Tailscale link from the remote-access work so it answers home or away. The **local path** is Home Assistant's own **Assist**: a Voice Preview Edition puck on the counter, speech-to-text and a conversation model running on the **EVGA GTX 1080 Ti** that was shared into the host earlier, and nothing spoken ever leaving the LAN (local area network). This page builds both.
 
 > [!NOTE]
-> One distinction makes the whole page click: an **automation** *watches* (it fires itself on a trigger) while a **script** *runs* on command. Anything you want to say out loud, point voice at a **script** or a **scene** — or trigger an automation by name. You can no more "tell Siri to run" a watching automation than ask it to set off a smoke detector.
+> One distinction makes the whole page click: an **automation** *watches* (it fires itself on a trigger) while a **script** *runs* on command. Anything you want to say out loud, point voice at a **script** or a **scene** — or run an automation's actions on demand with the explicit `automation.trigger` action covered below. What never works is flipping an automation's on/off switch and expecting it to *run*: that switch (which is all HomeKit exposure gives you) only arms or disarms the watcher, the way switching on a smoke detector is not the same as setting it off.
 
 ## The Apple path: "Hey Siri"
 
 ### Connect the companion app to home
-Install the **Home Assistant** app from the App Store on each iPhone and sign in with the server's pinned address — the same `ha-ip` from the Home Assistant page, on port `8123`. Because the remote-access work put the Home Assistant OS **VM (virtual machine)** on Tailscale with subnet routing, that one address answers whether you are home or out. Under **Settings → Companion app → (your server)**, point both the **Internal URL** and the **External URL** at that single Tailscale-reachable address so there is no separate away-URL to maintain.
+Install the **Home Assistant** app from the App Store on each iPhone and sign in with the server's pinned address — the same `ha-ip` from the Home Assistant page, on port `8123`. Because the remote-access work put the Proxmox host on Tailscale as a **subnet router**, the Home Assistant OS **VM (virtual machine)**'s one LAN address answers whether you are home or out — no Tailscale runs inside the VM itself. Under **Settings → Companion app → (your server)**, point both the **Internal URL** and the **External URL** at that single Tailscale-reachable address so there is no separate away-URL to maintain.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 > The address the companion app, Shortcuts, and the HomeKit Bridge all reach. Pinned on the Home Assistant page.
 
 ### Make a script for what you want to say
-A script is the clean target for a spoken command. In Home Assistant go to **Settings → Automations & scenes → Scripts → Add script**, give it a friendly, sayable name like "Movie night" or "Goodnight", add the actions (dim the Lutron Caséta lights, lower the shades, lock the three Aqara U400 doors, set the ecobee thermostats back), and save.
+A script is the clean target for a spoken command. In Home Assistant go to **Settings → Automations & scenes → Scripts → Add script**, give it a friendly, sayable name like "Movie night" or "Goodnight", add the actions (dim the Lutron Caséta lights, lower the shades, lock the three Aqara U400 doors, set the ecobee thermostats back), and save. The locks and the ecobee are already in Home Assistant from the earlier pages; if the Caséta lights and shades are not yet, add the **Lutron Caséta** integration first under **Settings → Devices & services → Add integration** — it talks to the Caséta bridge on your LAN.
 
 > [!DETAILS] Already built the automation? Two honest options
 > If the thing you want to say out loud is the *actions* of an automation you already wrote, you have two clean choices. Either lift those actions into a script and have the automation call the script too (one set of actions, two ways to fire it) — or skip the script and point Siri straight at the automation with the `automation.trigger` action below, which runs its actions on demand regardless of the normal trigger. The script route is tidier when a human says it often; `automation.trigger` is fine for a one-off.
@@ -70,7 +70,7 @@ A voice command takes four hops, and the reason Assist is so flexible is that **
 > "Intent engine" is Home Assistant's name for the part that decides what you *meant*. "Turn off the kitchen" becomes the same action whether typed or spoken — which is why putting every device in an **Area** on the Home Assistant page pays off again here. No areas, no "turn off the kitchen."
 
 ### Get the hardware: Voice Preview Edition
-The local path needs a dedicated **microphone-and-speaker satellite** in each room you want to talk to — and that has to be its own device. **Neither the HomePods nor the Google/Nest speakers can be the Assist microphone:** the HomePod's mic is locked to Siri and the Nest's to Google Assistant, and neither will hand its microphone to Home Assistant. (The Nest can still *play* announcements as a Cast target, as above — it just cannot *listen* for Assist.) So the local voice path is not something the speakers already in the house can do; it needs a puck of its own.
+The local path needs a dedicated **microphone-and-speaker satellite** in each room you want to talk to — and that has to be its own device. **Neither the HomePods nor the Google/Nest speakers can be the Assist microphone:** the HomePod's mic is locked to Siri and the Nest's to Google Assistant, and neither will hand its microphone to Home Assistant. (The Nest can still *play* announcements as a Cast target — that step comes later on this page — it just cannot *listen* for Assist.) So the local voice path is not something the speakers already in the house can do; it needs a puck of its own.
 
 The clean answer is Home Assistant's own **Voice Preview Edition** — a small **$59** puck with a **dual far-field microphone array** and an XMOS audio chip that cuts through room noise, a speaker, a physical **mute switch**, a volume dial, and a 3.5 mm output to wire into a louder speaker. Crucially it runs **wake-word detection on the device itself**, so the server is only invoked once it hears its name rather than streaming audio constantly. Out of the box it answers to **"Okay Nabu," "Hey Jarvis,"** and **"Hey Mycroft."** Plug it in, point it at the Home Assistant instance, and pin its address with a DHCP (Dynamic Host Configuration Protocol) reservation like every other guest. Get one per room you want hands-free voice in.
 
@@ -96,7 +96,33 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 
 Read the script before piping it into a root shell. Accept its defaults; it installs Ollama and exposes its HTTP API on port `11434`.
 
-**Build the faster-whisper LXC.** If a community helper exists for it, use it the same way; otherwise create a plain **Debian 12** container through the Proxmox wizard (a few cores, 2–4 GB RAM, a small disk) and install faster-whisper's Wyoming server inside it (the `wyoming-faster-whisper` package, exposing port `10300`). Either way you end with a Debian-based LXC that will run STT against the card.
+**Build the faster-whisper LXC.** If a community helper exists for it, use it the same way; otherwise create a plain **Debian 12** container through the Proxmox wizard (a few cores, 2–4 GB RAM, a small disk) and install faster-whisper's Wyoming server inside it by hand — `wyoming-faster-whisper` is a **pip** package, not an apt one. Either way you end with a Debian-based LXC that will run STT against the card, listening on port `10300`.
+
+> [!DETAILS] The hand-rolled install, start to finish
+> Inside the Debian LXC's console, put the Wyoming server in its own Python virtual environment:
+>
+> ```bash
+> apt install -y python3-venv
+> python3 -m venv /opt/wyoming
+> /opt/wyoming/bin/pip install wyoming-faster-whisper
+> ```
+>
+> Then give it a small systemd unit so it listens on `10300` and survives reboots. Create `/etc/systemd/system/wyoming-faster-whisper.service`:
+>
+> ```ini
+> [Unit]
+> Description=Wyoming faster-whisper STT
+> After=network-online.target
+>
+> [Service]
+> ExecStart=/opt/wyoming/bin/wyoming-faster-whisper --uri tcp://0.0.0.0:10300 --model small-int8 --device cuda
+> Restart=on-failure
+>
+> [Install]
+> WantedBy=multi-user.target
+> ```
+>
+> Enable it at boot with `systemctl enable --now wyoming-faster-whisper`. The `--device cuda` flag needs the card, so the service only starts cleanly once the lend-the-card step below is done.
 
 **Lend each container the card.** Both LXCs borrow the 1080 Ti exactly as Frigate does — the host owns the driver, each container adds the three NVIDIA device lines to **its own** config file. On the host, edit `/etc/pve/lxc/<ctid>.conf` for each container (`<ctid>` is that container's ID) and add:
 
@@ -106,10 +132,18 @@ dev1: /dev/nvidiactl,gid=44
 dev2: /dev/nvidia-uvm,gid=44
 ```
 
-Restart each container after editing its config. Then, inside each one, install the **in-container NVIDIA userspace driver at the same version** you noted from the host's `nvidia-smi` on the GPU/HBA Passthrough page — a version mismatch is the classic cause of "the GPU vanished." Give each container a fixed IP via a DHCP (Dynamic Host Configuration Protocol) reservation and enable **Start at boot**, the same habit as every other guest.
+Restart each container after editing its config. Then, inside each one, install the **in-container NVIDIA userspace driver at the same version** you noted from the host's `nvidia-smi` on the GPU/HBA Passthrough page — a version mismatch is the classic cause of "the GPU vanished." The container's Debian release ships a *different* driver version than the host's, so do not use `apt` for this one: download NVIDIA's installer for the **exact host version** and run it userspace-only —
+
+```bash
+# Inside the container — match <version> to the host's nvidia-smi exactly:
+wget https://us.download.nvidia.com/XFree86/Linux-x86_64/<version>/NVIDIA-Linux-x86_64-<version>.run
+sh NVIDIA-Linux-x86_64-<version>.run --no-kernel-module
+```
+
+The `--no-kernel-module` flag is what makes this safe: containers share the host's kernel (and its DKMS-managed module), so only the userspace libraries install here — the host-side "never a `.run`" rule is about kernel modules and does not apply inside an LXC. Give each container a fixed IP via a DHCP (Dynamic Host Configuration Protocol) reservation and enable **Start at boot**, the same habit as every other guest.
 
 > [!NOTE]
-> Home Assistant's native **Ollama** integration is what routes your spoken sentences through the model, and it needs **HA 2024.8 or later** — the release where local models gained the ability to actually *control* Home Assistant rather than only chat. The Home Assistant OS VM updates from inside itself (the Home Assistant page covers this), so keep it current; on an older core the model can talk but cannot turn anything on.
+> Home Assistant's native **Ollama** integration is what routes your spoken sentences through the model, and it needs **HA 2024.8 or later** — the release where local models gained the ability to actually *control* Home Assistant rather than only chat. The Home Assistant OS VM updates from inside itself — its own **Settings → System → Updates** screen — so keep it current; on an older core the model can talk but cannot turn anything on.
 
 Confirm each container actually sees the card before going further. In each LXC's console:
 
@@ -129,7 +163,7 @@ You should see the GTX 1080 Ti listed with a driver version. If it is missing, t
 > This is the `tts.piper` entity the leak-alert spoken announcement on the Automations page points at. That rule cannot speak until Piper exists — so before you rely on it, confirm `tts.piper` shows up under **Settings → Devices & services → Entities** (or that it autocompletes in a `tts.speak` action). The Automations page deferred this step here; this is where it is delivered.
 
 ### Add the Google/Nest speakers as announce targets
-Piper makes the *words*; a speaker has to *play* them. The leak-alert announcement (and any other spoken `tts.speak` action) needs a `media_player.*` target, and on this build that target is a **Google/Nest Cast speaker**. Add them in Home Assistant under **Settings → Devices & services → Add integration → Google Cast**; each speaker then surfaces as a `media_player.*` entity you can aim audio at.
+Piper makes the *words*; a speaker has to *play* them. The leak-alert announcement (and any other spoken `tts.speak` action) needs a `media_player.*` target, and on this build that target is a **Google/Nest Cast speaker**. Add them in Home Assistant under **Settings → Devices & services → Add integration → Google Cast**; each speaker then surfaces as a `media_player.*` entity you can aim audio at. Close the loop while you are here: the Automations page's leak rule speaks through `media_player.kitchen_speaker` — check the new entity's actual id under **Entities** and either rename it to match or update the rule's target to the real name.
 
 > [!NOTE]
 > A **HomePod mini cannot be a `tts.speak` target** — Home Assistant cannot push audio to it, so it never appears as a usable `media_player.*` for spoken announcements. That is why the Cast speaker exists in this stack: it is what the Automations page's leak announcement speaks through. The HomePod stays the Apple-path microphone and Siri target; the Cast speaker is the local path's mouth.

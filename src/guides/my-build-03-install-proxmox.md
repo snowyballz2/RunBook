@@ -14,7 +14,7 @@ This is the bare-metal install of **Proxmox VE** — the hypervisor that hosts e
 ## Make the installer USB
 
 ### Download the Proxmox VE ISO
-Do this on your everyday Mac — the server has no operating system yet, so the download and the USB-writing both happen on another computer. Get the ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads) — click **Proxmox Virtual Environment**, then the top entry, the **Proxmox VE 9.2 ISO Installer**. It is free, needs no account, and is about 1.7 GB.
+Do this on your everyday Mac — the server's Windows install is about to be wiped, so the download and the USB-writing both happen on another computer. Get the ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads) — click **Proxmox Virtual Environment**, then the top entry, the **Proxmox VE 9.2 ISO Installer**. It is free, needs no account, and is about 1.7 GB.
 
 > [!DETAILS] Verify the download (optional but smart)
 > Hash the file and compare it against the SHA256 checksum shown next to the download link. A match means the file arrived intact and untampered. On macOS — the household is all-Apple, so this is the line you will use:
@@ -45,16 +45,16 @@ Write the ISO to a USB stick of 4 GB or larger with **balenaEtcher**, which runs
 ### Boot the installer
 This part happens on a keyboard and monitor plugged into the server itself — there is nothing to reach remotely yet. It is temporary: once the install is done, the box runs headless and you do everything from your Mac's browser.
 
-Plug the server into the router with an **Ethernet cable** first — Proxmox cannot use Wi-Fi for management out of the box. Power on and tap **`F8`** right away to get the ASUS one-time boot menu, then pick the USB stick. If the menu lists it twice, choose the **UEFI:** entry.
+Make sure the server has wired **Ethernet** to the LAN first — through the GS308EPP switch to the router, as cabled on the Hardware & BIOS page — because Proxmox cannot use Wi-Fi for management out of the box. Power on and tap **`F8`** right away to get the ASUS one-time boot menu, then pick the USB stick. If the menu lists it twice, choose the **UEFI:** entry.
 
 > [!TIP]
 > If the stick refuses to boot, disable **Secure Boot** in the BIOS and try again. Proxmox has been signed for Secure Boot since version 8.1, but on some ASUS boards it still gets in the way, and turning it off is the documented fallback.
 
 ### Run the graphical installer
-At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts. Three answers are worth deciding before you start — the **target disk**, a **static IP address** on your LAN, and the **root password** — so record them here as you go.
+At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts. Four answers are worth deciding before you start — the **target disk**, the **hostname**, a **static IP address** on your LAN, and the **root password** — so record them here as you go.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
-> The static address you set during install. Every page in this build starts from this number — pin it with a DHCP (Dynamic Host Configuration Protocol) reservation on the router so it never moves.
+> The static address you set during install. Every page in this build starts from this number — pick it below the router's DHCP (Dynamic Host Configuration Protocol) range or pin it with a DHCP reservation on the router (details below) so it never moves.
 
 > [!INPUT] proxmox-hostname | Server hostname (FQDN) | pve.home.arpa
 
@@ -164,7 +164,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 
 ## Enable IOMMU on the kernel command line
 
-The BIOS already has **VT-d + VMX** on and the `PCIEX4_3` slot at x4. The last piece is on the host: add `intel_iommu=on` to the kernel command line so the 9300-8i HBA can be isolated into its own group and passed through to the TrueNAS VM (virtual machine) later. The 1080 Ti is **not** affected — it stays on the host to be shared into LXCs (Linux Containers).
+The BIOS already has **VT-d + VMX** on and the `PCIEX4_3` slot at x4. The last piece is on the host: add `intel_iommu=on iommu=pt` to the kernel command line so the 9300-8i HBA can be isolated into its own group and passed through to the TrueNAS VM (virtual machine) later. The 1080 Ti is **not** affected — it stays on the host to be shared into LXCs (Linux Containers).
 
 This build installed Proxmox on **ext4 on LVM** (the default chosen earlier), which boots with **GRUB** — so the kernel command line lives in `/etc/default/grub`. From the host shell:
 
@@ -186,10 +186,14 @@ After the reboot, confirm IOMMU came up and that the HBA landed in a clean group
 # Should print DMAR / IOMMU enabled lines:
 dmesg | grep -e DMAR -e IOMMU
 
-# List the groups; check the 9300-8i sits in a group of its own:
+# Find the HBA's PCI address (e.g. 02:00.0):
 lspci -nn | grep -i -e LSI -e SAS -e Broadcom
+
+# List the groups:
 find /sys/kernel/iommu_groups/ -type l
 ```
+
+To pass the check, find the HBA's address in the `find` output — the group number it sits under should contain no other devices.
 
 > [!TIP]
 > The HBA wants its **own clean IOMMU group**. It is in the bottom chipset-attached `PCIEX4_3` slot precisely so it lands alone — if it shares a group with devices you care about, passthrough drags them along or fails. The slot plan was chosen to avoid this; the check above just proves it.
@@ -198,4 +202,4 @@ find /sys/kernel/iommu_groups/ -type l
 > Add IOMMU only — do **not** blacklist or VFIO-bind the 1080 Ti here. That card stays on the host so its NVIDIA driver can be shared into Frigate, Ollama, and faster-whisper. Only the HBA gets passed through, and that happens once the TrueNAS VM is built.
 
 > [!NOTE]
-> With Proxmox installed, patched, and IOMMU live, the host is ready. Next comes storage: build the TrueNAS VM, pass the 9300-8i through, and create the ZFS (Zettabyte File System) mirror on the two IronWolf disks.
+> With Proxmox installed, patched, and IOMMU live, the host is ready. Next come the guests: first the Containers page lays the LXC groundwork, then the Virtual Machines page builds the TrueNAS VM — the 9300-8i passthrough and the ZFS (Zettabyte File System) mirror on the two IronWolf disks follow on the pages after that.

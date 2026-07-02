@@ -6,7 +6,7 @@ order: 11
 accent: spruce
 ---
 
-Frigate is the camera recorder (an NVR — network video recorder) that turns the two Reolink cameras into searchable, object-aware footage on hardware you own. On this build it runs as its own container, hardware-decodes the camera streams, and runs object detection on the **EVGA GTX 1080 Ti** that was shared into the host earlier — no cloud, no subscription, no Coral. This page builds the container, points detection at the 1080 Ti via ONNX/CUDA, adds the black 4:3 Reolink doorbell and the RLC-510WA over go2rtc, and lands recordings on the dedicated footage drive.
+Frigate is the camera recorder (an NVR — network video recorder) that turns the two Reolink cameras into searchable, object-aware footage on hardware you own. On this build it runs as its own container, hardware-decodes the camera streams, and runs object detection on the **EVGA GTX 1080 Ti** whose driver was set up on the host earlier and is shared from there into containers — no cloud, no subscription, no Coral. This page builds the container, points detection at the 1080 Ti via ONNX/CUDA, adds the black 4:3 Reolink doorbell and the RLC-510WA over go2rtc, and lands recordings on the dedicated footage drive.
 
 ## Create the Frigate container
 
@@ -26,7 +26,7 @@ Accept the defaults — **8 cores, 4 GB RAM, a 20 GB disk** on Debian 12 — and
 > The script builds a **privileged** container, which has weaker isolation from the host than an unprivileged one, and Frigate's own docs note that running in an LXC is community territory rather than officially supported. This path is popular and works well on this hardware, but the officially supported route is Docker Compose inside a VM (virtual machine). The LXC is chosen here so the container can share the host's GPU directly — the whole reason detection runs on the 1080 Ti instead of an Intel iGPU.
 
 ### Open the web UI
-The script prints the container's address when it finishes — browse to it on port **5000**. You should see Frigate running with a single `test` camera looping a sample clip, proof the install works before any real camera exists.
+The script prints the container's address when it finishes — browse to it on port **5000**. You should see Frigate running with a single `test` camera looping a sample clip, proof the install works before any real camera exists. Once that first look confirms the install, do your day-to-day browsing on Frigate's **authenticated UI at `https://<frigate-ip>:8971`** instead (expect a self-signed certificate warning) — port 5000 stays for the Home Assistant integration later on this page.
 
 > [!WARNING]
 > Port 5000 serves the UI with **no login** — the generated config ships with authentication disabled, and in Frigate's port scheme 5000 is the internal unauthenticated port. That is tolerable on the home LAN behind the router, but never create a port-forward to it. Camera footage stays on the network; remote access comes through Tailscale instead.
@@ -34,13 +34,24 @@ The script prints the container's address when it finishes — browse to it on p
 ### Pin its address and start at boot
 Give the container a fixed IP via the router's DHCP (Dynamic Host Configuration Protocol) reservation page, the same habit used for every guest, so Home Assistant and bookmarks never lose it. Then, in Proxmox, select the container, open **Options**, and enable **Start at boot** so a power cut does not silently end recordings.
 
-> [!INPUT] frigate-ip | Frigate container IP
+> [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
 > Pin it with a DHCP reservation so it never moves.
 
 ## Detect on the 1080 Ti
 
+### Lend the GPU into the container
+The 1080 Ti is **shared** into this LXC from the host's NVIDIA driver — it is never VFIO (Virtual Function I/O)'d to a VM. The GPU Sharing & HBA Passthrough page set up the host driver and left a lending recipe to apply when each borrowing container exists; the Frigate container now does, so lend the card in. On the host (click the Proxmox node, then **Shell**), edit `/etc/pve/lxc/<frigate-ctid>.conf` (`<frigate-ctid>` is this container's ID, shown next to its name in the sidebar) and add the three NVIDIA device lines:
+
+```ini
+dev0: /dev/nvidia0,gid=44
+dev1: /dev/nvidiactl,gid=44
+dev2: /dev/nvidia-uvm,gid=44
+```
+
+Restart the container. Then, inside it, install the **in-container NVIDIA userspace driver at the same version** the host's `nvidia-smi` reports — a version mismatch is the classic cause of "the GPU vanished." The container's Debian release ships a different driver version than the host's, so skip `apt` for this one: download NVIDIA's installer for the exact host version and run it userspace-only — `sh NVIDIA-Linux-x86_64-<version>.run --no-kernel-module`. The kernel module lives on the host, so only the libraries install inside; the host-side "never a `.run`" rule is about kernel modules and does not apply in an LXC.
+
 ### Confirm the GPU made it into the container
-The 1080 Ti is **shared** into this LXC from the host's NVIDIA driver — it was lent in with the `dev0:` device syntax after the GPU was shared in, and it is never VFIO (Virtual Function I/O)'d to a VM. Confirm the card is visible from inside the container. Open the container's **Console** and run:
+Confirm the card is visible from inside the container. Open the container's **Console** and run:
 
 ```bash
 nvidia-smi
@@ -51,8 +62,11 @@ You should see the GTX 1080 Ti listed with a driver version. If the command is m
 > [!WARNING]
 > The card is shared across containers, not handed to one guest — Frigate detection now, the Ollama LLM (large language model) and faster-whisper STT (speech-to-text) voice stack later. Keep `nvidia-persistenced` enabled on the host and the host/in-container driver versions matched. VFIO is reserved for the HBA (host bus adapter) feeding the TrueNAS VM; the GPU stays shared. The moment the GPU is VFIO-bound, every container loses detection at once.
 
+### Fetch the detection model
+Frigate does not bundle YOLO models — the file the config below points at has to be placed there once, by you. Download a pre-converted **YOLOv9-tiny ONNX export** (Frigate's object-detector documentation links current conversions) and put it inside the container at `/config/model_cache/yolov9-t.onnx`, creating the `model_cache` directory first if it does not exist. Without this file, detection fails to start with a missing-model error.
+
 ### Point detection at ONNX on CUDA
-This build does **not** use the Intel iGPU + OpenVINO path that Frigate defaults to. Detection runs on the 1080 Ti via the **ONNX (Open Neural Network Exchange) detector on the CUDA (NVIDIA's GPU compute platform) execution provider**, which lives inside Frigate's `-tensorrt` image and is auto-detected — point Frigate at ONNX and CUDA and it finds the card. Edit `/config/config.yml` (easiest in the web UI's built-in config editor, which validates as you type; `nano /config/config.yml` in the console works too) and set:
+This build does **not** use the Intel iGPU + OpenVINO path that Frigate defaults to. Detection runs on the 1080 Ti via the **ONNX (Open Neural Network Exchange) detector on the CUDA (NVIDIA's GPU compute platform) execution provider** — this install's Frigate build ships the ONNX runtime, which picks up CUDA automatically once the card is visible, so pointing Frigate at ONNX is enough to find the card. Edit `/config/config.yml` (easiest in the web UI's built-in config editor, which validates as you type; `nano /config/config.yml` in the console works too) and set:
 
 ```yaml
 detectors:
@@ -91,7 +105,7 @@ On Reolink doorbells, plain RTSP video is **less reliable** — it drops and stu
 ### Prepare the doorbell in the Reolink app
 In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a username and password. Set the bitrate to **"On, fluency first"** (constant bitrate, which Frigate prefers) and the **Interframe Space to 1×** (an I-frame interval matching the frame rate). Pin the doorbell's IP with a DHCP reservation while you are there so the config below never goes stale.
 
-> [!INPUT] doorbell-ip | Reolink doorbell IP
+> [!INPUT] doorbell-ip | Reolink doorbell IP | 192.168.1.70
 
 > [!INPUT] doorbell-user | Doorbell username
 
@@ -102,7 +116,7 @@ In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a 
 > Take the exact stream details from the Reolink app — do not guess them. In particular confirm **HTTP is enabled**, or the http-flv video path will not connect at all.
 
 ### Add the doorbell to the config
-There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the second camera you add later (the RLC-510WA) gets folded into these same two blocks rather than starting fresh ones. Add the doorbell first: its streams go under `go2rtc: streams:`, and the `doorbell:` camera goes under `cameras:`. Swap in the doorbell's IP, username, and password:
+There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the second camera you add later (the RLC-510WA) gets folded into these same two blocks rather than starting fresh ones. Add the doorbell first: fold its streams into the generated file's existing `go2rtc: streams:`, and the `doorbell:` camera into the existing `cameras:` — and while you are there, delete the `test:` sample camera (and its sample stream) that the install shipped with, so the file holds only real cameras. Swap in the doorbell's IP, username, and password:
 
 ```yaml
 go2rtc:
@@ -140,7 +154,7 @@ cameras:
 > Reading the odd parts: `channel0_main.bcs` is the full-resolution stream (recorded) and `channel0_ext.bcs` is the low-res sub stream (analyzed) — splitting them spares both the doorbell and the detector. The trailing `#video=copy#audio=copy#audio=opus` is deliberate: it passes the video through untouched, keeps the original audio for recording, *and* adds a second Opus audio track the browser live view needs. On the camera, `output_args: record: preset-record-generic-audio-copy` is what actually copies that original audio into the saved files — without it the recordings drop sound. The bare `rtsp://…/Preview_01_sub` line is the talk-back path, and it must **not** carry an `ffmpeg:` prefix — go2rtc has to handle that stream directly for two-way audio to work. The `live: streams:` block binds the live view (and its talk button) to that full `doorbell` stream rather than the detect substream.
 
 > [!TIP]
-> Talk-back needs the page served over **HTTPS** — browsers only allow microphone access on a secure connection (use Frigate's authenticated port `8971`). The reverse proxy's real certificate covers this, and the doorbell drives the speaker announcements set up in the automations work.
+> Talk-back needs the page served over **HTTPS** — browsers only allow microphone access on a secure connection (use Frigate's authenticated port `8971`). The reverse proxy set up later in this build provides the real certificate for that, and the doorbell will drive the speaker announcements set up later in the automations work.
 
 > [!TIP]
 > Not interested in talking back? Drop the secondary `rtsp://…/Preview_01_sub` line entirely and keep just the http-flv video. That is the simplest, most reliable doorbell setup — you still get full recording and person/package detection, without the most fragile part of the config.
@@ -155,7 +169,7 @@ The **Reolink RLC-510WA** (5MP WiFi) is added the same restream way, so its sing
 
 These entries join the blocks you already have — they do **not** start a second `go2rtc:` or a second `cameras:`. Add the two `rlc510` streams as siblings under your existing `go2rtc: streams:` (right alongside `doorbell` and `doorbell_sub`), and add the `rlc510:` camera as a sibling under your existing `cameras:` (right alongside `doorbell:`). A duplicate top-level `go2rtc:` or `cameras:` is invalid YAML — the later one wins and the doorbell silently disappears. The snippet below shows the new entries with their parent keys for placement only; merge them in, do not paste a fresh copy of `go2rtc:`/`cameras:`.
 
-> [!INPUT] camera-ip | Reolink RLC-510WA IP
+> [!INPUT] camera-ip | Reolink RLC-510WA IP | 192.168.1.71
 
 > [!INPUT] camera-user | RLC-510WA username
 
@@ -201,7 +215,37 @@ cameras:
 ## Footage and retention
 
 ### Record to the dedicated footage drive
-Detection runs in the NVMe (Non-Volatile Memory Express)-cached container, but recordings are bulk, write-heavy data that belongs on a spinning disk. They go to the **third Seagate IronWolf ST4000VN006 4 TB** — the lone footage drive on a motherboard SATA (Serial ATA) port, deliberately kept off the two-disk TrueNAS ZFS (Zettabyte File System) mirror. Frigate writes everything under `/media/frigate` inside the container — `recordings`, `clips` (snapshots), and `exports` — so mount that drive on the host and hand it to the container as a mount point at `/media/frigate`. Get the basic setup working on the container's local disk first, then move storage; that way a stream problem is never tangled up with a mount problem. Then set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time):
+Detection runs in the NVMe (Non-Volatile Memory Express)-cached container, but recordings are bulk, write-heavy data that belongs on a spinning disk. They go to the **third Seagate IronWolf ST4000VN006 4 TB** — the lone footage drive on a motherboard SATA (Serial ATA) port, deliberately kept off the two-disk TrueNAS ZFS (Zettabyte File System) mirror. Frigate writes everything under `/media/frigate` inside the container — `recordings`, `clips` (snapshots), and `exports` — so the job is to put the footage disk under that exact path. All of this happens on the host: click the Proxmox node, then **Shell**.
+
+**Identify the third IronWolf by serial.** It is the only ST4000VN006 the host can still see — the two mirror disks sit behind the VFIO'd HBA and never appear here:
+
+```bash
+lsblk -o NAME,SIZE,MODEL,SERIAL
+```
+
+Note its device name (for example `/dev/sda`) and double-check the serial before the next step.
+
+**Format it ext4** — this erases the disk:
+
+```bash
+mkfs.ext4 -L frigate-footage /dev/sdX
+```
+
+**Mount it by UUID via `/etc/fstab`** so it comes back on every boot. Make the mount point with `mkdir -p /mnt/frigate-footage`, read the disk's UUID (universally unique identifier) with `blkid /dev/sdX`, and add this line to `/etc/fstab`, swapping in the UUID `blkid` printed:
+
+```ini
+UUID=<uuid-from-blkid> /mnt/frigate-footage ext4 defaults 0 2
+```
+
+Run `mount -a` to mount it now and prove the entry parses.
+
+**Hand it to the container** as a mount point at `/media/frigate`:
+
+```bash
+pct set <frigate-ctid> -mp0 /mnt/frigate-footage,mp=/media/frigate
+```
+
+Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time):
 
 ```yaml
 record:
@@ -221,7 +265,7 @@ Restart Frigate to apply. A lighter middle ground is a `motion:` block with a `d
 ## Wire it into the build
 
 ### Connect to Home Assistant over MQTT
-Frigate and Home Assistant talk over **MQTT (Message Queuing Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials. Point Frigate at the broker and restart:
+Frigate and Home Assistant talk over **MQTT (Message Queuing Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker and restart:
 
 ```yaml
 mqtt:
@@ -237,12 +281,12 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 > The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog that must be installed once before any community integration can be downloaded. Follow the official install steps at [hacs.xyz](https://hacs.xyz/docs/use/) — they walk you through adding HACS as an Add-on and signing in with a GitHub account — then **restart Home Assistant**. Now open **HACS**, search for **Frigate**, download it, and **restart Home Assistant again**. Only then add the Frigate integration under **Settings → Devices & services**; it asks for Frigate's address (`http://frigate-ip:5000`).
 
 > [!INPUT] mqtt-user | MQTT username | | mqtt-user
-> The dedicated user Frigate logs in as — `mqtt-user` matches the example; edit if named differently.
+> The dedicated user Frigate logs in as, created in the Mosquitto add-on's Logins on the Home Assistant & Zigbee2MQTT page — `mqtt-user` matches the example; edit if named differently.
 
 > [!SECRET] mqtt-password | MQTT password
 
 > [!WARNING]
-> **Boot order matters.** The broker lives in the Home Assistant OS VM, which boots slower than this LXC. After a power cut the container can come up before the broker exists, so its MQTT connection never establishes and its Home Assistant entities stay dead until a restart. Fix it in Proxmox: give the Home Assistant OS VM a lower **Start/Shutdown order** number (or a startup delay) than the Frigate container — start the VM before the container. Footage still records locally either way; only the automation side goes quiet.
+> **Boot order matters.** The broker lives in the Home Assistant OS VM, which boots slower than this LXC. After a power cut the container can come up before the broker exists, so its MQTT connection never establishes and its Home Assistant entities stay dead until a restart. You already set this on the Home Assistant & Zigbee2MQTT page — confirm in Proxmox that the Home Assistant OS VM's **Start/Shutdown order** number is lower than this container's (or give the container a startup delay), so the VM starts before the container. Footage still records locally either way; only the automation side goes quiet.
 
 ### Restart and watch it work
 Apply any config change by restarting Frigate in the container's console:
@@ -257,4 +301,4 @@ Reload the web UI — the doorbell and RLC-510WA live views should appear, and w
 > If a camera stays black, watch the logs while it starts: `journalctl -u frigate -f` in the console. A wrong RTSP path or password shows up there immediately. If detection feels sluggish or the CPU is pinned, the 1080 Ti probably is not doing the work — re-check that `nvidia-smi` sees the card inside the container and that the logs name the ONNX/CUDA detector, not a CPU fallback.
 
 > [!NOTE]
-> This install does not update in place, so **back up `/config/config.yml`** after every change. That single file is the hand-built heart of the setup — the ONNX detector, the go2rtc doorbell and camera blocks, the MQTT credentials — and rebuilding it from memory is the painful part of any upgrade. Copy it to a Nextcloud folder or the TrueNAS share so a new container is a five-minute restore. At upgrade time, the script's own path is to build a fresh container and copy `/config` across — take a snapshot first.
+> This install does not update in place, so **back up `/config/config.yml`** after every change. That single file is the hand-built heart of the setup — the ONNX detector, the go2rtc doorbell and camera blocks, the MQTT credentials — and rebuilding it from memory is the painful part of any upgrade. Copy it to the TrueNAS `backups` share (or, later in the build, a Nextcloud folder) so a new container is a five-minute restore. At upgrade time, the script's own path is to build a fresh container and copy `/config` across — take a snapshot first.

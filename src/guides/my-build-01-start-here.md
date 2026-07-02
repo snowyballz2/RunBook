@@ -17,7 +17,7 @@ One physical computer hosts everything. **Proxmox VE** (Proxmox Virtual Environm
 
 - **Home Assistant OS** runs in its own **VM** (virtual machine) — the brain of the house. It talks to Zigbee, Matter, Lutron, the thermostats, and the cameras, and runs every automation.
 - **TrueNAS** runs in a second **VM** and owns the bulk storage. Its disk controller is handed to it whole, so the **ZFS** (Zettabyte File System, a storage system with built-in data integrity) sees real, raw drives.
-- **Frigate** (a local camera recorder with object detection) and the supporting services each run as a fast, low-overhead **LXC** (Linux Containers): Frigate, AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, and Uptime Kuma.
+- **Frigate** (a local camera recorder with object detection) and the supporting services each run as a fast, low-overhead **LXC** (Linux Containers): Frigate, AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, and Uptime Kuma (plus two voice containers, Ollama and faster-whisper, added near the end of the build).
 
 The single most important design decision — and the one that trips people up — is how the two add-in cards are treated. They go opposite ways:
 
@@ -28,7 +28,7 @@ The single most important design decision — and the one that trips people up �
 - **The LSI 9300-8i HBA _is_ passed through.** This **HBA** (host bus adapter, the card the data disks plug into) gets VFIO'd in its entirety to the TrueNAS VM, so ZFS manages the raw disks directly with full health reporting and no risk of silent corruption.
 
 > [!NOTE]
-> One more dependency to remember: **start the Home Assistant VM before the Frigate container.** Frigate publishes to the **MQTT** (Message Queuing Telemetry Transport, a lightweight messaging broker) service that lives with Home Assistant, so the broker has to exist first. You set this start order explicitly on the Virtual Machines page so it survives every reboot.
+> One more dependency to remember: **start the Home Assistant VM before the Frigate container.** Frigate publishes to the **MQTT** (Message Queuing Telemetry Transport, a lightweight messaging broker) service that lives with Home Assistant, so the broker has to exist first. You set this start order explicitly once the Home Assistant VM exists — on the Home Assistant & Zigbee2MQTT page, with the Frigate side set on the Cameras, Doorbell & Frigate page — so it survives every reboot.
 
 ### Understand the disk layout
 Three different jobs, three different homes:
@@ -109,7 +109,7 @@ The whole collection starts from one number — the static address you give the 
 > A few habits that make the build go smoothly:
 >
 > - **Each page is complete on its own.** The full steps for that stage are written inline and specialized to this exact hardware. You do not need any other reference.
-> - **Sensitive values are credential fields, not plain text.** Anything secret — IP addresses, drive serials, usernames, passwords, tokens — is captured in a fill-in field that stays on this device and is never committed or synced. Plain hardware and choices are written out normally. Your real synced secret store is Vaultwarden; these fields are just a convenience as you follow along.
+> - **Sensitive values are credential fields, not plain text.** Anything secret — IP addresses, drive serials, usernames, passwords, tokens — is captured in a fill-in field that stays on this device and is never committed or synced. Plain hardware and choices are written out normally. Your real synced secret store is your password manager (you will build Vaultwarden for this role later in the build); these fields are just a convenience as you follow along.
 > - **The order is the plan.** Build top to bottom. When a later page says "after the GPU is shared in" or "once the mirror exists," it is pointing back at a stage you have already finished.
 
 ## The build, in order
@@ -121,8 +121,8 @@ The pages are numbered in the exact sequence to build in. Do not skip ahead — 
 2. **Hardware & BIOS** — seat the cards in the right slots and flip the firmware switches (virtualization and **VT-d** (Intel Virtualization Technology for Directed I/O) on) before any software goes on.
 3. **Install Proxmox** — install Proxmox to the NVMe, switch to the free repository, and enable **IOMMU** (Input/Output Memory Management Unit, the hardware that isolates a device for passthrough).
 4. **Containers** — how the lightweight LXC service containers are created and configured.
-5. **Virtual Machines** — build the TrueNAS and Home Assistant VMs, and set the start-before-Frigate boot order.
-6. **GPU Sharing & HBA Passthrough** — put the NVIDIA driver on the host and share the card into containers; VFIO the HBA to the TrueNAS VM.
+5. **Virtual Machines** — build the TrueNAS VM and learn the appliance habits both VMs share (start at boot, the start-before-Frigate order, snapshots); the Home Assistant VM is built on the Home Assistant & Zigbee2MQTT page.
+6. **GPU Sharing & HBA Passthrough** — put the NVIDIA driver on the host and set up the recipe that shares the card into later containers; VFIO the HBA to the TrueNAS VM.
 7. **TrueNAS Storage** — build the ZFS mirror on the passed-through HBA and share folders over **SMB** (Server Message Block, the Windows/Mac file-sharing protocol).
 8. **Protect Your Data** — snapshots, scrubs, disk-health alerts, and the encrypted offsite copy.
 9. **Home Assistant & Zigbee2MQTT** — bring up Home Assistant and pair the Zigbee leak sensors, valve, and router plugs.

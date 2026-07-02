@@ -27,7 +27,7 @@ If the upgrade pulls a new kernel, finish with a host reboot to actually run it 
 > Open the web UI at `https://`-this-ip-`:8006` and log in as **root@pam** to reach **Updates** and the node Shell.
 
 > [!NOTE]
-> This step updates the Proxmox host only. The NVIDIA driver on the host — the one shared into the Frigate, Ollama, and faster-whisper containers — rides along through `apt` as part of this upgrade; there is no separate driver dance most months. Tailscale and NUT update the same way, because both were installed as host `apt` packages.
+> This step updates the Proxmox host only. The NVIDIA driver on the host — the one shared into the Frigate, Ollama, and faster-whisper containers — rides along through `apt` as part of this upgrade; there is no separate driver dance most months. The exception: if the upgrade bumps the `nvidia-driver` version (compare what `nvidia-smi` reports before and after), the in-container userspace drivers in the Frigate, Ollama, and faster-whisper containers must be updated to the matching version before they can use the card again. Tailscale and NUT update the same way, because both were installed as host `apt` packages.
 
 > [!WARNING]
 > Update the host *before* adding a new toy, never alongside one. If something misbehaves after a combined session, you cannot tell whether the upgrade or the new guest broke it. One change at a time keeps every failure traceable.
@@ -35,8 +35,8 @@ If the upgrade pulls a new kernel, finish with a host reboot to actually run it 
 ### Walk the guests, one at a time
 With the host current, give each guest its turn — and go strictly one at a time: snapshot first whenever an update looks major, update it, confirm it still answers, then move to the next. That order is what makes the walk safe: a breakage always has an obvious author, and the pre-update snapshot is the thing you fall back to when it does.
 
-- **Service LXCs** (AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, Uptime Kuma): these went up with the community helper scripts, so each updates with a single `update` typed in its **Console**. Two exceptions worth remembering — AdGuard's `update` command just tells you it updates from its own web UI instead, and Vaultwarden's `update` *recompiles from source*, so give it the half-hour and the headroom it asks for.
-- **Frigate LXC**: a plain Debian container under the hood — `apt update && apt full-upgrade` in its Console for the OS, with the Frigate image itself following its own update path.
+- **Service LXCs** (AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, Uptime Kuma): these went up with the community helper scripts, so each updates with a single `update` typed in its **Console**. Three exceptions worth remembering — AdGuard's `update` command just tells you it updates from its own web UI instead; Vaultwarden's `update` *recompiles from source*, so give it the half-hour and the headroom it asks for; and Nextcloud splits in two: `apt` covers its Debian layer, but the Nextcloud app itself updates only through the NCP (NextcloudPi) panel on port 4443, per the Nextcloud page.
+- **Frigate LXC**: a plain Debian container under the hood — `apt update && apt full-upgrade` in its Console for the OS. Frigate itself does not update in place — when a new release matters, follow the path from the Cameras, Doorbell & Frigate page: snapshot first, build a fresh container with the script, and copy `/config` across.
 - **Home Assistant OS (VM)**: updates from inside itself, on its **Settings → System → Updates** page — core, OS, and add-ons each listed there.
 - **TrueNAS (VM)**: updates under **System → Update** in its web UI.
 
@@ -49,7 +49,7 @@ With the host current, give each guest its turn — and go strictly one at a tim
 > bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/update-lxcs.sh)"
 > ```
 >
-> Read it before you run it, as always — and an honest caveat: this updates the *OS packages* inside each container, not the applications. The services themselves still update through their own `update` command, one at a time, with the AdGuard and Vaultwarden quirks above.
+> Read it before you run it, as always — and an honest caveat: this updates the *OS packages* inside each container, not the applications. The services themselves still update through their own `update` command, one at a time, with the AdGuard, Vaultwarden, and Nextcloud quirks above.
 
 ## Make it a rhythm
 
@@ -68,14 +68,14 @@ One sitting, roughly twenty minutes, the same order every time. Put a recurring 
 A full disk fails loudly and at the worst time, so this glance is its own habit. Three places hold most of the risk on this build:
 
 - **TrueNAS ZFS pool** — on the **Storage** dashboard, keep the mirror under roughly **80%** full. Past that, ZFS slows down and snapshots have nowhere to grow. This pool also holds the nightly Proxmox backups, so it creeps up from two directions.
-- **Frigate's footage disk** — the third IronWolf on the motherboard SATA port. Check it from the Proxmox node's **Disks** view or in Frigate's own storage figures. Footage is replaceable, but a full disk still stops new recordings.
+- **Frigate's footage disk** — the third IronWolf on the motherboard SATA port. Check Frigate's own storage figures (its UI reports usage), or run `df -h /mnt/frigate-footage` in the node **Shell** — the node's **Disks** view shows the drive's health, not how full it is. Footage is replaceable, but a full disk still stops new recordings.
 - **Nextcloud storage** — its data lives in the service LXC; glance at the usage in its admin view.
 
 > [!TIP]
-> While you are in **Datacenter → Backup**, open the job and confirm **AdGuard** and **Nginx Proxy Manager (NPM)** are actually in the selection. Selection mode **All** includes them automatically, but a hand-picked list is one careless edit from dropping the two guests you can least afford to lose: AdGuard is the household's DNS (Domain Name System), and NPM holds every reverse-proxy route and certificate. Restore everything *except* those two and the rest is unreachable until you rebuild them by hand. While the job is open, glance at its **Retention** settings too — **Keep Daily 7** and **Keep Weekly 4** (set when the backup job was created) are what prune old archives so the share does not fill forever. If the ZFS pool keeps climbing, confirm retention is still set on the job and has not drifted to "keep all."
+> When you open **Datacenter → Backup** for the backup check below, open the job and confirm **AdGuard** and **Nginx Proxy Manager (NPM)** are actually in the selection. Selection mode **All** includes them automatically, but a hand-picked list is one careless edit from dropping the two guests you can least afford to lose: AdGuard is the household's DNS (Domain Name System), and NPM holds every reverse-proxy route and certificate. Restore everything *except* those two and the rest is unreachable until you rebuild them by hand. While the job is open, glance at its **Retention** settings too — **Keep Daily 7** and **Keep Weekly 4** (set when the backup job was created) are what prune old archives so the share does not fill forever. If the ZFS pool keeps climbing, confirm retention is still set on the job and has not drifted to "keep all."
 
 ### Confirm last night's backup actually ran
-A backup job you assume is running is not a backup. In **Datacenter → Backup**, click into the job and read its task log — the most recent run should end **TASK OK**, and the archive should be sitting on the TrueNAS share where vzdump writes it. Green-on-the-schedule is not enough; an archive can fail to write while the schedule still shows it "ran." Confirm a fresh `.vzdump` file with last night's date actually exists.
+A backup job you assume is running is not a backup. In **Datacenter → Backup**, click into the job and read its task log — the most recent run should end **TASK OK**, and the archive should be sitting on the TrueNAS share where vzdump writes it. Green-on-the-schedule is not enough; an archive can fail to write while the schedule still shows it "ran." Confirm a fresh `vzdump-...` archive with last night's date actually exists (`.vma.zst` for the VMs, `.tar.zst` for the containers).
 
 > [!WARNING]
 > Vaultwarden is the guest where "probably backed up" is unacceptable — it holds every secret this build runs on. If its container is in the nightly job and last night's run is TASK OK, the vault is covered. If the backup glance ever shows a gap, fix that before anything else on the list.
@@ -100,4 +100,4 @@ While you are in the quarterly mood, check the two long-game protections:
 > Knowing the two mirror serials in advance turns a degraded-pool panic into a careful swap — the ST4000VN006s are identical at a glance, so the serial is the only safe way to tell which one to pull from the View 71's rear trays.
 
 ### Let the rest come to you
-Everything not on these two lists is event-driven, and you already built the events. Uptime Kuma shouts when a service dies, TrueNAS emails when a disk or scrub complains, and the NUT (Network UPS Tools) shutdown drill on the CyberPower UPS (uninterruptible power supply) proved a power cut handles itself. The Home Assistant leak automations already make the Third Reality sensors announce a wet floor on the HomePod mini and Nest speakers. If no alert fires between passes, the server needs exactly none of your attention — which is the entire point of the build.
+Everything not on these two lists is event-driven, and you already built the events. Uptime Kuma shouts when a service dies, TrueNAS emails when a disk or scrub complains, and the NUT (Network UPS Tools) shutdown drill on the CyberPower UPS (uninterruptible power supply) proved a power cut handles itself. The Home Assistant leak automations already make the Third Reality sensors announce a wet floor on the Nest speakers. If no alert fires between passes, the server needs exactly none of your attention — which is the entire point of the build.

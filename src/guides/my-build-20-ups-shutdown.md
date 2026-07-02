@@ -6,10 +6,10 @@ order: 20
 accent: azure
 ---
 
-Every page up to here has quietly assumed the wall socket never falters. When it does — a half-second blip, a sagging brownout, a real outage — this server stops mid-write, which is the ending the ZFS (Zettabyte File System) mirror and a busy Frigate database handle worst. A UPS (uninterruptible power supply) — a battery sitting between the wall and the machine — fixes both halves: blips and brownouts are absorbed before anything notices, and in a real outage the battery buys the minutes needed to bring the stack down in order. The hardware is the **CyberPower CP1500PFCLCD**, a line-interactive 1500 VA / 1000 W unit with a USB data port, already on NUT's (Network UPS Tools) hardware compatibility list under the `usbhid-ups` driver.
+The AdGuard and Uptime Kuma pages both leaned on this box's UPS (uninterruptible power supply) to shrug off brief power blips — this is the page that actually installs and wires it. When the wall socket falters — a half-second blip, a sagging brownout, a real outage — this server stops mid-write, which is the ending the ZFS (Zettabyte File System) mirror and a busy Frigate database handle worst. A UPS — a battery sitting between the wall and the machine — fixes both halves: blips and brownouts are absorbed before anything notices, and in a real outage the battery buys the minutes needed to bring the stack down in order. The hardware is the **CyberPower CP1500PFCLCD**, a line-interactive 1500 VA / 1000 W unit with a USB data port, already on NUT's (Network UPS Tools) hardware compatibility list under the `usbhid-ups` driver.
 
 > [!NOTE]
-> A UPS buys minutes, not evenings. The CP1500PFCLCD's runtime at this build's modest draw is generous, but the plan stays the same: ride out the short stuff, shut down clean for the long stuff. This is also the answer to the two threads left hanging earlier — AdGuard needs a plan for this box going down, and Uptime Kuma's one blind spot is the server itself dying.
+> A UPS buys minutes, not evenings. The CP1500PFCLCD's runtime at this build's modest draw is generous, but the plan stays the same: ride out the short stuff, shut down clean for the long stuff. This is also the answer to the two threads left hanging earlier — the AdGuard page promised outages would end in a clean shutdown once this page wired one up, and Uptime Kuma's one blind spot is the server itself dying.
 
 ## Plug it in
 
@@ -99,7 +99,7 @@ A healthy answer is a screenful of live variables. Three are worth knowing by na
 ## Handle the CyberPower USB-drop quirk
 
 ### Know the failure mode
-CyberPower units, this model included, have a well-documented habit: the `usbhid-ups` driver loses the USB device under load or after a glitch and never reconnects on its own. `upsc` starts answering "Driver not connected" or the data goes stale, and a UPS the host can no longer hear is a UPS that will not trigger a shutdown when it matters — the silent failure this whole page exists to prevent. Two settings make the driver resilient, and a watchdog catches the case where it still wedges.
+CyberPower units, this model included, have a well-documented habit: the `usbhid-ups` driver loses the USB device under load or after a glitch and never reconnects on its own. `upsc` starts answering "Driver not connected" or the data goes stale, and a UPS the host can no longer hear is a UPS that will not trigger a shutdown when it matters — the silent failure this whole page exists to prevent. Three settings make the driver resilient, and a watchdog catches the case where it still wedges.
 
 ### Make the driver reconnect itself
 Add three lines to the UPS's section so the driver polls steadily and re-grabs the device when the kernel re-enumerates it:
@@ -171,7 +171,7 @@ From here the sequence is already wired, and it is deliberately patient. When th
 > Who decides "low"? The CyberPower does — the threshold is set in the device by its vendor, and `usbhid-ups` falls back to 30% only if the UPS reports nothing. The patience is by design: every extra minute on battery is another minute in which the power might return without anything having to stop.
 
 > [!WARNING]
-> Order matters for this build. The Home Assistant VM holds the Mosquitto-dependent automations, and the Frigate LXC (Linux container) talks to it over MQTT (Message Queuing Telemetry Transport) — so the **HA VM must go down before the Frigate LXC**, and the TrueNAS VM should outlast the service containers that may still be flushing to its shares. Set this with each guest's **Start/Shutdown order** in its **Options** tab: shutdown runs the startup order in reverse, so order 1 boots first and goes down last. Give TrueNAS the lowest order, HA a lower order than Frigate. One catch: **guests with no order set shut down before any numbered guest**, so anything that must outlast TrueNAS or HA — such as a service container still writing to a share — needs an explicit order too, not the default. Each guest's **Shutdown timeout** lives in the same **Options** tab, if one genuinely needs longer than the default to stop cleanly.
+> Order matters for this build. The Home Assistant VM holds the Mosquitto-dependent automations, and the Frigate LXC (Linux container) talks to it over MQTT (Message Queuing Telemetry Transport) — so the **Frigate LXC must go down before the HA VM** (its MQTT broker must outlast it), and the TrueNAS VM should outlast the service containers that may still be flushing to its shares. Set this with each guest's **Start/Shutdown order** in its **Options** tab: shutdown runs the startup order in reverse, so order 1 boots first and goes down last. Give TrueNAS the lowest order, HA a lower order than Frigate. One catch: **guests with no order set shut down before any numbered guest** — which is what you want here, since a service container still writing to a share finishes and stops before the numbered TrueNAS VM goes down; only a guest that must outlast one of the numbered three needs an explicit order of its own. Each guest's **Shutdown timeout** lives in the same **Options** tab, if one genuinely needs longer than the default to stop cleanly.
 
 > [!DETAILS] Shutting down earlier than the UPS would
 > If the CyberPower calls low battery later than you'd like, NUT documents two routes. One: in the `[cyberpower]` section, add `ignorelb` with `override.battery.charge.low = 50` (and/or `override.battery.runtime.low = 600`) so NUT judges "low" by your numbers instead of the device's flag — note some CyberPower models round the reported charge, so verify `upsc` shows a sane figure first. Two: an `upssched` timer started by the on-battery event that runs `upsmon -c fsd` after a fixed number of minutes. Either way, shutting down early throws away runtime during which the power might have returned.
@@ -231,10 +231,16 @@ LISTEN 192.168.1.50 3493
 
 Swap in the Proxmox host's actual IP on the second `LISTEN` line, then `systemctl restart nut-server nut-monitor`. In Home Assistant, go to **Settings → Devices & services**; the integration may already be waiting under discovered devices, otherwise add **Network UPS Tools (NUT)** and enter the host's IP, port `3493`, and the `hauser` credentials. The CyberPower appears as a device with **Battery charge** and **Status** sensors enabled out of the box — the latter reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime** and the rest arrive disabled; enable them per entity if you want them.
 
+> [!INPUT] nut-ha-user | NUT read-only username | | hauser
+> The `[hauser]` section name in `upsd.users` — the account Home Assistant signs in with.
+
+> [!SECRET] nut-ha-password | NUT read-only password
+> Replaces `a-different-long-password` in `upsd.users` — enter it alongside the username in Home Assistant's NUT dialog. Keep it in Vaultwarden too.
+
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
 > [!TIP]
-> One automation earns its keep: trigger on the **Status** sensor changing to a state containing "On Battery" (capital B — the match is case-sensitive) and announce it through the Nest and Google speakers via Cast, plus a phone push from the Home Assistant companion app. The server already looks after itself; this turns a 3 am outage into a heads-up you actually hear instead of a mystery in the logs.
+> One automation earns its keep: trigger on the **Status** sensor changing to a state containing "On Battery" (capital B — the match is case-sensitive) and announce it through the Nest and Google speakers via Cast, plus a phone push from the Home Assistant companion app. The push half works today; the spoken half needs the Google Cast integration and the Piper voice, both added on the Voice page later in this build — build the automation now and the announcement starts working once that page is done. The server already looks after itself; this turns a 3 am outage into a heads-up you actually hear instead of a mystery in the logs.
 
 > [!NOTE]
 > Port 3493 stays on the LAN. Listing specific addresses instead of `0.0.0.0` keeps the daemon off interfaces it doesn't need, and Home Assistant gets its own low-privilege account regardless. Never port-forward 3493 to the internet — remote access is Tailscale's job.

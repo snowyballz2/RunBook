@@ -17,7 +17,7 @@ Every page in this build has told you to put a value in your password manager �
 ## Create the container
 
 ### Run the install script
-Vaultwarden is the last of the small service **LXCs (Linux Containers)** on this box, and like the others it goes up with the Proxmox community helper script. In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Paste this and press Return:
+Vaultwarden is one more of the small service **LXCs (Linux Containers)** on this box, and like the others it goes up with the Proxmox community helper script. In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Paste this and press Return:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/vaultwarden.sh)"
@@ -119,13 +119,13 @@ Existing accounts are untouched; the Create account door is closed.
 ## Point every device at it
 
 ### Connect the apps and extensions
-Install the official Bitwarden app from the App Store and the browser extension on each device. On the login screen, *before* signing in, open the **Logging in on** dropdown, choose **Self-hosted**, and enter `https://vault.example.com` as the Server URL. Then log in with the account's email and master password, import whatever the browser or old manager held, and turn on autofill. This is also the moment to move the build's credentials in for real — Proxmox, TrueNAS, the cameras and doorbell, the MQTT users, the Backblaze encryption password and salt.
+Install the official Bitwarden app from the App Store and the browser extension on each device. On the login screen, *before* signing in, open the **Logging in on** dropdown, choose **Self-hosted**, and enter `https://vault.example.com` as the Server URL. Then log in with the account's email and master password, import whatever the browser or old manager held, and turn on autofill. This is also the moment to move the build's credentials in for real — Proxmox, TrueNAS, the cameras and doorbell, the MQTT users, the Backblaze encryption password and salt — provided the backup gate at the top of this page is satisfied; on a first pass through the build, come back and do this after the Proxmox Backups page has produced its first proven archive.
 
 > [!NOTE]
 > Every signed-in device keeps a complete encrypted copy of the vault. Server down? The apps keep working in read-only mode — you can still look up the Proxmox root password to go fix the server holding it. The one rule: **lock, never log out.** Unlocking is local; logging back *in* needs the server.
 
 > [!NOTE]
-> Away from home, the vault syncs through the same Tailscale tunnel as everything else on this build — never a port-forward; a password server has no business being reachable from the internet. One wrinkle: `vault.example.com` only resolves where AdGuard answers DNS, so remote syncing needs the Tailscale-DNS wiring. Skip even that and nothing is lost day-to-day — the offline copies above carry you until you are home.
+> Away from home, the vault syncs through the same Tailscale tunnel as everything else on this build — never a port-forward; a password server has no business being reachable from the internet. One wrinkle: `vault.example.com` only resolves where AdGuard answers DNS, so remote syncing needs the Tailscale-DNS wiring covered on the Reverse Proxy page (AdGuard's LAN IP entered on the Tailscale admin console's DNS page). Skip even that and nothing is lost day-to-day — the offline copies above carry you until you are home.
 
 > [!DETAILS] Instant sync between phones — the optional push relay
 > By default the apps sync on login, periodically while unlocked, and on demand — fine for a household. If you want an edit on one iPhone to appear on another within seconds, Vaultwarden can use Bitwarden's push relay: request a free installation id and key at [bitwarden.com/host](https://bitwarden.com/host/), then add three lines to `/opt/vaultwarden/.env` in the container's console and restart:
@@ -166,4 +166,4 @@ When you build Uptime Kuma later in this build, give it an HTTP(s) monitor point
 Snapshot the container first (the standard habit before any change), then type `update` in the container's console — it recompiles the new release (patience, again) and leaves your data and settings alone. Vaultwarden's releases sometimes carry security fixes, so when the project says update, take it promptly.
 
 ### Put it on the front door
-A tile on the Homepage dashboard makes a fitting last touch — `icon: vaultwarden.png`, `href: https://vault.example.com` — the vault, one click from the page the household already starts at, and the place every secret on this build now lives.
+When you build the Homepage dashboard on the next page, its services config already carries the vault's tile — `icon: vaultwarden.png`, `href: https://vault.example.com` — the vault, one click from the page the household will start at, and the place every secret on this build now lives.

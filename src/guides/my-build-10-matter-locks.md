@@ -6,7 +6,7 @@ order: 10
 accent: rose
 ---
 
-The three Aqara U400 deadbolts are **Matter-over-Thread** devices, and in an all-Apple household the order you set them up in matters. Commission each lock into **Apple Home first** — that is the only path that lights up **Home Key** (tap-to-unlock with an iPhone or Apple Watch) — then **share** each one into Home Assistant (HA) over Matter's multi-admin feature so it shows up in your dashboards and automations. This page walks both halves for all three locks and explains why you never re-scan a QR code.
+The three Aqara U400 deadbolts are **Matter-over-Thread** devices, and in a household that runs on iPhones and Apple Watches the order you set them up in matters. Commission each lock into **Apple Home first** — that is the only path that lights up **Home Key** (tap-to-unlock with an iPhone or Apple Watch) — then **share** each one into Home Assistant (HA) over Matter's multi-admin feature so it shows up in your dashboards and automations. This page walks both halves for all three locks and explains why you never re-scan a QR code.
 
 > [!NOTE]
 > Matter is the vendor-neutral standard for local control with no manufacturer cloud in the loop. **Thread** is the low-power mesh radio it rides on here. A Thread device needs a **border router** on your network to reach the rest of the house — on this build the **HomePod mini** already fills that role, so there is nothing extra to buy.
@@ -27,7 +27,7 @@ Three things need to be true before you touch a lock:
 > Install the **Home Assistant companion app** on the same iPhone you use for Apple Home, and sign it in to your Home Assistant instance, **before** you start the locks. The share step in the second half needs both apps on one Bluetooth-capable phone.
 
 ### Find each lock's QR setup code
-Every U400 has a **Matter QR code** — on a sticker inside the battery compartment, on the quick-start card, and usually a peel-off duplicate for your records. Keep all three codes somewhere safe now; record them in the field below so this checklist stands on its own, and move them into Vaultwarden once you set it up later in this build. You will scan each one **once**, into Apple Home; after that it is spent.
+Every U400 has a **Matter QR code** — on a sticker inside the battery compartment, on the quick-start card, and usually a peel-off duplicate for your records. Keep all three codes somewhere safe now; record them in the field below so this checklist stands on its own, and record them in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). You will scan each one **once**, into Apple Home; after that it is spent.
 
 > [!SECRET] matter-lock-codes | Aqara U400 Matter setup codes (all three)
 > The 11-digit numeric pairing code under each QR (shown grouped like `XXXX-XXX-XXXX`). Capture all three here — one per lock — and label them by door (Front, Side, Garage). If a lock ever needs a factory reset, you re-commission from these.
@@ -38,7 +38,7 @@ Every U400 has a **Matter QR code** — on a sticker inside the battery compartm
 ## Commission into Apple Home
 
 ### Add the first U400 to the Home app
-Do this with the lock physically installed and powered (fresh batteries seated, the door able to throw the bolt). For each lock:
+Do this with the lock physically installed and powered (fresh batteries seated, the door able to throw the bolt). For the first lock:
 
 1. Open the Apple **Home** app on the iPhone and tap **+ → Add Accessory**.
 2. Point the camera at the lock's **Matter QR code**, or tap **More options** and enter the numeric setup code by hand.
@@ -95,10 +95,10 @@ For each of the three U400s, confirm the lock truly answers to both admins and t
 - **The door itself** — the keypad code and the physical key both still work.
 
 > [!TIP]
-> If a lock shows up in Home Assistant but its state lags or goes *unavailable*, the Thread mesh is usually the cause — move a Thread router or the HomePod mini closer, or reboot the border router. The lock being controllable in Apple Home but flaky in Home Assistant points at routing, not at the share.
+> If a lock shows up in Home Assistant but its state lags or goes *unavailable*, the Thread mesh is usually the cause — move the HomePod mini closer to the lock, or reboot it. The lock being controllable in Apple Home but flaky in Home Assistant points at routing, not at the share.
 
 ### These locks now feed the automations
 With all three U400s present as `lock.*` entities in Home Assistant, they become raw material for the automation rules on this build — auto-lock after a set time, an unlock notification to the household, and presence-based actions. Until the locks exist as Home Assistant entities, those rules have nothing to act on; now they do.
 
 > [!WARNING]
-> Keep all three Matter setup codes (the `matter-lock-codes` field above) and the Home Assistant owner credentials safe — you will consolidate these into Vaultwarden once you set it up later in this build. If a lock ever needs a factory reset, you re-commission from these codes — and you redo both halves of this page (Apple Home first, then the share) for that lock.
+> Keep all three Matter setup codes (the `matter-lock-codes` field above) and the Home Assistant owner credentials safe in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). If a lock ever needs a factory reset, you re-commission from these codes — and you redo both halves of this page (Apple Home first, then the share) for that lock.

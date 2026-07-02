@@ -8,7 +8,7 @@ accent: emerald
 
 ## What you are building
 
-Nextcloud gives the household what Google Drive, Google Photos, and iCloud sell — file sync, automatic phone-photo backup, calendars, shared folders — except every byte stays on this box. The honest trade: Google's admins stop being your problem because *you* become the admin, which is why this page spends as much effort on backups and growth as on the install itself. It runs as one more unprivileged **LXC (Linux Container)** alongside AdGuard, Vaultwarden, and the rest, and the big media archive ends up on the two-drive **ZFS (Zettabyte File System)** mirror that TrueNAS serves.
+Nextcloud gives the household what Google Drive, Google Photos, and iCloud sell — file sync, automatic phone-photo backup, calendars, shared folders — except every byte stays on this box. The honest trade: Google's admins stop being your problem because *you* become the admin, which is why this page spends as much effort on backups and growth as on the install itself. It runs as one more unprivileged **LXC (Linux Container)** alongside AdGuard, the Nginx Proxy Manager, and the rest, and the big media archive ends up on the two-drive **ZFS (Zettabyte File System)** mirror that TrueNAS serves.
 
 > [!DETAILS] Knowing what's under the hood
 > A real Nextcloud install is a small stack, not one program: a web server with PHP, a proper database (MariaDB or PostgreSQL — SQLite is for testing only), and memory caching (APCu and Redis). The path below installs **NextCloudPi (NCP)**, a community appliance listed on nextcloud.com's own install page that assembles that whole stack on Debian and adds an admin panel for the chores — certificates, backups, updates. You manage one panel instead of five services, which suits a box that is already running a dozen other things.
@@ -22,7 +22,7 @@ Open the Proxmox web interface at the host (log in as **root@pam**), click the n
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nextcloudpi.sh)"
 ```
 
-Accept the defaults — an **unprivileged** container with **2 cores, 2 GB RAM, and an 8 GB disk** on Debian 12 (at the time of writing NCP ships Nextcloud 33 on PHP 8.3, a handy way to confirm the install landed on a current stack rather than a stale image). Nextcloud has no reason to touch host hardware, so unlike the TrueNAS VM (virtual machine) it stays unprivileged, the secure default on this build.
+Accept the defaults — an **unprivileged** container with **2 cores, 2 GB RAM, and an 8 GB disk** on Debian 12 (at the time of writing NCP ships Nextcloud 33 on PHP 8.3, a handy way to confirm the install landed on a current stack rather than a stale image). Nextcloud has no reason to touch host hardware the way the TrueNAS VM (virtual machine) does, so it stays unprivileged — the secure default on this build.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The node these containers live on. Reach the web UI at `https://`-this-ip-`:8006`.
@@ -41,7 +41,7 @@ The script finishes by printing the container's address as `http://<IP>` — no 
 ## First login
 
 ### Open the activation page
-Browse to the printed address. Plain `http://` redirects to HTTPS, and the browser objects to the self-signed certificate — the same warning you clicked through for the Proxmox UI on port 8006. Proceed past it; you meet it exactly once more.
+Browse to the printed address. Plain `http://` redirects to HTTPS, and the browser objects to the self-signed certificate — the same warning you clicked through for the Proxmox UI on port 8006. Proceed past it; in this browser you meet it exactly once more, at the panel's port 4443.
 
 > [!NOTE]
 > NCP's docs mention `https://nextcloudpi.local`, an mDNS name that may not resolve to this unprivileged container from another Mac. The IP always works, and lives on the container's **Summary** tab if you lose it.
@@ -60,7 +60,7 @@ The activation page generates two random passwords for a user named **ncp** — 
 > Older write-ups call the Nextcloud user `admin`; current NCP uses **ncp** for both logins. Lose one and you can review or reset both via `sudo ncp-config` in the container's console (the `nc-admin` and `nc-passwd` tools).
 
 > [!DETAILS] Getting to know the 4443 panel
-> `https://<IP>:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. It can run Let's Encrypt to get a real certificate if you ever give this box a public name — but this is a local-first, all-Apple household, so living with the self-signed warning is a legitimate choice. The router blocks unsolicited inbound traffic and nothing here needs a port-forward; don't create one. Remote access rides the Tailscale tunnel set up later in this build.
+> `https://<IP>:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. It can run Let's Encrypt to get a real certificate if you ever give this box a public name — but this is a local-first, all-Apple household, so living with the self-signed warning is a legitimate choice. The router blocks unsolicited inbound traffic and nothing here needs a port-forward; don't create one. Remote access rides the Tailscale tunnel set up on the previous page.
 
 ### Sign in to Nextcloud itself
 Back at `https://<IP>/`, log in as **ncp** with the Nextcloud password. There is no first-run wizard — NCP already created the account and the stack behind it — so you land straight in your files.
@@ -129,7 +129,7 @@ Get the desktop client from [nextcloud.com/install](https://nextcloud.com/instal
 ## Keep it healthy
 
 ### Back up all five pieces at once
-Nextcloud's docs list five things a backup must retain: the config folder, custom apps, the data folder, the theme folder, and the database — and insist on a fresh backup before every upgrade. Here all five live inside one container, so the Proxmox vzdump job that protects the other guests captures the lot in one pass when it points at the `tank/backups` dataset on TrueNAS — storage that is not this same disk. That archive is the on-site, fast-restore tier; the off-property Backblaze B2 push is reserved for the irreplaceable files, not the guest archives.
+Nextcloud's docs list five things a backup must retain: the config folder, custom apps, the data folder, the theme folder, and the database — and insist on a fresh backup before every upgrade. Here all five live inside one container, so the Proxmox vzdump job (set up later in this build, on the Proxmox Backups page) will capture the lot in one pass, pointed at the `tank/backups` dataset on TrueNAS — storage that is not this same disk. That archive is the on-site, fast-restore tier; the off-property Backblaze B2 push is reserved for the irreplaceable files, not the guest archives.
 
 > [!NOTE]
 > The External Storage archive lives on the ZFS pool, so it is protected by the pool's own snapshots and the weekly scrub — not by the vzdump job, which only sees the container's local disk. That's the right split: the small, sync-critical data rides vzdump; the bulk archive rides the pool's protections. Photos you can't lose belong on the irreplaceable dataset that the Backblaze B2 push covers, so they also leave the property.
@@ -147,4 +147,4 @@ Nextcloud's docs list five things a backup must retain: the config folder, custo
 > Remember the data directory here is `/opt/ncdata/data`, outside the web root, so copy it too.
 
 ### Update on purpose, snapshot first
-Take a Proxmox snapshot before any update — Nextcloud's own docs warn in a red box that "The built-in updater does not backup your database or data directory." Then keep two layers current: Debian inside the container with `apt update && apt -y upgrade`, and Nextcloud itself, whose version NCP manages through its own tooling on port 4443. Let NCP drive the Nextcloud upgrade — mixing updaters is how appliances and their apps fall out of step. Fold this into the same monthly upkeep sitting as the rest of the guests.
+Take a Proxmox snapshot before any update — Nextcloud's own docs warn in a red box that "The built-in updater does not backup your database or data directory." Then keep two layers current: Debian inside the container with `apt update && apt -y upgrade`, and Nextcloud itself, whose version NCP manages through its own tooling on port 4443. Let NCP drive the Nextcloud upgrade — mixing updaters is how appliances and their apps fall out of step. Fold this into the monthly upkeep sitting the Maintenance & Upkeep page sets up later in this build for every guest.

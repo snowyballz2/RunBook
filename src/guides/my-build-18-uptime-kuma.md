@@ -38,7 +38,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 Two habits from earlier in the build. First, give it a **static IP** rather than DHCP (Dynamic Host Configuration Protocol) — set it during the script's Advanced prompts, or pin it with a reservation on the router. A monitor that wanders to a new address after a power cut is worse than none. Second, in the left tree select the container, open **Options**, and set **Start at boot** to Yes:
 
 ```bash
-pct set 110 -onboot 1        # swap in the container's actual ID
+pct set 109 -onboot 1        # swap in the container's actual ID
 ```
 
 > [!INPUT] kuma-ip | Uptime Kuma container IP | 192.168.1.57
@@ -62,14 +62,12 @@ The script prints the address when it finishes — `http://`-the-IP-`:3001`. The
 Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name it, give it an address, save, repeat. Work down the rack — these are the guests this collection built:
 
 - **Proxmox itself** — type **HTTP(s)**, URL `https://`-the-host-IP-`:8006`. The web UI's certificate is self-signed, so tick **Ignore TLS/SSL errors for HTTPS websites** — otherwise this monitor reports down from day one.
-- **AdGuard** — what the house actually depends on is port 53, not the dashboard. A **DNS** monitor pointed at the AdGuard container's IP proves a real lookup resolves; add an **HTTP(s)** monitor for the dashboard at `http://`-the-AdGuard-IP as well.
+- **AdGuard** — what the house actually depends on is port 53, not the dashboard. Add a **DNS** monitor: put a real public name (say `apple.com`) in **Hostname**, and the AdGuard container's IP in **Resolver Server** (port 53) — that second field is the one that matters, since it defaults to a public resolver and would happily pass with AdGuard dead. Add an **HTTP(s)** monitor for the dashboard at `http://`-the-AdGuard-IP as well.
 - **Home Assistant** — type **HTTP(s)**, URL `http://`-the-HA-IP-`:8123`.
 - **TrueNAS** — type **HTTP(s)**, at the address you use to reach its web UI; tick **Ignore TLS/SSL errors** if it serves HTTPS with a self-signed certificate.
 - **Frigate** — type **HTTP(s)**, URL `http://`-the-Frigate-IP-`:8971` (the authenticated UI port — 5000 is the internal one reserved for the Home Assistant integration).
 - **Nextcloud** — type **HTTP(s)**, at the Nextcloud LXC address; tick the toggle for its self-signed certificate.
-- **Vaultwarden, Homepage, Nginx Proxy Manager** — one **HTTP(s)** monitor each, at their own LXC addresses.
-
-> [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
+- **Vaultwarden, Homepage, Nginx Proxy Manager** — one **HTTP(s)** monitor each: Vaultwarden at `http://`-the-Vaultwarden-IP-`:8000` (it serves plain HTTP on 8000), Homepage at `http://`-the-Homepage-IP-`:3000`, and Nginx Proxy Manager at `http://`-the-proxy-IP-`:81` — the admin port, because port 80 hits the proxy's public side, not its admin UI.
 
 > [!INPUT] adguard-ip | AdGuard container IP | 192.168.1.53
 
@@ -118,7 +116,7 @@ A red bar on a dashboard nobody has open is not an alert. Go to **Settings → N
 > The **Notification Type** list is long. The other well-worn options: **Telegram** (a bot you create that messages you directly), **Email (SMTP)** (sends through any mail account's SMTP (Simple Mail Transfer Protocol) server, with an **SMTP Security** option for TLS (Transport Layer Security)), and **Webhook** (an HTTP POST of the alert to any **Webhook URL** — the glue option for anything not on the list).
 
 > [!DETAILS] Wiring alerts into Home Assistant
-> Since HA already drives this house, you can route Kuma's alerts through it: choose the built-in **Home Assistant** notification type, give it the HA URL and a **Long-Lived Access Token**, and it calls a notify service (the name defaults to `notify`, and alerts arrive titled "Uptime Kuma") so they can fan out to the Nest speakers and HomePod mini as spoken TTS (text-to-speech) announcements over Cast. The reverse also exists — Home Assistant 2025.8 added an official **Uptime Kuma** core integration that polls this instance every 30 seconds and creates per-monitor sensors — but for plain "tell me when it breaks", ntfy or this notify path is enough. If you find older write-ups pointing at a HACS (Home Assistant Community Store) integration, skip it: that project was archived in August 2025 and its author recommends the core integration.
+> Since HA already drives this house, you can route Kuma's alerts through it: choose the built-in **Home Assistant** notification type, give it the HA URL and a **Long-Lived Access Token**, and it calls a notify service (the name defaults to `notify`, and alerts arrive titled "Uptime Kuma") so they can fan out to the Nest speakers as spoken TTS (text-to-speech) announcements over Cast once the Voice — Siri & Local Assist page wires up TTS (a HomePod mini cannot be a target — Home Assistant cannot push audio to it). The reverse also exists — Home Assistant 2025.8 added an official **Uptime Kuma** core integration that polls this instance every 30 seconds and creates per-monitor sensors — but for plain "tell me when it breaks", ntfy or this notify path is enough. If you find older write-ups pointing at a HACS (Home Assistant Community Store) integration, skip it: that project was archived in August 2025 and its author recommends the core integration.
 
 > [!WARNING]
 > All of Kuma's notifiers push *outward* from the container — to an ntfy topic, the Telegram API (application programming interface), a mail server, a webhook, or Home Assistant. None of them needs an inbound port-forward into your network. Keep it that way; this build opens no ports, and remote access runs over Tailscale.
@@ -126,7 +124,7 @@ A red bar on a dashboard nobody has open is not an alert. Go to **Settings → N
 ### Know the one thing it cannot see
 One honest limit, baked into the architecture: Kuma runs on the very server it watches. If the whole i7-8700K dies — PSU (power supply unit) failure, kernel panic, someone trips over the cable — the monitor dies with everything it monitors, and no alert fires. There is no in-app cure; the maintainer's own words are that it is "not a distributed system."
 
-For this LAN-only build with no port-forwards, the workaround that fits is a second Uptime Kuma on separate always-on hardware — a Raspberry Pi, say — running a single monitor pointed at this one at `http://`-the-Kuma-IP-`:3001`. The UPS and its NUT (Network UPS Tools) shutdown handling cover the *power-blip* case, but only a second box catches a hard crash of the main server.
+For this LAN-only build with no port-forwards, the workaround that fits is a second Uptime Kuma on separate always-on hardware — a Raspberry Pi, say — running a single monitor pointed at this one at `http://`-the-Kuma-IP-`:3001`. The UPS and the NUT (Network UPS Tools) shutdown handling set up on the UPS & Safe Shutdown page cover the *power-blip* case, but only a second box catches a hard crash of the main server.
 
 > [!WARNING]
 > If you do run a second instance, it must have its own database — at most one Uptime Kuma per SQLite file. Two full installs, each watching the other; never two pointed at one data folder.
@@ -135,6 +133,6 @@ For this LAN-only build with no port-forwards, the workaround that fits is a sec
 Take a Proxmox snapshot first — the snapshot-before-changes habit from earlier — then update **from inside the container**: open its **Console** in Proxmox and type `update`. It compares your installed version against the latest release, stops the service, lays the new version over `/opt/uptime-kuma` without touching your data, and starts it again.
 
 > [!WARNING]
-> Do not re-run the install one-liner on the Proxmox *host* to update — on the host, that command begins the create-a-new-container flow. The same command behaves differently by location: pasted inside the container, `update` updates in place. It is pre-installed for you.
+> Do not re-run the install one-liner on the Proxmox *host* to update — on the host, that command begins the create-a-new-container flow. Inside the container, the short `update` command — pre-installed by the script — is what updates in place.
 
-Everything that matters — monitors, their history, notification settings, the SQLite database — lives in `/opt/uptime-kuma/data`. The Proxmox vzdump job that already backs this box up to the TrueNAS ZFS mirror captures the whole container in one pass, so this monitor is covered by the same on-site backup routine as every other guest. (Those guest archives stay on the NAS; only the irreplaceable files dataset goes offsite to Backblaze B2, not the container backups.) If you ever copy that folder by hand, stop the service first (`systemctl stop uptime-kuma`) so the database file is consistent. The project's own migration guide repeats "backup your `data` directory" three times in a row — take the hint.
+Everything that matters — monitors, their history, notification settings, the SQLite database — lives in `/opt/uptime-kuma/data`. The Proxmox vzdump job set up on the next page (Proxmox Backups) will capture the whole container in one pass, so this monitor joins the same on-site backup routine as every other guest. (Those guest archives stay on the NAS; only the irreplaceable files dataset goes offsite to Backblaze B2, not the container backups.) If you ever copy that folder by hand, stop the service first (`systemctl stop uptime-kuma`) so the database file is consistent. The project's own migration guide repeats "backup your `data` directory" three times in a row — take the hint.

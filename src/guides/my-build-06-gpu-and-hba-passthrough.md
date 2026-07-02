@@ -40,7 +40,7 @@ Then refresh and install the headers and driver from the Proxmox node shell:
 apt update
 
 # Headers matching the running Proxmox kernel, plus the driver and persistence daemon.
-apt install -y pve-headers-$(uname -r) build-essential
+apt install -y proxmox-headers-$(uname -r) build-essential
 apt install -y nvidia-driver nvidia-smi nvidia-persistenced
 
 # Confirm the card is seen:
@@ -56,7 +56,7 @@ nvidia-smi
 > If `apt install -y nvidia-driver` still cannot find the package, the non-free components are not enabled — re-check that you edited the `Components:` line in the right `.sources` file and ran `apt update`. The `nvidia-persistenced` package ships the persistence daemon's systemd unit; install it alongside the driver so the next step has a unit to enable.
 
 > [!NOTE]
-> The 1080 Ti is Pascal — compute capability 6.1 — which clears Frigate's detection bar (compute capability 5.0+, NVIDIA driver 545 or newer, CUDA 12.x). Install a 545+ driver so the same card can run the ONNX/CUDA detector later. A YOLOv9 model is the right pick on this card; RF-DETR runs very slowly on Pascal, so avoid it.
+> The 1080 Ti is Pascal — compute capability 6.1 — which clears Frigate's detection bar (compute capability 5.0+, NVIDIA driver 545 or newer, CUDA 12.x). Debian's packaged `nvidia-driver` on this host is the 550 series, which clears that bar — confirm the version `nvidia-smi` printed is 545 or newer so the same card can run the ONNX/CUDA detector later. A YOLOv9 model is the right pick on this card; RF-DETR runs very slowly on Pascal, so avoid it.
 
 ### Keep the driver awake with nvidia-persistenced
 Without the persistence daemon the driver de-initialises whenever nothing is actively using the card, and the first detection after an idle stretch pays a slow wake-up cost. You installed the `nvidia-persistenced` package above; now enable and start its service on the host:
@@ -148,13 +148,12 @@ With the card on vfio-pci, hand the **whole device** to the TrueNAS VM. In the P
 
 ```bash
 # Equivalent from the host shell. Use the HBA's PCI address captured by the
-# lspci step above (a chipset-side bus, e.g. 0000:02:00.0) — NOT 0000:01:00.0,
-# which on this board is the top x16 slot where the 1080 Ti lives.
-qm set <truenas-vmid> -hostpci0 <hba-pci-address>,pcie=1
+# lspci step above, without the ".0" function suffix (e.g. 0000:02:00 — a
+# chipset-side bus; omitting the suffix passes all functions, matching the
+# GUI's All Functions tick). NOT 0000:01:00, which on this board is the top
+# x16 slot where the 1080 Ti lives.
+qm set <truenas-vmid> -hostpci0 <hba-pci-address>
 ```
-
-> [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
-> The address TrueNAS prints on its console. Pin it with a DHCP (Dynamic Host Configuration Protocol) reservation so it never moves.
 
 Power-cycle the TrueNAS VM (a full stop and start, not a guest reboot). Once it boots, the two mirror disks appear under **Storage** in TrueNAS as raw drives — real SMART, real serials, ready for a mirrored ZFS pool.
 

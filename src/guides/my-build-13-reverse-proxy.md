@@ -6,9 +6,9 @@ order: 13
 accent: amber
 ---
 
-By now your bookmarks bar is a wall of IPs and certificate warnings: `https://192.168.1.50:8006` for Proxmox, an HTTP address for Home Assistant, the TrueNAS IP, a Frigate port, a Nextcloud address every new device objects to. A **reverse proxy** ends that. It is one small LXC (Linux Container) that becomes the single address you browse to — you ask for `https://proxmox.example.com`, it forwards the request to `192.168.1.50:8006` behind the scenes, and hands back the answer over a connection covered by one real, browser-trusted certificate that serves every name at once.
+By now your bookmarks bar is a wall of IPs and certificate warnings: `https://192.168.1.50:8006` for Proxmox, an HTTP address for Home Assistant, the TrueNAS IP, a Frigate port, an AdGuard dashboard on its own port. A **reverse proxy** ends that. It is one small LXC (Linux Container) that becomes the single address you browse to — you ask for `https://proxmox.example.com`, it forwards the request to `192.168.1.50:8006` behind the scenes, and hands back the answer over a connection covered by one real, browser-trusted certificate that serves every name at once.
 
-The tool here is **Nginx Proxy Manager** (NPM): nginx doing the proxying, with a web interface instead of config files. It runs as another service container on this Proxmox host, alongside AdGuard, Nextcloud, Vaultwarden, and the rest. Two rules hold throughout: the proxy serves only your LAN (and your tailnet, once remote access is in) — **no router port-forwards, not for this, ever** — and the certificate arrives without exposing anything to the internet.
+The tool here is **Nginx Proxy Manager** (NPM): nginx doing the proxying, with a web interface instead of config files. It runs as another service container on this Proxmox host, alongside AdGuard, Frigate, and the services still to come. Two rules hold throughout: the proxy serves only your LAN (and your tailnet, once remote access is in) — **no router port-forwards, not for this, ever** — and the certificate arrives without exposing anything to the internet.
 
 > [!NOTE]
 > This page leans on the stack already built. AdGuard must be the house DNS (Domain Name System) — that is how the new names resolve — and the services you proxy now (Proxmox at `proxmox-ip`, Home Assistant at `ha-ip`, TrueNAS at `truenas-ip`, and the Frigate LXC) need to be up and reachable at their direct addresses first. Nextcloud and Uptime Kuma do not exist yet — you build them later in this build — so their proxy hosts get added when those containers come up; the same Add-Proxy-Host pattern below applies unchanged.
@@ -25,7 +25,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 2 GB RAM, an 8 GB disk, an unprivileged Debian 12 container — except networking: set a **static IP** on `vmbr0`. The script finishes by printing `http://<IP>:81`. Before you open it, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
 
 > [!INPUT] proxy-ip | Proxy container IP | 192.168.1.54
-> Pin it with a DHCP (Dynamic Host Configuration Protocol) reservation so it never moves — every name below points here.
+> You set this statically during the install — record it here and keep it out of the router's DHCP (Dynamic Host Configuration Protocol) pool; every name below points here.
 
 > [!NOTE]
 > The catalog also carries `npmplus.sh`, a different project despite the similar name. The script above, `nginxproxymanager.sh`, is the one this page is written against.
@@ -104,7 +104,7 @@ nslookup proxmox.example.com
 Expect the proxy's IP. The names resolve; nothing answers on them yet — that is the next phase.
 
 > [!DETAILS] Carrying the names with you over Tailscale
-> These names exist only inside AdGuard, so a phone off the LAN will not find them on its own. On the Tailscale admin console's DNS page, add AdGuard's LAN IP under **Global nameservers** and enable **Override DNS servers** — tailnet devices then resolve through AdGuard, and `https://proxmox.example.com` works from anywhere the subnet route reaches. The trade: with Override on, the phone's DNS depends on the server being up. The gentler variant is split DNS — send only `example.com` lookups to AdGuard and leave the rest of the phone alone.
+> These names exist only inside AdGuard, so a phone off the LAN will not find them on its own. Once remote access is set up on the next page, the names can travel: on the Tailscale admin console's DNS page, add AdGuard's LAN IP under **Global nameservers** and enable **Override DNS servers** — tailnet devices then resolve through AdGuard, and `https://proxmox.example.com` works from anywhere the subnet route reaches. The trade: with Override on, the phone's DNS depends on the server being up. The gentler variant is split DNS — send only `example.com` lookups to AdGuard and leave the rest of the phone alone.
 
 ## Put every service behind it
 
@@ -152,7 +152,7 @@ More proxy hosts, same dialog. Every one gets the wildcard certificate and **For
 > [!WARNING]
 > Frigate splits its two ports: **8971** is the authenticated UI and API that reverse proxies should use, while **5000** is internal, unauthenticated access treated as admin regardless of login. Proxying 5000 would hand admin to anything that can resolve the name. Use 8971, and leave 5000 as the internal address the Home Assistant integration talks to.
 
-Two more proxy hosts get added later, once their containers exist — come back and repeat this exact Add-Proxy-Host pattern then:
+More proxy hosts get added later, once their containers exist — come back and repeat this exact Add-Proxy-Host pattern each time a later page brings a new service up. Two you already know are coming:
 
 - **Nextcloud** (built later in this build) — `cloud.example.com`, Scheme `https`, the Nextcloud IP, port `443`. The first visit stops at **Access through untrusted domain**; the fix is in the Nextcloud page (and recapped below for when you reach it).
 - **Uptime Kuma** (built later in this build) — `status.example.com`, Scheme `http`, the Kuma IP, port `3001`. It is built on WebSocket, so with the toggle off the dashboard never loads — leave **Websockets Support** on.
@@ -190,7 +190,7 @@ Two more proxy hosts get added later, once their containers exist — come back 
 > When you later build Uptime Kuma and put it behind the proxy, tell it so: **Settings → Reverse Proxy**, and under HTTP Headers set **Trust Proxy** on — its logs and rate limiting then see real client IPs instead of the proxy's.
 
 ### Decide what keeps its number
-Walk the bookmarks bar and replace what you have today: `proxmox.`, `ha.`, `nas.`, `frigate.` — `cloud.` and `status.` join the set when Nextcloud and Uptime Kuma come up later, making six names behind one lock, and Force SSL means even a typed `http://` lands on HTTPS. Three addresses deliberately stay raw, because they are the system's own foundations:
+Walk the bookmarks bar and replace what you have today: `proxmox.`, `ha.`, `nas.`, `frigate.` — `cloud.`, `status.`, and more join the set as later pages bring their services up, every name behind the same lock, and Force SSL means even a typed `http://` lands on HTTPS. Three addresses deliberately stay raw, because they are the system's own foundations:
 
 - **NPM's admin interface** at `http://<proxy-ip>:81`. When the proxy is the thing that is sick, a name routed through itself is no way to reach its controls.
 - **AdGuard's dashboard** at its IP. The names are answered there — if AdGuard is down, every name is down with it.

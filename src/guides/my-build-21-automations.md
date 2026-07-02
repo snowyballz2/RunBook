@@ -6,7 +6,7 @@ order: 21
 accent: emerald
 ---
 
-The infrastructure is finished, and this is where the house starts doing things on its own. An automation is one sentence — *when* something happens, *then* do something — and this page builds a stack of them on the exact devices already onboarded: the dozen Third Reality leak sensors and the Aqara valve from the Zigbee mesh, the three Aqara U400 locks shared in over Matter, the two ecobees, the Reolink doorbell and camera through Frigate, and the Google/Nest speakers for announcements. The showpiece is the first one — a leak trips, the main water shuts off, and you find out loudly — and it is the automation that earns the other twenty pages.
+The infrastructure is finished, and this is where the house starts doing things on its own. An automation is one sentence — *when* something happens, *then* do something — and this page builds a stack of them on the devices already onboarded — the dozen Third Reality leak sensors and the Aqara valve from the Zigbee mesh, the three Aqara U400 locks shared in over Matter, and the Reolink doorbell and camera through Frigate — plus two it onboards itself, the ecobee thermostats and the Lutron Caséta lights, and the Google/Nest speakers for announcements, which join later on the Voice page. The showpiece is the first one — a leak trips, the main water shuts off, and you find out loudly — and it is the automation that earns the other twenty pages.
 
 > [!WARNING]
 > Build the **water-leak** automation first, the day the valve is paired, before any convenience rule. It is the one that pays for the whole build. Everything else can wait. The valve-close and the critical iPhone push work the moment you save it; the spoken announcement depends on Piper text-to-speech and a Cast speaker, which you set up later on the Voice page of this build — until then that one step quietly does nothing, so build the rule now anyway.
@@ -56,13 +56,13 @@ actions:
 mode: single
 ```
 
-Why it works, top to bottom. The trigger lists every leak sensor under one roof, so any one going `on` (wet) fires the whole thing, and `trigger.to_state.name` carries *which* sensor into the alert — so the push and the spoken line both name the actual location without you writing twelve copies. The valve closes **first**, before any notification, because the point is to stop water, not to ask permission. Then two alerts fire in parallel: a **critical** push that reaches your iPhone wherever you are, and a `tts.speak` on a Google/Nest speaker so anyone home hears it out loud. The speech uses the **local Piper** TTS (text-to-speech) engine running on the shared GTX 1080 Ti rather than a cloud voice, so it still talks during the internet outage a burst pipe might cause.
+Why it works, top to bottom. The trigger lists every leak sensor under one roof, so any one going `on` (wet) fires the whole thing, and `trigger.to_state.name` carries *which* sensor into the alert — so the push and the spoken line both name the actual location without you writing twelve copies. The valve closes **first**, before any notification, because the point is to stop water, not to ask permission. Then two alerts fire in parallel: a **critical** push that reaches your iPhone wherever you are, and a `tts.speak` on a Google/Nest speaker so anyone home hears it out loud. The speech uses the **local Piper** TTS (text-to-speech) engine — installed as an add-on on the Home Assistant VM on the Voice page — rather than a cloud voice, so it still talks during the internet outage a burst pipe might cause.
 
 > [!NOTE]
 > The `notify.mobile_app_chris_iphone` action exists only after the Home Assistant companion app — the one you installed and signed in on the Matter Locks page of this build — has been **opened on the iPhone and granted notification permission**. It then surfaces as `notify.mobile_app_` plus the phone's name, underscored (so `chris_iphone` becomes `notify.mobile_app_chris_iphone`). Without that permission the entity does not exist, it will not autocomplete in the editor, and the rule will not save. Grant it before building this rule, since every automation on this page leans on it.
 
 > [!NOTE]
-> The spoken `tts.speak` step needs two things this build sets up later, on the Voice page: the **Piper** text-to-speech engine (which becomes the `tts.piper` entity) and a Google/Nest **Cast** speaker added to Home Assistant as a `media_player.*` entity. Until both exist, that one action fails silently while the valve-close and the critical push — the parts that actually matter — work from the moment you save. Build the rule the day the valve is paired; the spoken line starts working once you finish the Voice page. Your Google/Nest speakers are not in Home Assistant just because they are on the network: add them through **Settings → Devices & services → Add integration → Google Cast** so they surface as `media_player.*` targets (a HomePod cannot be a target — Home Assistant cannot push audio to it).
+> The spoken `tts.speak` step needs two things this build sets up later, on the Voice page: the **Piper** text-to-speech engine (which becomes the `tts.piper` entity) and a Google/Nest **Cast** speaker added to Home Assistant as a `media_player.*` entity. Until both exist, that one action fails silently while the valve-close and the critical push — the parts that actually matter — work from the moment you save. Build the rule the day the valve is paired; the spoken line starts working once you finish the Voice page. Your Google/Nest speakers are not in Home Assistant just because they are on the network — the Voice page adds them through **Settings → Devices & services → Add integration → Google Cast** so they surface as `media_player.*` targets (a HomePod cannot be a target — Home Assistant cannot push audio to it).
 
 > [!WARNING]
 > **No `conditions` block — on purpose.** A leak at 3 a.m. with everyone home, a leak while you are away, a leak during any "guest mode" — every one of them needs the water off. A safety action must never be suppressed by presence, time, or a toggle. Drive the valve straight off the raw sensors and resist the urge to be clever.
@@ -99,24 +99,28 @@ conditions:
       {{ states.sensor
          | selectattr('attributes.device_class', 'eq', 'battery')
          | selectattr('state', 'is_number')
-         | selectattr('state', 'lt', 20)
-         | list | count > 0 }}
+         | map(attribute='state') | map('float')
+         | select('lt', 20) | list | count > 0 }}
 actions:
   - action: notify.mobile_app_chris_iphone
     data:
       title: "🔋 Low battery"
       message: >-
-        {{ states.sensor
+        {% set low = namespace(names=[]) %}
+        {% for s in states.sensor
            | selectattr('attributes.device_class', 'eq', 'battery')
-           | selectattr('state', 'is_number')
-           | selectattr('state', 'lt', 20)
-           | map(attribute='name') | join(', ') }}
+           | selectattr('state', 'is_number') %}
+        {% if s.state | float < 20 %}
+        {% set low.names = low.names + [s.name] %}
+        {% endif %}
+        {% endfor %}
+        {{ low.names | join(', ') }}
 ```
 
-It walks every sensor with a `battery` device class, keeps the ones under 20%, and only notifies if the list is non-empty — naming each low device so you know which coin cell to buy. An ordinary push is right here; it is a chore reminder, not an emergency.
+It walks every sensor with a `battery` device class, keeps the ones under 20%, and only notifies if the list is non-empty — naming each low device so you know which coin cell to buy. The `float` conversions are load-bearing: an entity's state is always text in a template, and comparing text against the number 20 throws a template error instead of filtering. An ordinary push is right here; it is a chore reminder, not an emergency.
 
 > [!TIP]
-> A dead battery on a convenience sensor is an annoyance; a dead battery on a leak sensor quietly switches off the most important automation you own. Bump the threshold for the **leak sensors specifically** to 40% so the warning on those comes with plenty of runway.
+> A dead battery on a convenience sensor is an annoyance; a dead battery on a leak sensor quietly switches off the most important automation you own. Give the **leak sensors specifically** more runway: clone the sweep as a second automation whose templates list just the twelve leak-sensor battery entities (swap the `device_class` filter for their `entity_id`s) with the threshold raised to 40, so the warning on those arrives with months to spare.
 
 ## Doors and presence
 
@@ -165,13 +169,16 @@ actions:
       message: "Front door has been unlocked for 10 minutes."
 ```
 
-Repeat the patterns you want for `lock.back_door` and `lock.side_door` too (your real names from **Entities**).
+Repeat the patterns you want for `lock.side_door` and `lock.garage_door` too — the Side and Garage locks from the Matter Locks page (your real names from **Entities**).
 
 > [!TIP]
 > If you later add an Aqara door/window **contact sensor** to the Zigbee mesh and pair it (the same way you joined the leak sensors), you can swap the auto-lock trigger to fire on the *door* closing and holding (`binary_sensor.front_door_contact` reading `off` `for: "00:05:00"`) for a more natural "lock after the door is shut" behaviour. The build does not ship one, so the lock-state version above is the default.
 
+### Onboard the thermostats and lights
+The presence rules below reach for `climate.*` and `light.*` entities, and nothing earlier in this build has created them — the ecobee thermostats and the Lutron Caséta lights are the two integrations this page adds itself. In **Settings → Devices & services → Add integration**, add **ecobee** first and sign in with your ecobee account when prompted — it is a cloud integration, so it needs that account working — then note the two `climate.*` entity names it creates (the rules below use `climate.downstairs`; substitute your real names). Then add **Lutron Caséta** and follow the pairing flow against the Pro bridge — it asks you to press the button on the back of the bridge — and the dimmers and shades surface as `light.*` and `cover.*` entities, ready for the presence rules here and the scenes at the end of this page.
+
 ### Presence — everybody left, somebody home
-The companion app on each iPhone hands you a **device tracker** for free — find them under **Entities** (search "tracker"); each reads `home` or `not_home` and is the most reliable presence signal a home network has. Build two mirror-image rules. Everybody-left triggers when *either* phone leaves, but the **conditions require both** to read `not_home` before acting, so the house only goes to away-mode when it is actually empty:
+The companion app on each iPhone hands you a **device tracker** for free. So far only one phone has the app — the iPhone from the Matter Locks page — so have the second person install the **Home Assistant companion app** on their iPhone now and sign in, ideally as their own user created under **Settings → People**, and their tracker appears too. Find both under **Entities** (search "tracker"); each reads `home` or `not_home` and is the most reliable presence signal a home network has. Build two mirror-image rules. Everybody-left triggers when *either* phone leaves, but the **conditions require both** to read `not_home` before acting, so the house only goes to away-mode when it is actually empty:
 
 ```yaml
 alias: Everybody left
@@ -190,7 +197,7 @@ actions:
   - action: light.turn_off
     target: { entity_id: all }
   - action: lock.lock
-    target: { entity_id: [lock.front_door, lock.back_door, lock.side_door] }
+    target: { entity_id: [lock.front_door, lock.side_door, lock.garage_door] }
   - action: climate.set_temperature
     target: { entity_id: climate.downstairs }
     data: { temperature: 16 }
@@ -201,7 +208,7 @@ Coming home is the easy half — trigger on the first phone reaching `home`, no 
 ## Comfort and awareness
 
 ### ecobee setback and an optional open-window pause
-The presence pair above already nudges the **two ecobees** through `climate.set_temperature` on their `climate.*` entities — point them at the upstairs and downstairs ecobee. That setback alone is the comfort-and-savings win this build ships with.
+The presence pair above already nudges the **two ecobees** through `climate.set_temperature` on their `climate.*` entities — point them at the upstairs and downstairs entities the ecobee integration created when you added it before the presence rules. That setback alone is the comfort-and-savings win this build ships with.
 
 > [!NOTE]
 > **Optional, needs a sensor you do not have yet.** A money-saving extra is pausing a system when a window or door is open, so you are not heating the street — but this build includes **no window or door contact sensors**. If you want this rule, first add an Aqara door/window **contact sensor**, pair it into the Zigbee mesh the same way you joined the leak sensors, and rename it to something like `binary_sensor.living_room_window`. Then trigger on it holding open and turn the mode off:
@@ -292,4 +299,4 @@ Two tools live in each automation's three-dot menu. **Run actions** executes the
 > **Run actions** on the leak rule will physically close the main water valve — that is the point of the test, but do it on purpose, not by accident, and re-open the valve afterward.
 
 ### An off-switch for exceptions, never for safety
-The house acting on its own is great until the evening it should not. Make a toggle for that: **Settings → Devices & services → Helpers → Create helper → Toggle**, named "Guest mode". Add a **State** condition to the *porch and person* notifications requiring Guest mode be off, and visitor alerts hush while guests come and go. Gate convenience behind it freely — but **never** the leak valve, the auto-lock, or any safety action. Same rule, one last time so it sticks: a safety automation answers to the raw sensor and nothing else.
+The house acting on its own is great until the evening it should not. Make a toggle for that: **Settings → Devices & services → Helpers → Create helper → Toggle**, named "Guest mode". Add a **State** condition to the **Frigate person alert and the doorbell announcement** requiring Guest mode be off, and visitor alerts hush while guests come and go. Gate convenience behind it freely — but **never** the leak valve, the auto-lock, or any safety action. Same rule, one last time so it sticks: a safety automation answers to the raw sensor and nothing else.

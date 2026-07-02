@@ -6,7 +6,7 @@ order: 12
 accent: violet
 ---
 
-**AdGuard Home** is the first of the small service **LXCs (Linux Containers)** to come online on this box, and it has the widest blast radius of any of them: once the network points at it, every device in the house resolves names through it. That makes it both the household ad-and-tracker filter and the single **DNS (Domain Name System)** server the whole LAN (local area network) depends on. It is a single small Go binary, so it idles in a few tens of megabytes — but its IP address must be nailed down and never move.
+**AdGuard Home** is the next of the service **LXCs (Linux Containers)** to come online on this box, and it has the widest blast radius of any of them: once the network points at it, every device in the house resolves names through it. That makes it both the household ad-and-tracker filter and the single **DNS (Domain Name System)** server the whole LAN (local area network) depends on. It is a single small Go binary, so it idles in a few tens of megabytes — but its IP address must be nailed down and never move.
 
 > [!NOTE]
 > AdGuard belongs in an **unprivileged container**, the secure default on this Proxmox host — it touches no hardware. Build it before Nginx Proxy Manager, Nextcloud, and the rest; those are easier to reach by name once DNS is in your hands.
@@ -14,7 +14,7 @@ accent: violet
 ## Create the container
 
 ### Run the install script
-The quickest path is the Proxmox community helper script, which builds a ready-to-go AdGuard container in about two minutes. In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Paste this and press Return:
+The quickest path is the Proxmox community helper script, which builds a ready-to-go AdGuard container in about two minutes. In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). One heads-up before you paste: the script asks **Default or Advanced** almost as soon as it starts, so read the **Choose Advanced and pin a static IP** section below first — unlike the Frigate script on the previous page, the defaults are *not* what you want here. Then paste this and press Return:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"
@@ -38,7 +38,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > ./AdGuardHome -s install        # installs and starts it as a boot service
 > ```
 >
-> Done this way you have already covered the static-IP step too — continue at **Run the setup wizard**.
+> Done this way you have already covered the static-IP step too — continue at **Set it to start at boot**.
 
 ### Choose Advanced and pin a static IP
 This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced**. Every prompt is pre-filled sensibly — 1 CPU core, 512 MB RAM, 2 GB disk is more than enough — so press Enter through them. The one value to change is the network: set a **static IP** instead of DHCP (Dynamic Host Configuration Protocol). Record the address you choose; you will use it everywhere below. Let the script finish — it prints the setup URL when done.
@@ -59,7 +59,7 @@ pct set 102 -onboot 1        # swap in the container's actual ID
 ```
 
 > [!NOTE]
-> This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief power blips never reach AdGuard at all. Start-at-boot covers the longer outages that do drain the battery and force a clean shutdown.
+> This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief power blips never reach AdGuard at all. Start-at-boot covers the longer outages that do drain the battery — and once the UPS & Safe Shutdown page later in the build wires up an automatic shutdown, those end cleanly instead of as a hard cut.
 
 ## Run the setup wizard
 

@@ -44,7 +44,7 @@ Go to **Datacenter → Backup** and click **Add**. Set **Storage** to `nas-backu
 > The defaults are right here: **ZSTD** compression is fast and effective, and **Snapshot** mode backs up running guests with the least downtime. For the Home Assistant and TrueNAS VMs, the QEMU guest agent briefly freezes the filesystem during backup for a cleaner, more consistent archive.
 
 > [!DETAILS] Mind the start order and the Frigate footage disk
-> Two build-specific notes. First, the household start/shutdown order is **Home Assistant VM before the Frigate LXC** because Frigate depends on HA's Mosquitto MQTT (Message Queuing Telemetry Transport) broker — but vzdump backs each guest up independently, so the backup job does not disturb that ordering. Second, the Frigate LXC's *footage* lives on the third IronWolf on a motherboard SATA (Serial ATA) port, which is replaceable camera video — exclude that mount point from the Frigate job (its **Backup** checkbox on that mount) so you archive the container, not terabytes of recordings.
+> Two build-specific notes. First, the household start/shutdown order is **Home Assistant VM before the Frigate LXC** because Frigate depends on HA's Mosquitto MQTT (Message Queuing Telemetry Transport) broker — but vzdump backs each guest up independently, so the backup job does not disturb that ordering. Second, the Frigate LXC's *footage* lives on the third IronWolf on a motherboard SATA (Serial ATA) port, which is replaceable camera video. That disk is handed into the container as a bind mount of a host path, and vzdump skips bind mounts by default — so the job archives the container, not terabytes of recordings, with nothing to configure. After the first run, glance at the Frigate job's log and confirm the footage mount is listed as excluded.
 
 > [!DETAILS] Choosing what to keep — retention
 > By default every backup is kept forever and slowly fills the share. On the job's **Retention** tab, a sane home setup is **Keep Daily** 7 and **Keep Weekly** 4 — a week of daily restore points plus a month of weekly ones, pruned automatically. Job-level retention overrides whatever the storage is configured to keep.
@@ -60,9 +60,9 @@ Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's
 >
 > ```bash
 > # VM backup (e.g. Home Assistant) into new ID 901:
-> qmrestore /mnt/pve/nas-backups/dump/vzdump-qemu-100-....vma.zst 901
+> qmrestore /mnt/pve/nas-backups/dump/vzdump-qemu-110-....vma.zst 901
 > # Container backup (e.g. AdGuard) into new ID 900:
-> pct restore 900 /mnt/pve/nas-backups/dump/vzdump-lxc-110-....tar.zst
+> pct restore 900 /mnt/pve/nas-backups/dump/vzdump-lxc-102-....tar.zst
 > ```
 >
 > Swap in the archive's real filename. This is also how you test restores safely.
@@ -88,13 +88,14 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 - **`/etc/fstab`** — any mounts the host brings up at boot, including the third IronWolf footage disk on its SATA port.
 - **`/etc/modprobe.d`** — the VFIO bind line `options vfio-pci ids=...` that claims the LSI 9300-8i HBA for the TrueNAS VM, keeping it out of a host SAS (Serial Attached SCSI) driver's hands.
 - **`/etc/modules`** — the early-load `vfio`, `vfio_iommu_type1`, and `vfio_pci` modules that bring the VFIO stack up at boot.
+- **`/etc/default/grub`** — the kernel command line with the `intel_iommu=on iommu=pt` flags set on the **My Build: Install Proxmox** page. Without those flags the IOMMU never comes up and the HBA passthrough silently fails.
 - **`/etc/nut`** — the NUT (Network UPS Tools) configuration that talks to the CyberPower CP1500PFCLCD over USB and shuts the host down cleanly on a long outage.
 
 > [!NOTE]
-> `/etc/nut` only gains this build's settings after the **My Build: UPS & Safe Shutdown** page, which comes later than this one. If you run the host-config tarball below on your first pass through the build, that directory is still empty or default — so re-run the tarball once the UPS and safe-shutdown step is done, and treat *that* copy as the first complete one.
+> `/etc/nut` does not exist until the **My Build: UPS & Safe Shutdown** page installs NUT, and that page comes later than this one. If you run the host-config tarball below on your first pass through the build, expect `tar: /etc/nut: Cannot stat: No such file or directory` and a failure exit code — the rest of the archive is still written, so that is not a failed backup. Re-run the tarball once the UPS and safe-shutdown step is done, and treat *that* copy as the first complete one.
 
 > [!NOTE]
-> Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand. The HBA assignment to the TrueNAS VM (`qm set <truenas-vmid> -hostpci0 <hba-pci-address>,pcie=1`) lives inside `/etc/pve/qemu-server/<id>.conf`, and the GPU `dev0: /dev/nvidia0` shares live in `/etc/pve/lxc/<ctid>.conf` for the Frigate, Ollama, and faster-whisper containers — both are inside `/etc/pve` above. The `<hba-pci-address>` is the chipset-side bus you captured from `lspci` (e.g. `0000:02:00.0`), **not** `0000:01:00.0`, which on this board is the top x16 slot where the 1080 Ti lives. But keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
+> Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand. The HBA assignment to the TrueNAS VM (`qm set <truenas-vmid> -hostpci0 <hba-pci-address>`) lives inside `/etc/pve/qemu-server/<id>.conf`, and the GPU `dev0: /dev/nvidia0` shares live in `/etc/pve/lxc/<ctid>.conf` for the Frigate, Ollama, and faster-whisper containers (Frigate's exists now; the Ollama and faster-whisper containers arrive on the **My Build: Voice — Siri & Local Assist** page, and their lines land inside `/etc/pve` automatically once built) — both are inside `/etc/pve` above. The `<hba-pci-address>` is the chipset-side bus you captured from `lspci` (e.g. `0000:02:00.0`), **not** `0000:01:00.0`, which on this board is the top x16 slot where the 1080 Ti lives. But keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
 
 > [!DETAILS] A tiny job to copy it to the NAS
 > From the host **Shell**, roll the lot into one dated tarball on the backup share, already mounted at `/mnt/pve/nas-backups`:
@@ -102,21 +103,22 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 > ```bash
 > # One dated archive of the host's config, onto the NAS share:
 > tar czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +%F).tar.gz \
->   /etc/pve /etc/network/interfaces /etc/fstab /etc/modprobe.d /etc/nut /etc/modules
+>   /etc/pve /etc/network/interfaces /etc/fstab /etc/modprobe.d \
+>   /etc/default/grub /etc/nut /etc/modules
 > ```
 >
 > Run it after any change to networking, storage, or passthrough — or drop it in a weekly `cron` job so it keeps pace on its own. It is small; keep a few generations. (`/etc/pve` is a live filesystem, so `tar` may warn that a file changed while reading — harmless for these config files.)
 
-> [!INPUT] proxmox-root-password | Proxmox root password
+> [!SECRET] proxmox-root-password | Proxmox root password
 
 ### Walk the rebuild order
 After a boot-disk failure, the order matters: bring the host back knowing its hardware *before* the guests land on it, so the restored VMs and containers find what they expect.
 
 1. **Reinstall Proxmox** fresh on a new NVMe — same version, and re-enter the host IP, hostname, and root password from your records.
 2. **Redo the BIOS groundwork** if the board was reset: VT-d (Intel's IOMMU) and Virtualization (VMX) enabled, and the bottom `PCIEX4_3` slot set to x4 — the HBA's clean IOMMU group depends on it.
-3. **Restore the `/etc` bits** from the host-config tarball, then **re-run the passthrough commands**: the `qm set ... -hostpci0` HBA line for TrueNAS and a `update-initramfs -u -k all` so the VFIO bind takes. Reboot, and confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
+3. **Restore the `/etc` bits** from the host-config tarball — including `/etc/default/grub` with its `intel_iommu=on iommu=pt` flags (or re-add them by hand, as on the **My Build: Install Proxmox** page) — then run `update-grub` as well as `update-initramfs -u -k all` so the kernel flags and the VFIO bind both take. Reboot, and confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
 4. **Reinstall the NVIDIA driver on the host** and confirm `nvidia-smi`, so the GPU `dev0:` shares into Frigate, Ollama, and faster-whisper work once those containers return.
-5. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage), then **restore the guests** from vzdump.
+5. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage), then **restore the guests** from vzdump. Each archive carries its guest's config, so once the TrueNAS VM is restored, confirm its **Hardware** tab (or `/etc/pve/qemu-server/<id>.conf`) still shows the `hostpci0` HBA line — re-run your saved `qm set ... -hostpci0` command only if it is somehow missing.
 6. **Mind the dependency order on first boot**: start the Home Assistant VM before the Frigate LXC so the MQTT broker is up first.
 
 > [!TIP]
