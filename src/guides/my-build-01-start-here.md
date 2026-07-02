@@ -67,6 +67,176 @@ Check you have everything before you start — the later pages assume each piece
 > - **Leak protection:** 12x Third Reality leak sensors, an Aqara Valve Controller T1 on the main shutoff lever, and Third Reality smart plugs acting as Zigbee routers
 > - **Already in the house:** Lutron Caseta lights and shades (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge
 
+### See how everything gets power and network
+One map for the whole build: every physical device, how it is powered, and which link it talks over. The line colors are the link types; the small rose tag inside each box is that device's power source. (The wiring *inside* the server case has its own diagrams on the Hardware & BIOS page.)
+
+<svg viewBox="0 0 720 1110" role="img" aria-label="Power and network map of every physical device in the build" style="width:100%;height:auto;max-width:720px;margin:0.75rem 0;font-family:inherit;font-size:11px">
+<rect x="1" y="1" width="718" height="1108" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
+<text x="20" y="28" style="fill:currentColor;font-size:14px;font-weight:600">Power &amp; network — every physical device</text>
+<line x1="20" y1="58" x2="48" y2="58" style="stroke:#10b981;stroke-width:2.5"/>
+<text x="54" y="62" style="fill:var(--color-ink-soft);font-size:10px">Ethernet</text>
+<line x1="122" y1="58" x2="150" y2="58" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<text x="156" y="62" style="fill:var(--color-ink-soft);font-size:10px">Wi-Fi</text>
+<line x1="204" y1="58" x2="232" y2="58" style="stroke:#f59e0b;stroke-width:2"/>
+<text x="238" y="62" style="fill:var(--color-ink-soft);font-size:10px">USB</text>
+<line x1="282" y1="58" x2="310" y2="58" style="stroke:#f43f5e;stroke-width:2.5"/>
+<text x="316" y="62" style="fill:var(--color-ink-soft);font-size:10px">AC power</text>
+<line x1="382" y1="58" x2="410" y2="58" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
+<text x="416" y="62" style="fill:var(--color-ink-soft);font-size:10px">Zigbee</text>
+<line x1="470" y1="58" x2="498" y2="58" style="stroke:#d946ef;stroke-width:2;stroke-dasharray:2 3"/>
+<text x="504" y="62" style="fill:var(--color-ink-soft);font-size:10px">Thread</text>
+<line x1="556" y1="58" x2="584" y2="58" style="stroke:var(--color-ink-faint);stroke-width:1.5;stroke-dasharray:5 3"/>
+<text x="590" y="62" style="fill:var(--color-ink-soft);font-size:10px">Lutron RF</text>
+<rect x="20" y="72" width="46" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="26" y="82" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
+<text x="74" y="82" style="fill:var(--color-ink-soft);font-size:10px">= the rose tag in each box is that device's power source</text>
+<rect x="16" y="104" width="134" height="44" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="83" y="131" text-anchor="middle" style="fill:var(--color-ink-soft)">Internet (ISP)</text>
+<line x1="83" y1="148" x2="83" y2="178" style="stroke:var(--color-ink-faint);stroke-width:1.5"/>
+<rect x="16" y="178" width="134" height="72" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="83" y="199" text-anchor="middle" style="fill:currentColor;font-weight:600">Wi-Fi router</text>
+<text x="83" y="214" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">192.168.1.1</text>
+<rect x="53" y="224" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="83" y="234" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
+<rect x="196" y="178" width="224" height="72" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="308" y="199" text-anchor="middle" style="fill:currentColor;font-weight:600">Netgear GS308EPP switch</text>
+<text x="308" y="214" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">PoE+ ports ready for future wired cams</text>
+<rect x="266" y="224" width="84" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="308" y="234" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery</text>
+<line x1="150" y1="214" x2="196" y2="214" style="stroke:#10b981;stroke-width:2.5"/>
+<rect x="460" y="104" width="244" height="260" rx="8" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="582" y="128" text-anchor="middle" style="fill:currentColor;font-size:12px;font-weight:600">The server — Proxmox host</text>
+<text x="582" y="146" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">ASUS Maximus X Hero · i7-8700K · 32 GB</text>
+<text x="582" y="161" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">GTX 1080 Ti · 9300-8i HBA · NVMe</text>
+<text x="582" y="176" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">3× IronWolf 4 TB</text>
+<text x="582" y="193" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9.5px">(inside wiring: the Hardware &amp; BIOS page)</text>
+<text x="582" y="214" text-anchor="middle" style="fill:currentColor;font-size:10.5px">192.168.1.50</text>
+<rect x="497" y="226" width="170" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="582" y="236" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery — EVGA 850 W PSU</text>
+<line x1="420" y1="214" x2="460" y2="214" style="stroke:#10b981;stroke-width:2.5"/>
+<text x="440" y="207" text-anchor="middle" style="fill:#10b981;font-size:9px">LAN</text>
+<rect x="196" y="290" width="224" height="96" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="308" y="312" text-anchor="middle" style="fill:currentColor;font-weight:600">CyberPower CP1500PFCLCD</text>
+<text x="308" y="328" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">UPS — battery outlets feed the</text>
+<text x="308" y="342" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">server and the switch</text>
+<rect x="266" y="354" width="84" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="308" y="364" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall in</text>
+<line x1="330" y1="290" x2="330" y2="250" style="stroke:#f43f5e;stroke-width:2.5"/>
+<line x1="420" y1="320" x2="460" y2="320" style="stroke:#f43f5e;stroke-width:2.5"/>
+<text x="440" y="313" text-anchor="middle" style="fill:#f43f5e;font-size:9px">AC</text>
+<line x1="420" y1="352" x2="460" y2="352" style="stroke:#f59e0b;stroke-width:2"/>
+<text x="440" y="345" text-anchor="middle" style="fill:#f59e0b;font-size:9px">NUT</text>
+<rect x="460" y="384" width="244" height="46" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="582" y="403" text-anchor="middle" style="fill:currentColor;font-size:10.5px">ZBT-2 Zigbee coordinator</text>
+<text x="582" y="418" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">on a short USB extension off the server</text>
+<line x1="582" y1="364" x2="582" y2="384" style="stroke:#f59e0b;stroke-width:2"/>
+<line x1="30" y1="250" x2="30" y2="450" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<line x1="16" y1="450" x2="704" y2="450" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<text x="360" y="443" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">Wi-Fi — 2.4/5 GHz, everything wireless lives on the router</text>
+<line x1="460" y1="407" x2="42" y2="407" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
+<line x1="42" y1="407" x2="42" y2="720" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
+<rect x="56" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="131" y="490" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Reolink doorbell</text>
+<text x="131" y="504" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">192.168.1.70</text>
+<rect x="66" y="514" width="130" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="131" y="524" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">doorbell transformer</text>
+<line x1="131" y1="450" x2="131" y2="470" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<rect x="222" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="297" y="490" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Reolink RLC-510WA</text>
+<text x="297" y="504" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">192.168.1.71</text>
+<rect x="242" y="514" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="297" y="524" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">12 V DC adapter</text>
+<line x1="297" y1="450" x2="297" y2="470" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<rect x="388" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="463" y="490" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">2× ecobee thermostats</text>
+<text x="463" y="504" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">cloud integration</text>
+<rect x="398" y="514" width="130" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="463" y="524" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">HVAC 24 VAC (C-wire)</text>
+<line x1="463" y1="450" x2="463" y2="470" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<rect x="554" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="629" y="490" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Samsung Family Hub</text>
+<text x="629" y="504" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">fridge</text>
+<rect x="599" y="514" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="629" y="524" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
+<line x1="629" y1="450" x2="629" y2="470" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<line x1="214" y1="450" x2="214" y2="604" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<line x1="214" y1="604" x2="206" y2="604" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<line x1="214" y1="604" x2="222" y2="604" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<line x1="380" y1="450" x2="380" y2="590" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<line x1="380" y1="590" x2="388" y2="590" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<rect x="56" y="575" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="131" y="595" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">HomePod mini</text>
+<text x="131" y="609" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Apple hub · Thread border router</text>
+<rect x="101" y="619" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="131" y="629" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
+<rect x="222" y="575" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="297" y="595" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Google/Nest speakers</text>
+<text x="297" y="609" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Cast announce targets</text>
+<rect x="267" y="619" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="297" y="629" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
+<rect x="388" y="575" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="463" y="595" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Voice Preview Edition</text>
+<text x="463" y="609" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Assist voice satellite</text>
+<rect x="418" y="619" width="90" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="463" y="629" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">USB-C 5 V / 2 A</text>
+<rect x="554" y="575" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
+<text x="629" y="595" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Powered speaker</text>
+<text x="629" y="609" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">optional · 3.5 mm aux</text>
+<rect x="584" y="619" width="90" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="629" y="629" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall / USB</text>
+<line x1="538" y1="620" x2="554" y2="620" style="stroke:var(--color-ink-faint);stroke-width:1.5"/>
+<line x1="131" y1="651" x2="131" y2="706" style="stroke:#d946ef;stroke-width:2;stroke-dasharray:2 3"/>
+<line x1="131" y1="706" x2="540" y2="706" style="stroke:#d946ef;stroke-width:2;stroke-dasharray:2 3"/>
+<line x1="540" y1="706" x2="540" y2="720" style="stroke:#d946ef;stroke-width:2;stroke-dasharray:2 3"/>
+<rect x="16" y="720" width="330" height="270" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="181" y="742" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Zigbee mesh — Zigbee2MQTT</text>
+<text x="181" y="758" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">coordinator: the ZBT-2 on the server (above)</text>
+<rect x="32" y="772" width="298" height="54" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="181" y="792" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Third Reality smart plugs — mesh routers</text>
+<rect x="131" y="802" width="100" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="181" y="812" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall outlets</text>
+<rect x="32" y="846" width="298" height="54" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="181" y="866" text-anchor="middle" style="fill:currentColor;font-size:10.5px">12× Third Reality leak sensors</text>
+<rect x="151" y="876" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="181" y="886" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>
+<rect x="32" y="920" width="298" height="56" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="181" y="939" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Aqara Valve Controller T1</text>
+<text x="181" y="952" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">on the main water shutoff lever</text>
+<rect x="151" y="957" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="181" y="967" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>
+<line x1="181" y1="762" x2="181" y2="772" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
+<line x1="120" y1="826" x2="120" y2="846" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
+<line x1="330" y1="800" x2="338" y2="800" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
+<line x1="338" y1="800" x2="338" y2="946" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
+<line x1="338" y1="946" x2="330" y2="946" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
+<rect x="376" y="720" width="328" height="160" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="540" y="742" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Thread — Matter</text>
+<text x="540" y="758" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">border router: the HomePod mini (left)</text>
+<rect x="392" y="772" width="296" height="88" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="540" y="792" text-anchor="middle" style="fill:currentColor;font-size:10.5px">3× Aqara U400 deadbolts</text>
+<text x="540" y="807" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Front · Side · Garage</text>
+<text x="540" y="821" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Apple Home first → shared to Home Assistant</text>
+<rect x="510" y="831" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="540" y="841" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>
+<rect x="376" y="910" width="328" height="180" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="540" y="932" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Lutron Clear Connect RF</text>
+<rect x="392" y="946" width="296" height="52" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="540" y="963" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Caséta Pro bridge</text>
+<text x="540" y="976" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Ethernet — a wired port on the switch · AC wall</text>
+<rect x="392" y="1010" width="140" height="66" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="462" y="1030" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Wall dimmers</text>
+<rect x="407" y="1040" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="462" y="1050" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">in-wall house mains</text>
+<rect x="548" y="1010" width="140" height="66" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="618" y="1030" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Serena shades</text>
+<rect x="588" y="1040" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="618" y="1050" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>
+<line x1="462" y1="998" x2="462" y2="1010" style="stroke:var(--color-ink-faint);stroke-width:1.5;stroke-dasharray:5 3"/>
+<line x1="618" y1="998" x2="618" y2="1010" style="stroke:var(--color-ink-faint);stroke-width:1.5;stroke-dasharray:5 3"/>
+</svg>
+
+*Reading it top to bottom: the wall feeds the UPS; the UPS battery side keeps the server and the switch alive through an outage, with a USB lead telling the server when to shut down cleanly. Everything wired rides the switch to the router; everything wireless rides the router's Wi-Fi. Three radio meshes hang off their own hubs — Zigbee off the ZBT-2 on the server, Thread off the HomePod mini, and Lutron's own RF off the Caséta bridge.*
+
 ### Do all the PC-side prep before you wipe anything
 Once Proxmox is installed, the machine you are building becomes a **headless server** and the NVMe that held Windows is erased. From that point on, the server downloads everything itself and you only need a browser to drive it. But a few things must be done first, on a **working computer that has a web browser and a USB port** — get all of them out of the way before the install:
 
