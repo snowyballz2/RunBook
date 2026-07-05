@@ -69,6 +69,78 @@ The build has three Seagate IronWolf ST4000VN006 4 TB drives. Two of them become
 3. Cable the **single footage drive to a motherboard SATA (Serial Advanced Technology Attachment) port**. The host and the Frigate container need direct access to it, so it stays on the board — never on the HBA.
 4. Mount the 500 GB NVMe (Non-Volatile Memory Express) drive on the board's M.2 slot. This is the Proxmox OS plus Frigate cache disk.
 
+Here is how a drive actually seats in one of those trays — and the two screw sizes for the times screws do come into play:
+
+<svg viewBox="0 0 680 500" role="img" aria-label="How a 3.5 inch drive mounts tool-lessly in a View 71 tray, and the two standard drive screw sizes" style="width:100%;height:auto;max-width:680px;margin:0.75rem 0;font-family:inherit;font-size:11px">
+<rect x="1" y="1" width="678" height="498" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
+<text x="20" y="28" style="fill:currentColor;font-size:14px;font-weight:600">Mounting a 3.5&quot; drive in a View 71 tray — no screws</text>
+<text x="20" y="46" style="fill:var(--color-ink-soft);font-size:10px">Top-down, exploded. The tray's four pins do what screws would.</text>
+<rect x="72" y="66" width="256" height="96" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="200" y="105" text-anchor="middle" style="fill:currentColor;font-weight:600">IronWolf 4 TB — 3.5&quot;</text>
+<text x="200" y="121" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">label side up</text>
+<circle cx="79" cy="88" r="4" style="fill:none;stroke:#f59e0b;stroke-width:1.5"/>
+<circle cx="79" cy="140" r="4" style="fill:none;stroke:#f59e0b;stroke-width:1.5"/>
+<circle cx="321" cy="88" r="4" style="fill:none;stroke:#f59e0b;stroke-width:1.5"/>
+<circle cx="321" cy="140" r="4" style="fill:none;stroke:#f59e0b;stroke-width:1.5"/>
+<text x="338" y="84" style="fill:#f59e0b;font-size:9.5px">side screw holes</text>
+<text x="338" y="96" style="fill:#f59e0b;font-size:9.5px">(#6-32 thread)</text>
+<line x1="79" y1="145" x2="79" y2="252" style="stroke:var(--color-ink-faint);stroke-width:1;stroke-dasharray:3 3"/>
+<line x1="321" y1="145" x2="321" y2="252" style="stroke:var(--color-ink-faint);stroke-width:1;stroke-dasharray:3 3"/>
+<rect x="52" y="240" width="296" height="150" rx="8" style="fill:none;stroke:var(--color-line-strong);stroke-width:2"/>
+<rect x="52" y="240" width="20" height="150" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<rect x="328" y="240" width="20" height="150" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="200" y="318" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">plastic tray — rails flex</text>
+<circle cx="76" cy="264" r="4.5" style="fill:#10b981"/>
+<circle cx="76" cy="366" r="4.5" style="fill:#10b981"/>
+<circle cx="324" cy="264" r="4.5" style="fill:#10b981"/>
+<circle cx="324" cy="366" r="4.5" style="fill:#10b981"/>
+<text x="200" y="345" text-anchor="middle" style="fill:#10b981;font-size:9.5px">4 pins — seat into the side holes</text>
+<line x1="348" y1="300" x2="376" y2="300" style="stroke:currentColor;stroke-width:1.5"/>
+<line x1="376" y1="300" x2="369" y2="295" style="stroke:currentColor;stroke-width:1.5"/>
+<line x1="376" y1="300" x2="369" y2="305" style="stroke:currentColor;stroke-width:1.5"/>
+<text x="30" y="412" style="fill:currentColor;font-size:10px">① Flex one rail outward   ② lower the drive in, connectors</text>
+<text x="30" y="426" style="fill:currentColor;font-size:10px">facing the rear cable channel   ③ let go — the pins click in.</text>
+<text x="30" y="441" style="fill:currentColor;font-size:10px">Wiggle test: a seated drive does not shift.</text>
+<text x="30" y="462" style="fill:var(--color-ink-soft);font-size:9.5px">Each rear tray takes one 3.5&quot; drive this way (or two 2.5&quot;, screwed).</text>
+<line x1="420" y1="60" x2="420" y2="460" style="stroke:var(--color-line)"/>
+<text x="440" y="72" style="fill:currentColor;font-size:11.5px;font-weight:600">Screw cheat card</text>
+<circle cx="470" cy="110" r="11" style="fill:var(--color-surface-2);stroke:currentColor;stroke-width:1.5"/>
+<line x1="463" y1="110" x2="477" y2="110" style="stroke:currentColor;stroke-width:1.5"/>
+<rect x="481" y="104" width="52" height="12" style="fill:var(--color-surface-2);stroke:currentColor;stroke-width:1.2"/>
+<line x1="487" y1="102" x2="487" y2="118" style="stroke:#f59e0b;stroke-width:1.5"/>
+<line x1="497" y1="102" x2="497" y2="118" style="stroke:#f59e0b;stroke-width:1.5"/>
+<line x1="507" y1="102" x2="507" y2="118" style="stroke:#f59e0b;stroke-width:1.5"/>
+<line x1="517" y1="102" x2="517" y2="118" style="stroke:#f59e0b;stroke-width:1.5"/>
+<line x1="527" y1="102" x2="527" y2="118" style="stroke:#f59e0b;stroke-width:1.5"/>
+<text x="440" y="142" style="fill:currentColor;font-size:10.5px;font-weight:600">#6-32 UNC — 3.5&quot; drives</text>
+<text x="440" y="157" style="fill:var(--color-ink-soft);font-size:9.5px">fat shaft, coarse thread</text>
+<text x="440" y="171" style="fill:var(--color-ink-soft);font-size:9.5px">side holes: max 1/8&quot; (3.2 mm) deep</text>
+<text x="440" y="185" style="fill:var(--color-ink-soft);font-size:9.5px">bottom holes: max 1/4&quot; (6.35 mm)</text>
+<circle cx="470" cy="226" r="8" style="fill:var(--color-surface-2);stroke:currentColor;stroke-width:1.5"/>
+<line x1="465" y1="226" x2="475" y2="226" style="stroke:currentColor;stroke-width:1.5"/>
+<rect x="478" y="222" width="40" height="8" style="fill:var(--color-surface-2);stroke:currentColor;stroke-width:1.2"/>
+<line x1="482" y1="220" x2="482" y2="232" style="stroke:#6366f1;stroke-width:1.2"/>
+<line x1="488" y1="220" x2="488" y2="232" style="stroke:#6366f1;stroke-width:1.2"/>
+<line x1="494" y1="220" x2="494" y2="232" style="stroke:#6366f1;stroke-width:1.2"/>
+<line x1="500" y1="220" x2="500" y2="232" style="stroke:#6366f1;stroke-width:1.2"/>
+<line x1="506" y1="220" x2="506" y2="232" style="stroke:#6366f1;stroke-width:1.2"/>
+<line x1="512" y1="220" x2="512" y2="232" style="stroke:#6366f1;stroke-width:1.2"/>
+<text x="440" y="256" style="fill:currentColor;font-size:10.5px;font-weight:600">M3 — 2.5&quot; drives</text>
+<text x="440" y="271" style="fill:var(--color-ink-soft);font-size:9.5px">thinner shaft, fine thread, ~4 mm long</text>
+<text x="440" y="285" style="fill:var(--color-ink-soft);font-size:9.5px">(also optical bays — never 3.5&quot; drives)</text>
+<rect x="434" y="304" width="232" height="146" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="446" y="324" style="fill:currentColor;font-size:10px;font-weight:600">When screws actually matter here</text>
+<text x="446" y="342" style="fill:var(--color-ink-soft);font-size:9.5px">• These three IronWolfs: none — the</text>
+<text x="446" y="355" style="fill:var(--color-ink-soft);font-size:9.5px">   tray pins are the mounting</text>
+<text x="446" y="372" style="fill:var(--color-ink-soft);font-size:9.5px">• A 2.5&quot; drive later: M3 screws from</text>
+<text x="446" y="385" style="fill:var(--color-ink-soft);font-size:9.5px">   the case's accessory box, into the tray</text>
+<text x="446" y="402" style="fill:var(--color-ink-soft);font-size:9.5px">• Fallback brackets (if a tray is broken):</text>
+<text x="446" y="415" style="fill:var(--color-ink-soft);font-size:9.5px">   #6-32 into the drive's side or bottom</text>
+<text x="446" y="428" style="fill:var(--color-ink-soft);font-size:9.5px">   holes — snug only, max 8 in-lb</text>
+</svg>
+
+*The pins land in the same #6-32 side holes a screw would use — that is the whole trick. If a drive ever hums against the tray, the classic fix is a thin rubber washer between pin and hole, not tightening anything.*
+
 > [!TIP]
 > Label the two mirror drives now and record their serials below. ZFS identifies disks by serial, and you will want to know which physical drive is which when one eventually fails. The footage drive can stay unlabelled — it is the lone one on a board SATA port.
 
