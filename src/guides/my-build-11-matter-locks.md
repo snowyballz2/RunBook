@@ -2,7 +2,7 @@
 title: Matter Locks
 subtitle: Three Aqara U400s into Apple Home for Home Key, then shared to Home Assistant
 collection: My Build
-order: 10
+order: 11
 accent: rose
 ---
 

@@ -2,7 +2,7 @@
 title: Cameras, Doorbell & Frigate
 subtitle: Frigate NVR with detection on the 1080 Ti, plus the Reolink doorbell and RLC-510WA
 collection: My Build
-order: 11
+order: 12
 accent: spruce
 ---
 

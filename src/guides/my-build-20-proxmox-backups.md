@@ -2,7 +2,7 @@
 title: Proxmox Backups
 subtitle: Scheduled vzdump of every guest to the NAS, plus the host's own config and a rebuild order
 collection: My Build
-order: 19
+order: 20
 accent: amber
 ---
 

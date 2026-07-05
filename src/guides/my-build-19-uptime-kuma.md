@@ -2,7 +2,7 @@
 title: Uptime Kuma
 subtitle: One dashboard that watches the whole rack and pings your phone when something dies
 collection: My Build
-order: 18
+order: 19
 accent: violet
 ---
 

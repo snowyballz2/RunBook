@@ -2,7 +2,7 @@
 title: AdGuard
 subtitle: House-wide ad and tracker blocking, as the LAN's own DNS server
 collection: My Build
-order: 12
+order: 13
 accent: violet
 ---
 

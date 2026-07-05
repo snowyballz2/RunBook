@@ -2,7 +2,7 @@
 title: Nextcloud
 subtitle: Your own Google Drive and photo backup, pointed at the ZFS pool
 collection: My Build
-order: 15
+order: 16
 accent: emerald
 ---
 

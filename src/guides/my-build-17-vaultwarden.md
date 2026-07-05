@@ -2,7 +2,7 @@
 title: Vaultwarden
 subtitle: The synced password vault, and the secret store this whole build runs on
 collection: My Build
-order: 16
+order: 17
 accent: rose
 ---
 

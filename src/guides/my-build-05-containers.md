@@ -2,7 +2,7 @@
 title: Containers
 subtitle: My Build — the service LXCs, unprivileged by default, and how to reach them
 collection: My Build
-order: 4
+order: 5
 accent: rose
 ---
 

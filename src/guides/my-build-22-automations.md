@@ -2,11 +2,11 @@
 title: Automations
 subtitle: My Build — wiring the house to act on its own, starting with the leak that pays for everything
 collection: My Build
-order: 21
+order: 22
 accent: emerald
 ---
 
-The infrastructure is finished, and this is where the house starts doing things on its own. An automation is one sentence — *when* something happens, *then* do something — and this page builds a stack of them on the devices already onboarded — the dozen Third Reality leak sensors and the Aqara valve from the Zigbee mesh, the three Aqara U400 locks shared in over Matter, and the Reolink doorbell and camera through Frigate — plus two it onboards itself, the ecobee thermostats and the Lutron Caséta lights, and the Google/Nest speakers for announcements, which join later on the Voice page. The showpiece is the first one — a leak trips, the main water shuts off, and you find out loudly — and it is the automation that earns the other twenty pages.
+The infrastructure is finished, and this is where the house starts doing things on its own. An automation is one sentence — *when* something happens, *then* do something — and this page builds a stack of them on the devices already onboarded — the dozen Third Reality leak sensors and the Aqara valve from the Zigbee mesh, the three Aqara U400 locks shared in over Matter, and the Reolink doorbell and camera through Frigate — plus two it onboards itself, the ecobee thermostats and the Lutron Caséta lights, and the Google/Nest speakers for announcements, which join later on the Voice page. The showpiece is the first one — a leak trips, the main water shuts off, and you find out loudly — and it is the automation that earns every other page in this build.
 
 > [!WARNING]
 > Build the **water-leak** automation first, the day the valve is paired, before any convenience rule. It is the one that pays for the whole build. Everything else can wait. The valve-close and the critical iPhone push work the moment you save it; the spoken announcement depends on Piper text-to-speech and a Cast speaker, which you set up later on the Voice page of this build — until then that one step quietly does nothing, so build the rule now anyway.

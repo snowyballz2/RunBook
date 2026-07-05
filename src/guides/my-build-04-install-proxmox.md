@@ -2,7 +2,7 @@
 title: Install Proxmox
 subtitle: Flash the installer, put Proxmox on the NVMe, fix the repos, and turn on IOMMU
 collection: My Build
-order: 3
+order: 4
 accent: emerald
 ---
 

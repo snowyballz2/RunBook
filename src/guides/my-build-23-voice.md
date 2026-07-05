@@ -2,7 +2,7 @@
 title: Voice — Siri & Local Assist
 subtitle: My Build — "Hey Siri" through the HomeKit Bridge, and a fully-local Assist stack on the shared 1080 Ti
 collection: My Build
-order: 22
+order: 23
 accent: rose
 ---
 

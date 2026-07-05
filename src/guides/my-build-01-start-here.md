@@ -226,7 +226,8 @@ Check you have everything before you start — the later pages assume each piece
 > - **RAM:** 32 GB
 > - **PSU** (power supply unit)**:** EVGA 850W GQ (Gold) — ample for the GPU plus a stack of spinning disks
 > - **Case:** Thermaltake View 71 full tower
-> - **GPU:** EVGA GTX 1080 Ti FTW
+> - **GPU:** EVGA GTX 1080 Ti FTW3
+> - **Cooling refresh (page 3):** Thermalright Phantom Spirit 120 SE air cooler, 4x Noctua NF-P12 redux-1700 PWM case fans (optional fifth for top exhaust), a thermal pad variety kit (0.5/1.0/1.5 mm) and non-conductive paste for the GPU repaste
 
 > [!DETAILS] Storage — NVMe, disks, HBA
 > - **500 GB NVMe** — Proxmox OS + Frigate cache
@@ -305,26 +306,27 @@ The pages are numbered in the exact sequence to build in. Do not skip ahead — 
 
 1. **Start Here** — this page: the map and parts list.
 2. **Hardware & BIOS** — seat the cards in the right slots and flip the firmware switches (virtualization and **VT-d** (Intel Virtualization Technology for Directed I/O) on) before any software goes on.
-3. **Install Proxmox** — install Proxmox to the NVMe, switch to the free repository, and enable **IOMMU** (Input/Output Memory Management Unit, the hardware that isolates a device for passthrough).
-4. **Containers** — how the lightweight LXC service containers are created and configured.
-5. **Virtual Machines** — build the TrueNAS VM and learn the appliance habits both VMs share (start at boot, the start-before-Frigate order, snapshots); the Home Assistant VM is built on the Home Assistant & Zigbee2MQTT page.
-6. **GPU Sharing & HBA Passthrough** — put the NVIDIA driver on the host and set up the recipe that shares the card into later containers; VFIO the HBA to the TrueNAS VM.
-7. **TrueNAS Storage** — build the ZFS mirror on the passed-through HBA and share folders over **SMB** (Server Message Block, the Windows/Mac file-sharing protocol).
-8. **Protect Your Data** — snapshots, scrubs, disk-health alerts, and the encrypted offsite copy.
-9. **Home Assistant & Zigbee2MQTT** — bring up Home Assistant and pair the Zigbee leak sensors, valve, and router plugs.
-10. **Matter Locks** — commission the Aqara U400 locks into Apple Home, then share them to Home Assistant.
-11. **Cameras, Doorbell & Frigate** — point the Reolink cameras at Frigate and run detection on the shared GPU.
-12. **AdGuard** — the household DNS (Domain Name System) and ad-blocking resolver.
-13. **Reverse Proxy** — clean hostnames and certificates with Nginx Proxy Manager.
-14. **Remote Access** — reach everything from anywhere with Tailscale, no port-forwards.
-15. **Nextcloud** — self-hosted files and photos, backed by the ZFS mirror.
-16. **Vaultwarden** — the synced password vault and the build's secret store.
-17. **Homepage** — a single dashboard linking every service.
-18. **Uptime Kuma** — monitoring and alerts for the whole rack.
-19. **Proxmox Backups** — scheduled backups of every guest, plus the host config.
-20. **UPS & Safe Shutdown** — graceful shutdown on a power cut, over NUT.
-21. **Automations** — the leak-to-valve safety rule, presence, locks, and climate logic.
-22. **Voice — Siri & Local Assist** — both the Apple/Siri path and the fully-local voice assistant.
-23. **Maintenance & Upkeep** — the monthly and quarterly routine that keeps it boring.
+3. **Cooling Refresh** — swap the aging AIO for the air cooler, rewire the case fans off the motherboard, and repaste the 1080 Ti in the same open-case session.
+4. **Install Proxmox** — install Proxmox to the NVMe, switch to the free repository, and enable **IOMMU** (Input/Output Memory Management Unit, the hardware that isolates a device for passthrough).
+5. **Containers** — how the lightweight LXC service containers are created and configured.
+6. **Virtual Machines** — build the TrueNAS VM and learn the appliance habits both VMs share (start at boot, the start-before-Frigate order, snapshots); the Home Assistant VM is built on the Home Assistant & Zigbee2MQTT page.
+7. **GPU Sharing & HBA Passthrough** — put the NVIDIA driver on the host and set up the recipe that shares the card into later containers; VFIO the HBA to the TrueNAS VM.
+8. **TrueNAS Storage** — build the ZFS mirror on the passed-through HBA and share folders over **SMB** (Server Message Block, the Windows/Mac file-sharing protocol).
+9. **Protect Your Data** — snapshots, scrubs, disk-health alerts, and the encrypted offsite copy.
+10. **Home Assistant & Zigbee2MQTT** — bring up Home Assistant and pair the Zigbee leak sensors, valve, and router plugs.
+11. **Matter Locks** — commission the Aqara U400 locks into Apple Home, then share them to Home Assistant.
+12. **Cameras, Doorbell & Frigate** — point the Reolink cameras at Frigate and run detection on the shared GPU.
+13. **AdGuard** — the household DNS (Domain Name System) and ad-blocking resolver.
+14. **Reverse Proxy** — clean hostnames and certificates with Nginx Proxy Manager.
+15. **Remote Access** — reach everything from anywhere with Tailscale, no port-forwards.
+16. **Nextcloud** — self-hosted files and photos, backed by the ZFS mirror.
+17. **Vaultwarden** — the synced password vault and the build's secret store.
+18. **Homepage** — a single dashboard linking every service.
+19. **Uptime Kuma** — monitoring and alerts for the whole rack.
+20. **Proxmox Backups** — scheduled backups of every guest, plus the host config.
+21. **UPS & Safe Shutdown** — graceful shutdown on a power cut, over NUT.
+22. **Automations** — the leak-to-valve safety rule, presence, locks, and climate logic.
+23. **Voice — Siri & Local Assist** — both the Apple/Siri path and the fully-local voice assistant.
+24. **Maintenance & Upkeep** — the monthly and quarterly routine that keeps it boring.
 
 When you are ready, move on to **Hardware & BIOS** to seat the cards and prepare the firmware.

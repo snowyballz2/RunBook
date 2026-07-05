@@ -2,7 +2,7 @@
 title: Maintenance & Upkeep
 subtitle: The small monthly rhythm that keeps a Maximus X Hero server boring
 collection: My Build
-order: 23
+order: 24
 accent: spruce
 ---
 

@@ -2,7 +2,7 @@
 title: Home Assistant & Zigbee2MQTT
 subtitle: My Build — the HA OS VM, onboarding, Areas, and the Zigbee mesh on the ZBT-2
 collection: My Build
-order: 9
+order: 10
 accent: emerald
 ---
 

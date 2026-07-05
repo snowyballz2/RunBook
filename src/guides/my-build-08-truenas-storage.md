@@ -2,7 +2,7 @@
 title: TrueNAS Storage
 subtitle: A ZFS mirror on the passed-through HBA, plus the Frigate footage drive
 collection: My Build
-order: 7
+order: 8
 accent: amber
 ---
 

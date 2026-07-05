@@ -2,7 +2,7 @@
 title: GPU Sharing & HBA Passthrough
 subtitle: One card shared into containers, one card locked to a VM — and why they're opposite
 collection: My Build
-order: 6
+order: 7
 accent: violet
 ---
 

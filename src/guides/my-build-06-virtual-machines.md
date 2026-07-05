@@ -2,7 +2,7 @@
 title: Virtual Machines
 subtitle: The Home Assistant and TrueNAS VMs, and the boot order that keeps them honest
 collection: My Build
-order: 5
+order: 6
 accent: spruce
 ---
 

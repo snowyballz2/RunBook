@@ -2,7 +2,7 @@
 title: UPS & Safe Shutdown
 subtitle: Ride out the blips on the CyberPower battery, then shut the whole stack down clean
 collection: My Build
-order: 20
+order: 21
 accent: azure
 ---
 

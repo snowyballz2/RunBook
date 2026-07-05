@@ -2,7 +2,7 @@
 title: Remote Access
 subtitle: Tailscale on the Proxmox host — reach the whole build from anywhere, no port-forwards
 collection: My Build
-order: 14
+order: 15
 accent: azure
 ---
 

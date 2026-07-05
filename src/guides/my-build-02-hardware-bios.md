@@ -109,7 +109,7 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 *The two CPU-attached x16 slots feed the GPU; the chipset-attached bottom x4 slot is where the HBA isolates cleanly for passthrough.*
 
 ### Seat the GTX 1080 Ti in the top slot
-1. Install the EVGA GTX 1080 Ti FTW in the **top x16 slot** (`PCIEX16_1`). With nothing contending, it runs at full x16.
+1. Install the EVGA GTX 1080 Ti FTW3 in the **top x16 slot** (`PCIEX16_1`). With nothing contending, it runs at full x16.
 2. Connect both PCIe power leads from the EVGA PSU to the card.
 
 The 1080 Ti is roughly 300 mm long. In the View 71 it clears the front drive-cage area with room to spare, so there is no need to remove the front pods for it.
