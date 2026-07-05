@@ -69,39 +69,39 @@ The build has three Seagate IronWolf ST4000VN006 4 TB drives. Two of them become
 3. Cable the **single footage drive to a motherboard SATA (Serial Advanced Technology Attachment) port**. The host and the Frigate container need direct access to it, so it stays on the board — never on the HBA.
 4. Mount the 500 GB NVMe (Non-Volatile Memory Express) drive on the board's M.2 slot. This is the Proxmox OS plus Frigate cache disk.
 
-Here is how a drive actually seats in one of those trays — and the two screw sizes for the times screws do come into play:
+Here is how a drive actually mounts back there — the "tray" is a flat steel plate stamped with its own manual (`A: 3.5" HDD`, `B: 2.5" HDD/SSD`), and the plate is the whole mount; the removable front pods/cage are a separate system this build never touches:
 
-<svg viewBox="0 0 680 500" role="img" aria-label="How a 3.5 inch drive mounts tool-lessly in a View 71 tray, and the two standard drive screw sizes" style="width:100%;height:auto;max-width:680px;margin:0.75rem 0;font-family:inherit;font-size:11px">
+<svg viewBox="0 0 680 500" role="img" aria-label="How a 3.5 inch drive screws to a View 71 tray plate and hooks onto the rear rails, plus the two standard drive screw sizes" style="width:100%;height:auto;max-width:680px;margin:0.75rem 0;font-family:inherit;font-size:11px">
 <rect x="1" y="1" width="678" height="498" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
-<text x="20" y="28" style="fill:currentColor;font-size:14px;font-weight:600">Mounting a 3.5&quot; drive in a View 71 tray — no screws</text>
-<text x="20" y="46" style="fill:var(--color-ink-soft);font-size:10px">Top-down, exploded. The tray's four pins do what screws would.</text>
-<rect x="72" y="66" width="256" height="96" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="200" y="105" text-anchor="middle" style="fill:currentColor;font-weight:600">IronWolf 4 TB — 3.5&quot;</text>
-<text x="200" y="121" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">label side up</text>
-<circle cx="79" cy="88" r="4" style="fill:none;stroke:#f59e0b;stroke-width:1.5"/>
-<circle cx="79" cy="140" r="4" style="fill:none;stroke:#f59e0b;stroke-width:1.5"/>
-<circle cx="321" cy="88" r="4" style="fill:none;stroke:#f59e0b;stroke-width:1.5"/>
-<circle cx="321" cy="140" r="4" style="fill:none;stroke:#f59e0b;stroke-width:1.5"/>
-<text x="338" y="84" style="fill:#f59e0b;font-size:9.5px">side screw holes</text>
-<text x="338" y="96" style="fill:#f59e0b;font-size:9.5px">(#6-32 thread)</text>
-<line x1="79" y1="145" x2="79" y2="252" style="stroke:var(--color-ink-faint);stroke-width:1;stroke-dasharray:3 3"/>
-<line x1="321" y1="145" x2="321" y2="252" style="stroke:var(--color-ink-faint);stroke-width:1;stroke-dasharray:3 3"/>
-<rect x="52" y="240" width="296" height="150" rx="8" style="fill:none;stroke:var(--color-line-strong);stroke-width:2"/>
-<rect x="52" y="240" width="20" height="150" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<rect x="328" y="240" width="20" height="150" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="200" y="318" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">plastic tray — rails flex</text>
-<circle cx="76" cy="264" r="4.5" style="fill:#10b981"/>
-<circle cx="76" cy="366" r="4.5" style="fill:#10b981"/>
-<circle cx="324" cy="264" r="4.5" style="fill:#10b981"/>
-<circle cx="324" cy="366" r="4.5" style="fill:#10b981"/>
-<text x="200" y="345" text-anchor="middle" style="fill:#10b981;font-size:9.5px">4 pins — seat into the side holes</text>
-<line x1="348" y1="300" x2="376" y2="300" style="stroke:currentColor;stroke-width:1.5"/>
-<line x1="376" y1="300" x2="369" y2="295" style="stroke:currentColor;stroke-width:1.5"/>
-<line x1="376" y1="300" x2="369" y2="305" style="stroke:currentColor;stroke-width:1.5"/>
-<text x="30" y="412" style="fill:currentColor;font-size:10px">① Flex one rail outward   ② lower the drive in, connectors</text>
-<text x="30" y="426" style="fill:currentColor;font-size:10px">facing the rear cable channel   ③ let go — the pins click in.</text>
-<text x="30" y="441" style="fill:currentColor;font-size:10px">Wiggle test: a seated drive does not shift.</text>
-<text x="30" y="462" style="fill:var(--color-ink-soft);font-size:9.5px">Each rear tray takes one 3.5&quot; drive this way (or two 2.5&quot;, screwed).</text>
+<text x="20" y="28" style="fill:currentColor;font-size:14px;font-weight:600">Mounting a 3.5&quot; drive on a View 71 tray plate</text>
+<text x="20" y="46" style="fill:var(--color-ink-soft);font-size:10px">Screw the drive to the plate, hook the plate on the rails. No cage involved.</text>
+<text x="30" y="72" style="fill:currentColor;font-size:10.5px;font-weight:600">Step 1 — drive onto plate (side view)</text>
+<rect x="60" y="84" width="280" height="64" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="200" y="112" text-anchor="middle" style="fill:currentColor;font-weight:600">IronWolf 4 TB — 3.5&quot;</text>
+<text x="200" y="128" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">bottom (green PCB side) faces the plate</text>
+<rect x="44" y="156" width="312" height="10" rx="2" style="fill:var(--color-surface-2);stroke:currentColor;stroke-width:1.3"/>
+<text x="364" y="165" style="fill:var(--color-ink-soft);font-size:9.5px">steel tray plate</text>
+<line x1="110" y1="196" x2="110" y2="166" style="stroke:#f59e0b;stroke-width:2.5"/>
+<circle cx="110" cy="199" r="5" style="fill:none;stroke:#f59e0b;stroke-width:1.6"/>
+<line x1="290" y1="196" x2="290" y2="166" style="stroke:#f59e0b;stroke-width:2.5"/>
+<circle cx="290" cy="199" r="5" style="fill:none;stroke:#f59e0b;stroke-width:1.6"/>
+<line x1="110" y1="166" x2="110" y2="150" style="stroke:#f59e0b;stroke-width:1.2;stroke-dasharray:2 2"/>
+<line x1="290" y1="166" x2="290" y2="150" style="stroke:#f59e0b;stroke-width:1.2;stroke-dasharray:2 2"/>
+<text x="200" y="222" text-anchor="middle" style="fill:#f59e0b;font-size:9.5px">4x #6-32 up through the plate&apos;s A holes into the drive&apos;s bottom</text>
+<text x="30" y="252" style="fill:currentColor;font-size:10.5px;font-weight:600">Step 2 — plate onto the rails (behind the motherboard tray)</text>
+<rect x="60" y="266" width="26" height="120" rx="3" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<rect x="67" y="278" width="12" height="18" rx="2" style="fill:var(--color-paper);stroke:var(--color-line-strong)"/>
+<rect x="67" y="316" width="12" height="18" rx="2" style="fill:var(--color-paper);stroke:var(--color-line-strong)"/>
+<rect x="67" y="354" width="12" height="18" rx="2" style="fill:var(--color-paper);stroke:var(--color-line-strong)"/>
+<text x="60" y="400" style="fill:var(--color-ink-soft);font-size:9px">slotted rail</text>
+<polyline points="200,306 110,306 110,320 84,320" style="fill:none;stroke:#10b981;stroke-width:2.5"/>
+<rect x="200" y="298" width="150" height="16" rx="2" style="fill:var(--color-surface-2);stroke:currentColor;stroke-width:1.3"/>
+<text x="275" y="336" text-anchor="middle" style="fill:#10b981;font-size:9.5px">hook the plate&apos;s tabs into the slots,</text>
+<text x="275" y="349" text-anchor="middle" style="fill:#10b981;font-size:9.5px">then one screw locks the plate down</text>
+<text x="30" y="412" style="fill:currentColor;font-size:10px">① Drive to plate: 4x #6-32 in the A holes (B holes are the M3</text>
+<text x="30" y="426" style="fill:currentColor;font-size:10px">pattern for a 2.5&quot; drive)   ② hook onto the rail, SATA + power</text>
+<text x="30" y="440" style="fill:currentColor;font-size:10px">facing the cable cutouts   ③ lock with the outer screw.</text>
+<text x="30" y="462" style="fill:var(--color-ink-soft);font-size:9.5px">Repeat x3 — one plate per IronWolf, stacked down the rail positions.</text>
 <line x1="420" y1="60" x2="420" y2="460" style="stroke:var(--color-line)"/>
 <text x="440" y="72" style="fill:currentColor;font-size:11.5px;font-weight:600">Screw cheat card</text>
 <circle cx="470" cy="110" r="11" style="fill:var(--color-surface-2);stroke:currentColor;stroke-width:1.5"/>
@@ -127,19 +127,19 @@ Here is how a drive actually seats in one of those trays — and the two screw s
 <line x1="512" y1="220" x2="512" y2="232" style="stroke:#6366f1;stroke-width:1.2"/>
 <text x="440" y="256" style="fill:currentColor;font-size:10.5px;font-weight:600">M3 — 2.5&quot; drives</text>
 <text x="440" y="271" style="fill:var(--color-ink-soft);font-size:9.5px">thinner shaft, fine thread, ~4 mm long</text>
-<text x="440" y="285" style="fill:var(--color-ink-soft);font-size:9.5px">(also optical bays — never 3.5&quot; drives)</text>
+<text x="440" y="285" style="fill:var(--color-ink-soft);font-size:9.5px">(the plate&apos;s B holes — never 3.5&quot; drives)</text>
 <rect x="434" y="304" width="232" height="146" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="446" y="324" style="fill:currentColor;font-size:10px;font-weight:600">When screws actually matter here</text>
-<text x="446" y="342" style="fill:var(--color-ink-soft);font-size:9.5px">• These three IronWolfs: none — the</text>
-<text x="446" y="355" style="fill:var(--color-ink-soft);font-size:9.5px">   tray pins are the mounting</text>
-<text x="446" y="372" style="fill:var(--color-ink-soft);font-size:9.5px">• A 2.5&quot; drive later: M3 screws from</text>
-<text x="446" y="385" style="fill:var(--color-ink-soft);font-size:9.5px">   the case's accessory box, into the tray</text>
-<text x="446" y="402" style="fill:var(--color-ink-soft);font-size:9.5px">• Fallback brackets (if a tray is broken):</text>
-<text x="446" y="415" style="fill:var(--color-ink-soft);font-size:9.5px">   #6-32 into the drive's side or bottom</text>
-<text x="446" y="428" style="fill:var(--color-ink-soft);font-size:9.5px">   holes — snug only, max 8 in-lb</text>
+<text x="446" y="324" style="fill:currentColor;font-size:10px;font-weight:600">Which screws where</text>
+<text x="446" y="342" style="fill:var(--color-ink-soft);font-size:9.5px">• Each IronWolf: 4x #6-32 through the</text>
+<text x="446" y="355" style="fill:var(--color-ink-soft);font-size:9.5px">   plate (the case kit&apos;s HDD screws)</text>
+<text x="446" y="372" style="fill:var(--color-ink-soft);font-size:9.5px">• A 2.5&quot; drive later: M3 into the</text>
+<text x="446" y="385" style="fill:var(--color-ink-soft);font-size:9.5px">   plate&apos;s B holes</text>
+<text x="446" y="402" style="fill:var(--color-ink-soft);font-size:9.5px">• Fallback brackets (if plates are</text>
+<text x="446" y="415" style="fill:var(--color-ink-soft);font-size:9.5px">   missing): #6-32 into the drive&apos;s side</text>
+<text x="446" y="428" style="fill:var(--color-ink-soft);font-size:9.5px">   or bottom holes — snug, max 8 in-lb</text>
 </svg>
 
-*The pins land in the same #6-32 side holes a screw would use — that is the whole trick. If a drive ever hums against the tray, the classic fix is a thin rubber washer between pin and hole, not tightening anything.*
+*The plates ship screwed to the back of the motherboard tray, so if you only find one, the others are likely still in the case box from the teardown. If a drive ever hums against its plate, rubber washers under the A-hole screws (or the kit&apos;s grommeted shoulder screws, if yours has them) damp it — do not just crank the screws harder.*
 
 > [!TIP]
 > Label the two mirror drives now and record their serials below. ZFS identifies disks by serial, and you will want to know which physical drive is which when one eventually fails. The footage drive can stay unlabelled — it is the lone one on a board SATA port.
