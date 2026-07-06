@@ -255,109 +255,67 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 
 The footage drive and the NVMe both ride the board; only the two mirror disks hang off the HBA. The ZBT-2 is the one thing you leave unplugged for now — it goes into a USB port once Proxmox is up.
 
-And here is the power side alone, end to end — every cable the Toughpower Grand RGB 850W actually runs in this build, by its port and connector names, daisy chains included:
+And here is that panel drawn to match — the sockets are **zoned by function** (PCI-E red, everything else black), two rows, and every cable in this build lands in a labelled zone:
 
-<svg viewBox="0 0 700 850" role="img" aria-label="Complete PSU cable map for the Thermaltake Toughpower Grand RGB 850W in this build: every port, cable, connector, and daisy chain, end to end" style="width:100%;height:auto;max-width:700px;margin:0.75rem 0;font-family:inherit;font-size:11px">
-<rect x="1" y="1" width="698" height="848" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
-<text x="20" y="28" style="fill:currentColor;font-size:14px;font-weight:600">PSU cabling — Toughpower Grand RGB 850W, end to end</text>
-<text x="20" y="46" style="fill:var(--color-ink-soft);font-size:10px">Fully modular — 4 cables power the whole build. Solid sockets are used; hollow stay empty.</text>
-<rect x="24" y="64" width="100" height="44" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="74" y="90" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">AC wall</text>
-<line x1="124" y1="86" x2="158" y2="86" style="stroke:#f43f5e;stroke-width:2.5"/>
-<rect x="158" y="64" width="230" height="44" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="273" y="83" text-anchor="middle" style="fill:currentColor;font-size:10.5px">CyberPower CP1500PFCLCD</text>
-<text x="273" y="98" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">battery-side outlet</text>
-<polyline points="388,86 420,86 420,140 170,140 170,168" style="fill:none;stroke:#f43f5e;stroke-width:2.5"/>
-<text x="430" y="120" style="fill:#f43f5e;font-size:9.5px">C13 kettle cord → PSU inlet (rocker ON)</text>
-<rect x="24" y="168" width="280" height="470" rx="10" style="fill:var(--color-surface-2);stroke:var(--color-line-strong);stroke-width:1.6"/>
-<text x="164" y="192" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Toughpower Grand RGB 850W</text>
-<text x="164" y="207" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">fully modular — every cable detaches</text>
-<text x="40" y="232" style="fill:var(--color-ink-soft);font-size:9.5px;font-weight:600">MODULAR PANEL (as printed):</text>
-<rect x="40" y="242" width="76" height="20" rx="3" style="fill:currentColor;fill-opacity:0.14;stroke:currentColor"/>
-<text x="78" y="256" text-anchor="middle" style="fill:currentColor;font-size:9px">M/B</text>
-<text x="126" y="256" style="fill:var(--color-ink-soft);font-size:9px">→ 24-pin cable (18+10 at this end)</text>
-<rect x="40" y="276" width="76" height="20" rx="3" style="fill:#f43f5e;fill-opacity:0.18;stroke:#f43f5e"/>
-<text x="78" y="290" text-anchor="middle" style="fill:currentColor;font-size:8.5px">CPU &amp; PCI-E 1</text>
-<text x="126" y="290" style="fill:var(--color-ink-soft);font-size:9px">→ CPU cable (used)</text>
-<rect x="40" y="304" width="76" height="20" rx="3" style="fill:#10b981;fill-opacity:0.18;stroke:#10b981"/>
-<text x="78" y="318" text-anchor="middle" style="fill:currentColor;font-size:8.5px">CPU &amp; PCI-E 2</text>
-<text x="126" y="318" style="fill:var(--color-ink-soft);font-size:9px">→ PCIe cable A (used)</text>
-<rect x="40" y="332" width="76" height="20" rx="3" style="fill:#8b5cf6;fill-opacity:0.18;stroke:#8b5cf6"/>
-<text x="78" y="346" text-anchor="middle" style="fill:currentColor;font-size:8.5px">CPU &amp; PCI-E 3</text>
-<text x="126" y="346" style="fill:var(--color-ink-soft);font-size:9px">→ PCIe cable B (used)</text>
-<rect x="40" y="360" width="76" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
-<text x="78" y="374" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8.5px">CPU &amp; PCI-E 4</text>
-<text x="126" y="374" style="fill:var(--color-ink-faint);font-size:9px">empty</text>
-<rect x="40" y="396" width="76" height="20" rx="3" style="fill:#f59e0b;fill-opacity:0.2;stroke:#f59e0b"/>
-<text x="78" y="410" text-anchor="middle" style="fill:currentColor;font-size:8.5px">SATA &amp; PERIF 1</text>
-<text x="126" y="410" style="fill:var(--color-ink-soft);font-size:9px">→ SATA cable 1 (used)</text>
-<rect x="40" y="424" width="76" height="20" rx="3" style="fill:#14b8a6;fill-opacity:0.2;stroke:#14b8a6"/>
-<text x="78" y="438" text-anchor="middle" style="fill:currentColor;font-size:8.5px">SATA &amp; PERIF 2</text>
-<text x="126" y="438" style="fill:var(--color-ink-soft);font-size:9px">→ SATA cable 2 (used)</text>
-<rect x="40" y="452" width="76" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
-<text x="78" y="466" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8.5px">SATA &amp; PERIF 3</text>
-<text x="126" y="466" style="fill:var(--color-ink-faint);font-size:9px">empty</text>
-<text x="40" y="498" style="fill:var(--color-ink-soft);font-size:9px">Any CPU &amp; PCI-E socket accepts either cable —</text>
-<text x="40" y="511" style="fill:var(--color-ink-soft);font-size:9px">the cable&apos;s device end decides what it is.</text>
-<text x="40" y="534" style="fill:var(--color-ink-soft);font-size:9px">In the box, unused: PCIe cable C (two 6+2), one</text>
-<text x="40" y="547" style="fill:var(--color-ink-soft);font-size:9px">more SATA cable, Molex chain (+FDD adapter).</text>
-<text x="40" y="566" style="fill:var(--color-ink-faint);font-size:8.5px">No spare CPU cable — its 2nd plug rides the same lead (below).</text>
-<text x="40" y="590" style="fill:var(--color-ink-soft);font-size:9px">RGB: the fan ring&apos;s button sits by the AC inlet —</text>
-<text x="40" y="603" style="fill:var(--color-ink-soft);font-size:9px">cycle it to a color or off once; it remembers.</text>
-<line x1="288" y1="252" x2="430" y2="252" style="stroke:currentColor;stroke-width:3"/>
-<text x="352" y="244" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">24-pin</text>
-<polyline points="116,286 330,286 330,190 430,190" style="fill:none;stroke:#f43f5e;stroke-width:2.2"/>
-<text x="352" y="182" text-anchor="middle" style="fill:#f43f5e;font-size:9px">CPU cable — 4+4 plug in, both halves</text>
-<polyline points="116,314 356,314 356,318 430,318" style="fill:none;stroke:#10b981;stroke-width:2.2"/>
-<polyline points="116,342 344,342 344,352 430,352" style="fill:none;stroke:#8b5cf6;stroke-width:2.2"/>
-<polyline points="116,406 412,406 412,634 430,634" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
-<polyline points="412,582 430,582" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
-<polyline points="116,438 398,438 398,746 430,746" style="fill:none;stroke:#14b8a6;stroke-width:2.2"/>
-<rect x="430" y="152" width="250" height="118" rx="8" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="555" y="174" text-anchor="middle" style="fill:currentColor;font-weight:600">ASUS Maximus X Hero</text>
-<circle cx="444" cy="190" r="5" style="fill:#f43f5e"/>
-<text x="456" y="194" style="fill:currentColor;font-size:9.5px">EATX12V — 8-pin CPU, top-left corner</text>
-<text x="456" y="208" style="fill:var(--color-ink-soft);font-size:8.5px">(the cable&apos;s straight-8-pin twin plug: parked, tied back)</text>
-<circle cx="444" cy="252" r="5" style="fill:currentColor"/>
-<text x="456" y="256" style="fill:currentColor;font-size:9.5px">EATXPWR — 24-pin, right edge</text>
-<text x="456" y="240" style="fill:var(--color-ink-faint);font-size:8.5px">(fans, NVMe, ZBT-2, HBA: no PSU leads — board/slot/USB)</text>
-<rect x="430" y="292" width="250" height="128" rx="8" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="555" y="312" text-anchor="middle" style="fill:currentColor;font-weight:600">EVGA 1080 Ti FTW3</text>
-<circle cx="444" cy="318" r="5" style="fill:#10b981"/>
-<text x="456" y="322" style="fill:currentColor;font-size:9.5px">PCIe 8-pin plug 1 ← cable A, 1st connector</text>
-<circle cx="444" cy="352" r="5" style="fill:#8b5cf6"/>
-<text x="456" y="356" style="fill:currentColor;font-size:9.5px">PCIe 8-pin plug 2 ← cable B, 1st connector</text>
-<text x="456" y="380" style="fill:var(--color-ink-soft);font-size:9px">each cable&apos;s 2nd (6+2 pigtail) connector: ✕ unplugged,</text>
-<text x="456" y="393" style="fill:var(--color-ink-soft);font-size:9px">zip-tied back — one cable per plug on a 250 W card</text>
-<text x="456" y="409" style="fill:var(--color-ink-faint);font-size:8.5px">slot supplies the rest (75 W) through PCIEX16_1</text>
-<rect x="430" y="440" width="250" height="56" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="446" y="459" style="fill:currentColor;font-size:10px;font-weight:600">Two SATA cables — the plates are spread</text>
-<text x="446" y="473" style="fill:var(--color-ink-soft);font-size:9px">the 3 rear plates sit at scattered stamped spots,</text>
-<text x="446" y="486" style="fill:var(--color-ink-soft);font-size:9px">farther apart than one cable's plugs can reach</text>
-<text x="430" y="546" style="fill:#f59e0b;font-size:9px">cable 1 — the mirror pair, on the two closest plates</text>
-<rect x="426" y="552" width="258" height="112" rx="8" style="fill:none;stroke:#f59e0b;stroke-dasharray:4 3"/>
-<rect x="430" y="560" width="250" height="44" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="560" y="580" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — ZFS mirror A</text>
-<text x="560" y="595" text-anchor="middle" style="fill:#f59e0b;font-size:9px">cable 1, plug ①</text>
-<rect x="430" y="612" width="250" height="44" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="560" y="632" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — ZFS mirror B</text>
-<text x="560" y="647" text-anchor="middle" style="fill:#f59e0b;font-size:9px">cable 1, plug ② (daisy from A)</text>
-<rect x="430" y="724" width="250" height="44" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="560" y="744" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — Frigate footage</text>
-<text x="560" y="759" text-anchor="middle" style="fill:#14b8a6;font-size:9px">cable 2 — the far plate, on its own lead</text>
-<text x="24" y="668" style="fill:currentColor;font-size:10px;font-weight:600">Reading the chains</text>
-<text x="24" y="686" style="fill:var(--color-ink-soft);font-size:9.5px">• The CPU cable is itself a chain: a 4+4 plug AND a</text>
-<text x="24" y="699" style="fill:var(--color-ink-soft);font-size:9.5px">   straight 8-pin on one lead — this board takes the 4+4,</text>
-<text x="24" y="712" style="fill:var(--color-ink-soft);font-size:9.5px">   the twin stays parked</text>
-<text x="24" y="729" style="fill:var(--color-ink-soft);font-size:9.5px">• PCIe cables A and B each carry two 6+2 — pigtails unused</text>
-<text x="24" y="746" style="fill:var(--color-ink-soft);font-size:9.5px">• TWO SATA cables — the plates are too far apart for one:</text>
-<text x="24" y="759" style="fill:var(--color-ink-soft);font-size:9.5px">   mirror pair on cable 1 (daisy), footage alone on cable 2</text>
-<text x="24" y="776" style="fill:var(--color-ink-soft);font-size:9.5px">• SATA power plugs are L-keyed — never force one upside-down</text>
-<text x="24" y="806" style="fill:var(--color-ink-faint);font-size:9px">Data cables are separate and board-side: 1 SATA data lead, board → footage drive</text>
-<text x="24" y="819" style="fill:var(--color-ink-faint);font-size:9px">(the two mirror drives&apos; data comes from the HBA breakout, not the PSU or board).</text>
+<svg viewBox="0 0 700 452" role="img" aria-label="The Toughpower Grand RGB 850W modular panel traced from the unit: four labelled socket zones over two rows, PCI-E sockets red, numbered where used in this build" style="width:100%;height:auto;max-width:700px;margin:0.75rem 0;font-family:inherit;font-size:11px">
+<rect x="1" y="1" width="698" height="450" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
+<text x="20" y="26" style="fill:currentColor;font-size:14px;font-weight:600">PSU modular panel — Toughpower Grand RGB 850W</text>
+<text x="20" y="44" style="fill:var(--color-ink-soft);font-size:10px">Traced from the unit. Sockets are zoned by function; PCI-E sockets are red. Numbered = used in this build.</text>
+<rect x="24" y="60" width="652" height="156" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="40" y="80" style="fill:var(--color-ink-soft);font-size:9.5px">the panel as it sits — cable side up</text>
+<rect x="38" y="92" width="104" height="70" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
+<line x1="38" y1="127" x2="142" y2="127" style="stroke:var(--color-line-strong)"/>
+<circle cx="54" cy="108" r="9" style="fill:currentColor"/>
+<text x="54" y="112" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">1</text>
+<rect x="150" y="92" width="64" height="30" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
+<circle cx="164" cy="107" r="9" style="fill:currentColor"/>
+<text x="164" y="111" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">2</text>
+<rect x="150" y="132" width="64" height="30" rx="4" style="fill:#f43f5e;fill-opacity:0.2;stroke:#f43f5e"/>
+<circle cx="164" cy="147" r="9" style="fill:#f43f5e"/>
+<text x="164" y="151" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">3</text>
+<rect x="224" y="92" width="64" height="30" rx="4" style="fill:#f43f5e;fill-opacity:0.2;stroke:#f43f5e"/>
+<circle cx="238" cy="107" r="9" style="fill:#f43f5e"/>
+<text x="238" y="111" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">4</text>
+<rect x="224" y="132" width="64" height="30" rx="4" style="fill:#f43f5e;fill-opacity:0.2;stroke:#f43f5e"/>
+<circle cx="238" cy="147" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
+<rect x="360" y="92" width="64" height="30" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
+<circle cx="374" cy="107" r="9" style="fill:currentColor"/>
+<text x="374" y="111" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">5</text>
+<rect x="360" y="132" width="64" height="30" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
+<circle cx="374" cy="147" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
+<rect x="434" y="92" width="64" height="30" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
+<circle cx="448" cy="107" r="9" style="fill:currentColor"/>
+<text x="448" y="111" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">6</text>
+<rect x="434" y="132" width="64" height="30" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
+<circle cx="448" cy="147" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
+<text x="90" y="196" text-anchor="middle" style="fill:currentColor;font-size:10px;font-weight:600">24PIN ATX</text>
+<text x="182" y="196" text-anchor="middle" style="fill:currentColor;font-size:10px;font-weight:600">4+4 CPU</text>
+<text x="252" y="196" text-anchor="middle" style="fill:#f43f5e;font-size:10px;font-weight:600">8+2 PCI-E</text>
+<text x="466" y="196" text-anchor="middle" style="fill:currentColor;font-size:10px;font-weight:600">PERIPHERAL &amp; SATA</text>
+<text x="20" y="242" style="fill:currentColor;font-size:12px;font-weight:600">Where each cable lands</text>
+<circle cx="34" cy="262" r="8" style="fill:currentColor"/>
+<text x="34" y="266" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">1</text>
+<text x="50" y="266" style="fill:var(--color-ink-soft);font-size:9.5px">24PIN ATX → board EATXPWR. The 2-part plug merges into one 24-pin at the board.</text>
+<circle cx="34" cy="288" r="8" style="fill:currentColor"/>
+<text x="34" y="292" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">2</text>
+<text x="50" y="292" style="fill:var(--color-ink-soft);font-size:9.5px">4+4 CPU → board EATX12V (8-pin, top-left). Seat both 4+4 halves; the cable&apos;s straight-8 twin ties back.</text>
+<circle cx="34" cy="314" r="8" style="fill:#f43f5e"/>
+<text x="34" y="318" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">3</text>
+<text x="50" y="318" style="fill:var(--color-ink-soft);font-size:9.5px">8+2 PCI-E (red) → FTW3 plug 1 — PCIe cable A; its 6+2 pigtail parked.</text>
+<circle cx="34" cy="340" r="8" style="fill:#f43f5e"/>
+<text x="34" y="344" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">4</text>
+<text x="50" y="344" style="fill:var(--color-ink-soft);font-size:9.5px">8+2 PCI-E (red) → FTW3 plug 2 — PCIe cable B; its 6+2 pigtail parked. (One red socket stays spare.)</text>
+<circle cx="34" cy="366" r="8" style="fill:currentColor"/>
+<text x="34" y="370" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">5</text>
+<text x="50" y="370" style="fill:var(--color-ink-soft);font-size:9.5px">PERIPHERAL &amp; SATA → SATA cable 1, daisied to the two mirror drives (the two closest plates).</text>
+<circle cx="34" cy="392" r="8" style="fill:currentColor"/>
+<text x="34" y="396" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">6</text>
+<text x="50" y="396" style="fill:var(--color-ink-soft);font-size:9.5px">PERIPHERAL &amp; SATA → SATA cable 2, to the footage drive (the far plate).</text>
+<circle cx="34" cy="420" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
+<text x="50" y="424" style="fill:var(--color-ink-faint);font-size:9.5px">Spare: 1 red PCI-E, 2 PERIPHERAL &amp; SATA — plus a PCIe cable, a SATA cable, and the Molex chain still in the box.</text>
 </svg>
 
-*Total pull on this PSU is modest — roughly 300–400 W at full tilt against 850 W available — so every rail is loafing. Two cabling rules: two separate PCIe cables for the GPU’s two plugs (pigtails parked), and **two SATA cables** for the drives — the View 71’s three rear plates are spread too far apart for a single cable’s connectors, so put the two mirror drives on the two closest plates (one cable daisied across both, which also lets the HBA breakout reach both) and the footage drive on the third (the second cable). Fully modular means only Thermaltake’s own cables go into these sockets — pinouts differ between brands.
+*Faithful to your panel photo — the far-left 24-pin was partly hidden behind your thumb, so trust the printed zone labels over my exact socket count there. The rule the layout makes obvious: **the two GPU cables only go in the red 8+2 PCI-E sockets**, and the **two SATA cables go in PERIPHERAL & SATA** (mirror pair on one, footage on the other). Fully modular means only Thermaltake&apos;s own cables fit these pinouts. Total draw is ~300–400 W against 850 W available, so every rail loafs.*
 
 ## Set the ASUS Maximus X Hero BIOS
 
