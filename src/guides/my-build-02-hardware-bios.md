@@ -157,30 +157,131 @@ These are not slot-related, but they go in with the build:
 - **Netgear GS308EPP** managed PoE (Power over Ethernet) switch — for future PoE cameras; wire the server's Ethernet through it.
 - **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply) — the server and switch plug into it; its USB data cable goes to the host for NUT (Network UPS Tools) monitoring later.
 
-## Plan the PCIe slots
+## The board and its connections
 
 Two cards matter, and they have two different jobs. The GPU needs full bandwidth and stays on the host. The HBA needs to land in a **clean IOMMU (Input/Output Memory Management Unit) group** so it can be handed whole to the TrueNAS VM by VFIO (Virtual Function I/O) without dragging neighbouring devices along.
 
-<svg viewBox="0 0 680 254" role="img" aria-label="PCIe slot plan on the Maximus X Hero" style="width:100%;height:auto;max-width:680px;margin:0.75rem 0;font-family:inherit;font-size:11px">
-<rect x="1" y="1" width="678" height="252" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
-<text x="20" y="27" style="fill:currentColor;font-size:14px;font-weight:600">PCIe slot plan — Maximus X Hero</text>
-<rect x="18" y="42" width="644" height="160" rx="10" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="40" y="74" style="fill:currentColor">PCIEX16_1 · CPU lanes · x16</text>
-<rect x="360" y="57" width="282" height="26" rx="4" style="fill:#10b981;fill-opacity:0.14;stroke:#10b981"/>
-<text x="501" y="74" text-anchor="middle" style="fill:currentColor">GTX 1080 Ti — stays on host</text>
-<text x="40" y="112" style="fill:var(--color-ink-soft)">PCIEX16_2 · CPU lanes · x8</text>
-<rect x="360" y="95" width="282" height="26" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
-<text x="501" y="112" text-anchor="middle" style="fill:var(--color-ink-soft)">— empty —</text>
-<text x="40" y="150" style="fill:currentColor">M.2 slot · on board</text>
-<rect x="360" y="133" width="282" height="26" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="501" y="150" text-anchor="middle" style="fill:currentColor">500 GB NVMe — OS + Frigate cache</text>
-<text x="40" y="188" style="fill:currentColor">PCIEX4_3 · chipset · x4</text>
-<rect x="360" y="171" width="282" height="26" rx="4" style="fill:#6366f1;fill-opacity:0.16;stroke:#6366f1"/>
-<text x="501" y="188" text-anchor="middle" style="fill:currentColor">9300-8i HBA — passed to TrueNAS</text>
-<text x="20" y="228" style="fill:var(--color-ink-soft);font-size:10.5px">Bottom chipset slot lands in its own clean IOMMU group — seat the HBA here, then force it to x4 in the BIOS.</text>
+<svg viewBox="0 0 700 716" role="img" aria-label="ASUS Maximus X Hero board map traced from the manual, with every connector this build uses numbered" style="width:100%;height:auto;max-width:700px;margin:0.75rem 0;font-family:inherit;font-size:11px">
+<rect x="1" y="1" width="698" height="714" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
+<text x="20" y="26" style="fill:currentColor;font-size:14px;font-weight:600">Maximus X Hero — every connection this build uses</text>
+<text x="20" y="44" style="fill:var(--color-ink-soft);font-size:10px">Rear I/O at left, as the manual draws it. Numbered = used in this build; everything else stays empty.</text>
+<rect x="24" y="56" width="652" height="436" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<rect x="34" y="70" width="40" height="238" rx="4" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text transform="rotate(-90 54 200)" x="54" y="200" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">REAR  I/O</text>
+<rect x="38" y="250" width="32" height="24" rx="3" style="fill:var(--color-surface-2);stroke:currentColor"/>
+<circle cx="54" cy="262" r="8" style="fill:currentColor"/>
+<text x="54" y="266" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">11</text>
+<rect x="92" y="70" width="80" height="24" rx="3" style="fill:#f43f5e;fill-opacity:0.2;stroke:#f43f5e"/>
+<circle cx="106" cy="82" r="8" style="fill:currentColor"/>
+<text x="106" y="86" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">3</text>
+<text x="140" y="108" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">EATX12V</text>
+<rect x="250" y="72" width="40" height="18" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="296" y="72" width="40" height="18" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="342" y="72" width="48" height="18" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<circle cx="262" cy="81" r="8" style="fill:currentColor"/>
+<text x="262" y="85" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">9</text>
+<text x="320" y="104" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">CPU_FAN · CPU_OPT · AIO_PUMP</text>
+<rect x="150" y="120" width="110" height="94" rx="6" style="fill:var(--color-surface);stroke:currentColor;stroke-width:1.5"/>
+<circle cx="163" cy="133" r="8" style="fill:currentColor"/>
+<text x="163" y="137" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">1</text>
+<text x="210" y="168" text-anchor="middle" style="fill:currentColor;font-size:10px;font-weight:600">LGA1151</text>
+<text x="210" y="184" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">i7-8700K</text>
+<rect x="440" y="112" width="14" height="150" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<rect x="460" y="112" width="14" height="150" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="480" y="112" width="14" height="150" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<rect x="500" y="112" width="14" height="150" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<circle cx="452" cy="124" r="8" style="fill:currentColor"/>
+<text x="452" y="128" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">2</text>
+<text x="477" y="278" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">DDR4 ×4 · 32 GB</text>
+<rect x="560" y="118" width="50" height="132" rx="3" style="fill:#f43f5e;fill-opacity:0.2;stroke:#f43f5e"/>
+<circle cx="574" cy="132" r="8" style="fill:currentColor"/>
+<text x="574" y="136" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">4</text>
+<text x="585" y="268" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">EATXPWR 24-pin</text>
+<rect x="626" y="118" width="44" height="34" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="648" y="139" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8.5px">Q-Code</text>
+<rect x="86" y="250" width="86" height="14" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="129" y="246" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">PCIEX1_1</text>
+<rect x="86" y="272" width="330" height="20" rx="3" style="fill:#10b981;fill-opacity:0.16;stroke:#10b981"/>
+<circle cx="99" cy="282" r="8" style="fill:currentColor"/>
+<text x="99" y="286" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">5</text>
+<text x="250" y="286" text-anchor="middle" style="fill:currentColor;font-size:9.5px">PCIEX16_1 · x16</text>
+<rect x="86" y="302" width="86" height="14" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="129" y="312" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">PCIEX1_2</text>
+<rect x="86" y="322" width="330" height="20" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
+<text x="250" y="336" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9px">PCIEX8_2 · x8 — empty</text>
+<rect x="86" y="352" width="86" height="14" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="129" y="362" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">PCIEX1_3</text>
+<rect x="86" y="372" width="250" height="20" rx="3" style="fill:#6366f1;fill-opacity:0.18;stroke:#6366f1"/>
+<circle cx="99" cy="382" r="8" style="fill:currentColor"/>
+<text x="99" y="386" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">6</text>
+<text x="220" y="386" text-anchor="middle" style="fill:currentColor;font-size:9.5px">PCIEX4_3 · x4 · chipset</text>
+<rect x="300" y="250" width="116" height="16" rx="3" style="fill:#f59e0b;fill-opacity:0.2;stroke:#f59e0b"/>
+<circle cx="312" cy="258" r="8" style="fill:currentColor"/>
+<text x="312" y="262" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">7</text>
+<text x="372" y="262" text-anchor="middle" style="fill:currentColor;font-size:9px">M.2_1</text>
+<rect x="300" y="404" width="116" height="16" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
+<text x="358" y="416" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9px">M.2_2 — empty</text>
+<rect x="440" y="300" width="70" height="64" rx="4" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="475" y="336" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Z370</text>
+<rect x="560" y="288" width="94" height="86" rx="4" style="fill:#f59e0b;fill-opacity:0.12;stroke:#f59e0b"/>
+<circle cx="576" cy="304" r="8" style="fill:currentColor"/>
+<text x="576" y="308" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">8</text>
+<rect x="596" y="298" width="24" height="14" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="624" y="298" width="24" height="14" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="596" y="318" width="24" height="14" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="624" y="318" width="24" height="14" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="596" y="338" width="24" height="14" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="624" y="338" width="24" height="14" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<text x="607" y="368" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">SATA6G 1-6</text>
+<rect x="40" y="342" width="38" height="16" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<circle cx="52" cy="350" r="8" style="fill:currentColor"/>
+<text x="52" y="354" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">10</text>
+<text x="59" y="372" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">CHA_FAN1</text>
+<rect x="520" y="256" width="34" height="15" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<text x="537" y="252" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">H_AMP</text>
+<rect x="620" y="392" width="34" height="15" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<text x="637" y="388" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">CHA_FAN2</text>
+<rect x="86" y="452" width="430" height="20" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
+<text x="301" y="466" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9px">front-panel · USB · audio · CHA_FAN3 headers → case wiring</text>
+<text x="20" y="520" style="fill:currentColor;font-size:12px;font-weight:600">What plugs into each numbered point</text>
+<circle cx="34" cy="540" r="8" style="fill:currentColor"/>
+<text x="34" y="544" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">1</text>
+<text x="50" y="544" style="fill:var(--color-ink-soft);font-size:9.5px">LGA1151 → i7-8700K</text>
+<circle cx="34" cy="564" r="8" style="fill:currentColor"/>
+<text x="34" y="568" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">2</text>
+<text x="50" y="568" style="fill:var(--color-ink-soft);font-size:9.5px">DDR4 ×4 → 32 GB (fill A2 &amp; B2 first for two sticks)</text>
+<circle cx="34" cy="588" r="8" style="fill:currentColor"/>
+<text x="34" y="592" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">3</text>
+<text x="50" y="592" style="fill:var(--color-ink-soft);font-size:9.5px">EATX12V → PSU 4+4 CPU cable</text>
+<circle cx="34" cy="612" r="8" style="fill:currentColor"/>
+<text x="34" y="616" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">4</text>
+<text x="50" y="616" style="fill:var(--color-ink-soft);font-size:9.5px">EATXPWR → PSU 24-pin cable</text>
+<circle cx="34" cy="636" r="8" style="fill:currentColor"/>
+<text x="34" y="640" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">5</text>
+<text x="50" y="640" style="fill:var(--color-ink-soft);font-size:9.5px">PCIEX16_1 (x16) → GTX 1080 Ti FTW3 — stays on the host</text>
+<circle cx="34" cy="660" r="8" style="fill:currentColor"/>
+<text x="34" y="664" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">6</text>
+<text x="50" y="664" style="fill:var(--color-ink-soft);font-size:9.5px">PCIEX4_3 (x4, chipset) → 9300-8i HBA — clean IOMMU; force x4 in BIOS, VFIO to TrueNAS</text>
+<circle cx="366" cy="540" r="8" style="fill:currentColor"/>
+<text x="366" y="544" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">7</text>
+<text x="382" y="544" style="fill:var(--color-ink-soft);font-size:9.5px">M.2_1 → 500 GB NVMe (keeps all 6 SATA live)</text>
+<circle cx="366" cy="564" r="8" style="fill:currentColor"/>
+<text x="366" y="568" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">8</text>
+<text x="382" y="568" style="fill:var(--color-ink-soft);font-size:9.5px">SATA6G_1 → footage drive (data)</text>
+<circle cx="366" cy="588" r="8" style="fill:currentColor"/>
+<text x="366" y="592" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">9</text>
+<text x="382" y="592" style="fill:var(--color-ink-soft);font-size:9.5px">CPU_FAN + CPU_OPT → Phantom Spirit (2 fans)</text>
+<circle cx="366" cy="612" r="8" style="fill:currentColor"/>
+<text x="366" y="616" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">10</text>
+<text x="382" y="616" style="fill:var(--color-ink-soft);font-size:9.5px">CHA_FAN1-3 + H_AMP → 4 Noctua case fans</text>
+<circle cx="366" cy="636" r="8" style="fill:currentColor"/>
+<text x="366" y="640" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">11</text>
+<text x="382" y="640" style="fill:var(--color-ink-soft);font-size:9.5px">Rear USB → HA Connect ZBT-2 (added later, on an extension)</text>
+<text x="20" y="688" style="fill:var(--color-ink-faint);font-size:9px">Empty: PCIEX8_2, the three x1 slots, M.2_2, EXT_FAN, W_PUMP+. AIO_PUMP is spare for an optional top-exhaust fan (set it to Q-Fan).</text>
+<text x="20" y="703" style="fill:var(--color-ink-faint);font-size:9px">The two ZFS mirror drives take their data from the HBA breakout, not these board SATA ports.</text>
 </svg>
 
-*The two CPU-attached x16 slots feed the GPU; the chipset-attached bottom x4 slot is where the HBA isolates cleanly for passthrough.*
+*This is the whole board, traced from the manual. Two placements decide the build: the **GPU goes in `PCIEX16_1`** (top x16, full bandwidth, stays on the host), and the **HBA goes in `PCIEX4_3`** — the bottom chipset x4 slot, the one that lands in its own clean IOMMU group for passthrough. Force that slot to x4 in the BIOS; it defaults to x2.*
 
 ### Seat the GTX 1080 Ti in the top slot
 1. Install the EVGA GTX 1080 Ti FTW3 in the **top x16 slot** (`PCIEX16_1`). With nothing contending, it runs at full x16.
