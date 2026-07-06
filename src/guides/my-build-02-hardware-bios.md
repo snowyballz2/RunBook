@@ -195,18 +195,18 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 <circle cx="442" cy="128" r="8" style="fill:currentColor"/>
 <text x="442" y="132" text-anchor="middle" style="fill:var(--color-surface);font-size:9px;font-weight:700">2</text>
 <text x="467" y="278" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">DDR4 ×4 · 32 GB</text>
-<rect x="606" y="106" width="50" height="120" rx="3" style="fill:#f43f5e;fill-opacity:0.2;stroke:#f43f5e"/>
-<circle cx="620" cy="120" r="8" style="fill:currentColor"/>
-<text x="620" y="124" text-anchor="middle" style="fill:var(--color-surface);font-size:9px;font-weight:700">4</text>
-<text x="631" y="240" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">EATXPWR 24-pin</text>
-<rect x="612" y="252" width="44" height="13" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
-<text x="634" y="278" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">U31G2_E3</text>
+<rect x="606" y="104" width="50" height="110" rx="3" style="fill:#f43f5e;fill-opacity:0.2;stroke:#f43f5e"/>
+<circle cx="620" cy="118" r="8" style="fill:currentColor"/>
+<text x="620" y="122" text-anchor="middle" style="fill:var(--color-surface);font-size:9px;font-weight:700">4</text>
+<text x="631" y="228" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">EATXPWR 24-pin</text>
+<rect x="610" y="240" width="46" height="13" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="602" y="250" text-anchor="end" style="fill:var(--color-ink-faint);font-size:8px">U31G2_E3</text>
+<rect x="610" y="262" width="46" height="14" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<text x="602" y="273" text-anchor="end" style="fill:var(--color-ink-faint);font-size:8px">H_AMP</text>
 <rect x="300" y="284" width="116" height="16" rx="3" style="fill:#f59e0b;fill-opacity:0.2;stroke:#f59e0b"/>
 <circle cx="312" cy="292" r="8" style="fill:currentColor"/>
 <text x="312" y="296" text-anchor="middle" style="fill:var(--color-surface);font-size:9px;font-weight:700">7</text>
 <text x="372" y="296" text-anchor="middle" style="fill:currentColor;font-size:9px">M.2_1</text>
-<rect x="520" y="284" width="34" height="15" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
-<text x="537" y="280" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">H_AMP</text>
 <rect x="86" y="310" width="86" height="13" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="129" y="306" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">PCIEX1_1</text>
 <rect x="86" y="328" width="330" height="20" rx="3" style="fill:#10b981;fill-opacity:0.16;stroke:#10b981"/>
@@ -223,52 +223,50 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 <circle cx="99" cy="430" r="8" style="fill:currentColor"/>
 <text x="99" y="434" text-anchor="middle" style="fill:var(--color-surface);font-size:9px;font-weight:700">6</text>
 <text x="220" y="434" text-anchor="middle" style="fill:currentColor;font-size:9.5px">PCIEX4_3 · x4 · chipset</text>
-<rect x="440" y="330" width="66" height="60" rx="4" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="473" y="364" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Z370</text>
-<rect x="560" y="296" width="94" height="80" rx="4" style="fill:#f59e0b;fill-opacity:0.12;stroke:#f59e0b"/>
-<circle cx="576" cy="312" r="8" style="fill:currentColor"/>
-<text x="576" y="316" text-anchor="middle" style="fill:var(--color-surface);font-size:9px;font-weight:700">8</text>
-<rect x="596" y="306" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
-<rect x="624" y="306" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
-<rect x="596" y="325" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
-<rect x="624" y="325" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
-<rect x="596" y="344" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
-<rect x="624" y="344" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
-<text x="607" y="370" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">SATA6G 1-6</text>
+<rect x="440" y="316" width="66" height="60" rx="4" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="473" y="350" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Z370</text>
+<rect x="560" y="288" width="94" height="78" rx="4" style="fill:#f59e0b;fill-opacity:0.12;stroke:#f59e0b"/>
+<circle cx="576" cy="304" r="8" style="fill:currentColor"/>
+<text x="576" y="308" text-anchor="middle" style="fill:var(--color-surface);font-size:9px;font-weight:700">8</text>
+<rect x="596" y="298" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="624" y="298" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="596" y="317" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="624" y="317" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="596" y="336" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="624" y="336" width="24" height="13" rx="2" style="fill:var(--color-surface);stroke:currentColor"/>
+<text x="607" y="360" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">SATA6G 1-6</text>
+<rect x="610" y="378" width="46" height="15" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<text x="602" y="389" text-anchor="end" style="fill:var(--color-ink-faint);font-size:8px">CHA_FAN2</text>
+<rect x="604" y="402" width="52" height="14" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="598" y="412" text-anchor="end" style="fill:var(--color-ink-faint);font-size:8px">W_PUMP+ / flow</text>
 <rect x="40" y="352" width="38" height="16" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
 <circle cx="52" cy="360" r="8" style="fill:currentColor"/>
 <text x="52" y="364" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">10</text>
 <text x="59" y="380" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">CHA_FAN1</text>
-<rect x="600" y="386" width="54" height="13" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
-<text x="627" y="382" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">W_PUMP+</text>
-<rect x="610" y="408" width="44" height="15" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
-<text x="632" y="404" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">CHA_FAN2</text>
-<rect x="600" y="430" width="54" height="13" rx="2" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
-<text x="627" y="454" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">W_IN·OUT·FLOW</text>
-<rect x="360" y="440" width="120" height="15" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
-<text x="420" y="436" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9px">M.2_2 — empty</text>
-<rect x="500" y="440" width="46" height="15" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
-<text x="523" y="436" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">CHA_FAN3</text>
-<rect x="554" y="440" width="40" height="15" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
-<text x="574" y="436" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">EXT_FAN</text>
-<rect x="40" y="470" width="50" height="22" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<rect x="340" y="440" width="120" height="15" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
+<text x="400" y="436" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9px">M.2_2 — empty</text>
+<rect x="476" y="440" width="54" height="15" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="503" y="436" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">EXT_FAN</text>
+<rect x="40" y="470" width="48" height="22" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
 <circle cx="54" cy="481" r="8" style="fill:currentColor"/>
 <text x="54" y="485" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">15</text>
-<text x="65" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">AAFP</text>
-<rect x="100" y="470" width="180" height="22" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
-<text x="190" y="484" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">ADD_HDR · START · RESET · OC jumpers · TPM</text>
-<rect x="292" y="470" width="64" height="22" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
-<circle cx="306" cy="481" r="8" style="fill:currentColor"/>
-<text x="306" y="485" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">13</text>
-<text x="326" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">U31G1_12</text>
-<rect x="368" y="470" width="56" height="22" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
-<circle cx="382" cy="481" r="8" style="fill:currentColor"/>
-<text x="382" y="485" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">14</text>
-<text x="396" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">USB910</text>
-<rect x="432" y="470" width="56" height="22" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
-<text x="460" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">USB1112</text>
-<rect x="500" y="470" width="48" height="22" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
-<text x="524" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">SPEAKER</text>
+<text x="64" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">AAFP</text>
+<rect x="94" y="470" width="150" height="22" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:4 3"/>
+<text x="169" y="484" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">ADD_HDR · START · RESET · TPM</text>
+<rect x="252" y="470" width="60" height="22" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<circle cx="266" cy="481" r="8" style="fill:currentColor"/>
+<text x="266" y="485" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">13</text>
+<text x="286" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">U31G1_12</text>
+<rect x="318" y="470" width="54" height="22" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<circle cx="332" cy="481" r="8" style="fill:currentColor"/>
+<text x="332" y="485" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">14</text>
+<text x="348" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">USB910</text>
+<rect x="378" y="470" width="50" height="22" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="403" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">USB1112</text>
+<rect x="434" y="470" width="48" height="22" rx="3" style="fill:var(--color-surface);stroke:currentColor"/>
+<text x="458" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">CHA_FAN3</text>
+<rect x="488" y="470" width="44" height="22" rx="3" style="fill:var(--color-surface);stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="510" y="504" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8px">SPEAKER</text>
 <rect x="576" y="470" width="80" height="22" rx="3" style="fill:var(--color-surface);stroke:currentColor;stroke-width:1.4"/>
 <circle cx="590" cy="481" r="8" style="fill:currentColor"/>
 <text x="590" y="485" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">12</text>
@@ -309,7 +307,7 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 <text x="382" y="602" style="fill:var(--color-ink-soft);font-size:9.5px">Rear USB → HA Connect ZBT-2 (added later)</text>
 <circle cx="366" cy="620" r="8" style="fill:currentColor"/>
 <text x="366" y="624" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">12</text>
-<text x="382" y="624" style="fill:var(--color-ink-soft);font-size:9.5px">F_PANEL (bottom-right corner) → power + reset buttons, LEDs</text>
+<text x="382" y="624" style="fill:var(--color-ink-soft);font-size:9.5px">F_PANEL (bottom-right corner) → power + reset, LEDs</text>
 <circle cx="366" cy="642" r="8" style="fill:currentColor"/>
 <text x="366" y="646" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">13</text>
 <text x="382" y="646" style="fill:var(--color-ink-soft);font-size:9.5px">U31G1_12 → 2× front USB 3.0 (case I/O)</text>
@@ -318,7 +316,7 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 <text x="382" y="668" style="fill:var(--color-ink-soft);font-size:9.5px">USB910 → 2× front USB 2.0 (case I/O)</text>
 <circle cx="366" cy="686" r="8" style="fill:currentColor"/>
 <text x="366" y="690" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">15</text>
-<text x="382" y="690" style="fill:var(--color-ink-soft);font-size:9.5px">AAFP (bottom-left corner) → front headphone + mic jacks</text>
+<text x="382" y="690" style="fill:var(--color-ink-soft);font-size:9.5px">AAFP (bottom-left corner) → front headphone + mic</text>
 <text x="20" y="732" style="fill:var(--color-ink-faint);font-size:9px">⑥ chipset slot = clean IOMMU, force x4 in BIOS · ⑦ M.2_1 keeps all six SATA live · mirror drives take data from the HBA, not board SATA.</text>
 <text x="20" y="748" style="fill:var(--color-ink-faint);font-size:9px">Dashed = empty: PCIEX8_2, x1 slots, M.2_2, U31G2_E3 (no front USB-C), USB1112, SPEAKER, EXT_FAN, water headers, RGB/OC extras.</text>
 </svg>
