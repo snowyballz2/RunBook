@@ -255,6 +255,107 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 
 The footage drive and the NVMe both ride the board; only the two mirror disks hang off the HBA. The ZBT-2 is the one thing you leave unplugged for now — it goes into a USB port once Proxmox is up.
 
+And here is the power side alone, end to end — every cable the EVGA 850 GQ actually runs in this build, by its port and connector names, daisy chains included:
+
+<svg viewBox="0 0 700 850" role="img" aria-label="Complete PSU cable map for the EVGA 850 GQ in this build: every port, cable, connector, and daisy chain, end to end" style="width:100%;height:auto;max-width:700px;margin:0.75rem 0;font-family:inherit;font-size:11px">
+<rect x="1" y="1" width="698" height="848" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
+<text x="20" y="28" style="fill:currentColor;font-size:14px;font-weight:600">PSU cabling — EVGA 850 GQ, end to end</text>
+<text x="20" y="46" style="fill:var(--color-ink-soft);font-size:10px">4 cables + the captive 24-pin power the whole build. Solid ports are used; hollow stay empty.</text>
+<rect x="24" y="64" width="100" height="44" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="74" y="90" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">AC wall</text>
+<line x1="124" y1="86" x2="158" y2="86" style="stroke:#f43f5e;stroke-width:2.5"/>
+<rect x="158" y="64" width="230" height="44" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="273" y="83" text-anchor="middle" style="fill:currentColor;font-size:10.5px">CyberPower CP1500PFCLCD</text>
+<text x="273" y="98" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">battery-side outlet</text>
+<polyline points="388,86 420,86 420,140 170,140 170,168" style="fill:none;stroke:#f43f5e;stroke-width:2.5"/>
+<text x="430" y="120" style="fill:#f43f5e;font-size:9.5px">C13 kettle cord → PSU inlet (rocker ON)</text>
+<rect x="24" y="168" width="280" height="470" rx="10" style="fill:var(--color-surface-2);stroke:var(--color-line-strong);stroke-width:1.6"/>
+<text x="164" y="192" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">EVGA 850 GQ (semi-modular)</text>
+<rect x="40" y="204" width="248" height="40" rx="5" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="52" y="221" style="fill:currentColor;font-size:10px;font-weight:600">CAPTIVE: 24-pin ATX cable</text>
+<text x="52" y="235" style="fill:var(--color-ink-soft);font-size:9px">hard-wired — always attached</text>
+<text x="52" y="266" style="fill:var(--color-ink-soft);font-size:9.5px;font-weight:600">MODULAR PANEL (as printed):</text>
+<rect x="52" y="276" width="64" height="20" rx="3" style="fill:#f43f5e;fill-opacity:0.18;stroke:#f43f5e"/>
+<text x="84" y="290" text-anchor="middle" style="fill:currentColor;font-size:9px">CPU 1</text>
+<text x="126" y="290" style="fill:var(--color-ink-soft);font-size:9px">→ EPS cable (used)</text>
+<rect x="52" y="304" width="64" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="84" y="318" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9px">CPU 2</text>
+<text x="126" y="318" style="fill:var(--color-ink-faint);font-size:9px">empty</text>
+<rect x="52" y="340" width="64" height="20" rx="3" style="fill:#10b981;fill-opacity:0.18;stroke:#10b981"/>
+<text x="84" y="354" text-anchor="middle" style="fill:currentColor;font-size:9px">VGA 1</text>
+<text x="126" y="354" style="fill:var(--color-ink-soft);font-size:9px">→ PCIe cable A (used)</text>
+<rect x="52" y="368" width="64" height="20" rx="3" style="fill:#8b5cf6;fill-opacity:0.18;stroke:#8b5cf6"/>
+<text x="84" y="382" text-anchor="middle" style="fill:currentColor;font-size:9px">VGA 2</text>
+<text x="126" y="382" style="fill:var(--color-ink-soft);font-size:9px">→ PCIe cable B (used)</text>
+<rect x="52" y="396" width="64" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="84" y="410" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9px">VGA 3</text>
+<rect x="52" y="424" width="64" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="84" y="438" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9px">VGA 4</text>
+<text x="126" y="424" style="fill:var(--color-ink-faint);font-size:9px">empty</text>
+<rect x="52" y="460" width="64" height="20" rx="3" style="fill:#f59e0b;fill-opacity:0.2;stroke:#f59e0b"/>
+<text x="84" y="474" text-anchor="middle" style="fill:currentColor;font-size:8.5px">SATA/PERIF 1</text>
+<text x="126" y="474" style="fill:var(--color-ink-soft);font-size:9px">→ SATA chain (used)</text>
+<rect x="52" y="488" width="64" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="84" y="502" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8.5px">SATA/PERIF 2</text>
+<rect x="52" y="516" width="64" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="84" y="530" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8.5px">SATA/PERIF 3</text>
+<rect x="52" y="544" width="64" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
+<text x="84" y="558" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8.5px">SATA/PERIF 4</text>
+<text x="126" y="516" style="fill:var(--color-ink-faint);font-size:9px">empty</text>
+<text x="40" y="592" style="fill:var(--color-ink-soft);font-size:9px">Cables in the box, unused: 2nd EPS, 2 more</text>
+<text x="40" y="605" style="fill:var(--color-ink-soft);font-size:9px">SATA chains (6 plugs), Molex chain (3 plugs)</text>
+<text x="40" y="624" style="fill:var(--color-ink-faint);font-size:8.5px">(If your unit ships the EPS captive too — same destination.)</text>
+<line x1="288" y1="224" x2="430" y2="224" style="stroke:currentColor;stroke-width:3"/>
+<text x="352" y="216" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9px">24-pin</text>
+<polyline points="116,286 330,286 330,190 430,190" style="fill:none;stroke:#f43f5e;stroke-width:2.2"/>
+<text x="352" y="182" text-anchor="middle" style="fill:#f43f5e;font-size:9px">EPS 4+4 — seat BOTH halves</text>
+<polyline points="116,350 356,350 356,318 430,318" style="fill:none;stroke:#10b981;stroke-width:2.2"/>
+<polyline points="116,378 344,378 344,352 430,352" style="fill:none;stroke:#8b5cf6;stroke-width:2.2"/>
+<polyline points="116,470 400,470 400,762 430,762" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
+<polyline points="400,700 430,700" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
+<polyline points="400,638 430,638" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
+<rect x="430" y="152" width="250" height="118" rx="8" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="555" y="174" text-anchor="middle" style="fill:currentColor;font-weight:600">ASUS Maximus X Hero</text>
+<circle cx="444" cy="190" r="5" style="fill:#f43f5e"/>
+<text x="456" y="194" style="fill:currentColor;font-size:9.5px">EATX12V — 8-pin CPU, top-left corner</text>
+<circle cx="444" cy="224" r="5" style="fill:currentColor"/>
+<text x="456" y="228" style="fill:currentColor;font-size:9.5px">EATXPWR — 24-pin, right edge</text>
+<text x="456" y="252" style="fill:var(--color-ink-faint);font-size:8.5px">(fans, NVMe, ZBT-2, HBA: no PSU leads — board/slot/USB)</text>
+<rect x="430" y="292" width="250" height="128" rx="8" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="555" y="312" text-anchor="middle" style="fill:currentColor;font-weight:600">EVGA 1080 Ti FTW3</text>
+<circle cx="444" cy="318" r="5" style="fill:#10b981"/>
+<text x="456" y="322" style="fill:currentColor;font-size:9.5px">PCIe 8-pin plug 1 ← cable A, 1st connector</text>
+<circle cx="444" cy="352" r="5" style="fill:#8b5cf6"/>
+<text x="456" y="356" style="fill:currentColor;font-size:9.5px">PCIe 8-pin plug 2 ← cable B, 1st connector</text>
+<text x="456" y="380" style="fill:var(--color-ink-soft);font-size:9px">each cable&apos;s 2nd (6+2 pigtail) connector: ✕ unplugged,</text>
+<text x="456" y="393" style="fill:var(--color-ink-soft);font-size:9px">zip-tied back — one cable per plug on a 250 W card</text>
+<text x="456" y="409" style="fill:var(--color-ink-faint);font-size:8.5px">slot supplies the rest (75 W) through PCIEX16_1</text>
+<rect x="430" y="440" width="250" height="42" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="446" y="458" style="fill:currentColor;font-size:10px;font-weight:600">SATA chain — one cable, 3 plugs</text>
+<text x="446" y="472" style="fill:var(--color-ink-soft);font-size:9px">routes up the back, feeding plates bottom → top</text>
+<rect x="430" y="614" width="250" height="48" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="560" y="634" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — TOP plate</text>
+<text x="560" y="650" text-anchor="middle" style="fill:#f59e0b;font-size:9px">③ last plug on the chain</text>
+<rect x="430" y="676" width="250" height="48" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="560" y="696" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — MIDDLE plate</text>
+<text x="560" y="712" text-anchor="middle" style="fill:#f59e0b;font-size:9px">② middle plug</text>
+<rect x="430" y="738" width="250" height="48" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="560" y="758" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — BOTTOM plate</text>
+<text x="560" y="774" text-anchor="middle" style="fill:#f59e0b;font-size:9px">① first plug from the PSU</text>
+<text x="24" y="668" style="fill:currentColor;font-size:10px;font-weight:600">Reading the chains</text>
+<text x="24" y="686" style="fill:var(--color-ink-soft);font-size:9.5px">• PCIe cables A and B each carry two 6+2 connectors —</text>
+<text x="24" y="699" style="fill:var(--color-ink-soft);font-size:9.5px">   the daisy pigtails stay unused on this card</text>
+<text x="24" y="716" style="fill:var(--color-ink-soft);font-size:9.5px">• The SATA cable IS the daisy chain: three plugs in</text>
+<text x="24" y="729" style="fill:var(--color-ink-soft);font-size:9.5px">   series feed all three drives — no second cable</text>
+<text x="24" y="746" style="fill:var(--color-ink-soft);font-size:9.5px">• EPS and 24-pin: one connector each, no chain</text>
+<text x="24" y="768" style="fill:var(--color-ink-soft);font-size:9.5px">• SATA power plugs are L-keyed — they only fit one way;</text>
+<text x="24" y="781" style="fill:var(--color-ink-soft);font-size:9.5px">   never force one upside-down</text>
+<text x="24" y="806" style="fill:var(--color-ink-faint);font-size:9px">Data cables are separate and board-side: 1 SATA data lead, board → footage drive</text>
+<text x="24" y="819" style="fill:var(--color-ink-faint);font-size:9px">(the two mirror drives&apos; data comes from the HBA breakout, not the PSU or board).</text>
+</svg>
+
+*Total pull on this PSU is modest — roughly 300–400 W at full tilt against 850 W available — so every rail is loafing. The one rule that matters: two separate VGA cables for the GPU's two plugs, pigtails parked. If a drive ever loses power, the chain order above tells you which plug to wiggle first.*
+
 ## Set the ASUS Maximus X Hero BIOS
 
 Enter the BIOS by tapping `Del` repeatedly the moment the screen lights up on power-on. Work through these in order — the toggles live in different submenus, so do not stop after the first one.
