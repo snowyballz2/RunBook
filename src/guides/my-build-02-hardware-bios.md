@@ -214,7 +214,7 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 <rect x="378" y="108" width="204" height="32" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="480" y="128" text-anchor="middle" style="fill:currentColor">Board — 24-pin + 8-pin CPU</text>
 <rect x="378" y="152" width="204" height="34" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="480" y="173" text-anchor="middle" style="fill:currentColor">3× IronWolf — 1 SATA-power each</text>
+<text x="480" y="173" text-anchor="middle" style="fill:currentColor">3× IronWolf — SATA power, 2 cables (spread plates)</text>
 <line x1="18" y1="208" x2="662" y2="208" style="stroke:var(--color-line)"/>
 <text x="20" y="232" style="fill:currentColor;font-size:12px;font-weight:600">② Data — from the board and the HBA</text>
 <rect x="24" y="248" width="140" height="58" rx="6" style="fill:#6366f1;fill-opacity:0.14;stroke:#6366f1"/>
@@ -290,16 +290,17 @@ And here is the power side alone, end to end — every cable the Toughpower Gran
 <text x="126" y="374" style="fill:var(--color-ink-faint);font-size:9px">empty</text>
 <rect x="40" y="396" width="76" height="20" rx="3" style="fill:#f59e0b;fill-opacity:0.2;stroke:#f59e0b"/>
 <text x="78" y="410" text-anchor="middle" style="fill:currentColor;font-size:8.5px">SATA &amp; PERIF 1</text>
-<text x="126" y="410" style="fill:var(--color-ink-soft);font-size:9px">→ SATA chain (used)</text>
-<rect x="40" y="424" width="76" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
-<text x="78" y="438" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8.5px">SATA &amp; PERIF 2</text>
+<text x="126" y="410" style="fill:var(--color-ink-soft);font-size:9px">→ SATA cable 1 (used)</text>
+<rect x="40" y="424" width="76" height="20" rx="3" style="fill:#14b8a6;fill-opacity:0.2;stroke:#14b8a6"/>
+<text x="78" y="438" text-anchor="middle" style="fill:currentColor;font-size:8.5px">SATA &amp; PERIF 2</text>
+<text x="126" y="438" style="fill:var(--color-ink-soft);font-size:9px">→ SATA cable 2 (used)</text>
 <rect x="40" y="452" width="76" height="20" rx="3" style="fill:none;stroke:var(--color-line-strong);stroke-dasharray:3 2"/>
 <text x="78" y="466" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:8.5px">SATA &amp; PERIF 3</text>
-<text x="126" y="452" style="fill:var(--color-ink-faint);font-size:9px">empty</text>
+<text x="126" y="466" style="fill:var(--color-ink-faint);font-size:9px">empty</text>
 <text x="40" y="498" style="fill:var(--color-ink-soft);font-size:9px">Any CPU &amp; PCI-E socket accepts either cable —</text>
 <text x="40" y="511" style="fill:var(--color-ink-soft);font-size:9px">the cable&apos;s device end decides what it is.</text>
-<text x="40" y="534" style="fill:var(--color-ink-soft);font-size:9px">In the box, unused: PCIe cable C (two 6+2), two</text>
-<text x="40" y="547" style="fill:var(--color-ink-soft);font-size:9px">more SATA chains, Molex chain (+FDD adapter).</text>
+<text x="40" y="534" style="fill:var(--color-ink-soft);font-size:9px">In the box, unused: PCIe cable C (two 6+2), one</text>
+<text x="40" y="547" style="fill:var(--color-ink-soft);font-size:9px">more SATA cable, Molex chain (+FDD adapter).</text>
 <text x="40" y="566" style="fill:var(--color-ink-faint);font-size:8.5px">No spare CPU cable — its 2nd plug rides the same lead (below).</text>
 <text x="40" y="590" style="fill:var(--color-ink-soft);font-size:9px">RGB: the fan ring&apos;s button sits by the AC inlet —</text>
 <text x="40" y="603" style="fill:var(--color-ink-soft);font-size:9px">cycle it to a color or off once; it remembers.</text>
@@ -309,9 +310,9 @@ And here is the power side alone, end to end — every cable the Toughpower Gran
 <text x="352" y="182" text-anchor="middle" style="fill:#f43f5e;font-size:9px">CPU cable — 4+4 plug in, both halves</text>
 <polyline points="116,314 356,314 356,318 430,318" style="fill:none;stroke:#10b981;stroke-width:2.2"/>
 <polyline points="116,342 344,342 344,352 430,352" style="fill:none;stroke:#8b5cf6;stroke-width:2.2"/>
-<polyline points="116,406 400,406 400,762 430,762" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
-<polyline points="400,700 430,700" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
-<polyline points="400,638 430,638" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
+<polyline points="116,406 412,406 412,634 430,634" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
+<polyline points="412,582 430,582" style="fill:none;stroke:#f59e0b;stroke-width:2.2"/>
+<polyline points="116,438 398,438 398,746 430,746" style="fill:none;stroke:#14b8a6;stroke-width:2.2"/>
 <rect x="430" y="152" width="250" height="118" rx="8" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="555" y="174" text-anchor="middle" style="fill:currentColor;font-weight:600">ASUS Maximus X Hero</text>
 <circle cx="444" cy="190" r="5" style="fill:#f43f5e"/>
@@ -329,31 +330,34 @@ And here is the power side alone, end to end — every cable the Toughpower Gran
 <text x="456" y="380" style="fill:var(--color-ink-soft);font-size:9px">each cable&apos;s 2nd (6+2 pigtail) connector: ✕ unplugged,</text>
 <text x="456" y="393" style="fill:var(--color-ink-soft);font-size:9px">zip-tied back — one cable per plug on a 250 W card</text>
 <text x="456" y="409" style="fill:var(--color-ink-faint);font-size:8.5px">slot supplies the rest (75 W) through PCIEX16_1</text>
-<rect x="430" y="440" width="250" height="42" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="446" y="458" style="fill:currentColor;font-size:10px;font-weight:600">SATA chain — one lead, plugs ①②③</text>
-<text x="446" y="472" style="fill:var(--color-ink-soft);font-size:9px">routes up the back, feeding plates bottom → top</text>
-<rect x="430" y="614" width="250" height="48" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="560" y="634" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — TOP plate</text>
-<text x="560" y="650" text-anchor="middle" style="fill:#f59e0b;font-size:9px">③ last plug on the chain</text>
-<rect x="430" y="676" width="250" height="48" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="560" y="696" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — MIDDLE plate</text>
-<text x="560" y="712" text-anchor="middle" style="fill:#f59e0b;font-size:9px">② middle plug</text>
-<rect x="430" y="738" width="250" height="48" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="560" y="758" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — BOTTOM plate</text>
-<text x="560" y="774" text-anchor="middle" style="fill:#f59e0b;font-size:9px">① first plug from the PSU</text>
+<rect x="430" y="440" width="250" height="56" rx="6" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="446" y="459" style="fill:currentColor;font-size:10px;font-weight:600">Two SATA cables — the plates are spread</text>
+<text x="446" y="473" style="fill:var(--color-ink-soft);font-size:9px">the 3 rear plates sit at scattered stamped spots,</text>
+<text x="446" y="486" style="fill:var(--color-ink-soft);font-size:9px">farther apart than one cable's plugs can reach</text>
+<text x="430" y="546" style="fill:#f59e0b;font-size:9px">cable 1 — the mirror pair, on the two closest plates</text>
+<rect x="426" y="552" width="258" height="112" rx="8" style="fill:none;stroke:#f59e0b;stroke-dasharray:4 3"/>
+<rect x="430" y="560" width="250" height="44" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="560" y="580" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — ZFS mirror A</text>
+<text x="560" y="595" text-anchor="middle" style="fill:#f59e0b;font-size:9px">cable 1, plug ①</text>
+<rect x="430" y="612" width="250" height="44" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="560" y="632" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — ZFS mirror B</text>
+<text x="560" y="647" text-anchor="middle" style="fill:#f59e0b;font-size:9px">cable 1, plug ② (daisy from A)</text>
+<rect x="430" y="724" width="250" height="44" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="560" y="744" text-anchor="middle" style="fill:currentColor;font-size:10px">IronWolf — Frigate footage</text>
+<text x="560" y="759" text-anchor="middle" style="fill:#14b8a6;font-size:9px">cable 2 — the far plate, on its own lead</text>
 <text x="24" y="668" style="fill:currentColor;font-size:10px;font-weight:600">Reading the chains</text>
 <text x="24" y="686" style="fill:var(--color-ink-soft);font-size:9.5px">• The CPU cable is itself a chain: a 4+4 plug AND a</text>
 <text x="24" y="699" style="fill:var(--color-ink-soft);font-size:9.5px">   straight 8-pin on one lead — this board takes the 4+4,</text>
 <text x="24" y="712" style="fill:var(--color-ink-soft);font-size:9.5px">   the twin stays parked</text>
 <text x="24" y="729" style="fill:var(--color-ink-soft);font-size:9.5px">• PCIe cables A and B each carry two 6+2 — pigtails unused</text>
-<text x="24" y="746" style="fill:var(--color-ink-soft);font-size:9.5px">• The SATA lead is the drive chain: three plugs in series</text>
-<text x="24" y="759" style="fill:var(--color-ink-soft);font-size:9.5px">   feed all three drives (a 4th plug, if present, tucks spare)</text>
+<text x="24" y="746" style="fill:var(--color-ink-soft);font-size:9.5px">• TWO SATA cables — the plates are too far apart for one:</text>
+<text x="24" y="759" style="fill:var(--color-ink-soft);font-size:9.5px">   mirror pair on cable 1 (daisy), footage alone on cable 2</text>
 <text x="24" y="776" style="fill:var(--color-ink-soft);font-size:9.5px">• SATA power plugs are L-keyed — never force one upside-down</text>
 <text x="24" y="806" style="fill:var(--color-ink-faint);font-size:9px">Data cables are separate and board-side: 1 SATA data lead, board → footage drive</text>
 <text x="24" y="819" style="fill:var(--color-ink-faint);font-size:9px">(the two mirror drives&apos; data comes from the HBA breakout, not the PSU or board).</text>
 </svg>
 
-*Total pull on this PSU is modest — roughly 300–400 W at full tilt against 850 W available — so every rail is loafing. Two rules that matter: two separate PCIe cables for the GPU&apos;s two plugs, pigtails parked — and because this unit is fully modular, only Thermaltake&apos;s own cables go into it (modular pinouts differ between brands; another brand&apos;s cable in these sockets can fry drives). If a drive ever loses power, the chain order above tells you which plug to wiggle first.
+*Total pull on this PSU is modest — roughly 300–400 W at full tilt against 850 W available — so every rail is loafing. Two cabling rules: two separate PCIe cables for the GPU’s two plugs (pigtails parked), and **two SATA cables** for the drives — the View 71’s three rear plates are spread too far apart for a single cable’s connectors, so put the two mirror drives on the two closest plates (one cable daisied across both, which also lets the HBA breakout reach both) and the footage drive on the third (the second cable). Fully modular means only Thermaltake’s own cables go into these sockets — pinouts differ between brands.
 
 ## Set the ASUS Maximus X Hero BIOS
 

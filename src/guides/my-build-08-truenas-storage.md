@@ -18,7 +18,7 @@ This wiring happened during the physical build on the **Hardware & BIOS** page �
 - **One breakout tail → mirror disk A** (one ST4000VN006), **another tail → mirror disk B** (the second ST4000VN006). Any unused tails are spare — room to grow the pool later. Both mirror disks ride the HBA, so they belong to TrueNAS.
 - **Footage disk → a motherboard SATA port, *not* the HBA.** The third ST4000VN006 is Frigate's. The whole HBA goes to this VM, so anything plugged into it vanishes from the Proxmox host — and the footage drive has to stay on a board port the host can still see, because the host is what hands that disk into the Frigate container.
 - **NVMe (Non-Volatile Memory Express) → the board's M.2 slot** (Proxmox OS plus the Frigate cache — untouched by TrueNAS).
-- **Power:** the Toughpower PSU (power supply unit) SATA chain — one lead, three plugs — to the three 4 TB drives.
+- **Power:** SATA power to each of the three 4 TB drives from the Toughpower PSU (power supply unit). The three drive plates sit at spread-out spots on the back of the tray, farther apart than one cable&apos;s connectors reach — so it takes **two** of the PSU&apos;s SATA cables (the two mirror drives daisied on one, the footage drive on the other), not a single chain.
 
 > [!NOTE]
 > All three 3.5" IronWolfs are already mounted in the Thermaltake View 71's **fixed drive trays behind the motherboard tray** — done on the Hardware & BIOS page; the removable front "pod" cages aren't required. The roughly 300 mm 1080 Ti clears the front cage area regardless.
