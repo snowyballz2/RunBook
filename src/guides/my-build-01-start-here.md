@@ -88,7 +88,7 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="582" y="193" text-anchor="middle" style="fill:var(--color-ink-faint);font-size:9.5px">(inside wiring: the Hardware &amp; BIOS page)</text>
 <text x="582" y="214" text-anchor="middle" style="fill:currentColor;font-size:10.5px">192.168.1.50</text>
 <rect x="497" y="226" width="170" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
-<text x="582" y="236" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery — EVGA 850 W PSU</text>
+<text x="582" y="236" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery — Toughpower 850 W PSU</text>
 <line x1="420" y1="214" x2="460" y2="214" style="stroke:#10b981;stroke-width:2.5"/>
 <text x="440" y="207" text-anchor="middle" style="fill:#10b981;font-size:9px">LAN</text>
 <rect x="196" y="290" width="224" height="96" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
@@ -224,7 +224,7 @@ Check you have everything before you start — the later pages assume each piece
 > - **Motherboard:** ASUS ROG Maximus X Hero (Z370)
 > - **CPU:** Intel i7-8700K
 > - **RAM:** 32 GB
-> - **PSU** (power supply unit)**:** EVGA 850W GQ (Gold) — ample for the GPU plus a stack of spinning disks
+> - **PSU** (power supply unit)**:** Thermaltake Toughpower Grand RGB 850W (Gold, fully modular) — ample for the GPU plus a stack of spinning disks
 > - **Case:** Thermaltake View 71 full tower
 > - **GPU:** EVGA GTX 1080 Ti FTW3
 > - **Cooling refresh (page 3):** Thermalright Phantom Spirit 120 SE air cooler, 4x Noctua NF-P12 redux-1700 PWM case fans (optional fifth for top exhaust), a thermal pad variety kit (0.5/1.0/1.5 mm) and non-conductive paste for the GPU repaste

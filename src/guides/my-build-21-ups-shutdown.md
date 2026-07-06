@@ -14,7 +14,7 @@ The AdGuard and Uptime Kuma pages both leaned on this box's UPS (uninterruptible
 ## Plug it in
 
 ### Wire the battery side
-The whole tower goes on the CyberPower. Plug the View 71's EVGA 850W GQ PSU (power supply unit) into one of the UPS's **battery-backed** outlets — the CP1500PFCLCD also has surge-only outlets that go dark in an outage, so read the labels. If the Netgear GS308EPP switch and the house router reach, put them on battery too; with the network riding out a blip alongside the server, Tailscale and the local dashboards keep answering and nobody in the house notices anything happened.
+The whole tower goes on the CyberPower. Plug the View 71's Toughpower Grand RGB 850W PSU (power supply unit) into one of the UPS's **battery-backed** outlets — the CP1500PFCLCD also has surge-only outlets that go dark in an outage, so read the labels. If the Netgear GS308EPP switch and the house router reach, put them on battery too; with the network riding out a blip alongside the server, Tailscale and the local dashboards keep answering and nobody in the house notices anything happened.
 
 Connect the bundled USB cable: the square B end into the UPS, the flat A end into a motherboard USB port on the ASUS ROG Maximus X Hero. This data link is the entire point — a battery with no USB port keeps the server up until it dies, then drops it mid-write anyway, the same dirty power-off, just delayed.
 
