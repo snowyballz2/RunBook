@@ -325,7 +325,7 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 
 ### Seat the GTX 1080 Ti in the top slot
 1. Install the EVGA GTX 1080 Ti FTW3 in the **top x16 slot** (`PCIEX16_1`). With nothing contending, it runs at full x16.
-2. Connect both PCIe power leads from the Toughpower PSU to the card — two separate cables, per the PSU map below.
+2. Feed the card&apos;s two 8-pin inputs from **one** PCIe cable off a red socket — the end connector into one input, the 6+2 pigtail into the other. (Two cables is marginally cleaner, but one is within spec for a stock 1080 Ti at server loads.)
 
 The 1080 Ti is roughly 300 mm long. In the View 71 it clears the front drive-cage area with room to spare, so there is no need to remove the front pods for it.
 
@@ -398,8 +398,8 @@ The footage drive and the NVMe both ride the board; only the two mirror disks ha
 
 And here is that panel drawn to match — the sockets are **zoned by function** (PCI-E red, everything else black), two rows, and every cable in this build lands in a labelled zone:
 
-<svg viewBox="0 0 700 452" role="img" aria-label="The Toughpower Grand RGB 850W modular panel traced from the unit: four labelled socket zones over two rows, PCI-E sockets red, numbered where used in this build" style="width:100%;height:auto;max-width:700px;margin:0.75rem 0;font-family:inherit;font-size:11px">
-<rect x="1" y="1" width="698" height="450" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
+<svg viewBox="0 0 700 416" role="img" aria-label="The Toughpower Grand RGB 850W modular panel traced from the unit: four labelled socket zones over two rows, PCI-E sockets red, numbered where used in this build" style="width:100%;height:auto;max-width:700px;margin:0.75rem 0;font-family:inherit;font-size:11px">
+<rect x="1" y="1" width="698" height="414" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
 <text x="20" y="26" style="fill:currentColor;font-size:14px;font-weight:600">PSU modular panel — Toughpower Grand RGB 850W</text>
 <text x="20" y="44" style="fill:var(--color-ink-soft);font-size:10px">Traced from the unit. Sockets are zoned by function; PCI-E sockets are red. Numbered = used in this build.</text>
 <rect x="24" y="60" width="652" height="156" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
@@ -415,18 +415,17 @@ And here is that panel drawn to match — the sockets are **zoned by function** 
 <circle cx="164" cy="147" r="9" style="fill:#f43f5e"/>
 <text x="164" y="151" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">3</text>
 <rect x="224" y="92" width="64" height="30" rx="4" style="fill:#f43f5e;fill-opacity:0.2;stroke:#f43f5e"/>
-<circle cx="238" cy="107" r="9" style="fill:#f43f5e"/>
-<text x="238" y="111" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">4</text>
+<circle cx="238" cy="107" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
 <rect x="224" y="132" width="64" height="30" rx="4" style="fill:#f43f5e;fill-opacity:0.2;stroke:#f43f5e"/>
 <circle cx="238" cy="147" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
 <rect x="360" y="92" width="64" height="30" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
 <circle cx="374" cy="107" r="9" style="fill:currentColor"/>
-<text x="374" y="111" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">5</text>
+<text x="374" y="111" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">4</text>
 <rect x="360" y="132" width="64" height="30" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
 <circle cx="374" cy="147" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
 <rect x="434" y="92" width="64" height="30" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
 <circle cx="448" cy="107" r="9" style="fill:currentColor"/>
-<text x="448" y="111" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">6</text>
+<text x="448" y="111" text-anchor="middle" style="fill:var(--color-surface);font-size:11px;font-weight:700">5</text>
 <rect x="434" y="132" width="64" height="30" rx="4" style="fill:var(--color-surface);stroke:currentColor"/>
 <circle cx="448" cy="147" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
 <text x="90" y="196" text-anchor="middle" style="fill:currentColor;font-size:10px;font-weight:600">24PIN ATX</text>
@@ -442,21 +441,18 @@ And here is that panel drawn to match — the sockets are **zoned by function** 
 <text x="50" y="292" style="fill:var(--color-ink-soft);font-size:9.5px">4+4 CPU → board EATX12V (8-pin, top-left). Seat both 4+4 halves; the cable&apos;s straight-8 twin ties back.</text>
 <circle cx="34" cy="314" r="8" style="fill:#f43f5e"/>
 <text x="34" y="318" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">3</text>
-<text x="50" y="318" style="fill:var(--color-ink-soft);font-size:9.5px">8+2 PCI-E (red) → FTW3 plug 1 — PCIe cable A; its 6+2 pigtail parked.</text>
-<circle cx="34" cy="340" r="8" style="fill:#f43f5e"/>
+<text x="50" y="318" style="fill:var(--color-ink-soft);font-size:9.5px">8+2 PCI-E (red) → BOTH FTW3 plugs on one cable — end connector into one input, 6+2 pigtail into the other.</text>
+<circle cx="34" cy="340" r="8" style="fill:currentColor"/>
 <text x="34" y="344" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">4</text>
-<text x="50" y="344" style="fill:var(--color-ink-soft);font-size:9.5px">8+2 PCI-E (red) → FTW3 plug 2 — PCIe cable B; its 6+2 pigtail parked. (One red socket stays spare.)</text>
+<text x="50" y="344" style="fill:var(--color-ink-soft);font-size:9.5px">PERIPHERAL &amp; SATA → SATA cable 1, daisied to the two mirror drives (the two closest plates).</text>
 <circle cx="34" cy="366" r="8" style="fill:currentColor"/>
 <text x="34" y="370" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">5</text>
-<text x="50" y="370" style="fill:var(--color-ink-soft);font-size:9.5px">PERIPHERAL &amp; SATA → SATA cable 1, daisied to the two mirror drives (the two closest plates).</text>
-<circle cx="34" cy="392" r="8" style="fill:currentColor"/>
-<text x="34" y="396" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">6</text>
-<text x="50" y="396" style="fill:var(--color-ink-soft);font-size:9.5px">PERIPHERAL &amp; SATA → SATA cable 2, to the footage drive (the far plate).</text>
-<circle cx="34" cy="420" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
-<text x="50" y="424" style="fill:var(--color-ink-faint);font-size:9.5px">Spare: 1 red PCI-E, 2 PERIPHERAL &amp; SATA — plus a PCIe cable, a SATA cable, and the Molex chain still in the box.</text>
+<text x="50" y="370" style="fill:var(--color-ink-soft);font-size:9.5px">PERIPHERAL &amp; SATA → SATA cable 2, to the footage drive (the far plate).</text>
+<circle cx="34" cy="392" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
+<text x="50" y="396" style="fill:var(--color-ink-faint);font-size:9.5px">Spare: 2 red PCI-E + 2 PERIPHERAL &amp; SATA sockets (the 2nd PCIe cable went to another build).</text>
 </svg>
 
-*Faithful to your panel photo — the far-left 24-pin was partly hidden behind your thumb, so trust the printed zone labels over my exact socket count there. The rule the layout makes obvious: **the two GPU cables only go in the red 8+2 PCI-E sockets**, and the **two SATA cables go in PERIPHERAL & SATA** (mirror pair on one, footage on the other). Fully modular means only Thermaltake&apos;s own cables fit these pinouts. Total draw is ~300–400 W against 850 W available, so every rail loafs.*
+*Faithful to your panel photo — the far-left 24-pin was partly hidden behind your thumb, so trust the printed zone labels over my exact socket count there. The rule the layout makes obvious: **the GPU cable goes in a red 8+2 PCI-E socket** (one cable — end connector + pigtail into both plugs), and the **two SATA cables go in PERIPHERAL & SATA** (mirror pair on one, footage on the other). Fully modular means only Thermaltake&apos;s own cables fit these pinouts. Total draw is ~300–400 W against 850 W available, so every rail loafs.*
 
 ## Set the ASUS Maximus X Hero BIOS
 
