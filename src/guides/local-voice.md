@@ -18,7 +18,7 @@ A voice command takes four hops, and the reason Assist is so flexible is that **
 > "Intent engine" is just Home Assistant's name for the part that decides what you *meant*. "Turn off the kitchen" becomes the same action whether you typed it or spoke it — which is why the *Home Assistant OS* guide's nagging about putting every device in an **Area** pays off here too. No areas, no "turn off the kitchen."
 
 ### Get the hardware: Voice Preview Edition
-You can assemble the pipeline from a spare microphone and speaker, but the clean answer is Home Assistant's own **Voice Preview Edition** — a small puck (~$69) with a microphone array, a speaker, and a physical **mute switch**, built to run the whole pipeline against your server. Out of the box it answers to the wake words **"Okay Nabu," "Hey Jarvis,"** and **"Hey Mycroft."** Plug it in, point it at your Home Assistant instance, and it joins the LAN like any other device.
+You can assemble the pipeline from a spare microphone and speaker, but the clean answer is Home Assistant's own **Voice Preview Edition** — a small puck (about $69) with a microphone array, a speaker, and a physical **mute switch**, built to run the whole pipeline against your server. Out of the box it answers to the wake words **"Okay Nabu," "Hey Jarvis,"** and **"Hey Mycroft."** Plug it in, point it at your Home Assistant instance, and it joins the LAN like any other device.
 
 > [!WARNING]
 > The name is honest: this is still officially a **"preview"** product. It works, the company sells it, and it's the most in-keeping hardware for a build this self-hosted — but expect rougher edges than a finished Echo or HomePod, and expect things to keep changing under it. Buy it as the enthusiast's path it is, not as a polished appliance.
