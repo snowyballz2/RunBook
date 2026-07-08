@@ -452,7 +452,7 @@ And here is that panel drawn to match — the sockets are **zoned by function** 
 <text x="50" y="396" style="fill:var(--color-ink-faint);font-size:9.5px">Spare: 2 red PCI-E + 2 PERIPHERAL &amp; SATA sockets (the 2nd PCIe cable went to another build).</text>
 </svg>
 
-*Faithful to your panel photo — the far-left 24-pin was partly hidden behind your thumb, so trust the printed zone labels over my exact socket count there. The rule the layout makes obvious: **the GPU cable goes in a red 8+2 PCI-E socket** (one cable — end connector + pigtail into both plugs), and the **two SATA cables go in PERIPHERAL & SATA** (mirror pair on one, footage on the other). Fully modular means only Thermaltake&apos;s own cables fit these pinouts. Total draw is ~300–400 W against 850 W available, so every rail loafs.*
+*Faithful to your panel photo — the far-left 24-pin was partly hidden behind your thumb, so trust the printed zone labels over my exact socket count there. The rule the layout makes obvious: **the GPU cable goes in a red 8+2 PCI-E socket** (one cable — end connector + pigtail into both plugs), and the **two SATA cables go in PERIPHERAL & SATA** (mirror pair on one, footage on the other). Fully modular means only Thermaltake&apos;s own cables fit these pinouts. Total draw is about 300–400 W against 850 W available, so every rail loafs.*
 
 ## Set the ASUS Maximus X Hero BIOS
 

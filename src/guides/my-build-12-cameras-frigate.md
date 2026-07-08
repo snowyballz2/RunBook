@@ -212,6 +212,9 @@ cameras:
 > [!WARNING]
 > WiFi cameras drop more than wired ones — Frigate's docs are blunt that wireless streams are less reliable. If the RLC-510WA stutters, that is the link, not Frigate. The **Netgear GS308EPP** managed PoE (Power over Ethernet) switch is staged in the rack for future wired cameras; a camera on it joins Frigate the plain-RTSP way, no http-flv gymnastics needed.
 
+> [!DETAILS] When you add PoE cameras — what to buy
+> The switch is staged for wired cameras; here is the pick when you add them. Frigate's own hardware notes favour **Dahua-family** cameras for rock-solid RTSP and clean, configurable substreams — meaning none of the http-flv gymnastics the Reolink doorbell needed. The standout is the **EmpireTech IPC-T5442T-ZE** (about $105–135), a Dahua-made turret with a large 1/1.8″ 4MP Starlight sensor and a varifocal 2.7–12 mm lens; "EmpireTech" is simply how you buy Dahua in the US without the gray-market firmware headaches. A big-sensor 4MP beats cramming 4K onto a small sensor **at night**, which is when person detection actually needs to fire, and the varifocal lets you zoom to frame each spot instead of buying a different camera per angle. Turret shape over bullet, too — less IR glare and fewer spiderwebs. Cheaper Dahua-family value pick: the **Amcrest IP5M-T1179EW** (about $70), same clean config, weaker low light. Want to stay one-app all-Reolink? The **RLC-520A** (5MP, H.264) is the trouble-free Reolink — its H.264 stream sidesteps the H.265/RTSP quirks the higher-megapixel Reolinks hit. Wire any of them to the GS308EPP, give it a DHCP reservation, and fold it into the same `go2rtc:` and `cameras:` blocks. A Dahua-family camera takes plain RTSP — `rtsp://USER:PASS@CAM-IP:554/cam/realmonitor?channel=1&subtype=0` for the record stream and `subtype=1` for the detect substream — no `ffmpeg:` prefix or http-flv needed.
+
 ## Footage and retention
 
 ### Record to the dedicated footage drive

@@ -11,7 +11,7 @@ The PC being converted has 2017 cooling in it: an **AIO** (all-in-one liquid coo
 Do this alongside the Hardware & BIOS page's work — same screwdriver session, before the OS install. Windows is still on the NVMe at this stage, which matters at the end: it is your test bench for verifying temperatures before the wipe.
 
 > [!NOTE]
-> The swap, at a glance. **Out:** the 2017 Thermaltake AIO, the liquid metal on the CPU, all seven proprietary-plug RGB fans, and the RGB/fan controller box. **In:** a **Thermalright Phantom Spirit 120 SE** air cooler (~$55, ships with two fans and its own paste) and **four Noctua NF-P12 redux-1700 PWM** case fans (~$72), all running straight off the motherboard's own headers — no controller, no splitters, no lights.
+> The swap, at a glance. **Out:** the 2017 Thermaltake AIO, the liquid metal on the CPU, all seven proprietary-plug RGB fans, and the RGB/fan controller box. **In:** a **Thermalright Phantom Spirit 120 SE** air cooler (about $55, ships with two fans and its own paste) and **four Noctua NF-P12 redux-1700 PWM** case fans (about $72), all running straight off the motherboard's own headers — no controller, no splitters, no lights.
 
 > [!WARNING]
 > Static kills chips. Before touching the card or the board: unplug the PC, hold the power button ten seconds to bleed residual charge, and ground yourself on bare case or PSU metal — or wear an **ESD** (electrostatic discharge) strap. Work on a hard, non-carpet surface.
