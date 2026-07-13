@@ -215,6 +215,32 @@ cameras:
 > [!DETAILS] When you add PoE cameras — what to buy
 > The switch is staged for wired cameras; here is the pick when you add them. Frigate's own hardware notes favour **Dahua-family** cameras for rock-solid RTSP and clean, configurable substreams — meaning none of the http-flv gymnastics the Reolink doorbell needed. The standout is the **EmpireTech IPC-T5442T-ZE** (about $105–135), a Dahua-made turret with a large 1/1.8″ 4MP Starlight sensor and a varifocal 2.7–12 mm lens; "EmpireTech" is simply how you buy Dahua in the US without the gray-market firmware headaches. A big-sensor 4MP beats cramming 4K onto a small sensor **at night**, which is when person detection actually needs to fire, and the varifocal lets you zoom to frame each spot instead of buying a different camera per angle. Turret shape over bullet, too — less IR glare and fewer spiderwebs. Cheaper Dahua-family value pick: the **Amcrest IP5M-T1179EW** (about $70), same clean config, weaker low light. Want to stay one-app all-Reolink? The **RLC-520A** (5MP, H.264) is the trouble-free Reolink — its H.264 stream sidesteps the H.265/RTSP quirks the higher-megapixel Reolinks hit. Wire any of them to the GS308EPP, give it a DHCP reservation, and fold it into the same `go2rtc:` and `cameras:` blocks. A Dahua-family camera takes plain RTSP — `rtsp://USER:PASS@CAM-IP:554/cam/realmonitor?channel=1&subtype=0` for the record stream and `subtype=1` for the detect substream — no `ffmpeg:` prefix or http-flv needed.
 
+## Harden each camera
+
+A cheap IP camera is the least-trusted device on your network — closed firmware, a habit of phoning home to a vendor cloud, and exactly the sort of thing that turns up in breach lists. But nothing in this build needs a camera to reach the internet: Frigate pulls its stream **locally**, and you view it remotely by tunnelling *in* over Tailscale (the Remote Access page). So cut every camera off from the internet while leaving it fully reachable on the LAN. This is **device-level isolation** — no VLAN, no managed switch, no extra hardware.
+
+### Cut the camera's route to the internet
+Do this **after** the camera is configured and streaming to Frigate — initial setup in the vendor app often needs internet to activate the device, so lock it down last.
+
+Give each camera a **static IP with a blank (or dead) gateway**. A device only needs its gateway to reach addresses *outside* its own subnet — i.e. the internet. Leave it blank and the camera can still talk to anything on `192.168.1.x` (so Frigate keeps pulling its stream, unchanged), but it physically **cannot route a packet to the internet**: it can't phone home, leak footage to a cloud, or be reached by anyone outside. Set it in the camera's own network settings, matching the address you reserved earlier:
+
+- **IP** — the address you pinned (e.g. `192.168.1.71`)
+- **Subnet mask** — `255.255.255.0`
+- **Gateway** — leave **blank**; if the firmware insists on a value, enter an unused address on the subnet (even the camera's own IP) so packets route nowhere
+- **DNS** — blank or your router; it can't reach an external resolver anyway, which is the point
+
+### Shut the vendor cloud off at the source
+In the camera's own app, turn **off** everything that reaches out: **cloud / P2P / remote access**, **UPnP** (so it can't punch its own hole in the router), and any "push to phone" service. You're replacing all of it with Frigate and Home Assistant notifications — local, and far smarter.
+
+### Give it a local clock
+The one thing a camera legitimately wants from outside is the time. With no gateway it can't reach an internet **NTP (Network Time Protocol)** server, so point its **NTP** setting at your **router** or **Home Assistant** — either serves time on the LAN — so recording timestamps stay correct.
+
+> [!TIP]
+> If a camera's firmware flat-out refuses to work without a real gateway (a few do), give it the gateway back and **block it at the router instead**: the Fios router's **Access Control** can deny that one device internet access. Same outcome, enforced upstream.
+
+> [!NOTE]
+> Know what this does and doesn't do. It stops the camera reaching the **internet** — which is how cameras actually get compromised (cloud bugs, phone-home, remote exploitation) — but not a hijacked camera talking sideways to other devices on the flat LAN. Blocking that *lateral movement* needs true **VLAN** segmentation, and the Verizon Fios router can't do VLANs. If you ever want that extra wall it's an optional add-on — a **Firewalla** or an **OPNsense** box alongside the Fios router (a one-time purchase, no subscription), never a requirement of this build. Internet-isolated cameras plus local-only footage already cover the threat that actually matters at home.
+
 ## Footage and retention
 
 ### Record to the dedicated footage drive
