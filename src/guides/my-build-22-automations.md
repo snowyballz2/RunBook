@@ -284,6 +284,55 @@ The first condition keeps you to `type: new`, so one person walking through does
 >       media_content_type: music
 > ```
 
+## Motorized shades
+
+Motorized shades join the house as `cover` entities — identical open/close/set-position controls whether the motor is a SmartWings, an Eve, or a Hunter Douglas. This build runs a mix, and Home Assistant flattens all of them into one set of entities you group and automate together.
+
+### Pick a local radio and there is nothing to lock down
+Unlike a camera — which must be an IP device and usually drags a cloud along — a shade sends only tiny commands, so it can ride a **local radio** that never touches the internet. Choose one of these at purchase and the shade has no cloud to phone home to and nothing to isolate:
+
+- **Matter** (over Thread *or* over Ethernet) — local by design, driven by Home Assistant directly. The **SmartWings PoE "Matter over Ethernet"** motor is the pick here: power *and* Matter control down one Cat6 run, no batteries. **Eve MotionBlinds** are Matter over Thread, riding the HomePod mini border router.
+- **Zigbee** — pairs straight into the Zigbee2MQTT you already run on the ZBT-2. No hub, no cloud, fastest response. SmartWings sell a Zigbee motor too, if you prefer battery over pulling a cable.
+- **Hunter Douglas PowerView** — a hub system rather than a bare radio: the shades talk RF to a **PowerView Hub/Gateway** on the LAN, which the core `hunterdouglas_powerview` integration reads locally.
+
+Avoid any **Wi-Fi / "works with Alexa" shade** — that is the cloud-dependent variant, the only one you would have to isolate the camera way, and isolating it tends to break its own app. No reason to pick it when the local radios exist.
+
+> [!NOTE]
+> **The PoE Matter shades are the exception to the camera rule.** They *are* IP devices on your flat LAN, but Matter is local — Home Assistant drives them with no cloud, so they need no internet lockdown. Belt-and-suspenders, you *can* give one a static IP with a blank gateway and it keeps working; it is optional, not required. Do keep them on the **same flat subnet** as Home Assistant, though — Matter over Ethernet finds its controller by mDNS, which does not cross subnets (one more reason the network stays flat and unmanaged).
+
+### Split the PoE shades and cameras across the two switches
+PoE shades and PoE cameras both pull from the switch, so divide them by what each needs:
+
+- **PoE cameras → the managed 8-port GS308EPP**, whose per-port PoE control lets you power-cycle a frozen camera from software (or from an HA automation).
+- **PoE shades → the 24-port switch.** Its **320 W** budget is almost entirely theirs, since the cameras sit on the other switch. Each shade is one port plus one Cat6 run to the window, punched down on the patch panel and patched across.
+
+A motor draws almost nothing idle and only a modest amount while moving, so 320 W covers a whole house of shades. The one time you near the budget is a scene that moves *every* shade at once — with many shades, stagger the close-all below into small groups a second apart so the motors never all peak together.
+
+### Onboard each system
+All three land as `cover.*` entities:
+
+- **SmartWings Matter** (PoE or Thread) and **Eve MotionBlinds** — commission into Home Assistant's Matter controller, the same Matter capability the U400 locks use: **Settings → Devices & services → Add integration → Matter**, enter the pairing code, or share the device in from Apple Home.
+- **SmartWings Zigbee**, if you chose it — pair it in Zigbee2MQTT exactly like the leak sensors.
+- **Hunter Douglas** — put the **PowerView Hub/Gateway** on the LAN with a DHCP reservation, then add the **hunterdouglas_powerview** integration; every shade and PowerView scene imports.
+
+### Group them and drive them as one
+Make one group so brand stops mattering, then automate the group. In **Settings → Devices & services → Helpers → Create helper → Group → Cover group**, add every shade entity and name it `cover.all_shades`. Now a single rule closes the whole house at sunset no matter who built each motor:
+
+```yaml
+alias: Shades — close at sunset
+triggers:
+  - trigger: sun
+    event: sunset
+    offset: "-00:15:00"
+actions:
+  - action: cover.close_cover
+    target:
+      entity_id: cover.all_shades
+```
+
+> [!TIP]
+> Drive shades with **`cover.set_cover_position`** (0–100) rather than each brand's own scenes — that one action behaves identically across SmartWings, Eve, and Hunter Douglas, so a single automation covers every shade in the house. If a close-all ever browns a motor out on the PoE budget, split `cover.all_shades` into two smaller groups and close them a second apart.
+
 ## Make it yours
 
 ### Scenes — set the room, not the devices
