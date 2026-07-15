@@ -291,14 +291,17 @@ Motorized shades join the house as `cover` entities — identical open/close/set
 ### Pick a local radio and there is nothing to lock down
 Unlike a camera — which must be an IP device and usually drags a cloud along — a shade sends only tiny commands, so it can ride a **local radio** that never touches the internet. Choose one of these at purchase and the shade has no cloud to phone home to and nothing to isolate:
 
-- **Matter** (over Thread *or* over Ethernet) — local by design, driven by Home Assistant directly. The **SmartWings PoE "Matter over Ethernet"** motor is the pick here: power *and* Matter control down one Cat6 run, no batteries. **Eve MotionBlinds** are Matter over Thread, riding the HomePod mini border router.
-- **Zigbee** — pairs straight into the Zigbee2MQTT you already run on the ZBT-2. No hub, no cloud, fastest response. SmartWings sell a Zigbee motor too, if you prefer battery over pulling a cable.
+- **Matter** — local by design, driven by Home Assistant directly, and SmartWings sells it in two forms you can freely mix. The **PoE "Matter over Ethernet"** motor is the pick for most windows (power *and* control down one Cat6, no batteries). For the few windows where pulling a cable is not worth it, SmartWings also makes a **battery "Matter over Thread"** motor — the same Matter, just wireless. **Eve MotionBlinds** are Matter over Thread as well. Wired or battery, every one commissions into the *same* Home Assistant Matter controller and lands as an identical `cover` entity, so a mixed PoE-and-battery fleet is one uniform set of shades in HA — nothing special is needed to run the battery ones.
+- **Zigbee** — pairs straight into the Zigbee2MQTT you already run on the ZBT-2. No hub, no cloud, fastest response. SmartWings sell a Zigbee motor too, if you would rather lean on the Zigbee mesh you already run than add Thread devices.
 - **Hunter Douglas PowerView** — a hub system rather than a bare radio: the shades talk RF to a **PowerView Hub/Gateway** on the LAN, which the core `hunterdouglas_powerview` integration reads locally.
 
 Avoid any **Wi-Fi / "works with Alexa" shade** — that is the cloud-dependent variant, the only one you would have to isolate the camera way, and isolating it tends to break its own app. No reason to pick it when the local radios exist.
 
 > [!NOTE]
 > **The PoE Matter shades are the exception to the camera rule.** They *are* IP devices on your flat LAN, but Matter is local — Home Assistant drives them with no cloud, so they need no internet lockdown. Belt-and-suspenders, you *can* give one a static IP with a blank gateway and it keeps working; it is optional, not required. Do keep them on the **same flat subnet** as Home Assistant, though — Matter over Ethernet finds its controller by mDNS, which does not cross subnets (one more reason the network stays flat and unmanaged).
+
+> [!NOTE]
+> The **battery (Thread) shades** lean on different infrastructure than the PoE ones — a **Thread border router** and a healthy Thread mesh, not the wired LAN. Your **HomePod mini** already fills that role (it carries the Matter locks and the Eve motors), so there is nothing new to buy for a handful of battery shades. Two things to know: a battery Matter shade is a low-power *sleepy end-device* that does not extend the mesh itself, so if one sits far from the HomePod, add another Thread border router near it (a second HomePod mini, an Apple TV 4K, or a Nest Hub); and expect it to react a touch slower than a wired PoE shade. The PoE shades ignore all of this — they are wired.
 
 ### Split the PoE shades and cameras across the two switches
 PoE shades and PoE cameras both pull from the switch, so divide them by what each needs:
@@ -308,10 +311,13 @@ PoE shades and PoE cameras both pull from the switch, so divide them by what eac
 
 A motor draws almost nothing idle and only a modest amount while moving, so 320 W covers a whole house of shades. The one time you near the budget is a scene that moves *every* shade at once — with many shades, stagger the close-all below into small groups a second apart so the motors never all peak together.
 
+### Run one Cat6 to each PoE shade
+Every PoE shade needs its **own Cat6 run** back to the switch. The motor ships with a short **7.5-inch (19 cm) Ethernet pigtail** — join it to the in-wall cable with a **Cat6A inline coupler**. The motor is **802.3af/at** and draws about **5 W** (120–150 µA idle) over runs up to **100 m (328 ft)**, which is why a whole house of them barely dents the 320 W budget. Plan the **cable exit before the drywall closes**: **inside-mount** shades bring it out at the **head jamb**, **outside-mount** shades out the **rear of the motor cover**. Give each shade a dedicated run (a dual shade needs two); two motors *can* share one run through an Ethernet splitter, but a run per shade is cleaner. Terminate every run on the 48-port patch panel and patch across to the 24-port switch. (SmartWings ships a full PoE wiring guide with the shades; this matches it.)
+
 ### Onboard each system
 All three land as `cover.*` entities:
 
-- **SmartWings Matter** (PoE or Thread) and **Eve MotionBlinds** — commission into Home Assistant's Matter controller, the same Matter capability the U400 locks use: **Settings → Devices & services → Add integration → Matter**, enter the pairing code, or share the device in from Apple Home.
+- **SmartWings Matter** (PoE-wired *or* battery-Thread) and **Eve MotionBlinds** — commission into Home Assistant's Matter controller, the same Matter capability the U400 locks use: **Settings → Devices & services → Add integration → Matter**, enter the pairing code, or share the device in from Apple Home.
 - **SmartWings Zigbee**, if you chose it — pair it in Zigbee2MQTT exactly like the leak sensors.
 - **Hunter Douglas** — put the **PowerView Hub/Gateway** on the LAN with a DHCP reservation, then add the **hunterdouglas_powerview** integration; every shade and PowerView scene imports.
 
