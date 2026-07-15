@@ -6,7 +6,7 @@ order: 22
 accent: emerald
 ---
 
-The infrastructure is finished, and this is where the house starts doing things on its own. An automation is one sentence — *when* something happens, *then* do something — and this page builds a stack of them on the devices already onboarded — the dozen Third Reality leak sensors and the Aqara valve from the Zigbee mesh, the three Aqara U400 locks shared in over Matter, and the Reolink doorbell and camera through Frigate — plus two it onboards itself, the ecobee thermostats and the Lutron Caséta lights, and the Google/Nest speakers for announcements, which join later on the Voice page. The showpiece is the first one — a leak trips, the main water shuts off, and you find out loudly — and it is the automation that earns every other page in this build.
+The infrastructure is finished, and this is where the house starts doing things on its own. An automation is one sentence — *when* something happens, *then* do something — and this page builds a stack of them on the devices already onboarded — the dozen Third Reality leak sensors and the Aqara valve from the Zigbee mesh, the three Aqara U400 locks commissioned over Matter, and the Reolink doorbell and camera through Frigate — plus two it onboards itself, the ecobee thermostats and the Lutron Caséta lights, and the Google/Nest speakers for announcements, which join later on the Voice page. The showpiece is the first one — a leak trips, the main water shuts off, and you find out loudly — and it is the automation that earns every other page in this build.
 
 > [!WARNING]
 > Build the **water-leak** automation first, the day the valve is paired, before any convenience rule. It is the one that pays for the whole build. Everything else can wait. The valve-close and the critical iPhone push work the moment you save it; the spoken announcement depends on Piper text-to-speech and a Cast speaker, which you set up later on the Voice page of this build — until then that one step quietly does nothing, so build the rule now anyway.
@@ -125,7 +125,7 @@ It walks every sensor with a `battery` device class, keeps the ones under 20%, a
 ## Doors and presence
 
 ### Auto-lock the U400s and notify on unlock
-The three **Aqara U400** deadbolts were commissioned into Apple Home for Home Key, then shared into Home Assistant over Matter's multi-admin, so each surfaces as a `lock.*` entity. This build has **no door or window contact sensors** — the only Third Reality devices here are the leak sensors and the router plugs — so these rules trigger off the lock's *own* reported state instead of an external sensor. Three patterns per lock.
+The three **Aqara U400** deadbolts were commissioned directly into Home Assistant over Matter (per the Matter Locks page), so each surfaces as a `lock.*` entity. This build has **no door or window contact sensors** — the only Third Reality devices here are the leak sensors and the router plugs — so these rules trigger off the lock's *own* reported state instead of an external sensor. Three patterns per lock.
 
 First, auto-lock a few minutes after the lock is opened — trigger on the lock holding `unlocked` for a few minutes, then re-lock it. This stands in for a door-closed sensor: if the deadbolt is left open, it secures itself.
 
@@ -286,22 +286,21 @@ The first condition keeps you to `type: new`, so one person walking through does
 
 ## Motorized shades
 
-Motorized shades join the house as `cover` entities — identical open/close/set-position controls whether the motor is a SmartWings, an Eve, or a Hunter Douglas. This build runs a mix, and Home Assistant flattens all of them into one set of entities you group and automate together.
+Every shade in this build is a **SmartWings** — most **PoE** (wired), a few **battery**. Both are Matter under the hood, so Home Assistant sees one uniform set of `cover` entities: identical open/close/set-position controls whether the motor is wired or battery.
 
-### Pick a local radio and there is nothing to lock down
-Unlike a camera — which must be an IP device and usually drags a cloud along — a shade sends only tiny commands, so it can ride a **local radio** that never touches the internet. Choose one of these at purchase and the shade has no cloud to phone home to and nothing to isolate:
+### Two SmartWings flavours, one control surface — and nothing to lock down
+Unlike a camera — which must be an IP device and usually drags a cloud along — a shade sends only tiny commands, so it rides **Matter**, which is local by design: Home Assistant drives it directly with no cloud to phone home to and nothing to isolate. SmartWings sells that Matter in two forms you mix freely:
 
-- **Matter** — local by design, driven by Home Assistant directly, and SmartWings sells it in two forms you can freely mix. The **PoE "Matter over Ethernet"** motor is the pick for most windows (power *and* control down one Cat6, no batteries). For the few windows where pulling a cable is not worth it, SmartWings also makes a **battery "Matter over Thread"** motor — the same Matter, just wireless. **Eve MotionBlinds** are Matter over Thread as well. Wired or battery, every one commissions into the *same* Home Assistant Matter controller and lands as an identical `cover` entity, so a mixed PoE-and-battery fleet is one uniform set of shades in HA — nothing special is needed to run the battery ones.
-- **Zigbee** — pairs straight into the Zigbee2MQTT you already run on the ZBT-2. No hub, no cloud, fastest response. SmartWings sell a Zigbee motor too, if you would rather lean on the Zigbee mesh you already run than add Thread devices.
-- **Hunter Douglas PowerView** — a hub system rather than a bare radio: the shades talk RF to a **PowerView Hub/Gateway** on the LAN, which the core `hunterdouglas_powerview` integration reads locally.
+- **PoE "Matter over Ethernet"** — the pick for most windows. Power *and* Matter control down one Cat6 run, no batteries. It is a wired IP device on your flat LAN.
+- **Battery "Matter over Thread"** — for the few windows where pulling a cable is not worth it. Same Matter, carried wirelessly over the Thread mesh.
 
-Avoid any **Wi-Fi / "works with Alexa" shade** — that is the cloud-dependent variant, the only one you would have to isolate the camera way, and isolating it tends to break its own app. No reason to pick it when the local radios exist.
-
-> [!NOTE]
-> **The PoE Matter shades are the exception to the camera rule.** They *are* IP devices on your flat LAN, but Matter is local — Home Assistant drives them with no cloud, so they need no internet lockdown. Belt-and-suspenders, you *can* give one a static IP with a blank gateway and it keeps working; it is optional, not required. Do keep them on the **same flat subnet** as Home Assistant, though — Matter over Ethernet finds its controller by mDNS, which does not cross subnets (one more reason the network stays flat and unmanaged).
+Either way, every motor commissions into the *same* Home Assistant Matter controller and lands as an identical `cover` entity, so a mixed PoE-and-battery fleet is one set of shades in HA.
 
 > [!NOTE]
-> The **battery (Thread) shades** lean on different infrastructure than the PoE ones — a **Thread border router** and a healthy Thread mesh, not the wired LAN. Your **HomePod mini** already fills that role (it carries the Matter locks and the Eve motors), so there is nothing new to buy for a handful of battery shades. Two things to know: a battery Matter shade is a low-power *sleepy end-device* that does not extend the mesh itself, so if one sits far from the HomePod, add another Thread border router near it (a second HomePod mini, an Apple TV 4K, or a Nest Hub); and expect it to react a touch slower than a wired PoE shade. The PoE shades ignore all of this — they are wired.
+> **The PoE Matter shades are the exception to the camera lockdown rule.** They *are* IP devices on your flat LAN, but Matter is local — Home Assistant drives them with no cloud, so they need no internet lockdown. Belt-and-suspenders, you *can* give one a static IP with a blank gateway and it keeps working; optional, not required. Do keep them on the **same flat subnet** as Home Assistant — Matter over Ethernet finds its controller by mDNS, which does not cross subnets.
+
+> [!NOTE]
+> **The battery (Thread) shades ride the Thread mesh, not the wired LAN** — so they lean on **Home Assistant's own OpenThread Border Router** (the second ZBT-2 you stood up on the Matter Locks page), the same one carrying the locks. A battery Matter shade is a low-power *sleepy end-device* that does not repeat the mesh, and a single border router does not blanket a house — so keep the battery shades within solid range of the radio, or add a mains-powered Thread router near a far one. A HomePod added later becomes a second border router and helps. Most of your shades are PoE (wired, no Thread), so the Thread footprint stays light.
 
 ### Split the PoE shades and cameras across the two switches
 PoE shades and PoE cameras both pull from the switch, so divide them by what each needs:
@@ -314,15 +313,14 @@ A motor draws almost nothing idle and only a modest amount while moving, so 320 
 ### Run one Cat6 to each PoE shade
 Every PoE shade needs its **own Cat6 run** back to the switch. The motor ships with a short **7.5-inch (19 cm) Ethernet pigtail** — join it to the in-wall cable with a **Cat6A inline coupler**. The motor is **802.3af/at** and draws about **5 W** (120–150 µA idle) over runs up to **100 m (328 ft)**, which is why a whole house of them barely dents the 320 W budget. Plan the **cable exit before the drywall closes**: **inside-mount** shades bring it out at the **head jamb**, **outside-mount** shades out the **rear of the motor cover**. Give each shade a dedicated run (a dual shade needs two); two motors *can* share one run through an Ethernet splitter, but a run per shade is cleaner. Terminate every run on the 48-port patch panel and patch across to the 24-port switch. (SmartWings ships a full PoE wiring guide with the shades; this matches it.)
 
-### Onboard each system
-All three land as `cover.*` entities:
+### Onboard the shades
+Both kinds land as `cover.*` entities, commissioned straight into Home Assistant's Matter controller — no Apple Home, no vendor app:
 
-- **SmartWings Matter** (PoE-wired *or* battery-Thread) and **Eve MotionBlinds** — commission into Home Assistant's Matter controller, the same Matter capability the U400 locks use: **Settings → Devices & services → Add integration → Matter**, enter the pairing code, or share the device in from Apple Home.
-- **SmartWings Zigbee**, if you chose it — pair it in Zigbee2MQTT exactly like the leak sensors.
-- **Hunter Douglas** — put the **PowerView Hub/Gateway** on the LAN with a DHCP reservation, then add the **hunterdouglas_powerview** integration; every shade and PowerView scene imports.
+- In the **Home Assistant companion app**, go to **Settings → Devices & services → Add integration → Matter**, and enter each shade's pairing code. A **PoE (Ethernet) shade** joins over the wired LAN; a **battery (Thread) shade** joins over Home Assistant's OpenThread Border Router — the phone's Bluetooth does the handshake and hands over the Thread credentials, exactly like the locks.
+- Give each PoE shade a **DHCP reservation** so its address never moves.
 
 ### Group them and drive them as one
-Make one group so brand stops mattering, then automate the group. In **Settings → Devices & services → Helpers → Create helper → Group → Cover group**, add every shade entity and name it `cover.all_shades`. Now a single rule closes the whole house at sunset no matter who built each motor:
+Make one group so PoE-vs-battery stops mattering, then automate the group. In **Settings → Devices & services → Helpers → Create helper → Group → Cover group**, add every shade entity and name it `cover.all_shades`. Now a single rule closes the whole house at sunset:
 
 ```yaml
 alias: Shades — close at sunset
@@ -337,7 +335,7 @@ actions:
 ```
 
 > [!TIP]
-> Drive shades with **`cover.set_cover_position`** (0–100) rather than each brand's own scenes — that one action behaves identically across SmartWings, Eve, and Hunter Douglas, so a single automation covers every shade in the house. If a close-all ever browns a motor out on the PoE budget, split `cover.all_shades` into two smaller groups and close them a second apart.
+> Drive shades with **`cover.set_cover_position`** (0–100) rather than the vendor app — one action covers every shade, PoE or battery, in the house. If a close-all ever browns a motor out on the PoE budget, split `cover.all_shades` into two smaller groups and close them a second apart.
 
 ## Make it yours
 

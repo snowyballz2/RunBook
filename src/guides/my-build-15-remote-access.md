@@ -8,7 +8,7 @@ accent: azure
 
 Everything you have built so far answers only at home: the Proxmox web UI, Home Assistant, TrueNAS, Frigate, the AdGuard LXC (Linux container), and the hostnames the Nginx Proxy Manager LXC serves — all of it lives on the `192.168.1.x` LAN (local area network) and stops at the front door. This guide fixes that for the entire build at once by putting **Tailscale on the Proxmox host** and turning that host into a *subnet router* for the whole home network. Every service you build on later pages — Nextcloud, Vaultwarden, Homepage, Uptime Kuma — becomes reachable the same way the moment it gets a LAN IP, with no extra remote-access setup per service.
 
-The payoff fits this all-Apple, local-first household exactly: one mesh VPN (virtual private network), built from outbound connections only, with **no router port-forwards, ever.** Your network stays as closed to the internet as it is right now. Every guest stays on its normal LAN IP, and every one of them becomes reachable from your iPhone, MacBook, or HomePod-adjacent travels — through the single subnet route this host advertises.
+The payoff fits this local-first household exactly: one mesh VPN (virtual private network), built from outbound connections only, with **no router port-forwards, ever.** Your network stays as closed to the internet as it is right now. Every guest stays on its normal LAN IP, and every one of them becomes reachable from your iPhone, MacBook, or HomePod-adjacent travels — through the single subnet route this host advertises.
 
 > [!NOTE]
 > This page assumes Proxmox VE (Proxmox Virtual Environment) is installed on the 500 GB NVMe (Non-Volatile Memory Express) drive, the i7-8700K server is on Ethernet through the Netgear GS308EPP switch with a static IP, and you can already log in to the web UI from a browser on the LAN.
@@ -19,10 +19,10 @@ The payoff fits this all-Apple, local-first household exactly: one mesh VPN (vir
 ## Put the host on a tailnet
 
 > [!NOTE]
-> Before you start, have the household Apple ID ready — the same account behind Apple Home, the Home Key locks, and the HomePod mini. The same identity signs in the host (in a browser on the MacBook, which may ask you to re-authenticate) and later the iPhone, so keep its password and a two-factor device within reach. Make sure the iPhone is already signed in to that Apple ID and the App Store before the phone step at the end.
+> Before you start, have the household Apple ID ready — the same one your iPhones, iPads, and Watches already use. The same identity signs in the host (in a browser on the MacBook, which may ask you to re-authenticate) and later the iPhone, so keep its password and a two-factor device within reach. Make sure the iPhone is already signed in to that Apple ID and the App Store before the phone step at the end.
 
 ### Create your Tailscale account
-Tailscale calls your private network a *tailnet*; it is created the moment you first sign in. Go to [tailscale.com](https://tailscale.com/) and sign up — the Personal plan is $0, free forever. There is no Tailscale password to invent: you sign in with an identity you already own. For this household, **Apple** is the natural choice — it is the same account behind Apple Home, the Home Key locks, and the HomePod mini — but Google, Microsoft, GitHub, or a passkey work too.
+Tailscale calls your private network a *tailnet*; it is created the moment you first sign in. Go to [tailscale.com](https://tailscale.com/) and sign up — the Personal plan is $0, free forever. There is no Tailscale password to invent: you sign in with an identity you already own. For this household, **Apple** is the natural choice — it is the Apple ID your iPhones already use — but Google, Microsoft, GitHub, or a passkey work too.
 
 > [!TIP]
 > Pick the account you are most certain you will still control in five years; it *is* your Tailscale identity, and the same account goes on every device here. Signing in with one account everywhere is the whole trick — that is what puts the host, your iPhone, and your MacBook on the same network.

@@ -1,104 +1,95 @@
 ---
 title: Matter Locks
-subtitle: Three Aqara U400s into Apple Home for Home Key, then shared to Home Assistant
+subtitle: Three Aqara U400s commissioned straight into Home Assistant over its own Thread border router — no Apple hub
 collection: My Build
 order: 11
 accent: rose
 ---
 
-The three Aqara U400 deadbolts are **Matter-over-Thread** devices, and in a household that runs on iPhones and Apple Watches the order you set them up in matters. Commission each lock into **Apple Home first** — that is the only path that lights up **Home Key** (tap-to-unlock with an iPhone or Apple Watch) — then **share** each one into Home Assistant (HA) over Matter's multi-admin feature so it shows up in your dashboards and automations. This page walks both halves for all three locks and explains why you never re-scan a QR code.
+The three Aqara U400 deadbolts are **Matter-over-Thread** devices, and this build runs them **Apple-hub-free**: Home Assistant provides its own **Thread border router**, so each lock commissions **directly into Home Assistant (HA)** — no HomePod, no Apple Home in the loop. That keeps them fully local and self-hosted for lock/unlock, automations, and notifications. The one thing HA cannot grant is Apple's **Home Key** (tap-to-unlock with an iPhone or Apple Watch): that needs the lock in Apple Home, which needs an *Apple* Thread border router — so Home Key waits for the HomePod you add later, and the last section switches it on then.
 
 > [!NOTE]
-> Matter is the vendor-neutral standard for local control with no manufacturer cloud in the loop. **Thread** is the low-power mesh radio it rides on here. A Thread device needs a **border router** on your network to reach the rest of the house — on this build the **HomePod mini** already fills that role, so there is nothing extra to buy.
+> Matter is the vendor-neutral standard for local control with no manufacturer cloud in the loop. **Thread** is the low-power mesh radio it rides on. A Thread device needs a **border router** to reach the network — and on this build **Home Assistant runs its own**, on a dedicated ZBT-2 radio, so no Apple or Google hub sits in the critical path. A HomePod added later simply *joins* the Thread mesh as a second border router and strengthens it.
 
-## Before you start
+## Stand up Home Assistant's Thread border router
 
-### Confirm the prerequisites are in place
+### Add a second ZBT-2 for Thread
+Your first **HA Connect ZBT-2** is busy running Zigbee2MQTT — and one radio cannot cleanly do Zigbee and Thread at once (the multi-protocol firmware is experimental and degrades both). So Thread gets its **own** ZBT-2. Plug a **second ZBT-2** into the server on a short USB extension (away from case interference), then pass it to the Home Assistant OS VM exactly like the first: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the second ZBT-2 by name, and reboot the VM.
+
+> [!WARNING]
+> Two identical ZBT-2s are easy to mix up. Note which USB port each is on, and after the reboot confirm Zigbee2MQTT still sees *its* coordinator before you point Thread at the other one — do not let the OTBR add-on grab the Zigbee radio, or the whole mesh drops.
+
+### Install the OpenThread Border Router add-on
+In Home Assistant, go to **Settings → Add-ons → Add-on store**, install **OpenThread Border Router (OTBR)**, and in its configuration point it at the **second ZBT-2's device path** (not the Zigbee one). Start it. Home Assistant's **Thread** integration picks it up automatically and forms a network — check **Settings → Devices & services → Thread**, where you should see your own network listed as *preferred*, with the OTBR as its border router.
+
+> [!NOTE]
+> This is the piece a HomePod would otherwise provide, and running it yourself means full local control and visibility. Be honest about the trade-off, though: it is **one** border router, where an Apple household gets a whole-house mesh from every HomePod. Plan around it — commission Thread devices within solid range of this radio, and lean on the fact that most of this build's Matter devices (the **PoE shades**, wired over Ethernet) are not on Thread at all. The Thread mesh here carries only these locks and any **battery** shades, so its footprint is light.
+
+## Before you commission
+
+### Confirm the prerequisites
 Three things need to be true before you touch a lock:
 
-- The **Home Assistant OS VM** is up and onboarded, reachable at its pinned address, with the **Matter** integration available (it ships with Home Assistant — no add-on hunting required).
-- The **HomePod mini** is online and acting as the **Thread border router**. Open the Apple **Home** app → **Home Settings → Wi-Fi Network & Thread** and confirm a Thread network exists.
-- You have an **iPhone with Bluetooth on**. Commissioning a Matter device — both into Apple Home and into Home Assistant — happens over Bluetooth from a phone. The Home Assistant web UI alone cannot do it, which surprises people running HA in a VM with no Bluetooth at all. The phone bridges that gap.
+- The **Home Assistant OS VM** is up, with the **Matter** integration available (it ships with Home Assistant) and the **OTBR** running from the step above.
+- You have an **iPhone or Android phone with Bluetooth on**, signed in to the **Home Assistant companion app**. Commissioning a Matter device happens over Bluetooth from a phone — the HA web UI alone cannot do it, which surprises people running HA in a VM with no Bluetooth. The phone bridges that gap and hands the device HA's Thread credentials.
+- Each lock is **physically installed and powered** — fresh batteries seated, the door able to throw the bolt.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
-> The address the Home Assistant companion app points at. The Matter share step runs through this app on a Bluetooth phone.
-
-> [!WARNING]
-> Install the **Home Assistant companion app** on the same iPhone you use for Apple Home, and sign it in to your Home Assistant instance, **before** you start the locks. The share step in the second half needs both apps on one Bluetooth-capable phone.
+> The address the Home Assistant companion app points at.
 
 ### Find each lock's QR setup code
-Every U400 has a **Matter QR code** — on a sticker inside the battery compartment, on the quick-start card, and usually a peel-off duplicate for your records. Keep all three codes somewhere safe now; record them in the field below so this checklist stands on its own, and record them in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). You will scan each one **once**, into Apple Home; after that it is spent.
+Every U400 has a **Matter QR code** — on a sticker inside the battery compartment, on the quick-start card, and usually a peel-off duplicate for your records. You scan each one **once**, into Home Assistant. Record all three now so this checklist stands on its own, and keep them in your password manager (you consolidate these into Vaultwarden later in the build) — you re-commission from them after any factory reset.
 
 > [!SECRET] matter-lock-codes | Aqara U400 Matter setup codes (all three)
-> The 11-digit numeric pairing code under each QR (shown grouped like `XXXX-XXX-XXXX`). Capture all three here — one per lock — and label them by door (Front, Side, Garage). If a lock ever needs a factory reset, you re-commission from these.
+> The 11-digit numeric pairing code under each QR (shown grouped like `XXXX-XXX-XXXX`). Capture all three — one per lock — labelled by door (Front, Side, Garage). If a lock ever needs a factory reset, you re-commission from these.
 
-> [!DETAILS] Why the QR code is single-use
-> A Matter setup code is the device's first-contact secret. The moment Apple Home commissions the lock with it, the code is **consumed** — Home Assistant cannot scan the same code to join independently. That is by design, and it is exactly what the share step below works around: Matter lets one device answer to several controllers at once (*multi-admin*), so the second controller is invited in with a fresh code rather than re-pairing from scratch.
+## Commission the locks into Home Assistant
 
-## Commission into Apple Home
-
-### Add the first U400 to the Home app
-Do this with the lock physically installed and powered (fresh batteries seated, the door able to throw the bolt). For the first lock:
-
-1. Open the Apple **Home** app on the iPhone and tap **+ → Add Accessory**.
-2. Point the camera at the lock's **Matter QR code**, or tap **More options** and enter the numeric setup code by hand.
-3. The phone commissions the lock over Bluetooth, then hands it to **Thread** via the HomePod mini border router. Accept the **Add to Apple Home** / Matter trust prompt when it appears.
-4. Assign the lock to a **room** (Front Door, Side Door, Garage) and give it a clear **name** — this name follows the device when it later appears in Home Assistant, so pick well now.
-
-> [!TIP]
-> Commission the lock **near the HomePod mini** if the first join is slow, then move it to its door. Thread is a mesh, but the initial handshake is more reliable with a strong first hop.
-
-### Turn on Home Key
-Once a U400 is in Apple Home, the Home app offers to set up **Home Key** — a digital key in your Apple Wallet that unlocks the bolt with a tap of the iPhone or Apple Watch. Accept it. This is the entire reason for commissioning into Apple Home first; sharing the lock to Home Assistant later does **not** grant Home Key, and pairing it into Home Assistant first would mean you never get Home Key at all.
-
-> [!NOTE]
-> Home Key and the physical keypad and key on the U400 all keep working regardless of what software controls the lock. Home Assistant is an *addition*, never a replacement for the ways you already open the door.
-
-### Repeat for all three locks
-Run the same Add Accessory flow for the **second and third U400**, each with its own QR code, room, and name, and enable Home Key on each. Confirm all three respond to lock/unlock taps in the Home app before moving on — a lock that misbehaves in Apple Home will misbehave everywhere.
-
-## Share each lock into Home Assistant
-
-### Generate a fresh pairing code in Apple Home
-Because the original QR code is spent, you invite Home Assistant in as a **second admin**. Starting with the first lock, in the Apple **Home** app:
-
-1. Open the lock's tile → **Settings** (the gear).
-2. Scroll to **Turn On Pairing Mode** (listed under the accessory's setup options).
-3. Apple displays — and copies — a **fresh setup code** (a Matter code, shown grouped like `XXXX-XXX-XXXX`). Leave this screen up; the code is time-limited.
-
-> [!DETAILS] What "multi-admin" actually does
-> You are not removing the lock from Apple Home or duplicating it. Multi-admin lets the **same physical lock** answer to multiple Matter controllers simultaneously. Apple Home keeps full control and Home Key stays exactly as it was; Home Assistant simply gains *shared* control of the identical device. There is no second pairing, no bridge, and no cloud relay — both controllers talk to the lock locally over Thread.
-
-### Add it to Home Assistant as a Matter device
-With the fresh code in hand, on the same Bluetooth iPhone:
+### Add the first U400
+With the OTBR up and the companion app open on a Bluetooth phone:
 
 1. In the **Home Assistant companion app**, go to **Settings → Devices & services → Add integration → Matter**.
-2. When prompted, enter (or scan, if Apple showed a QR) the **fresh setup code** Apple just generated.
-3. The phone commissions Home Assistant as the new admin over Bluetooth and Thread. After a moment the lock appears in Home Assistant as a `lock.*` entity.
+2. Scan the lock's **Matter QR code** (or tap to enter the numeric setup code by hand).
+3. The phone commissions the lock over **Bluetooth**, hands it Home Assistant's **Thread credentials**, and the lock joins HA's Thread network. After a moment it appears in Home Assistant as a `lock.*` entity.
+4. Assign it to the matching **Area** (Front Door, Side Door, Garage) and give it a clear name.
 
 > [!WARNING]
-> Do this step from the **companion app**, not the desktop browser. The Matter add flow needs the phone's Bluetooth radio to reach the lock — the Home Assistant VM has none.
+> Do this from the **companion app**, not the desktop browser — the Matter add flow needs the phone's Bluetooth radio to reach the lock, and the Home Assistant VM has none.
 
-### Place it in an Area and repeat
-Assign the new lock entity to the matching room under **Settings → Areas, labels & zones** so dashboards and voice targeting can find it. Then repeat the whole share — **Turn On Pairing Mode → fresh code → Add → Matter** — for the **second and third locks**. Each lock needs its own pairing-mode round trip; there is no batch path.
+> [!TIP]
+> If the first join is slow, commission the lock **near the ZBT-2 Thread radio**, then move it to its door. Thread is a mesh, but the initial handshake is more reliable with a strong first hop.
+
+### Repeat for all three
+Run the same Matter add flow for the **second and third U400**, each with its own QR code, Area, and name. Each lock is its own round trip; there is no batch path. Confirm all three toggle from Home Assistant before moving on — a lock that misbehaves here will misbehave in every automation.
 
 > [!NOTE]
-> Name the Area the same as the room you chose in Apple Home (Front Door, Side Door, Garage). Consistent names keep the two apps legible side by side and make automations read cleanly.
+> The physical keypad and key on the U400 keep working regardless of software — Home Assistant control is an *addition*, never a replacement for the ways you already open the door. (Home Key, the Apple-Wallet tap, is the one convenience that waits for the HomePod; the last section adds it.)
 
 ## Verify and hand off
 
-### Test both controllers on every lock
-For each of the three U400s, confirm the lock truly answers to both admins and the physical hardware still works:
+### Test each lock
+For each of the three U400s:
 
-- **Apple Home** — lock and unlock from the Home app; tap the iPhone or Watch to confirm **Home Key** still opens it.
-- **Home Assistant** — toggle the `lock.*` entity and watch the bolt move; check the state reports back correctly.
+- **Home Assistant** — toggle the `lock.*` entity and watch the bolt move; confirm the state reports back correctly.
 - **The door itself** — the keypad code and the physical key both still work.
 
 > [!TIP]
-> If a lock shows up in Home Assistant but its state lags or goes *unavailable*, the Thread mesh is usually the cause — move the HomePod mini closer to the lock, or reboot it. The lock being controllable in Apple Home but flaky in Home Assistant points at routing, not at the share.
+> If a lock shows up but its state lags or goes *unavailable*, the Thread mesh is the usual cause — a sleepy battery device reaching a single border router. Move it closer to the ZBT-2 radio, reboot the OTBR add-on, or (the durable fix) add a mains-powered Thread router near it. Adding a HomePod later gives you a second border router, which generally clears this up.
 
 ### These locks now feed the automations
-With all three U400s present as `lock.*` entities in Home Assistant, they become raw material for the automation rules on this build — auto-lock after a set time, an unlock notification to the household, and presence-based actions. Until the locks exist as Home Assistant entities, those rules have nothing to act on; now they do.
+With all three U400s present as `lock.*` entities, they become raw material for the automation rules later in this build — auto-lock after a set time, an unlock notification to the household, and presence-based actions. Until the locks exist as entities, those rules have nothing to act on; now they do.
+
+## Add Home Key later — when you add a HomePod
+
+### Share each lock into Apple Home
+**Home Key** (tap-to-unlock with an iPhone or Apple Watch) lives only in **Apple Home**, and adding a Thread lock to Apple Home needs an **Apple Thread border router** — a HomePod or Apple TV. You do not have one yet, so this waits until you do. When the HomePod arrives and is set up as a home hub, add Home Key without disturbing anything:
+
+1. In Home Assistant, open the lock → its device page → **Add to another network / Share device** (Matter multi-admin). Home Assistant generates a **fresh, time-limited pairing code**.
+2. In the Apple **Home** app, tap **+ → Add Accessory → More options**, and enter that fresh code. The lock joins Apple Home *alongside* Home Assistant — both control it locally over Thread, no cloud, no second pairing of the device itself.
+3. Accept Apple's offer to set up **Home Key**. Repeat the share for the other two locks.
+
+> [!NOTE]
+> This is Matter multi-admin run in reverse of the usual write-up: because you commissioned into Home Assistant **first**, HA is the controller that hands out the share code and Apple Home comes in second. Home Assistant keeps full control throughout; the HomePod adds Home Key *and* a second Thread border router that strengthens the mesh for every battery Thread device in the house.
 
 > [!WARNING]
-> Keep all three Matter setup codes (the `matter-lock-codes` field above) and the Home Assistant owner credentials safe in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). If a lock ever needs a factory reset, you re-commission from these codes — and you redo both halves of this page (Apple Home first, then the share) for that lock.
+> Keep all three Matter setup codes (the `matter-lock-codes` field above) and the Home Assistant owner credentials safe in your password manager (you consolidate these into Vaultwarden when you set it up later in the build). After a factory reset you re-commission a lock from its code — straight into Home Assistant, per this page.

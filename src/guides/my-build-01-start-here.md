@@ -141,8 +141,8 @@ One map for the whole build: every physical device, how it is powered, and which
 <line x1="380" y1="450" x2="380" y2="590" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
 <line x1="380" y1="590" x2="388" y2="590" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
 <rect x="56" y="575" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="131" y="595" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">HomePod mini</text>
-<text x="131" y="609" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Apple hub · Thread border router</text>
+<text x="131" y="595" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">HomePod mini (later)</text>
+<text x="131" y="609" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">optional · Siri + extra Thread router</text>
 <rect x="101" y="619" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="131" y="629" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
 <rect x="222" y="575" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
@@ -187,11 +187,11 @@ One map for the whole build: every physical device, how it is powered, and which
 <line x1="338" y1="946" x2="330" y2="946" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
 <rect x="376" y="720" width="328" height="160" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="540" y="742" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Thread — Matter</text>
-<text x="540" y="758" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">border router: the HomePod mini (left)</text>
+<text x="540" y="758" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">border router: HA OTBR — 2nd ZBT-2 on the server</text>
 <rect x="392" y="772" width="296" height="88" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="540" y="792" text-anchor="middle" style="fill:currentColor;font-size:10.5px">3× Aqara U400 deadbolts</text>
 <text x="540" y="807" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Front · Side · Garage</text>
-<text x="540" y="821" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Apple Home first → shared to Home Assistant</text>
+<text x="540" y="821" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">commissioned straight into Home Assistant</text>
 <rect x="510" y="831" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="540" y="841" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>
 <rect x="376" y="910" width="328" height="180" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
@@ -211,7 +211,7 @@ One map for the whole build: every physical device, how it is powered, and which
 <line x1="618" y1="998" x2="618" y2="1010" style="stroke:var(--color-ink-faint);stroke-width:1.5;stroke-dasharray:5 3"/>
 </svg>
 
-*Reading it top to bottom: the wall feeds the UPS; the UPS battery side keeps the server and the switch alive through an outage, with a USB lead telling the server when to shut down cleanly. Everything wired rides the switch to the router; everything wireless rides the router's Wi-Fi. Three radio meshes hang off their own hubs — Zigbee off the ZBT-2 on the server, Thread off the HomePod mini, and Lutron's own RF off the Caséta bridge.*
+*Reading it top to bottom: the wall feeds the UPS; the UPS battery side keeps the server and the switch alive through an outage, with a USB lead telling the server when to shut down cleanly. Everything wired rides the switch to the router; everything wireless rides the router's Wi-Fi. Three radio meshes hang off their own hubs — Zigbee off one ZBT-2 on the server, Thread off Home Assistant's own OpenThread border router (a second ZBT-2 on the server), and Lutron's own RF off the Caséta bridge. A HomePod added later just joins the Thread mesh as an extra border router; the build does not need it.*
 
 ## Get ready
 
@@ -237,11 +237,11 @@ Check you have everything before you start — the later pages assume each piece
 > [!DETAILS] Network, power, and radios
 > - **Netgear GS308EPP** managed switch with **PoE** (Power over Ethernet, power and data on one cable) for future cameras
 > - **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply, the battery backup) — monitored over **NUT** (Network UPS Tools)
-> - **HA Connect ZBT-2** Zigbee coordinator (ember driver, paired with Zigbee2MQTT)
-> - **HomePod mini** — the Thread border router and Apple Home hub
+> - **HA Connect ZBT-2 ×2** — one is the Zigbee coordinator (ember driver, Zigbee2MQTT); the second is a dedicated **Thread** radio for Home Assistant's own **OpenThread Border Router**, so Matter-over-Thread (the locks, any battery shades) needs no Apple or Google hub
+> - **HomePod mini** *(optional, add later)* — brings Siri voice and a second Thread border router that strengthens the mesh; the build works fully without it
 
 > [!DETAILS] What the house controls
-> - **Locks:** 3x Aqara U400 (Matter-over-Thread), commissioned into Apple Home first, then shared to Home Assistant
+> - **Locks:** 3x Aqara U400 (Matter-over-Thread), commissioned straight into Home Assistant over its own Thread border router (Home Key added later if you add a HomePod)
 > - **Cameras:** Reolink Video Doorbell WiFi (the black 4:3 model, wired off the door transformer) + Reolink RLC-510WA (5MP WiFi), both feeding Frigate
 > - **Leak protection:** 12x Third Reality leak sensors, an Aqara Valve Controller T1 on the main shutoff lever, and Third Reality smart plugs acting as Zigbee routers
 > - **Already in the house:** Lutron Caseta lights and shades (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge
@@ -314,7 +314,7 @@ The pages are numbered in the exact sequence to build in. Do not skip ahead — 
 8. **TrueNAS Storage** — build the ZFS mirror on the passed-through HBA and share folders over **SMB** (Server Message Block, the Windows/Mac file-sharing protocol).
 9. **Protect Your Data** — snapshots, scrubs, disk-health alerts, and the encrypted offsite copy.
 10. **Home Assistant & Zigbee2MQTT** — bring up Home Assistant and pair the Zigbee leak sensors, valve, and router plugs.
-11. **Matter Locks** — commission the Aqara U400 locks into Apple Home, then share them to Home Assistant.
+11. **Matter Locks** — commission the Aqara U400 locks straight into Home Assistant over its own Thread border router (no Apple hub).
 12. **Cameras, Doorbell & Frigate** — point the Reolink cameras at Frigate and run detection on the shared GPU.
 13. **AdGuard** — the household DNS (Domain Name System) and ad-blocking resolver.
 14. **Reverse Proxy** — clean hostnames and certificates with Nginx Proxy Manager.
