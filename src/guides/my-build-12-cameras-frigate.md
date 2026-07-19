@@ -218,7 +218,7 @@ The doorbell and the WiFi RLC-510WA got the build going; the wired perimeter is 
 
 ### What to buy
 - **Four `IPC-T54PRO-AS` (WizColor dual-light) — the perimeter.** A Dahua-made 4MP turret on a large **1/1.8″** sensor with an **f/1.0** lens, **dual light** (IR to 60 m, *or* a warm LED for full-colour night), and **two-way talk**. **$199.99** each, direct from empiretech01.com. Get the **3.6mm** lens — the mounting section explains why it fits your corners. It supersedes the older IR-only `IPC-T54IR-AS-S3`: same price, but the PRO is the newer WizColor generation and adds the warm light and speaker for nothing extra.
-- **One or two `IPC-Color4K-T-S2` — indoor.** An **8MP 1/1.2″** full-colour turret, the biggest sensor in this class, so it holds clean colour in a dark room where an IR camera would glare off walls and glass. **$279.99** each, **2.8mm** lens (wide, to cover a room). The white finish sells out fast — back-order it rather than settle.
+- **One or two `IPC-Color4K-T-S2` — indoor.** An **8MP 1/1.2″** full-colour turret, the biggest sensor in this class, so it holds clean colour in a dark room where an IR camera would glare off walls and glass. **$279.99** each, **3.6mm** lens — it also sits in an inside 90° corner, so it takes the same wedge-fit lens as the outdoor turrets (3.6mm fills the 90° corner and reaches further for facial ID; 2.8mm would just waste width on the flanking walls). One camera recognises across a large room and identifies out to about 25 ft; a big open-plan space is better served by **two** in opposite corners. The white finish sells out fast — back-order it rather than settle.
 - **The Reolink doorbell stays** — already wired and already in Frigate above.
 
 > [!NOTE]
