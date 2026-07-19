@@ -1,12 +1,12 @@
 ---
 title: Cameras, Doorbell & Frigate
-subtitle: Frigate NVR with detection on the 1080 Ti, plus the Reolink doorbell and RLC-510WA
+subtitle: Frigate NVR with detection on the 1080 Ti — the Reolink doorbell plus four EmpireTech turrets and a full-colour indoor camera
 collection: My Build
 order: 12
 accent: spruce
 ---
 
-Frigate is the camera recorder (an NVR — network video recorder) that turns the two Reolink cameras into searchable, object-aware footage on hardware you own. On this build it runs as its own container, hardware-decodes the camera streams, and runs object detection on the **EVGA GTX 1080 Ti** whose driver was set up on the host earlier and is shared from there into containers — no cloud, no subscription, no Coral. This page builds the container, points detection at the 1080 Ti via ONNX/CUDA, adds the black 4:3 Reolink doorbell and the RLC-510WA over go2rtc, and lands recordings on the dedicated footage drive.
+Frigate is the camera recorder (an NVR — network video recorder) that turns the two Reolink cameras into searchable, object-aware footage on hardware you own. On this build it runs as its own container, hardware-decodes the camera streams, and runs object detection on the **EVGA GTX 1080 Ti** whose driver was set up on the host earlier and is shared from there into containers — no cloud, no subscription, no Coral. This page builds the container, points detection at the 1080 Ti via ONNX/CUDA, adds the black 4:3 Reolink doorbell and the RLC-510WA over go2rtc, specs the four EmpireTech turrets and the full-colour indoor camera that make up the wired perimeter, and lands recordings on the dedicated footage drive.
 
 ## Create the Frigate container
 
@@ -212,8 +212,62 @@ cameras:
 > [!WARNING]
 > WiFi cameras drop more than wired ones — Frigate's docs are blunt that wireless streams are less reliable. If the RLC-510WA stutters, that is the link, not Frigate. The **Netgear GS308EPP** managed PoE (Power over Ethernet) switch is staged in the rack for future wired cameras; a camera on it joins Frigate the plain-RTSP way, no http-flv gymnastics needed.
 
-> [!DETAILS] When you add PoE cameras — what to buy
-> The switch is staged for wired cameras; here is the pick when you add them. Frigate's own hardware notes favour **Dahua-family** cameras for rock-solid RTSP and clean, configurable substreams — meaning none of the http-flv gymnastics the Reolink doorbell needed. The standout is the **EmpireTech IPC-T5442T-ZE** (about $105–135), a Dahua-made turret with a large 1/1.8″ 4MP Starlight sensor and a varifocal 2.7–12 mm lens; "EmpireTech" is simply how you buy Dahua in the US without the gray-market firmware headaches. A big-sensor 4MP beats cramming 4K onto a small sensor **at night**, which is when person detection actually needs to fire, and the varifocal lets you zoom to frame each spot instead of buying a different camera per angle. Turret shape over bullet, too — less IR glare and fewer spiderwebs. Cheaper Dahua-family value pick: the **Amcrest IP5M-T1179EW** (about $70), same clean config, weaker low light. Want to stay one-app all-Reolink? The **RLC-520A** (5MP, H.264) is the trouble-free Reolink — its H.264 stream sidesteps the H.265/RTSP quirks the higher-megapixel Reolinks hit. Wire any of them to the GS308EPP, give it a DHCP reservation, and fold it into the same `go2rtc:` and `cameras:` blocks. A Dahua-family camera takes plain RTSP — `rtsp://USER:PASS@CAM-IP:554/cam/realmonitor?channel=1&subtype=0` for the record stream and `subtype=1` for the detect substream — no `ffmpeg:` prefix or http-flv needed.
+## The PoE camera lineup
+
+The doorbell and the WiFi RLC-510WA got the build going; the wired perimeter is **EmpireTech (Dahua-family) turrets**, settled on after weighing every alternative. Here is the locked lineup.
+
+### What to buy
+- **Four `IPC-T54PRO-AS` (WizColor dual-light) — the perimeter.** A Dahua-made 4MP turret on a large **1/1.8″** sensor with an **f/1.0** lens, **dual light** (IR to 60 m, *or* a warm LED for full-colour night), and **two-way talk**. **$199.99** each, direct from empiretech01.com. Get the **3.6mm** lens — the mounting section explains why it fits your corners. It supersedes the older IR-only `IPC-T54IR-AS-S3`: same price, but the PRO is the newer WizColor generation and adds the warm light and speaker for nothing extra.
+- **One or two `IPC-Color4K-T-S2` — indoor.** An **8MP 1/1.2″** full-colour turret, the biggest sensor in this class, so it holds clean colour in a dark room where an IR camera would glare off walls and glass. **$279.99** each, **2.8mm** lens (wide, to cover a room). The white finish sells out fast — back-order it rather than settle.
+- **The Reolink doorbell stays** — already wired and already in Frigate above.
+
+> [!NOTE]
+> **Why EmpireTech (Dahua), not Reolink or Hikvision.** Frigate lives on an RTSP stream, and Dahua-family cameras give the clean kind: a plain `/cam/realmonitor` URL, no http-flv wrappers, no connection-limit juggling, and **fully configurable substreams** so detection gets a right-sized frame. They also expose a **real manual shutter** and *honour* it — the one thing that keeps a moving person sharp at night — where Reolink fakes that control and auto-blurs. And they behave when firewalled off the internet (the hardening below), which Reolink actively fights. Hikvision's hardware is just as good, but the legitimate English-firmware version costs *more* than the EmpireTech, splits you across two config styles, and the cheap listings are grey-market with no security patches — so it was considered and dropped.
+
+> [!TIP]
+> **On a tight budget, the sanctioned swap is Amcrest, not Reolink.** The **`IP5M-T1179EW`** (**$79.99**, and the one camera Micro Center actually stocks) is a Dahua rebrand — it keeps the clean RTSP, the configurable substream, and the honoured manual shutter, just on a smaller **1/2.7″** sensor. Use it on a lit or secondary angle where you don't need the PRO's night reach. It drops into the same config and the same hardening as the EmpireTechs — one playbook — where a Reolink would fracture both.
+
+> [!WARNING]
+> Buy EmpireTech **direct from empiretech01.com** (or its own Amazon storefront). Newegg and marketplace resellers list the identical cameras at a steep markup. These prices are a mid-2026 snapshot — check the store for the day's number — and EmpireTech runs limited stock, so order the four together.
+
+### Add each one to the config
+A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv work. Wire it to the **GS308EPP**, give it a DHCP reservation, and fold its two streams into the same `go2rtc: streams:` and its camera into the same `cameras:` block you built above:
+
+```yaml
+# main = record, sub = detect — fold into your EXISTING blocks
+go2rtc:
+  streams:
+    front_turret:
+      - "rtsp://USER:PASS@CAM-IP:554/cam/realmonitor?channel=1&subtype=0"
+    front_turret_sub:
+      - "rtsp://USER:PASS@CAM-IP:554/cam/realmonitor?channel=1&subtype=1"
+```
+
+> [!TIP]
+> In each turret's own web UI, set the **substream** to roughly 720p at **5 fps** for a clean detect frame, and at night set a **manual shutter** — cap it near 1/120 s and hold the gain down — so a moving person doesn't smear (the control Reolink never gave you). On the `T54PRO-AS`, leave the warm light **off / IR mode** for any angle where you want to read a licence plate; the colour mode washes plates out.
+
+## Mount the cameras
+
+The four turrets go in **inside building corners**, routed straight into the wall cavity. Turrets make this easy — here is the whole method.
+
+### Aiming: the eyeball does the work
+A turret is a ball-in-socket — it tilts and rotates inside its housing, so mounted flat on a wall it **already aims down and out**. You do **not** need an angled bracket or a wall arm to point it down; downward is its natural direction. (Brackets only solve the opposite problem — a soffit-mounted turret that can't tilt back *up* to the horizon — which is not your case.)
+
+### Lens: 3.6mm fits an inside corner
+Each camera sits in a concave 90° corner, so the two walls block everything but a **90° wedge** looking out. The **3.6mm** lens (about 87°) fits that opening almost exactly — every pixel lands on the useful area, and the walls stay just out of frame. A wider 2.8mm would overspill onto the two flanking walls and, worse, bounce the IR and warm light back into the lens at night. Step up to **6mm** only on a corner whose view is unusually deep and you want the extra reach down the middle.
+
+### Cavity mount: skip the junction box
+Routing into the wall cavity means the cable and its waterproof connector tuck **inside the wall**, so you can skip the junction box entirely — it exists for solid-masonry runs with nowhere to hide the connector. Per camera:
+
+1. **Drill about a 1-inch hole** behind the base, big enough to pass the camera's moulded waterproof RJ45 pigtail into the cavity. Position it so the base covers the hole.
+2. **Caulk the base to the wall, leaving a gap at the bottom** so any wind-driven water drains out instead of pooling in the wall.
+3. The RJ45 connection now lives in the dry cavity — protected, no weatherproofing tape needed (a dab of dielectric grease is belt-and-braces).
+
+> [!NOTE]
+> The one exception is a corner that turns out to be **solid brick or stucco with no cavity** behind it — there you would want EmpireTech's **`PFA130-E`** junction box (about $20) to hold the connector, since you cannot fish into the wall. For framed walls with a cavity, buy no boxes.
+
+> [!WARNING]
+> Keep each camera's view clear of the **flanking walls, gutters, and fascia**. A turret's lens sits flush, so a bright surface right in front bounces IR — and the T54PRO-AS's warm light — back into the lens and washes the image out. Aiming into the open wedge (the reason for the 3.6mm lens) is exactly what avoids it.
 
 ## Harden each camera
 
