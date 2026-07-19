@@ -199,16 +199,11 @@ One map for the whole build: every physical device, how it is powered, and which
 <rect x="392" y="946" width="296" height="52" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="540" y="963" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Caséta Pro bridge</text>
 <text x="540" y="976" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Ethernet — a wired port on the switch · AC wall</text>
-<rect x="392" y="1010" width="140" height="66" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="462" y="1030" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Wall dimmers</text>
-<rect x="407" y="1040" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
-<text x="462" y="1050" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">in-wall house mains</text>
-<rect x="548" y="1010" width="140" height="66" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="618" y="1030" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Serena shades</text>
-<rect x="588" y="1040" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
-<text x="618" y="1050" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>
-<line x1="462" y1="998" x2="462" y2="1010" style="stroke:var(--color-ink-faint);stroke-width:1.5;stroke-dasharray:5 3"/>
-<line x1="618" y1="998" x2="618" y2="1010" style="stroke:var(--color-ink-faint);stroke-width:1.5;stroke-dasharray:5 3"/>
+<rect x="470" y="1010" width="140" height="66" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="540" y="1030" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Wall dimmers</text>
+<rect x="485" y="1040" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="540" y="1050" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">in-wall house mains</text>
+<line x1="540" y1="998" x2="540" y2="1010" style="stroke:var(--color-ink-faint);stroke-width:1.5;stroke-dasharray:5 3"/>
 </svg>
 
 *Reading it top to bottom: the wall feeds the UPS; the UPS battery side keeps the server and the switch alive through an outage, with a USB lead telling the server when to shut down cleanly. Everything wired rides the switch to the router; everything wireless rides the router's Wi-Fi. Three radio meshes hang off their own hubs — Zigbee off one ZBT-2 on the server, Thread off Home Assistant's own OpenThread border router (a second ZBT-2 on the server), and Lutron's own RF off the Caséta bridge. A HomePod added later just joins the Thread mesh as an extra border router; the build does not need it.*
@@ -244,7 +239,7 @@ Check you have everything before you start — the later pages assume each piece
 > - **Locks:** 3x Aqara U400 (Matter-over-Thread), commissioned straight into Home Assistant over its own Thread border router (Home Key added later if you add a HomePod)
 > - **Cameras:** Reolink Video Doorbell WiFi (the black 4:3 model, wired off the door transformer) + Reolink RLC-510WA (5MP WiFi), both feeding Frigate
 > - **Leak protection:** 12x Third Reality leak sensors, an Aqara Valve Controller T1 on the main shutoff lever, and Third Reality smart plugs acting as Zigbee routers
-> - **Already in the house:** Lutron Caseta lights and shades (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge
+> - **Already in the house:** Lutron Caseta lights (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge
 
 ### Get wired Ethernet to the server's final spot
 Proxmox cannot use Wi-Fi for its management interface, so the box must be plugged into the router with a cable. If the spot where the quiet box will live is far from the router, get a long Ethernet cable or a powerline adapter (both work) **before** you start — this is the one networking thing you cannot fix from a browser later, and discovering it after the wipe means the server is unreachable.
