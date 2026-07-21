@@ -76,7 +76,7 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="83" y="234" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
 <rect x="196" y="178" width="224" height="72" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="308" y="199" text-anchor="middle" style="fill:currentColor;font-weight:600">Netgear GS308EPP switch</text>
-<text x="308" y="214" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">PoE+ ports ready for future wired cams</text>
+<text x="308" y="214" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">PoE+ powers the wired camera perimeter</text>
 <rect x="266" y="224" width="84" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="308" y="234" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery</text>
 <line x1="150" y1="214" x2="196" y2="214" style="stroke:#10b981;stroke-width:2.5"/>
@@ -230,14 +230,17 @@ Check you have everything before you start — the later pages assume each piece
 > - **LSI/Broadcom 9300-8i HBA** — IT mode (Initiator-Target mode, where the card exposes raw disks instead of building its own array), pre-flashed; passed through to TrueNAS
 
 > [!DETAILS] Network, power, and radios
-> - **Netgear GS308EPP** managed switch with **PoE** (Power over Ethernet, power and data on one cable) for future cameras
+> - **Netgear GS308EPP** managed 8-port **PoE** (Power over Ethernet, power and data on one cable) switch — powers the wired camera perimeter (the EmpireTech turrets + the Color4K indoor cam); per-port control reboots a frozen camera from software
+> - **24-port PoE switch (320 W budget)** — powers the PoE SmartWings shades, kept on their own switch away from the cameras
+> - **48-port patch panel** — every camera and shade Cat6 run terminates here and patches across to the switches
 > - **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply, the battery backup) — monitored over **NUT** (Network UPS Tools)
 > - **HA Connect ZBT-2 ×2** — one is the Zigbee coordinator (ember driver, Zigbee2MQTT); the second is a dedicated **Thread** radio for Home Assistant's own **OpenThread Border Router**, so Matter-over-Thread (the locks, any battery shades) needs no Apple or Google hub
 > - **HomePod mini** *(optional, add later)* — brings Siri voice and a second Thread border router that strengthens the mesh; the build works fully without it
 
 > [!DETAILS] What the house controls
 > - **Locks:** 3x Aqara U400 (Matter-over-Thread), commissioned straight into Home Assistant over its own Thread border router (Home Key added later if you add a HomePod)
-> - **Cameras:** Reolink Video Doorbell WiFi (the black 4:3 model, wired off the door transformer) + Reolink RLC-510WA (5MP WiFi), both feeding Frigate
+> - **Cameras:** the wired perimeter is **4x EmpireTech IPC-T54PRO-AS** (WizColor dual-light turrets, 3.6mm, inside-corner mounts) plus **1-2x IPC-Color4K-T-S2** (8MP full-colour, 3.6mm) indoors — all PoE into the GS308EPP, feeding Frigate. Kept alongside: the **Reolink Video Doorbell WiFi** (black 4:3, off the door transformer) and a **Reolink RLC-510WA** (WiFi) stopgap
+> - **Shades:** **SmartWings** motorized shades — most PoE ("Matter over Ethernet"), a few battery ("Matter over Thread") — all landing in Home Assistant as `cover` entities
 > - **Leak protection:** 12x Third Reality leak sensors, an Aqara Valve Controller T1 on the main shutoff lever, and Third Reality smart plugs acting as Zigbee routers
 > - **Already in the house:** Lutron Caseta lights (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge
 
@@ -310,7 +313,7 @@ The pages are numbered in the exact sequence to build in. Do not skip ahead — 
 9. **Protect Your Data** — snapshots, scrubs, disk-health alerts, and the encrypted offsite copy.
 10. **Home Assistant & Zigbee2MQTT** — bring up Home Assistant and pair the Zigbee leak sensors, valve, and router plugs.
 11. **Matter Locks** — commission the Aqara U400 locks straight into Home Assistant over its own Thread border router (no Apple hub).
-12. **Cameras, Doorbell & Frigate** — point the Reolink cameras at Frigate and run detection on the shared GPU.
+12. **Cameras, Doorbell & Frigate** — point the EmpireTech turrets, the Color4K indoor camera, and the Reolink doorbell at Frigate and run detection on the shared GPU.
 13. **AdGuard** — the household DNS (Domain Name System) and ad-blocking resolver.
 14. **Reverse Proxy** — clean hostnames and certificates with Nginx Proxy Manager.
 15. **Remote Access** — reach everything from anywhere with Tailscale, no port-forwards.

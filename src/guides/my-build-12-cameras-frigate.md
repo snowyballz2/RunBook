@@ -210,7 +210,7 @@ cameras:
 > `h264Preview_01_main` / `_sub` is the usual RLC spelling, but confirm it from the Reolink app rather than trusting the example. Detecting on the sub stream is correct anyway — frames get resized down to the model's small input, so a high-resolution detect stream loses the extra detail for nothing. Aim the detect stream at roughly 720p and **5 fps** (the recommended rate; 10 fps is the maximum worth using for most setups) — anything higher just burns effort on frames the model downscales away. Frigate tracks `person` by default; add an `objects: track:` list to watch for `car`, `dog`, and friends.
 
 > [!WARNING]
-> WiFi cameras drop more than wired ones — Frigate's docs are blunt that wireless streams are less reliable. If the RLC-510WA stutters, that is the link, not Frigate. The **Netgear GS308EPP** managed PoE (Power over Ethernet) switch is staged in the rack for future wired cameras; a camera on it joins Frigate the plain-RTSP way, no http-flv gymnastics needed.
+> WiFi cameras drop more than wired ones — Frigate's docs are blunt that wireless streams are less reliable. If the RLC-510WA stutters, that is the link, not Frigate. The **Netgear GS308EPP** managed PoE (Power over Ethernet) switch is the home for the wired EmpireTech perimeter specced below; a camera on it joins Frigate the plain-RTSP way, no http-flv gymnastics needed.
 
 ## The PoE camera lineup
 

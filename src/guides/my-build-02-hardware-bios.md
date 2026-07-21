@@ -154,7 +154,7 @@ Here is the tray plate itself — traced from the actual part, hole for hole. Th
 These are not slot-related, but they go in with the build:
 
 - **HA Connect ZBT-2** Zigbee coordinator — leave it boxed for now; it plugs into USB via a short extension lead once the host is up (keeps the radio away from case interference).
-- **Netgear GS308EPP** managed PoE (Power over Ethernet) switch — for future PoE cameras; wire the server's Ethernet through it.
+- **Netgear GS308EPP** managed PoE (Power over Ethernet) switch — powers the wired camera perimeter; wire the server's Ethernet through it too.
 - **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply) — the server and switch plug into it; its USB data cable goes to the host for NUT (Network UPS Tools) monitoring later.
 
 ## The board and its connections
