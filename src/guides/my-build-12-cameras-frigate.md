@@ -6,7 +6,7 @@ order: 12
 accent: spruce
 ---
 
-Frigate is the camera recorder (an NVR — network video recorder) that turns the two Reolink cameras into searchable, object-aware footage on hardware you own. On this build it runs as its own container, hardware-decodes the camera streams, and runs object detection on the **EVGA GTX 1080 Ti** whose driver was set up on the host earlier and is shared from there into containers — no cloud, no subscription, no Coral. This page builds the container, points detection at the 1080 Ti via ONNX/CUDA, adds the black 4:3 Reolink doorbell and the RLC-510WA over go2rtc, specs the four EmpireTech turrets and the full-colour indoor camera that make up the wired perimeter, and lands recordings on the dedicated footage drive.
+Frigate is the camera recorder (an NVR — network video recorder) that turns your cameras — the EmpireTech perimeter turrets, the full-colour indoor camera, and the Reolink doorbell — into searchable, object-aware footage on hardware you own. On this build it runs as its own container, hardware-decodes the camera streams, and runs object detection on the **EVGA GTX 1080 Ti** whose driver was set up on the host earlier and is shared from there into containers — no cloud, no subscription, no Coral. This page builds the container, points detection at the 1080 Ti via ONNX/CUDA, adds the black 4:3 Reolink doorbell and the RLC-510WA over go2rtc, specs the four EmpireTech turrets and the full-colour indoor camera that make up the wired perimeter, and lands recordings on the dedicated footage drive.
 
 ## Create the Frigate container
 
@@ -366,7 +366,7 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 > [!INPUT] mqtt-user | MQTT username | | mqtt-user
 > The dedicated user Frigate logs in as, created in the Mosquitto add-on's Logins on the Home Assistant & Zigbee2MQTT page — `mqtt-user` matches the example; edit if named differently.
 
-> [!SECRET] mqtt-password | MQTT password
+> [!SECRET] frigate-mqtt-password | MQTT password
 
 > [!WARNING]
 > **Boot order matters.** The broker lives in the Home Assistant OS VM, which boots slower than this LXC. After a power cut the container can come up before the broker exists, so its MQTT connection never establishes and its Home Assistant entities stay dead until a restart. You already set this on the Home Assistant & Zigbee2MQTT page — confirm in Proxmox that the Home Assistant OS VM's **Start/Shutdown order** number is lower than this container's (or give the container a startup delay), so the VM starts before the container. Footage still records locally either way; only the automation side goes quiet.
