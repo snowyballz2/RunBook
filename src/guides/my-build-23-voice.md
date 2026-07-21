@@ -105,6 +105,7 @@ Read the script before piping it into a root shell. Accept its defaults; it inst
 > apt install -y python3-venv
 > python3 -m venv /opt/wyoming
 > /opt/wyoming/bin/pip install wyoming-faster-whisper
+> mkdir -p /opt/wyoming/data
 > ```
 >
 > Then give it a small systemd unit so it listens on `10300` and survives reboots. Create `/etc/systemd/system/wyoming-faster-whisper.service`:
@@ -115,7 +116,7 @@ Read the script before piping it into a root shell. Accept its defaults; it inst
 > After=network-online.target
 >
 > [Service]
-> ExecStart=/opt/wyoming/bin/wyoming-faster-whisper --uri tcp://0.0.0.0:10300 --model small-int8 --device cuda
+> ExecStart=/opt/wyoming/bin/wyoming-faster-whisper --uri tcp://0.0.0.0:10300 --data-dir /opt/wyoming/data --model small-int8 --device cuda
 > Restart=on-failure
 >
 > [Install]
