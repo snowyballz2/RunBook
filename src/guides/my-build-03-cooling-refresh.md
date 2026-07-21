@@ -131,7 +131,7 @@ Set the heatsink back down aligned, start all screws by hand, then tighten the f
 ## Verify before the wipe
 
 ### Test it under Windows while you still can
-Windows is still on the NVMe until the Install Proxmox page erases it — use it. Seat the card, reconnect both PCIe power cables, boot into the old Windows install, and run a GPU stress test (FurMark, or Heaven looping) for ten minutes while watching temperatures, plus a short CPU load (Cinebench) to prove the new tower is seated well. This is the last point where load-testing the hardware is trivial.
+Windows is still on the NVMe until the Install Proxmox page erases it — use it. Seat the card, reconnect the GPU's PCIe power cable to both 8-pin inputs (end connector + pigtail), boot into the old Windows install, and run a GPU stress test (FurMark, or Heaven looping) for ten minutes while watching temperatures, plus a short CPU load (Cinebench) to prove the new tower is seated well. This is the last point where load-testing the hardware is trivial.
 
 > [!NOTE]
 > A good repaste and repad usually drops GPU load temps 10–20°C; target under about **80°C** under sustained load. If temps are the same or worse, the die screws are uneven or a pad is the wrong thickness — recheck before trusting it. The CPU under the new air cooler should sit comfortably under 75°C in a stress run, and the room should be noticeably quieter with the pump gone.

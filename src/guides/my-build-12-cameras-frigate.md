@@ -369,7 +369,7 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 > [!SECRET] frigate-mqtt-password | MQTT password
 
 > [!WARNING]
-> **Boot order matters.** The broker lives in the Home Assistant OS VM, which boots slower than this LXC. After a power cut the container can come up before the broker exists, so its MQTT connection never establishes and its Home Assistant entities stay dead until a restart. You already set this on the Home Assistant & Zigbee2MQTT page — confirm in Proxmox that the Home Assistant OS VM's **Start/Shutdown order** number is lower than this container's (or give the container a startup delay), so the VM starts before the container. Footage still records locally either way; only the automation side goes quiet.
+> **Boot order matters.** The broker lives in the Home Assistant OS VM, which boots slower than this LXC. After a power cut the container can come up before the broker exists, so its MQTT connection never establishes and its Home Assistant entities stay dead until a restart. You set the Home Assistant VM to **order=2** on the Home Assistant & Zigbee2MQTT page; now give this Frigate container **order=3** — in Proxmox, select the container → **Options → Start/Shutdown order** — so the broker's VM (the lower number) always starts first, with a **startup delay** on the container as belt-and-suspenders insurance. Footage still records locally either way; only the automation side goes quiet.
 
 ### Restart and watch it work
 Apply any config change by restarting Frigate in the container's console:
