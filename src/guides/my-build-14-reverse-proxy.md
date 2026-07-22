@@ -37,14 +37,14 @@ When it asks **Default or Advanced**, pick **Advanced** and press Enter through 
 > Not Docker, despite most NPM tutorials. The script builds everything from source inside the Debian container: OpenResty (the nginx flavor that does the proxying), the NPM app on Node.js, and Certbot — the Let's Encrypt client with DNS plugins — running as the `openresty` and `npm` systemd services. Settings live in a SQLite file at `/data/database.sqlite`. Two consequences: Docker advice from the wider internet does not apply, and updating has its own command — open the container's **Console** and run `update`. Snapshot the container first.
 
 ### Create your admin account
-Browse to the proxy at `http://<proxy-ip>:81`. A welcome screen asks you to create the admin account — **Full Name**, **Email address**, **New Password**. This login controls where every name in your house points, so give it a strong password and record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
+Browse to the proxy at `http://<proxy-ip>:81` and log in with NPM's default credentials — **`admin@example.com`** / **`changeme`**. It immediately forces a first-run step: set your real **Full Name** and **Email address**, then a strong **New Password**. This login controls where every name in your house points, so make the password strong and record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
 
 > [!INPUT] npm-email | NPM admin email
 
 > [!SECRET] npm-password | NPM admin password
 
 > [!NOTE]
-> Older write-ups say to log in as `admin@example.com` / `changeme` and change it. That default was removed in late 2025 — current releases have only this wizard, and the container installs the latest. If you meet the old default login, you are on an outdated install that deserves the `update` command.
+> The default `admin@example.com` / `changeme` login is deliberately useless: NPM forces you to replace both the moment you first log in, so the account you actually keep is the one you just set. Do not skip recording the new password — there is no reset button, only a database edit.
 
 ## Get a domain and a wildcard certificate
 
@@ -70,21 +70,20 @@ Create no other records. No A record with your home IP — nothing about this do
 > DuckDNS hands out free subdomains of `duckdns.org`. Claim one, copy the token from its dashboard, and your services become `proxmox.yourname.duckdns.org` and friends — NPM's provider list includes **DuckDNS**, credentials a single line: `dns_duckdns_token=your-token`. The trade: longer, visibly borrowed names, and DuckDNS allows only one TXT record at a time, so request exactly one certificate — the wildcard `*.yourname.duckdns.org`, which covers every service anyway. Everywhere below you see `*.example.com`, read your DuckDNS name instead.
 
 ### Request the wildcard certificate
-In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Encrypt via DNS**. In the dialog:
+In NPM, open **SSL Certificates**, click **Add SSL Certificate**, and choose **Let's Encrypt**. In the dialog:
 
 - **Domain Names** — `*.example.com`, your own domain swapped in.
-- **Key Type** — leave the default.
+- **Email Address** — for Let's Encrypt's expiry notices.
+- **Use a DNS Challenge** — turn this **on**; a wildcard can only be issued this way, and it reveals the DNS fields below.
 - **DNS Provider** — pick yours from the list.
 - **Credentials File Content** — the box pre-fills a template for the chosen provider; replace the placeholder with your real `dns-api-token`.
 - **Propagation Seconds** — leave empty for the plugin's default.
+- **I Agree to the Let's Encrypt Terms of Service** — tick it.
 
 Save, and after a short wait the certificate appears, valid for every name under your domain. If it fails on timing, set **Propagation Seconds** to something patient like `120` and try again.
 
 > [!NOTE]
 > The dialog warns that these credentials are stored as plaintext in NPM's database and in a file. That is the trade for hands-off issuance and renewal: the proxy keeps your DNS token. A tightly scoped token and a strong NPM admin password are the mitigations.
-
-> [!NOTE]
-> If your NPM shows **SSL Certificates** in the menu and a **Use a DNS Challenge** toggle, plus email and terms-of-service boxes, you are on the pre-November-2025 interface — same ideas, older labels. Run the container's `update` command (Console → `update`) to come current.
 
 > [!DETAILS] Covering the bare domain too
 > A wildcard covers `anything.example.com` but not plain `example.com`. Every service on this page lives on a subdomain, so you may never care — but if you want the bare name to work, add `example.com` alongside `*.example.com` in the same certificate's Domain Names, and add a second, exact DNS rewrite for it in AdGuard (the next phase). Skip this on DuckDNS, where the one-TXT-record limit makes the combined request unreliable.
