@@ -26,7 +26,7 @@ Log in to the Proxmox web UI and confirm the host is in the state the earlier pa
 TrueNAS ships as a standard installer **ISO**, and the server fetches it itself — no upload from a laptop. In the left tree, click the **local** storage under your node, then **ISO Images → Download from URL**, and paste the TrueNAS Community Edition `.iso` link from the official download page ([truenas.com/download-truenas-community-edition](https://www.truenas.com/download-truenas-community-edition/)). Wait for `TASK OK`.
 
 > [!TIP]
-> The download page lists a **SHA256** checksum next to the ISO. The **Download from URL** dialog has a **Verify** section — paste that checksum in and pick `SHA256`, and Proxmox confirms the file arrived intact before you boot it. Same habit you used for the Proxmox installer.
+> The download page lists a **SHA256** checksum next to the ISO. In the **Download from URL** dialog, click **Advanced** to reveal the **Checksum** and **Hash algorithm** fields — paste the checksum in, pick `SHA256`, and Proxmox confirms the file arrived intact before you boot it. Same habit you used for the Proxmox installer.
 
 > [!NOTE]
 > No Home Assistant OS media to fetch here — it is built on the Home Assistant & Zigbee2MQTT page (it uses a disk image, not the wizard below). The wizard and install steps that follow are the TrueNAS VM only.

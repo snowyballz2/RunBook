@@ -21,14 +21,14 @@ Because of this, the driver lives on the **Proxmox host**, which owns the hardwa
 ### Install the NVIDIA driver on the host
 Do this on the **host**, not inside any container, and install it from Debian's package archive — never a `.run` installer downloaded from nvidia.com. The packaged driver builds its kernel module through **DKMS (Dynamic Kernel Module Support)** against the headers you install below and rebuilds itself automatically on every kernel update; a `.run` installer does not, and it silently breaks the card after the next Proxmox upgrade (exactly the "GPU vanished after an update" failure this page warns about). The server pulls everything over its own network connection — nothing to download on another PC.
 
-First enable Debian's **non-free** and **non-free-firmware** components (the NVIDIA driver lives there). On Proxmox 8/9 the apt sources are **deb822 `.sources` files** under `/etc/apt/sources.list.d/`, and the old single-file `/etc/apt/sources.list` is usually empty — so the primary path is to edit the Debian `.sources` file's `Components:` line. First find which file holds the Debian entry:
+First enable Debian's **non-free** and **non-free-firmware** components (the NVIDIA driver lives there). Where the Debian repo is defined depends on the Proxmox version: **Proxmox 9** (Debian 13 Trixie) uses the newer **deb822 `.sources` files** under `/etc/apt/sources.list.d/` — you edit the `Components:` line — while **Proxmox 8** (Debian 12 Bookworm) still keeps it in the legacy single-file `/etc/apt/sources.list`. Rather than guess, find which file holds the Debian entry:
 
 ```bash
-# Where is the Debian repo defined? On stock PVE 8/9 this is a .sources file.
+# Where is the Debian repo defined? Proxmox 9: a .sources file; Proxmox 8: /etc/apt/sources.list.
 grep -rl 'non-free\|Components:\|deb http' /etc/apt/sources.list /etc/apt/sources.list.d/
 ```
 
-Open the Debian `.sources` file that matches (typically `/etc/apt/sources.list.d/debian.sources`) and edit its `Components:` line so it reads:
+On **Proxmox 9**, open the Debian `.sources` file the `grep` pointed at (typically `/etc/apt/sources.list.d/debian.sources`) and edit its `Components:` line so it reads:
 
 ```
 Components: main contrib non-free non-free-firmware
@@ -50,7 +50,7 @@ nvidia-smi
 `nvidia-smi` should print the 1080 Ti with a driver version. **Write that version down** — it has to match the userspace driver inside each container.
 
 > [!NOTE]
-> Legacy fallback only: if your host still uses the old single-file format and `/etc/apt/sources.list` has an uncommented Debian `main` line (the `grep` above shows it there, not in a `.sources` file), you can append the components in one shot instead — `sed -i 's/ main$/ main contrib non-free non-free-firmware/' /etc/apt/sources.list` then `apt update`. On a stock PVE 8/9 install this `sed` matches nothing, which is why the deb822 `.sources` edit above is the working path.
+> Proxmox 8 (Debian 12) path: there the Debian repo is the one-line format in `/etc/apt/sources.list` (the `grep` above shows it there, not in a `.sources` file), and Proxmox's default entries end in `main contrib`. Append the two components — `sed -i 's/main contrib$/main contrib non-free non-free-firmware/' /etc/apt/sources.list` — then `apt update`. On Proxmox 9 there is no such `main` line to edit; the deb822 `Components:` edit above is the path.
 
 > [!NOTE]
 > If `apt install -y nvidia-driver` still cannot find the package, the non-free components are not enabled — re-check that you edited the `Components:` line in the right `.sources` file and ran `apt update`. The `nvidia-persistenced` package ships the persistence daemon's systemd unit; install it alongside the driver so the next step has a unit to enable.
