@@ -115,7 +115,7 @@ Add three lines to the UPS's section so the driver polls steadily and re-grabs t
     maxretry = 3
 ```
 
-Restart with `systemctl restart nut-server`, then confirm `upsc cyberpower@localhost ups.status` still returns `OL`.
+These are driver-level settings, so restart the **driver** (not just upsd) for them to take effect: `systemctl restart nut-driver@cyberpower nut-server`, then confirm `upsc cyberpower@localhost ups.status` still returns `OL`.
 
 > [!DETAILS] What the three knobs do
 > `pollinterval` is how often the `usbhid-ups` driver polls the UPS for critical status changes — it watches the `OB` (on-battery) and `LB` (low-battery) bits on this cadence; `pollfreq` is how often the driver re-reads the full variable set from the hardware. `maxretry = 3` tells the driver to attempt the USB handshake three times before giving up at startup, which clears most cold-boot races where the UPS enumerates slightly after the driver launches. These tame the common case; the watchdog below covers the case where the link drops anyway.
