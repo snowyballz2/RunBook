@@ -31,7 +31,7 @@ Accept the defaults — an **unprivileged** container with **2 cores, 2 GB RAM, 
 > Partway through, the script stops and asks permission: "This script will run an external installer from a third-party source," warning that the code is "NOT maintained or audited" by community-scripts, then waits at **Do you want to continue? [y/N]**. That source is the official NextCloudPi installer — the whole point of running this — so answer **y**; anything else aborts. Two scripts now want your read-first habit, and you cannot walk away expecting an unattended install.
 
 > [!NOTE]
-> There is no plain "nextcloud" entry in the catalog — the repo carries exactly two: this NextCloudPi one and a lighter Alpine variant. NCP is the relaxed household choice; take it.
+> The plain **Nextcloud** entry in the catalog is a TurnKey **VM**, not a container — the repo's two LXC options are this NextCloudPi one and a lighter Alpine variant. NCP is the relaxed household choice; take it.
 
 ### Reserve its IP and start it at boot
 The script finishes by printing the container's address as `http://<IP>` — no port, no passwords yet; those come in the browser. Before opening it, pin that address with a **DHCP (Dynamic Host Configuration Protocol)** reservation on the router — the same habit AdGuard Home enforces house-wide — because it is about to be baked into every device's sync client. Then enable **Options → Start at boot** in Proxmox so the family cloud survives a power cut.
