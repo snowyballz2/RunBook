@@ -22,7 +22,7 @@ Same move as the other service containers: in the Proxmox web interface, click y
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nginxproxymanager.sh)"
 ```
 
-When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 2 GB RAM, an 8 GB disk, an unprivileged Debian 12 container — except networking: set a **static IP** on `vmbr0`. The script finishes by printing `http://<IP>:81`. Before you open it, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
+When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 2 GB RAM, an 8 GB disk, an unprivileged Debian 13 container — except networking: set a **static IP** on `vmbr0`. The script finishes by printing `http://<IP>:81`. Before you open it, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
 
 > [!INPUT] proxy-ip | Proxy container IP | 192.168.1.54
 > You set this statically during the install — record it here and keep it out of the router's DHCP (Dynamic Host Configuration Protocol) pool; every name below points here.

@@ -362,10 +362,10 @@ mqtt:
 Then install the Frigate integration in the Home Assistant OS VM through **HACS (the Home Assistant Community Store)**, which itself has to be installed once first. You get a live entity per camera, occupancy and motion binary sensors per camera and zone, object-count and performance sensors, and the recordings browsable in Home Assistant's media browser — the raw material for the automations later in this build.
 
 > [!DETAILS] Install HACS first, then the Frigate integration
-> The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog that must be installed once before any community integration can be downloaded. Follow the official install steps at [hacs.xyz](https://hacs.xyz/docs/use/) — they walk you through adding HACS as an Add-on and signing in with a GitHub account — then **restart Home Assistant**. Now open **HACS**, search for **Frigate**, download it, and **restart Home Assistant again**. Only then add the Frigate integration under **Settings → Devices & services**; it asks for Frigate's address (`http://frigate-ip:5000`).
+> The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog that must be installed once before any community integration can be downloaded. Follow the official install steps at [hacs.xyz](https://hacs.xyz/docs/use/) — they walk you through installing the **Get HACS** app (**Settings → Apps → Install app → Get HACS**) and signing in with a GitHub account — then **restart Home Assistant**. Now open **HACS**, search for **Frigate**, download it, and **restart Home Assistant again**. Only then add the Frigate integration under **Settings → Devices & services**; it asks for Frigate's address (`http://frigate-ip:5000`).
 
 > [!INPUT] mqtt-user | MQTT username | | mqtt-user
-> The dedicated user Frigate logs in as, created in the Mosquitto add-on's Logins on the Home Assistant & Zigbee2MQTT page — `mqtt-user` matches the example; edit if named differently.
+> The dedicated user Frigate logs in as, created in the Mosquitto app's Logins on the Home Assistant & Zigbee2MQTT page — `mqtt-user` matches the example; edit if named differently.
 
 > [!SECRET] frigate-mqtt-password | MQTT password
 

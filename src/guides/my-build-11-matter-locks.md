@@ -17,10 +17,10 @@ The three Aqara U400 deadbolts are **Matter-over-Thread** devices, and this buil
 Your first **HA Connect ZBT-2** is busy running Zigbee2MQTT — and one radio cannot cleanly do Zigbee and Thread at once (the multi-protocol firmware is experimental and degrades both). So Thread gets its **own** ZBT-2. Plug a **second ZBT-2** into the server on a short USB extension (away from case interference), then pass it to the Home Assistant OS VM exactly like the first: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the second ZBT-2 by name, and reboot the VM.
 
 > [!WARNING]
-> Two identical ZBT-2s are easy to mix up. Note which USB port each is on, and after the reboot confirm Zigbee2MQTT still sees *its* coordinator before you point Thread at the other one — do not let the OTBR add-on grab the Zigbee radio, or the whole mesh drops.
+> Two identical ZBT-2s are easy to mix up. Note which USB port each is on, and after the reboot confirm Zigbee2MQTT still sees *its* coordinator before you point Thread at the other one — do not let the OTBR app grab the Zigbee radio, or the whole mesh drops.
 
-### Install the OpenThread Border Router add-on
-In Home Assistant, go to **Settings → Add-ons → Add-on store**, install **OpenThread Border Router (OTBR)**, and in its configuration point it at the **second ZBT-2's device path** (not the Zigbee one). Start it. Home Assistant's **Thread** integration picks it up automatically and forms a network — check **Settings → Devices & services → Thread**, where you should see your own network listed as *preferred*, with the OTBR as its border router.
+### Install the OpenThread Border Router app
+In Home Assistant, go to **Settings → Apps → Install app**, install **OpenThread Border Router (OTBR)**, and in its configuration point it at the **second ZBT-2's device path** (not the Zigbee one). Start it. Home Assistant's **Thread** integration picks it up automatically and forms a network — check **Settings → Devices & services → Thread**, where you should see your own network listed as *preferred*, with the OTBR as its border router.
 
 > [!NOTE]
 > This is the piece a HomePod would otherwise provide, and running it yourself means full local control and visibility. Be honest about the trade-off, though: it is **one** border router, where an Apple household gets a whole-house mesh from every HomePod. Plan around it — commission Thread devices within solid range of this radio, and lean on the fact that most of this build's Matter devices (the **PoE shades**, wired over Ethernet) are not on Thread at all. The Thread mesh here carries only these locks and any **battery** shades, so its footprint is light.
@@ -32,7 +32,7 @@ Three things need to be true before you touch a lock:
 
 - The **Home Assistant OS VM** is up, with the **Matter** integration available (it ships with Home Assistant) and the **OTBR** running from the step above.
 - You have an **iPhone or Android phone with Bluetooth on**, signed in to the **Home Assistant companion app**. Commissioning a Matter device happens over Bluetooth from a phone — the HA web UI alone cannot do it, which surprises people running HA in a VM with no Bluetooth. The phone bridges that gap and hands the device HA's Thread credentials.
-- Each lock is **physically installed and powered** — fresh batteries seated, the door able to throw the bolt.
+- Each lock is **physically installed and powered** — the U400's rechargeable lithium pack charged (it takes USB-C, not disposable cells) and seated, the door able to throw the bolt.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 > The address the Home Assistant companion app points at.
@@ -48,7 +48,7 @@ Every U400 has a **Matter QR code** — on a sticker inside the battery compartm
 ### Add the first U400
 With the OTBR up and the companion app open on a Bluetooth phone:
 
-1. In the **Home Assistant companion app**, go to **Settings → Devices & services → Add integration → Matter**.
+1. In the **Home Assistant companion app**, go to **Settings → Matter** and select **Add device**. (Matter and Thread moved out of *Devices & services* to their own top-level Settings entry in Home Assistant 2026.2.)
 2. Scan the lock's **Matter QR code** (or tap to enter the numeric setup code by hand).
 3. The phone commissions the lock over **Bluetooth**, hands it Home Assistant's **Thread credentials**, and the lock joins HA's Thread network. After a moment it appears in Home Assistant as a `lock.*` entity.
 4. Assign it to the matching **Area** (Front Door, Side Door, Garage) and give it a clear name.
@@ -74,7 +74,7 @@ For each of the three U400s:
 - **The door itself** — the keypad code and the physical key both still work.
 
 > [!TIP]
-> If a lock shows up but its state lags or goes *unavailable*, the Thread mesh is the usual cause — a sleepy battery device reaching a single border router. Move it closer to the ZBT-2 radio, reboot the OTBR add-on, or (the durable fix) add a mains-powered Thread router near it. Adding a HomePod later gives you a second border router, which generally clears this up.
+> If a lock shows up but its state lags or goes *unavailable*, the Thread mesh is the usual cause — a sleepy battery device reaching a single border router. Move it closer to the ZBT-2 radio, reboot the OTBR app, or (the durable fix) add a mains-powered Thread router near it. Adding a HomePod later gives you a second border router, which generally clears this up.
 
 ### These locks now feed the automations
 With all three U400s present as `lock.*` entities, they become raw material for the automation rules later in this build — auto-lock after a set time, an unlock notification to the household, and presence-based actions. Until the locks exist as entities, those rules have nothing to act on; now they do.

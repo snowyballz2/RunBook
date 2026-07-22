@@ -37,7 +37,7 @@ With the host current, give each guest its turn — and go strictly one at a tim
 
 - **Service LXCs** (AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, Uptime Kuma): these went up with the community helper scripts, so each updates with a single `update` typed in its **Console**. Three exceptions worth remembering — AdGuard's `update` command just tells you it updates from its own web UI instead; Vaultwarden's `update` *recompiles from source*, so give it the half-hour and the headroom it asks for; and Nextcloud splits in two: `apt` covers its Debian layer, but the Nextcloud app itself updates only through the NCP (NextcloudPi) panel on port 4443, per the Nextcloud page.
 - **Frigate LXC**: a plain Debian container under the hood — `apt update && apt full-upgrade` in its Console for the OS. Frigate itself does not update in place — when a new release matters, follow the path from the Cameras, Doorbell & Frigate page: snapshot first, build a fresh container with the script, and copy `/config` across.
-- **Home Assistant OS (VM)**: updates from inside itself, on its **Settings → System → Updates** page — core, OS, and add-ons each listed there.
+- **Home Assistant OS (VM)**: updates from inside itself, on its **Settings → System → Updates** page — core, OS, and Apps (what Home Assistant called add-ons before 2026.2) each listed there.
 - **TrueNAS (VM)**: updates under **System → Update** in its web UI.
 
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20

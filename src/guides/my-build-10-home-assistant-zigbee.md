@@ -14,7 +14,7 @@ This is the brain of the house. Home Assistant runs as its own **VM (virtual mac
 ## Stand up the VM
 
 ### Create the Home Assistant OS VM
-Home Assistant OS ships as a ready-made disk image, **not** an installer ISO — so skip the Create VM wizard and use one of the two paths below. Either way, give it **2 cores and 8 GB RAM** (this box has it to spare, and add-ons want the headroom) and a 32 GB disk.
+Home Assistant OS ships as a ready-made disk image, **not** an installer ISO — so skip the Create VM wizard and use one of the two paths below. Either way, give it **2 cores and 8 GB RAM** (this box has it to spare, and apps want the headroom) and a 32 GB disk.
 
 > [!DETAILS] The quick way — helper script
 > The community-scripts helper downloads the official image and builds the VM for you. Run it in the Proxmox host shell, pick **Advanced**, and bump it to **8 GB RAM** while keeping the 2 cores and 32 GB disk:
@@ -80,13 +80,13 @@ Before any devices arrive, lay out your rooms under **Settings → Areas, labels
 ## Zigbee2MQTT on the ZBT-2
 
 ### Pass the coordinator through
-This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broader device support, and it speaks the same MQTT bus the rest of the build uses — and it runs as a Home Assistant add-on, so the coordinator goes to the Home Assistant OS VM. Plug the **HA Connect ZBT-2** into the server on a short USB extension cable (keeps the radio away from case interference), then pass it through: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the ZBT-2 by name, and reboot the VM.
+This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broader device support, and it speaks the same MQTT bus the rest of the build uses — and it runs as a Home Assistant app, so the coordinator goes to the Home Assistant OS VM. Plug the **HA Connect ZBT-2** into the server on a short USB extension cable (keeps the radio away from case interference), then pass it through: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the ZBT-2 by name, and reboot the VM.
 
 > [!WARNING]
 > Proxmox does not hand USB devices to a guest automatically. If Z2M cannot see the coordinator, this missed passthrough step is almost always why.
 
 ### Stand up the Mosquitto broker and its logins
-The whole build talks over one **Mosquitto** broker, and it lives here on the Home Assistant VM: install the official **Mosquitto broker** add-on (**Settings → Add-ons → Add-on store**) if it is not already running, and do not stand up a second broker anywhere else. Then create the build's two broker logins — the broker rejects unknown credentials by default, so a username nobody created just gets "not authorised". Add both under the add-on's **Configuration → Logins** list (or create dedicated non-admin Home Assistant users with these names): **`zigbee2mqtt`** for Z2M, used below, and **`mqtt-user`** for Frigate, used on the Cameras, Doorbell & Frigate page. Same broker, distinct logins — the broker's logs make it obvious who is talking.
+The whole build talks over one **Mosquitto** broker, and it lives here on the Home Assistant VM: install the official **Mosquitto broker** app (**Settings → Apps → Install app** — Home Assistant renamed *Add-ons* to *Apps* in 2026.2, so older write-ups say "add-on store") if it is not already running, and do not stand up a second broker anywhere else. Then create the build's two broker logins — the broker rejects unknown credentials by default, so a username nobody created just gets "not authorised". Add both under the app's **Configuration → Logins** list (or create dedicated non-admin Home Assistant users with these names): **`zigbee2mqtt`** for Z2M, used below, and **`mqtt-user`** for Frigate, used on the Cameras, Doorbell & Frigate page. Same broker, distinct logins — the broker's logs make it obvious who is talking.
 
 > [!INPUT] z2m-mqtt-user | Zigbee2MQTT's own MQTT username | | zigbee2mqtt
 > Created in the broker's Logins a moment ago. Separate from Frigate's `mqtt-user` — same broker, distinct login.
@@ -97,13 +97,13 @@ The whole build talks over one **Mosquitto** broker, and it lives here on the Ho
 > Created now so the broker knows it; Frigate itself enters this pair on the Cameras, Doorbell & Frigate page.
 
 ### Point Z2M at the Mosquitto broker
-Install Z2M as a Home Assistant add-on. Its add-ons live in a separate repository: in **Settings → Add-ons → Add-on store**, open the **⋮ menu → Repositories**, add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`, then install **Zigbee2MQTT** from the store. In its MQTT settings, point it at the broker below and enter the `zigbee2mqtt` username and password you just created; everything Z2M publishes namespaces under `zigbee2mqtt/...` and stays out of Frigate's way. In Z2M's settings, select the **`ember`** driver — that is the one for the ZBT-2.
+Install Z2M as a Home Assistant app. Its apps live in a separate repository: in **Settings → Apps → Install app**, open the **⋮ menu → Repositories**, add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`, then install **Zigbee2MQTT** from the store. In its MQTT settings, point it at the broker below and enter the `zigbee2mqtt` username and password you just created; everything Z2M publishes namespaces under `zigbee2mqtt/...` and stays out of Frigate's way. In Z2M's settings, select the **`ember`** driver — that is the one for the ZBT-2.
 
 > [!INPUT] mqtt-host | Mosquitto broker address | 192.168.1.51
 > Where the broker listens — the Home Assistant VM, on the standard port `1883`. Frigate connects to this same broker with its `mqtt-user` login on the Cameras, Doorbell & Frigate page.
 
 ### Surface Z2M in Home Assistant
-Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT integration**. Home Assistant auto-discovers the local Mosquitto add-on: in **Settings → Devices & services**, confirm the discovered **MQTT** integration and accept it — it connects with the add-on's own internal login, so there are no credentials to type. With both Z2M and Home Assistant on the broker, every device Z2M reports shows up as an ordinary Home Assistant entity automatically — no per-device wiring.
+Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT integration**. Home Assistant auto-discovers the local Mosquitto app: in **Settings → Devices & services**, confirm the discovered **MQTT** integration and accept it — it connects with the app's own internal login, so there are no credentials to type. With both Z2M and Home Assistant on the broker, every device Z2M reports shows up as an ordinary Home Assistant entity automatically — no per-device wiring.
 
 > [!NOTE]
 > The non-Zigbee devices on this build — the Lutron Caséta bridge, the ecobee thermostats, the cameras, and the rest — arrive the same way, under **Settings → Devices & services** after onboarding (many auto-detected in the **Discovered** section). An empty Discovered list right after setup is normal. The cameras and locks get their integrations on their own pages, and the ecobee thermostats are onboarded on the Automations page. The Lutron Caséta bridge has no page of its own, so add it now: **Settings → Devices & services → Add integration → Lutron Caséta**, then press the button on the back of the bridge when prompted — the lights surface as entities for the scenes and scripts later in the build.
@@ -134,7 +134,7 @@ Pair the **Aqara Valve Controller T1** last. It is the clamp-on actuator on the 
 ## Keep it backed up
 
 ### Turn on Home Assistant's own backups
-Home Assistant keeps its own backups separate from the whole-VM copy Proxmox takes. Turn them on now under **Settings → System → Backups → Set up backups**: pick a **daily** schedule and **System optimal** for the time, and Home Assistant handles it from then on. These local backups are the fast in-app undo — one click to roll back a bad add-on or a broken automation.
+Home Assistant keeps its own backups separate from the whole-VM copy Proxmox takes. Turn them on now under **Settings → System → Backups → Set up backups**: pick a **daily** schedule and **System optimal** for the time, and Home Assistant handles it from then on. These local backups are the fast in-app undo — one click to roll back a bad app or a broken automation.
 
 ### Point the backups at the NAS
 On their own, those backups land on the VM's disk — the copy lives on the very thing it is protecting. Send them to the NAS instead: go to **Settings → System → Storage**, click **Add network storage**, and point it at the TrueNAS `backups` SMB (Server Message Block) share from the TrueNAS Storage page (server `192.168.1.20`, your SMB share credentials, **Usage: Backups**). Then under **Settings → System → Backups**, pick that network location as where backups go.
