@@ -19,7 +19,7 @@ The 500GB NVMe (Non-Volatile Memory Express) boot drive holds the Proxmox OS and
 Before you point Proxmox at it, confirm the `backups` share actually exists. In the TrueNAS web interface, go to **Shares → Windows (SMB) Shares** and check that a share whose path is `tank/backups` is listed and enabled. If only `files` is there, add it now: click **Add** on that widget, set the path to the `tank/backups` dataset, save, and accept the prompt to restart the **SMB service** so the share goes live. Without this share, the `backups` entry will not appear in Proxmox's **Share** dropdown in the next step.
 
 ### Add the TrueNAS share as backup storage
-In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacenter → Storage → Add → SMB/CIFS**. Give it an ID like `nas-backups`, enter the TrueNAS address as the **Server**, pick the `backups` **Share**, fill in the SMB **Username** and **Password**, and under **Content** tick **VZDump backup file** (and **Disk image** only if you want it as general storage too). Proxmox mounts it under `/mnt/pve/nas-backups`.
+In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacenter → Storage → Add → SMB/CIFS**. Give it an ID like `nas-backups`, enter the TrueNAS address as the **Server**, pick the `backups` **Share**, fill in the SMB **Username** and **Password**, and under **Content** tick **Backup** — older Proxmox versions label it **VZDump backup file** — (and **Disk image** only if you want it as general storage too). Proxmox mounts it under `/mnt/pve/nas-backups`.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 
