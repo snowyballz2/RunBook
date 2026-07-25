@@ -63,7 +63,7 @@ You should see the GTX 1080 Ti listed with a driver version. If the command is m
 > The card is shared across containers, not handed to one guest — Frigate detection now, the Ollama LLM (large language model) and faster-whisper STT (speech-to-text) voice stack later. Keep `nvidia-persistenced` enabled on the host and the host/in-container driver versions matched. VFIO is reserved for the HBA (host bus adapter) feeding the TrueNAS VM; the GPU stays shared. The moment the GPU is VFIO-bound, every container loses detection at once.
 
 ### Fetch the detection model
-Frigate does not bundle YOLO models — the file the config below points at has to be placed there once, by you. Download a pre-converted **YOLOv9-tiny ONNX export** (Frigate's object-detector documentation links current conversions) and put it inside the container at `/config/model_cache/yolov9-t.onnx`, creating the `model_cache` directory first if it does not exist. Without this file, detection fails to start with a missing-model error.
+Frigate does not bundle YOLO models — the file the config below points at has to be produced once, by you. Frigate's object-detector documentation (YOLOv9 section) gives a **one-line Docker command that exports the model** from the official YOLOv9 repo — run it with `MODEL_SIZE=t` and `IMG_SIZE=320`, then copy the resulting `yolov9-t.onnx` into the container at `/config/model_cache/yolov9-t.onnx`, creating the `model_cache` directory first if it does not exist. Without this file, detection fails to start with a missing-model error.
 
 ### Point detection at ONNX on CUDA
 This build does **not** use the Intel iGPU + OpenVINO path that Frigate defaults to. Detection runs on the 1080 Ti via the **ONNX (Open Neural Network Exchange) detector on the CUDA (NVIDIA's GPU compute platform) execution provider** — this install's Frigate build ships the ONNX runtime, which picks up CUDA automatically once the card is visible, so pointing Frigate at ONNX is enough to find the card. Edit `/config/config.yml` (easiest in the web UI's built-in config editor, which validates as you type; `nano /config/config.yml` in the console works too) and set:
@@ -98,7 +98,7 @@ ffmpeg:
 
 ## Add the Reolink doorbell
 
-The doorbell is the camera most people actually want, and the pick here is the **Reolink Video Doorbell WiFi in black** — the 4:3 model that gives a tall head-to-toe view of a visitor and a package on the step. It runs off the existing wired doorbell transformer, no battery. It does not behave like a plain RTSP (Real-Time Streaming Protocol) camera, so it gets its own walkthrough.
+The doorbell is the camera most people actually want, and the pick here is the **Reolink Video Doorbell WiFi in black** — the **4:3 wide-view** model that frames the visitor and the whole doorstep (the white variant is the taller 3:4 head-to-toe one). It runs off the existing wired doorbell transformer, no battery. It does not behave like a plain RTSP (Real-Time Streaming Protocol) camera, so it gets its own walkthrough.
 
 ### Understand why a doorbell is different
 On Reolink doorbells, plain RTSP video is **less reliable** — it drops and stutters — while video carried over **http-flv (video over HTTP)** is steady. But the two-way talk audio only rides on RTSP. So the trick is to pull *video* over http-flv for stability and add a *secondary RTSP stream just for the audio*, then let Frigate's bundled **go2rtc** restreamer fuse them into one feed it can record, detect on, and talk back through.
@@ -148,7 +148,6 @@ cameras:
     objects:
       track:
         - person
-        - package
 ```
 
 > [!NOTE]
@@ -158,7 +157,7 @@ cameras:
 > Talk-back needs the page served over **HTTPS** — browsers only allow microphone access on a secure connection (use Frigate's authenticated port `8971`). The reverse proxy set up later in this build provides the real certificate for that, and the doorbell will drive the speaker announcements set up later in the automations work.
 
 > [!TIP]
-> Not interested in talking back? Drop the secondary `rtsp://…/Preview_01_sub` line entirely and keep just the http-flv video. That is the simplest, most reliable doorbell setup — you still get full recording and person/package detection, without the most fragile part of the config.
+> Not interested in talking back? Drop the secondary `rtsp://…/Preview_01_sub` line entirely and keep just the http-flv video. That is the simplest, most reliable doorbell setup — you still get full recording and person detection, without the most fragile part of the config. (One honest limit: `package` is not a class in this build's COCO-80 labelmap, so package *detection* needs a Frigate+ custom model — the recording still shows the box on the step, but no automation can fire on it.)
 
 > [!WARNING]
 > Reolink doorbells have limited streaming capacity and dislike many simultaneous connections. Detecting on the sub stream, as above, keeps the load light — but every extra consumer is another connection, and adding Reolink's own Home Assistant integration is a common one. Running everything at once can cause dropouts, so add one thing at a time and watch the logs.
@@ -219,7 +218,7 @@ The doorbell and the WiFi RLC-510WA got the build going; the wired perimeter is 
 
 ### What to buy
 - **Four `IPC-T54PRO-AS` (WizColor dual-light) — the perimeter.** A Dahua-made 4MP turret on a large **1/1.8″** sensor with an **f/1.0** lens, **dual light** (IR to 60 m, *or* a warm LED for full-colour night), and **two-way talk**. **$199.99** each, direct from empiretech01.com. Get the **3.6mm** lens — the mounting section explains why it fits your corners. It supersedes the older IR-only `IPC-T54IR-AS-S3`: same price, but the PRO is the newer WizColor generation and adds the warm light and speaker for nothing extra.
-- **One or two `IPC-Color4K-T-S2` — indoor.** An **8MP 1/1.2″** full-colour turret, the biggest sensor in this class, so it holds clean colour in a dark room where an IR camera would glare off walls and glass. **$279.99** each, **3.6mm** lens — it also sits in an inside 90° corner, so it takes the same wedge-fit lens as the outdoor turrets (3.6mm fills the 90° corner and reaches further for facial ID; 2.8mm would just waste width on the flanking walls). One camera recognises across a large room and identifies out to about 25 ft; a big open-plan space is better served by **two** in opposite corners. The white finish sells out fast — back-order it rather than settle.
+- **One or two `IPC-Color4K-T-S2` — indoor.** An **8MP 1/1.2″** full-colour turret, the biggest sensor in this class, so it holds clean colour in a dark room where an IR camera would glare off walls and glass. **$289.99** each with the **3.6mm** lens (the 2.8mm is $279.99) — it also sits in an inside 90° corner, so it takes the same wedge-fit lens as the outdoor turrets (3.6mm fills the 90° corner and reaches further for facial ID; 2.8mm would just waste width on the flanking walls). One camera recognises across a large room and identifies out to about 25 ft; a big open-plan space is better served by **two** in opposite corners. The white finish sells out fast — back-order it rather than settle.
 - **The Reolink doorbell stays** — already wired and already in Frigate above.
 
 > [!NOTE]
@@ -255,7 +254,7 @@ The four turrets go in **inside building corners**, routed straight into the wal
 A turret is a ball-in-socket — it tilts and rotates inside its housing, so mounted flat on a wall it **already aims down and out**. You do **not** need an angled bracket or a wall arm to point it down; downward is its natural direction. (Brackets only solve the opposite problem — a soffit-mounted turret that can't tilt back *up* to the horizon — which is not your case.)
 
 ### Lens: 3.6mm fits an inside corner
-Each camera sits in a concave 90° corner, so the two walls block everything but a **90° wedge** looking out. The **3.6mm** lens (about 87°) fits that opening almost exactly — every pixel lands on the useful area, and the walls stay just out of frame. A wider 2.8mm would overspill onto the two flanking walls and, worse, bounce the IR and warm light back into the lens at night. Step up to **6mm** only on a corner whose view is unusually deep and you want the extra reach down the middle.
+Each camera sits in a concave 90° corner, so the two walls block everything but a **90° wedge** looking out. The **3.6mm** lens (95° horizontal on the T54PRO-AS, per EmpireTech's spec) matches that opening with only a couple of degrees of overspill at each edge — nearly every pixel lands on the useful area. A wider 2.8mm would overspill onto the two flanking walls and, worse, bounce the IR and warm light back into the lens at night. Step up to **6mm** only on a corner whose view is unusually deep and you want the extra reach down the middle.
 
 ### Cavity mount: skip the junction box
 Routing into the wall cavity means the cable and its waterproof connector tuck **inside the wall**, so you can skip the junction box entirely — it exists for solid-masonry runs with nowhere to hide the connector. Per camera:
@@ -362,7 +361,7 @@ mqtt:
 Then install the Frigate integration in the Home Assistant OS VM through **HACS (the Home Assistant Community Store)**, which itself has to be installed once first. You get a live entity per camera, occupancy and motion binary sensors per camera and zone, object-count and performance sensors, and the recordings browsable in Home Assistant's media browser — the raw material for the automations later in this build.
 
 > [!DETAILS] Install HACS first, then the Frigate integration
-> The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog that must be installed once before any community integration can be downloaded. Follow the official install steps at [hacs.xyz](https://hacs.xyz/docs/use/) — they walk you through installing the **Get HACS** app (**Settings → Apps → Install app → Get HACS**) and signing in with a GitHub account — then **restart Home Assistant**. Now open **HACS**, search for **Frigate**, download it, and **restart Home Assistant again**. Only then add the Frigate integration under **Settings → Devices & services**; it asks for Frigate's address (`http://frigate-ip:5000`).
+> The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog that must be installed once before any community integration can be downloaded. The order matters: install the **Get HACS** app (**Settings → Apps → Install app → Get HACS**), **restart Home Assistant**, then add the **HACS integration** under **Settings → Devices & services** — that step is where the GitHub sign-in happens, via a device code you enter on github.com — and only then does the HACS panel appear. Open **HACS**, search for **Frigate**, download it, and **restart Home Assistant again**. Finally add the Frigate integration under **Settings → Devices & services**; it asks for Frigate's address (`http://frigate-ip:5000`).
 
 > [!INPUT] mqtt-user | MQTT username | | mqtt-user
 > The dedicated user Frigate logs in as, created in the Mosquitto app's Logins on the Home Assistant & Zigbee2MQTT page — `mqtt-user` matches the example; edit if named differently.

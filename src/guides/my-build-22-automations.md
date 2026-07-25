@@ -38,8 +38,8 @@ triggers:
       # ... all twelve Third Reality sensors
     to: "on"
 actions:
-  - action: valve.close_valve
-    target: { entity_id: valve.main_water }
+  - action: switch.turn_off
+    target: { entity_id: switch.main_water }
   - action: notify.mobile_app_chris_iphone
     data:
       title: "💧 Water leak"
