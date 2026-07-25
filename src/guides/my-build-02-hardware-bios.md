@@ -154,8 +154,8 @@ Here is the tray plate itself — traced from the actual part, hole for hole. Th
 These are not slot-related, but they go in with the build:
 
 - **HA Connect ZBT-2 ×2** — one becomes the Zigbee coordinator, the second Home Assistant's Thread radio. Leave both boxed for now; each plugs into a rear USB port later on its included 1.5 m USB-C cable, which stands the antenna away from case interference. The units are identical, so label them the moment they come out of the box.
-- **Netgear GS308EPP** managed PoE (Power over Ethernet) switch — powers the wired camera perimeter; wire the server's Ethernet through it too.
-- **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply) — the server plugs into it (the rack switches stay on wall AC; a UPS of their own can come later); its USB data cable goes to the host for NUT (Network UPS Tools) monitoring later.
+- **Netgear GS308EPP** managed PoE (Power over Ethernet) switch — powers the wired camera perimeter. The server's own Ethernet does **not** go through it — that cable runs straight to the router.
+- **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply) — the server plugs into its battery side, and so do the Fios router and the Caséta bridge (the rack switches stay on wall AC); its USB data cable goes to the host for NUT (Network UPS Tools) monitoring later.
 
 ## The board and its connections
 

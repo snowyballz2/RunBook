@@ -72,12 +72,12 @@ One map for the whole build: every physical device, how it is powered, and which
 <rect x="16" y="178" width="134" height="72" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="83" y="199" text-anchor="middle" style="fill:currentColor;font-weight:600">Wi-Fi router</text>
 <text x="83" y="214" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">192.168.1.1</text>
-<rect x="53" y="224" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
-<text x="83" y="234" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
+<rect x="46" y="224" width="74" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="83" y="234" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery</text>
 <rect x="196" y="178" width="224" height="72" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="308" y="196" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Rack switches — daisy-chained</text>
 <text x="308" y="210" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">VIMIN 26-port · 24× PoE 320 W → shades</text>
-<text x="308" y="223" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">→ GS308EPP 8-port PoE+ → cameras + server</text>
+<text x="308" y="223" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">→ GS308EPP 8-port PoE+ → the 6 cameras</text>
 <rect x="278" y="228" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="308" y="238" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
 <line x1="150" y1="214" x2="196" y2="214" style="stroke:#10b981;stroke-width:2.5"/>
@@ -90,11 +90,12 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="582" y="214" text-anchor="middle" style="fill:currentColor;font-size:10.5px">192.168.1.50</text>
 <rect x="497" y="226" width="170" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="582" y="236" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery — Toughpower 850 W PSU</text>
-<line x1="420" y1="214" x2="460" y2="214" style="stroke:#10b981;stroke-width:2.5"/>
-<text x="440" y="207" text-anchor="middle" style="fill:#10b981;font-size:9px">LAN</text>
+<line x1="100" y1="250" x2="100" y2="268" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="100" y1="268" x2="460" y2="268" style="stroke:#10b981;stroke-width:2.5"/>
+<text x="455" y="263" text-anchor="end" style="fill:#10b981;font-size:9px">server — straight to the router</text>
 <rect x="196" y="290" width="224" height="96" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="308" y="312" text-anchor="middle" style="fill:currentColor;font-weight:600">CyberPower CP1500PFCLCD</text>
-<text x="308" y="328" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">UPS — battery outlets feed the server</text>
+<text x="308" y="328" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">UPS — battery: server · router · Caséta</text>
 <text x="308" y="342" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">(switches stay on wall AC for now)</text>
 <rect x="266" y="354" width="84" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="308" y="364" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall in</text>
@@ -198,7 +199,7 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="540" y="932" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Lutron Clear Connect RF</text>
 <rect x="392" y="946" width="296" height="52" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="540" y="963" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Caséta Pro bridge</text>
-<text x="540" y="976" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Ethernet — a wired port on the switch · AC wall</text>
+<text x="540" y="976" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Ethernet — a wired switch port · UPS battery</text>
 <rect x="470" y="1010" width="140" height="66" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="540" y="1030" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Wall dimmers</text>
 <rect x="485" y="1040" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
@@ -206,7 +207,7 @@ One map for the whole build: every physical device, how it is powered, and which
 <line x1="540" y1="998" x2="540" y2="1010" style="stroke:var(--color-ink-faint);stroke-width:1.5;stroke-dasharray:5 3"/>
 </svg>
 
-*Reading it top to bottom: the wall feeds the UPS; the UPS battery side keeps the server alive through an outage, with a USB lead telling it when to shut down cleanly — the rack switches stay on wall power, so cameras and shades go dark in an outage while the server rides through (a second UPS for the switches can come later). Everything wired rides the daisy-chained rack switches to the router; everything wireless rides the router's Wi-Fi. Three radio meshes hang off their own hubs — Zigbee off one ZBT-2 on the server, Thread off Home Assistant's own OpenThread border router (a second ZBT-2 on the server), and Lutron's own RF off the Caséta bridge. A HomePod added later just joins the Thread mesh as an extra border router; the build does not need it.*
+*Reading it top to bottom: the wall feeds the UPS; its battery side carries the server, the Fios router, and the Caséta bridge — and because the server plugs straight into the router, an outage keeps Wi-Fi, Tailscale, the dashboards, and every Zigbee/Thread automation alive with no switch involved (internet and notifications too, if the Fios ONT has power). The rack switches stay on wall power, so the cameras stop recording and the shades go dark until mains returns — adding the switches to battery later is what would close that gap. Everything else wired rides the daisy-chained rack switches to the router; everything wireless rides the router's Wi-Fi. Three radio meshes hang off their own hubs — Zigbee off one ZBT-2 on the server, Thread off Home Assistant's own OpenThread border router (a second ZBT-2 on the server), and Lutron's own RF off the Caséta bridge. A HomePod added later just joins the Thread mesh as an extra border router; the build does not need it.*
 
 ## Get ready
 
@@ -230,10 +231,10 @@ Check you have everything before you start — the later pages assume each piece
 > - **LSI/Broadcom 9300-8i HBA** — IT mode (Initiator-Target mode, where the card exposes raw disks instead of building its own array), pre-flashed; passed through to TrueNAS
 
 > [!DETAILS] Network, power, and radios
-> - **Netgear GS308EPP** managed 8-port **PoE** (Power over Ethernet, power and data on one cable) switch — powers the wired camera perimeter (the EmpireTech turrets + the Color4K indoor cam); per-port control reboots a frozen camera from software. Its 8 ports run exactly full: 6 cameras, the server, and the uplink from the VIMIN
-> - **VIMIN VM-GS2420P 26-port Gigabit PoE switch** — 24 PoE ports (**320 W** budget) for the SmartWings shades plus **2 dedicated gigabit uplinks**: the Fios router feeds one, the GS308EPP hangs off the other, so the rack chains **router → VIMIN → GS308EPP**
+> - **Netgear GS308EPP** managed 8-port **PoE** (Power over Ethernet, power and data on one cable) switch — powers the wired camera perimeter (the EmpireTech turrets + the Color4K indoor cam); per-port control reboots a frozen camera from software. The 6 cameras plus the VIMIN uplink fill 7 of its 8 ports — the server's own Ethernet runs straight to the router, leaving one spare
+> - **VIMIN VM-GS2420P 26-port Gigabit PoE switch** — 24 PoE ports (**320 W** budget) for the SmartWings shades plus **2 dedicated gigabit uplinks**: the Fios router feeds one, the GS308EPP hangs off the other, so the rack chains **router → VIMIN → GS308EPP** (the server does not ride the chain — it plugs straight into the router)
 > - **48-port patch panel** — every camera and shade Cat6 run terminates here and patches across to the switches
-> - **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply, the battery backup) — monitored over **NUT** (Network UPS Tools)
+> - **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply, the battery backup) — monitored over **NUT** (Network UPS Tools); its battery side carries the **server, the Fios router, and the Caséta bridge** (the switches stay on wall AC)
 > - **HA Connect ZBT-2 ×2** — one is the Zigbee coordinator (ember driver, Zigbee2MQTT); the second is a dedicated **Thread** radio for Home Assistant's own **OpenThread Border Router**, so Matter-over-Thread (the locks, any battery shades) needs no Apple or Google hub
 > - **HomePod mini** *(optional, add later)* — brings Siri voice and a second Thread border router that strengthens the mesh; the build works fully without it
 
