@@ -112,7 +112,7 @@ Here is the tray plate itself — traced from the actual part, hole for hole. Th
 <text x="150" y="467" style="fill:var(--color-ink-soft);font-size:10px;font-style:italic">B: 2.5&quot; HDD/SSD</text>
 <line x1="272" y1="288" x2="316" y2="288" style="stroke:#f43f5e;stroke-width:1;stroke-dasharray:2 2"/>
 <text x="80" y="600" style="fill:currentColor;font-size:10px">Amber A + red damped = the IronWolf&apos;s four #6-32</text>
-<text x="80" y="614" style="fill:currentColor;font-size:10px">positions. Snug — bottom holes take max 1/4&quot; of thread.</text>
+<text x="80" y="614" style="fill:currentColor;font-size:10px">positions. Snug — bottom holes take max 0.14&quot; (3.6 mm) of thread.</text>
 <line x1="420" y1="60" x2="420" y2="620" style="stroke:var(--color-line)"/>
 <text x="436" y="80" style="fill:currentColor;font-size:11.5px;font-weight:600">Hanging it on the rail</text>
 <rect x="452" y="96" width="34" height="330" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
@@ -430,7 +430,7 @@ And here is that panel drawn to match — the sockets are **zoned by function** 
 <circle cx="448" cy="147" r="7" style="fill:none;stroke:var(--color-ink-faint);stroke-width:1.4"/>
 <text x="90" y="196" text-anchor="middle" style="fill:currentColor;font-size:10px;font-weight:600">24PIN ATX</text>
 <text x="182" y="196" text-anchor="middle" style="fill:currentColor;font-size:10px;font-weight:600">4+4 CPU</text>
-<text x="252" y="196" text-anchor="middle" style="fill:#f43f5e;font-size:10px;font-weight:600">8+2 PCI-E</text>
+<text x="252" y="196" text-anchor="middle" style="fill:#f43f5e;font-size:10px;font-weight:600">6+2 PCI-E</text>
 <text x="466" y="196" text-anchor="middle" style="fill:currentColor;font-size:10px;font-weight:600">PERIPHERAL &amp; SATA</text>
 <text x="20" y="242" style="fill:currentColor;font-size:12px;font-weight:600">Where each cable lands</text>
 <circle cx="34" cy="262" r="8" style="fill:currentColor"/>
@@ -441,7 +441,7 @@ And here is that panel drawn to match — the sockets are **zoned by function** 
 <text x="50" y="292" style="fill:var(--color-ink-soft);font-size:9.5px">4+4 CPU → board EATX12V (8-pin, top-left). Seat both 4+4 halves; the cable&apos;s straight-8 twin ties back.</text>
 <circle cx="34" cy="314" r="8" style="fill:#f43f5e"/>
 <text x="34" y="318" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">3</text>
-<text x="50" y="318" style="fill:var(--color-ink-soft);font-size:9.5px">8+2 PCI-E (red) → BOTH FTW3 plugs on one cable — end connector into one input, 6+2 pigtail into the other.</text>
+<text x="50" y="318" style="fill:var(--color-ink-soft);font-size:9.5px">6+2 PCI-E (red) → BOTH FTW3 plugs on one cable — end connector into one input, 6+2 pigtail into the other.</text>
 <circle cx="34" cy="340" r="8" style="fill:currentColor"/>
 <text x="34" y="344" text-anchor="middle" style="fill:var(--color-surface);font-size:10px;font-weight:700">4</text>
 <text x="50" y="344" style="fill:var(--color-ink-soft);font-size:9.5px">PERIPHERAL &amp; SATA → SATA cable 1, daisied to the two mirror drives (the two closest plates).</text>
@@ -452,7 +452,7 @@ And here is that panel drawn to match — the sockets are **zoned by function** 
 <text x="50" y="396" style="fill:var(--color-ink-faint);font-size:9.5px">Spare: 2 red PCI-E + 2 PERIPHERAL &amp; SATA sockets (the 2nd PCIe cable went to another build).</text>
 </svg>
 
-*Faithful to your panel photo — the far-left 24-pin was partly hidden behind your thumb, so trust the printed zone labels over my exact socket count there. The rule the layout makes obvious: **the GPU cable goes in a red 8+2 PCI-E socket** (one cable — end connector + pigtail into both plugs), and the **two SATA cables go in PERIPHERAL & SATA** (mirror pair on one, footage on the other). Fully modular means only Thermaltake&apos;s own cables fit these pinouts. Total draw is about 300–400 W against 850 W available, so every rail loafs.*
+*Faithful to your panel photo — the far-left 24-pin was partly hidden behind your thumb, so trust the printed zone labels over my exact socket count there. The rule the layout makes obvious: **the GPU cable goes in a red 6+2 PCI-E socket** (one cable — end connector + pigtail into both plugs; Thermaltake's designation is 6+2, matching the cable ends), and the **two SATA cables go in PERIPHERAL & SATA** (mirror pair on one, footage on the other). Fully modular means only Thermaltake&apos;s own cables fit these pinouts. Total draw is about 300–400 W against 850 W available, so every rail loafs.*
 
 ## Set the ASUS Maximus X Hero BIOS
 
@@ -461,8 +461,8 @@ Enter the BIOS by tapping `Del` repeatedly the moment the screen lights up on po
 ### Update the BIOS first
 Flash the latest Maximus X Hero firmware before touching any toggle, so the settings below sit on current microcode. This needs its own USB stick — it is **not** the Proxmox installer stick you made during the Start Here prep.
 
-1. On another computer, open the ASUS support page for the **ROG Maximus X Hero** (asus.com → Support → search "Maximus X Hero" → **Driver & Tools → BIOS & Firmware**) and download the **latest BIOS** file. Note the version number — you will confirm it after the flash.
-2. Unzip the download. ASUS firmware must carry the exact filename EZ Flash expects, so run the bundled **BIOSRenamer** utility (included in the same zip) once — it renames the file for you.
+1. On another computer, open the ASUS support page for the **ROG Maximus X Hero** (asus.com → Support → search "Maximus X Hero" → **Driver & Utility → BIOS & Firmware**) and download the **latest BIOS** file. Note the version number — you will confirm it after the flash.
+2. Unzip the download and run the bundled **BIOSRenamer** utility (included in the same zip) once. Strictly, that rename is only required for the board's **USB BIOS FlashBack** button-recovery method — EZ Flash takes the file as downloaded — but renaming costs nothing and leaves the stick ready for either path.
 3. Format a USB stick as **FAT32** and copy the renamed BIOS file to its **root** (not inside a folder).
 4. Plug the stick into the server, enter the BIOS (`Del` on power-on), and open **EZ Flash 3** under the *Tool* menu. Point it at the file on the stick and confirm. The board flashes, reboots itself, and lands back in the BIOS — where you carry on with the toggles below. After the flash, the BIOS version shows on the **EZ Mode** main screen (and is listed in EZ Flash 3 itself) — confirm it matches the version you downloaded before continuing.
 
@@ -470,7 +470,7 @@ Flash the latest Maximus X Hero firmware before touching any toggle, so the sett
 > Do not interrupt the flash or cut power during it. A failed BIOS update on this board means a recovery dance you want to avoid — let EZ Flash run to completion.
 
 > [!TIP]
-> A firmware update occasionally moves or renames a toggle, so if one isn't where it's written below, use the BIOS search — press `F9` (or click the magnifier in Advanced Mode) and search for `VMX`, `VT-d`, or the slot name `PCIEX4_3` to jump straight to it.
+> A firmware update occasionally moves or renames a toggle, so if one isn't where it's written below, check the neighbouring Advanced menus — this board's UEFI predates the searchable-settings feature of newer ASUS boards, so the menu paths below are the map. `F3` (My Favorites) is the closest built-in aid: pin the toggles there once you find them.
 
 ### Enable Intel Virtualization (VMX)
 1. Go to *Advanced → CPU Configuration*.

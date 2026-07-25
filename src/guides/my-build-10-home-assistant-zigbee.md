@@ -49,7 +49,7 @@ Home Assistant OS ships as a ready-made disk image, **not** an installer ISO —
 > ```
 
 > [!NOTE]
-> Set the **Start/Shutdown order** so this VM boots **before** the Frigate LXC every time. Frigate points at the Mosquitto MQTT (Message Queuing Telemetry Transport) broker that lives alongside it, and keeping Home Assistant up first holds the dependency order clean. Open the VM's **Options → Start/Shutdown order** and set it to **order=2** — TrueNAS is `order=1` from the Virtual Machines page and the Frigate container becomes `order=3`, so the storage boots first, then this VM, then Frigate.
+> Set the **Start/Shutdown order** so this VM boots **before** the Frigate LXC every time. Frigate points at the Mosquitto MQTT (MQ Telemetry Transport) broker that lives alongside it, and keeping Home Assistant up first holds the dependency order clean. Open the VM's **Options → Start/Shutdown order** and set it to **order=2** — TrueNAS is `order=1` from the Virtual Machines page and the Frigate container becomes `order=3`, so the storage boots first, then this VM, then Frigate.
 
 ### Pin its address
 Give the VM a fixed IP before anything else points at it: a DHCP (Dynamic Host Configuration Protocol) reservation on the router, or a static address inside Home Assistant under **Settings → System → Network** (that screen only exists once the onboarding below is done). Pick one. Phone apps, dashboards, and the MQTT links all use this address, and `homeassistant.local` does not resolve reliably on every network.

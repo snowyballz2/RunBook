@@ -32,7 +32,7 @@ The single most important design decision — and the one that trips people up �
 One dependency underpins every reboot of this build:
 
 > [!NOTE]
-> **Start the Home Assistant VM before the Frigate container.** Frigate publishes to the **MQTT** (Message Queuing Telemetry Transport, a lightweight messaging broker) service that lives with Home Assistant, so the broker has to exist first. You set this start order explicitly once the Home Assistant VM exists — on the Home Assistant & Zigbee2MQTT page, with the Frigate side set on the Cameras, Doorbell & Frigate page — so it survives every reboot.
+> **Start the Home Assistant VM before the Frigate container.** Frigate publishes to the **MQTT** (MQ Telemetry Transport, a lightweight messaging broker) service that lives with Home Assistant, so the broker has to exist first. You set this start order explicitly once the Home Assistant VM exists — on the Home Assistant & Zigbee2MQTT page, with the Frigate side set on the Cameras, Doorbell & Frigate page — so it survives every reboot.
 
 ### Understand the disk layout
 Three different jobs, three different homes:
@@ -259,7 +259,7 @@ The 500 GB NVMe currently has Windows and your files on it, and the Proxmox inst
 > [!DETAILS] What to pull off the NVMe before it is wiped
 > Most of what matters lives in a handful of places — work down this list on the Windows machine, then copy it all to an external drive or another PC and spot-check that it opens:
 > - **Personal files** — `Documents`, `Desktop`, `Downloads`, `Pictures`, `Videos`. Downloads is the one people forget.
-> - **Browser bookmarks** — Chrome `chrome://bookmarks`, Edge `edge://favorites`, Firefox *Bookmarks → Manage Bookmarks → Export Bookmarks to HTML*.
+> - **Browser bookmarks** — Chrome `chrome://bookmarks`, Edge `edge://favorites`, Firefox *Bookmarks → Manage Bookmarks → Import and Backup → Export Bookmarks to HTML*.
 > - **Saved passwords** — each browser's password settings → *Export* (Chrome `chrome://settings/passwords` saves a CSV — treat it carefully and delete it once it is safely imported elsewhere).
 > - **Game saves** — many live outside Steam's cloud. Check `Documents\My Games`, `%APPDATA%`, `%LOCALAPPDATA%`, and `C:\Program Files (x86)\Steam\userdata`.
 > - **License keys** — pull keys for paid software from purchase emails or each app's About/Account screen while you can still open it.
