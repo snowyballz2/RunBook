@@ -23,7 +23,7 @@ Container templates live in storage, and a fresh Proxmox install has none. Grab 
 When the task log says `TASK OK`, the template is ready in the wizard.
 
 ### Walk the Create CT wizard
-Click **Create CT** (top right) and step through the tabs. Build one **throwaway practice container** now to learn the flow — DHCP is fine for it, and you can delete it at the end of this page (select it, **Shutdown**, then **More → Destroy**). Each real service gets its own container, with its own values and static IP, on its own page later in the build. These are the starter values for a plain service container on this build; the heavier guests get more later.
+Click **Create CT** (top right) and step through the tabs. Build one **throwaway practice container** now to learn the flow — DHCP is fine for it, and you can delete it at the end of this page (select it, **Shutdown**, then **More → Remove**, typing the CT ID to confirm). Each real service gets its own container, with its own values and static IP, on its own page later in the build. These are the starter values for a plain service container on this build; the heavier guests get more later.
 
 - **General** — accept the suggested **CT ID** (every guest gets a unique number starting at 100; the suggestion is the next free one), set a hostname (e.g. `testbox`), and set a root password. **Leave Unprivileged container ticked** (more below).
 - **Template** — the Debian standard template you just downloaded.
@@ -61,7 +61,7 @@ apt update && apt full-upgrade -y
 dpkg-reconfigure tzdata   # match the container's clock to yours
 ```
 
-`full-upgrade` also adds or removes packages when dependencies have shifted since the template was built — the right tool for a first sync. For routine updates later, plain `apt upgrade` is the more conservative habit.
+`full-upgrade` will also **remove** installed packages when a dependency shift demands it — plain `apt upgrade` installs what's needed but never removes anything — which makes `full-upgrade` the right tool for a first sync. For routine updates later, plain `apt upgrade` is the more conservative habit.
 
 ### Reach it over SSH instead of the Console
 The Debian standard template runs an SSH (Secure Shell) server, but `ssh root@<ip>` with a **password** fails out of the box — Debian's sshd defaults root login to keys only (`PermitRootLogin prohibit-password`). Either fill the **SSH Public Key** field in the wizard up front, or get in once via the Console / `pct enter` and add your key:
@@ -88,7 +88,7 @@ pct set 100 -onboot 1      # swap in the container's ID
 Enable this on **every** service container so the whole stack reassembles itself after mains returns.
 
 > [!NOTE]
-> The same **Options** panel holds **Start/Shutdown order**, which matters once on this build: the **Home Assistant OS VM must start before the Frigate LXC**, because Frigate points at the Mosquitto MQTT (Message Queuing Telemetry Transport) broker inside that VM. Give the HA VM a lower order number than Frigate so the broker is up first — you will set this later in the build, once both guests exist, on their own pages; nothing to do here yet. The plain service containers can stay at the default. The same panel also has a **Startup delay** — useful here because a VM boots slower than a container, so a few seconds of delay gives the HA VM time to bring its broker up before Frigate starts. On host shutdown, Proxmox asks each guest to stop cleanly and waits up to 60 seconds by default before moving on.
+> The same **Options** panel holds **Start/Shutdown order**, which matters once on this build: the **Home Assistant OS VM must start before the Frigate LXC**, because Frigate points at the Mosquitto MQTT (Message Queuing Telemetry Transport) broker inside that VM. Give the HA VM a lower order number than Frigate so the broker is up first — you will set this later in the build, once both guests exist, on their own pages; nothing to do here yet. The plain service containers can stay at the default. The same panel also has a **Startup delay** — useful here because a VM boots slower than a container, so a few seconds of delay gives the HA VM time to bring its broker up before Frigate starts. On host shutdown, Proxmox asks each guest to stop cleanly and waits before moving on — by default up to 60 seconds for a container and 180 for a VM.
 
 ### Grow the disk, cores, or memory live
 That 8 GB starter disk enlarges with no downtime — in **Resources**, select the **Root Disk** row, then **Volume Action → Resize**, or:

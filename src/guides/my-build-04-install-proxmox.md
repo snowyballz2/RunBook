@@ -178,7 +178,7 @@ reboot
 ```
 
 > [!NOTE]
-> Not sure which bootloader you have? Run `proxmox-boot-tool status`. The GRUB steps above match this build's ext4-on-LVM install. If you instead installed on **ZFS root**, Proxmox boots with systemd-boot — add the same `intel_iommu=on iommu=pt` to `/etc/kernel/cmdline`, then run `proxmox-boot-tool refresh` and reboot.
+> Not sure which bootloader you have? Run `proxmox-boot-tool status`. The GRUB steps above match this build's ext4-on-LVM install. If you instead installed on **ZFS root** with Secure Boot off, Proxmox boots with systemd-boot — add the same `intel_iommu=on iommu=pt` to `/etc/kernel/cmdline`, then run `proxmox-boot-tool refresh` and reboot. (With Secure Boot **on**, even a ZFS install uses GRUB — follow the GRUB steps above.)
 
 After the reboot, confirm IOMMU came up and that the HBA landed in a clean group:
 
