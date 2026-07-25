@@ -306,7 +306,7 @@ Either way, every motor commissions into the *same* Home Assistant Matter contro
 PoE shades and PoE cameras both pull from the switch, so divide them by what each needs:
 
 - **PoE cameras → the managed 8-port GS308EPP**, whose per-port PoE control lets you power-cycle a frozen camera from software (or from an HA automation).
-- **PoE shades → the 24-port switch.** Its **320 W** budget is almost entirely theirs, since the cameras sit on the other switch. Each shade is one port plus one Cat6 run to the window, punched down on the patch panel and patched across.
+- **PoE shades → the 24-port VIMIN VM-GS2420P** (26 ports: 24 PoE + 2 gigabit uplinks — the router feeds one uplink, the GS308EPP hangs off the other). Its **320 W** budget is almost entirely the shades', since the cameras sit on the other switch. Each shade is one port plus one Cat6 run to the window, punched down on the patch panel and patched across.
 
 A motor draws almost nothing idle and only a modest amount while moving, so 320 W covers a whole house of shades. The one time you near the budget is a scene that moves *every* shade at once — with many shades, stagger the close-all below into small groups a second apart so the motors never all peak together.
 
