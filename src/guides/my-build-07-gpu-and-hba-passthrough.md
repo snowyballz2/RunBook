@@ -65,7 +65,7 @@ Without the persistence daemon the driver de-initialises whenever nothing is act
 systemctl enable --now nvidia-persistenced
 ```
 
-If this reports `Unit nvidia-persistenced.service not found`, the package did not install — run `apt install -y nvidia-persistenced` and try again.
+If this reports `Failed to enable unit: Unit file nvidia-persistenced.service does not exist`, the package did not install — run `apt install -y nvidia-persistenced` and try again.
 
 ### The dev0: lending recipe (applied when each container is built)
 The host now owns a working driver. Each container that needs the card borrows it by adding three device lines to **its own** config file — but **none of those containers exist yet at this stage**. You will apply this recipe as you create each one later in the build:
@@ -105,7 +105,8 @@ The card is already the right tool: a 9300-8i in **IT mode (Initiator-Target mod
 Passthrough needs the card isolated in its own **IOMMU (Input/Output Memory Management Unit)** group. The HBA is in the bottom **PCIEX4_3 chipset-attached slot** (set to x4 in BIOS) precisely so it lands in a group by itself. Verify before binding anything:
 
 ```bash
-# IOMMU must be active (VT-d enabled in BIOS, intel_iommu=on iommu=pt on the cmdline)
+# IOMMU must be active — VT-d on in BIOS. (intel_iommu defaults to on since kernel 6.8/PVE 8.2;
+# the cmdline flags you set on the Install Proxmox page are belt-and-braces, not required.)
 dmesg | grep -e DMAR -e IOMMU
 
 # Find the HBA's PCI address and its vendor:device IDs
