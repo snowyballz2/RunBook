@@ -80,7 +80,7 @@ Before any devices arrive, lay out your rooms under **Settings → Areas, labels
 ## Zigbee2MQTT on the ZBT-2
 
 ### Pass the coordinator through
-This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broader device support, and it speaks the same MQTT bus the rest of the build uses — and it runs as a Home Assistant app, so the coordinator goes to the Home Assistant OS VM. Plug the **HA Connect ZBT-2** into the server on a short USB extension cable (keeps the radio away from case interference), then pass it through: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the ZBT-2 by name, and reboot the VM.
+This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broader device support, and it speaks the same MQTT bus the rest of the build uses — and it runs as a Home Assistant app, so the coordinator goes to the Home Assistant OS VM. Plug the **HA Connect ZBT-2** into a rear USB port on its included 1.5 m USB-C cable — long enough to stand the antenna base away from case interference — then pass it through: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the ZBT-2 by name, and reboot the VM.
 
 > [!WARNING]
 > Proxmox does not hand USB devices to a guest automatically. If Z2M cannot see the coordinator, this missed passthrough step is almost always why.

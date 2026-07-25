@@ -103,8 +103,8 @@ One map for the whole build: every physical device, how it is powered, and which
 <line x1="420" y1="352" x2="460" y2="352" style="stroke:#f59e0b;stroke-width:2"/>
 <text x="440" y="345" text-anchor="middle" style="fill:#f59e0b;font-size:9px">NUT</text>
 <rect x="460" y="384" width="244" height="46" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="582" y="403" text-anchor="middle" style="fill:currentColor;font-size:10.5px">ZBT-2 Zigbee coordinator</text>
-<text x="582" y="418" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">on a short USB extension off the server</text>
+<text x="582" y="403" text-anchor="middle" style="fill:currentColor;font-size:10.5px">2× ZBT-2 radios — Zigbee + Thread</text>
+<text x="582" y="418" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">each on its included 1.5 m USB-C cable</text>
 <line x1="582" y1="364" x2="582" y2="384" style="stroke:#f59e0b;stroke-width:2"/>
 <line x1="30" y1="250" x2="30" y2="450" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
 <line x1="16" y1="450" x2="704" y2="450" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>

@@ -21,7 +21,7 @@ The platform is a Z370 build: an ASUS ROG Maximus X Hero board with an Intel i7-
 <rect x="30" y="68" width="8" height="250" style="fill:var(--color-ink-faint);fill-opacity:0.45"/>
 <text x="46" y="84" style="fill:var(--color-ink-soft);font-size:10px">ASUS Maximus X Hero · rear I/O at left edge</text>
 <rect x="46" y="92" width="150" height="24" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="121" y="108" text-anchor="middle" style="fill:currentColor">ZBT-2 · USB (later)</text>
+<text x="121" y="108" text-anchor="middle" style="fill:currentColor">2× ZBT-2 · USB (later)</text>
 <rect x="120" y="130" width="190" height="34" rx="4" style="fill:#10b981;fill-opacity:0.14;stroke:#10b981"/>
 <text x="215" y="151" text-anchor="middle" style="fill:currentColor">GTX 1080 Ti · top x16</text>
 <rect x="120" y="176" width="104" height="22" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
@@ -153,7 +153,7 @@ Here is the tray plate itself — traced from the actual part, hole for hole. Th
 ### Fit the radio, switch, and UPS
 These are not slot-related, but they go in with the build:
 
-- **HA Connect ZBT-2** Zigbee coordinator — leave it boxed for now; it plugs into USB via a short extension lead once the host is up (keeps the radio away from case interference).
+- **HA Connect ZBT-2 ×2** — one becomes the Zigbee coordinator, the second Home Assistant's Thread radio. Leave both boxed for now; each plugs into a rear USB port later on its included 1.5 m USB-C cable, which stands the antenna away from case interference. The units are identical, so label them the moment they come out of the box.
 - **Netgear GS308EPP** managed PoE (Power over Ethernet) switch — powers the wired camera perimeter; wire the server's Ethernet through it too.
 - **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply) — the server and switch plug into it; its USB data cable goes to the host for NUT (Network UPS Tools) monitoring later.
 
@@ -304,7 +304,7 @@ Two cards matter, and they have two different jobs. The GPU needs full bandwidth
 <text x="382" y="580" style="fill:var(--color-ink-soft);font-size:9.5px">CHA_FAN1-3 + H_AMP → 4 Noctua case fans</text>
 <circle cx="366" cy="598" r="8" style="fill:currentColor"/>
 <text x="366" y="602" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">11</text>
-<text x="382" y="602" style="fill:var(--color-ink-soft);font-size:9.5px">Rear USB → HA Connect ZBT-2 (added later)</text>
+<text x="382" y="602" style="fill:var(--color-ink-soft);font-size:9.5px">Rear USB → 2× HA Connect ZBT-2 (added later)</text>
 <circle cx="366" cy="620" r="8" style="fill:currentColor"/>
 <text x="366" y="624" text-anchor="middle" style="fill:var(--color-surface);font-size:8px;font-weight:700">12</text>
 <text x="382" y="624" style="fill:var(--color-ink-soft);font-size:9.5px">F_PANEL (bottom-right corner) → power + reset, LEDs</text>
@@ -385,7 +385,7 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 <rect x="470" y="416" width="188" height="30" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="564" y="435" text-anchor="middle" style="fill:currentColor">500 GB NVMe</text>
 <rect x="470" y="456" width="188" height="30" rx="4" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
-<text x="564" y="475" text-anchor="middle" style="fill:currentColor">ZBT-2 (later)</text>
+<text x="564" y="475" text-anchor="middle" style="fill:currentColor">ZBT-2 ×2 (later)</text>
 <rect x="22" y="512" width="14" height="11" rx="2" style="fill:#f43f5e"/>
 <text x="42" y="521" style="fill:var(--color-ink-soft);font-size:10.5px">PSU power</text>
 <rect x="150" y="512" width="14" height="11" rx="2" style="fill:#6366f1"/>
@@ -394,7 +394,7 @@ With both cards seated, run every cable. The rule of thumb: **power comes from t
 <text x="350" y="521" style="fill:var(--color-ink-soft);font-size:10.5px">motherboard data (SATA / M.2 / USB)</text>
 </svg>
 
-The footage drive and the NVMe both ride the board; only the two mirror disks hang off the HBA. The ZBT-2 is the one thing you leave unplugged for now — it goes into a USB port once Proxmox is up.
+The footage drive and the NVMe both ride the board; only the two mirror disks hang off the HBA. The two ZBT-2 radios are the one thing you leave unplugged for now — they go into rear USB ports once Proxmox is up, one for Zigbee and one for Thread.
 
 And here is that panel drawn to match — the sockets are **zoned by function** (PCI-E red, everything else black), two rows, and every cable in this build lands in a labelled zone:
 

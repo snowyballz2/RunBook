@@ -14,7 +14,7 @@ The three Aqara U400 deadbolts are **Matter-over-Thread** devices, and this buil
 ## Stand up Home Assistant's Thread border router
 
 ### Add a second ZBT-2 for Thread
-Your first **HA Connect ZBT-2** is busy running Zigbee2MQTT — and one radio cannot cleanly do Zigbee and Thread at once (the multi-protocol firmware is experimental and degrades both). So Thread gets its **own** ZBT-2. Plug a **second ZBT-2** into the server on a short USB extension (away from case interference), then pass it to the Home Assistant OS VM exactly like the first: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the second ZBT-2 by name, and reboot the VM.
+Your first **HA Connect ZBT-2** is busy running Zigbee2MQTT — and one radio cannot cleanly do Zigbee and Thread at once (the multi-protocol firmware is experimental and degrades both). So Thread gets its **own** ZBT-2. Plug a **second ZBT-2** into another rear USB port on its included 1.5 m USB-C cable (stand the antenna away from the case, and away from the first radio), then pass it to the Home Assistant OS VM exactly like the first: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the second ZBT-2 by name, and reboot the VM.
 
 > [!WARNING]
 > Two identical ZBT-2s are easy to mix up. Note which USB port each is on, and after the reboot confirm Zigbee2MQTT still sees *its* coordinator before you point Thread at the other one — do not let the OTBR app grab the Zigbee radio, or the whole mesh drops.
