@@ -44,7 +44,7 @@ The script finishes by printing the container's address as `http://<IP>` — no 
 Browse to the printed address. Plain `http://` redirects to HTTPS, and the browser objects to the self-signed certificate — the same warning you clicked through for the Proxmox UI on port 8006. Proceed past it; in this browser you meet it exactly once more, at the panel's port 4443.
 
 > [!NOTE]
-> NCP's docs mention `https://nextcloudpi.local`, an mDNS name that may not resolve to this unprivileged container from another Mac. The IP always works, and lives on the container's **Summary** tab if you lose it.
+> NCP's docs mention `https://nextcloudpi.local`, an mDNS name that may not resolve to this unprivileged container from another Mac. The IP always works, and lives on the container's **Network** tab if you lose it (Proxmox does not show an LXC's address on the Summary tab — only VMs with the guest agent get that).
 
 ### Save both passwords, then Activate
 The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (the **Print** button captures them too), recording them in your password manager for now — you will consolidate these into Vaultwarden when you set it up later in this build. Then click **Activate**: the page opens `https://<IP>:4443` (the second certificate warning), landing you in the NCP panel.
@@ -77,7 +77,7 @@ Back at `https://<IP>/`, log in as **ncp** with the Nextcloud password. There is
 ## Point the storage at the ZFS pool
 
 ### Add accounts for the household
-Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account**, enter a name and password, and click **Add new account** — one per person, so everyone gets their own files, photos, and password. Files, Activity, and Photos come enabled; Calendar, Contacts, and Notes wait on the **Apps** page behind an **Enable** button. If an app isn't already bundled, clicking **Enable** downloads it from the Nextcloud app store, installs, and enables it in one step — so a brief install pause is expected, not a fault.
+Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account**, enter a name and password, and click **Add new account** — one per person, so everyone gets their own files, photos, and password. NCP pre-enables the household set — Files, Activity, Photos, **and** Calendar, Contacts, Notes, and Tasks are all ready on first login. Anything further comes from the **Apps** page: clicking **Enable** on an unbundled app downloads it from the Nextcloud app store, installs, and enables it in one step — so a brief install pause is expected, not a fault.
 
 ### Decide where the bytes live
 Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root disk — fine to start, tiny against a camera roll across the whole household. There are two ways to give it room, and this build uses both:
