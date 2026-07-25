@@ -97,7 +97,7 @@ While you are in the quarterly mood, check the two long-game protections:
 > [!INPUT] zfs-mirror-disk1-serial | IronWolf mirror disk 1 serial
 
 > [!INPUT] zfs-mirror-disk2-serial | IronWolf mirror disk 2 serial
-> Knowing the two mirror serials in advance turns a degraded-pool panic into a careful swap — the ST4000VN006s are identical at a glance, so the serial is the only safe way to tell which one to pull from the View 71's rear trays.
+> Knowing the two mirror serials in advance turns a degraded-pool panic into a careful swap — the ST4000VN006s are identical at a glance, so the serial is the only safe way to tell which one to pull from the screw-plate mounts behind the View 71's motherboard tray.
 
 ### Let the rest come to you
 Everything not on these two lists is event-driven, and you already built the events. Uptime Kuma shouts when a service dies, TrueNAS emails when a disk or scrub complains, and the NUT (Network UPS Tools) shutdown drill on the CyberPower UPS (uninterruptible power supply) proved a power cut handles itself. The Home Assistant leak automations already make the Third Reality sensors announce a wet floor on the Nest speakers. If no alert fires between passes, the server needs exactly none of your attention — which is the entire point of the build.
