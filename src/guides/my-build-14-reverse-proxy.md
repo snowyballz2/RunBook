@@ -70,15 +70,15 @@ Create no other records. No A record with your home IP — nothing about this do
 > DuckDNS hands out free subdomains of `duckdns.org`. Claim one, copy the token from its dashboard, and your services become `proxmox.yourname.duckdns.org` and friends — NPM's provider list includes **DuckDNS**, credentials a single line: `dns_duckdns_token=your-token`. The trade: longer, visibly borrowed names, and DuckDNS allows only one TXT record at a time, so request exactly one certificate — the wildcard `*.yourname.duckdns.org`, which covers every service anyway. Everywhere below you see `*.example.com`, read your DuckDNS name instead.
 
 ### Request the wildcard certificate
-In NPM, open **SSL Certificates**, click **Add SSL Certificate**, and choose **Let's Encrypt**. In the dialog:
+In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Encrypt via DNS** from the dropdown — a wildcard can only be issued over DNS, and in the current interface you pick that route here, up front, rather than with a toggle inside the dialog. Then:
 
 - **Domain Names** — `*.example.com`, your own domain swapped in.
-- **Email Address** — for Let's Encrypt's expiry notices.
-- **Use a DNS Challenge** — turn this **on**; a wildcard can only be issued this way, and it reveals the DNS fields below.
+- **Key Type** — leave the default.
 - **DNS Provider** — pick yours from the list.
 - **Credentials File Content** — the box pre-fills a template for the chosen provider; replace the placeholder with your real `dns-api-token`.
 - **Propagation Seconds** — leave empty for the plugin's default.
-- **I Agree to the Let's Encrypt Terms of Service** — tick it.
+
+There is no email field or terms-of-service box — Let's Encrypt stopped sending expiry emails in 2025, and current NPM handles the terms agreement itself. (If your NPM instead shows an **SSL Certificates** menu with an email field and an *I Agree* checkbox, it predates the v2.15 interface rewrite — run `update` from the container's Console to come current.)
 
 Save, and after a short wait the certificate appears, valid for every name under your domain. If it fails on timing, set **Propagation Seconds** to something patient like `120` and try again.
 
