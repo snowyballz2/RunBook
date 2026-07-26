@@ -78,7 +78,7 @@ One map for the whole build: every physical device, how it is powered, and which
 <rect x="196" y="178" width="224" height="72" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="308" y="196" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Rack switches — daisy-chained</text>
 <text x="308" y="210" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">VIMIN 26-port · 24× PoE 320 W → shades</text>
-<text x="308" y="223" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">→ GS308EPP 8-port PoE+ → the 6 cameras</text>
+<text x="308" y="223" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">→ GS308EPP 8-port PoE+ → the 5 cameras</text>
 <rect x="278" y="228" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="308" y="238" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
 <line x1="150" y1="214" x2="196" y2="214" style="stroke:#10b981;stroke-width:2.5"/>
@@ -119,12 +119,6 @@ One map for the whole build: every physical device, how it is powered, and which
 <rect x="66" y="514" width="130" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="131" y="524" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">doorbell transformer</text>
 <line x1="131" y1="450" x2="131" y2="470" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
-<rect x="222" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
-<text x="297" y="490" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Reolink RLC-510WA</text>
-<text x="297" y="504" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">192.168.1.71</text>
-<rect x="242" y="514" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
-<text x="297" y="524" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">12 V DC adapter</text>
-<line x1="297" y1="450" x2="297" y2="470" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
 <rect x="388" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="463" y="490" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">2× ecobee thermostats</text>
 <text x="463" y="504" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">cloud integration</text>
@@ -232,7 +226,7 @@ Check you have everything before you start — the later pages assume each piece
 > - **LSI/Broadcom 9300-8i HBA** — IT mode (Initiator-Target mode, where the card exposes raw disks instead of building its own array), pre-flashed; passed through to TrueNAS
 
 > [!DETAILS] Network, power, and radios
-> - **Netgear GS308EPP** managed 8-port **PoE** (Power over Ethernet, power and data on one cable) switch — powers the wired camera perimeter (the EmpireTech turrets + the Color4K indoor cam); per-port control reboots a frozen camera from software. The 6 cameras plus the VIMIN uplink fill 7 of its 8 ports — the server's own Ethernet runs straight to the router, leaving one spare
+> - **Netgear GS308EPP** managed 8-port **PoE** (Power over Ethernet, power and data on one cable) switch — powers the wired camera perimeter (the EmpireTech turrets + the Color4K indoor cam); per-port control reboots a frozen camera from software. The 5 cameras plus the VIMIN uplink fill 6 of its 8 ports — the server's own Ethernet runs straight to the router, leaving two spare
 > - **VIMIN VM-GS2420P 26-port Gigabit PoE switch** — 24 PoE ports (**320 W** budget) for the SmartWings shades plus **2 dedicated gigabit uplinks**: the Fios router feeds one, the GS308EPP hangs off the other, so the rack chains **router → VIMIN → GS308EPP** (the server does not ride the chain — it plugs straight into the router)
 > - **48-port patch panel** — every camera and shade Cat6 run terminates here and patches across to the switches
 > - **CyberPower CP1500PFCLCD UPS** (uninterruptible power supply, the battery backup) — monitored over **NUT** (Network UPS Tools); its battery side carries the **server, the Fios router, the Fios ONT, and the Caséta bridge** (the switches stay on wall AC)
@@ -241,7 +235,7 @@ Check you have everything before you start — the later pages assume each piece
 
 > [!DETAILS] What the house controls
 > - **Locks:** 3x Aqara U400 (Matter-over-Thread), commissioned straight into Home Assistant over its own Thread border router (Home Key added later if you add a HomePod)
-> - **Cameras:** the wired perimeter is **4x EmpireTech IPC-T54PRO-AS** (WizColor dual-light turrets, 3.6mm, inside-corner mounts) plus **1-2x IPC-Color4K-T-S2** (8MP full-colour, 3.6mm) indoors — all PoE into the GS308EPP, feeding Frigate. Kept alongside: the **Reolink Video Doorbell WiFi** (black 4:3, off the door transformer) and a **Reolink RLC-510WA** (WiFi) stopgap
+> - **Cameras:** **4x EmpireTech IPC-T54PRO-AS** (WizColor dual-light turrets, 3.6mm, inside-corner mounts) plus **one IPC-Color4K-T-S2** (8MP full-colour, 3.6mm) indoors — five cameras, all PoE into the GS308EPP, feeding Frigate. The **Reolink Video Doorbell WiFi** (black 4:3, off the door transformer) stays as the only Reolink
 > - **Shades:** **SmartWings** motorized shades — most PoE ("Matter over Ethernet"), a few battery ("Matter over Thread") — all landing in Home Assistant as `cover` entities
 > - **Leak protection:** 12x Third Reality leak sensors, an Aqara Valve Controller T1 on the main shutoff lever, and Third Reality smart plugs acting as Zigbee routers
 > - **Already in the house:** Lutron Caseta lights (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge
