@@ -119,6 +119,12 @@ One map for the whole build: every physical device, how it is powered, and which
 <rect x="66" y="514" width="130" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="131" y="524" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">doorbell transformer</text>
 <line x1="131" y1="450" x2="131" y2="470" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<rect x="222" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="297" y="490" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Reolink RLC-510WA</text>
+<text x="297" y="504" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">192.168.1.71 · 2nd indoor</text>
+<rect x="242" y="514" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="297" y="524" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">12 V DC adapter</text>
+<line x1="297" y1="450" x2="297" y2="470" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
 <rect x="388" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="463" y="490" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">2× ecobee thermostats</text>
 <text x="463" y="504" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">cloud integration</text>
@@ -235,7 +241,7 @@ Check you have everything before you start — the later pages assume each piece
 
 > [!DETAILS] What the house controls
 > - **Locks:** 3x Aqara U400 (Matter-over-Thread), commissioned straight into Home Assistant over its own Thread border router (Home Key added later if you add a HomePod)
-> - **Cameras:** **4x EmpireTech IPC-T54PRO-AS** (WizColor dual-light turrets, 3.6mm, inside-corner mounts) plus **one IPC-Color4K-T-S2** (8MP full-colour, 3.6mm) indoors — five cameras, all PoE into the GS308EPP, feeding Frigate. The **Reolink Video Doorbell WiFi** (black 4:3, off the door transformer) stays as the only Reolink
+> - **Cameras:** **4x EmpireTech IPC-T54PRO-AS** (WizColor dual-light turrets, 3.6mm, inside-corner mounts) plus **one IPC-Color4K-T-S2** (8MP full-colour, 3.6mm) indoors — five PoE cameras into the GS308EPP, feeding Frigate. Also kept: the **Reolink Video Doorbell WiFi** (black 4:3, off the door transformer) and the **Reolink RLC-510WA** (5MP WiFi, 12 V adapter) as the second indoor camera
 > - **Shades:** **SmartWings** motorized shades — most PoE ("Matter over Ethernet"), a few battery ("Matter over Thread") — all landing in Home Assistant as `cover` entities
 > - **Leak protection:** 12x Third Reality leak sensors, an Aqara Valve Controller T1 on the main shutoff lever, and Third Reality smart plugs acting as Zigbee routers
 > - **Already in the house:** Lutron Caseta lights (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge

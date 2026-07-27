@@ -92,9 +92,11 @@ Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name
 > The types form a ladder. **Ping** proves the machine answers on the network; **TCP Port** proves something is listening on a port; **HTTP(s)** proves the actual service responds properly — by default it accepts status codes 200–299 and follows up to 10 redirects. Prefer the highest rung a service offers: a frozen app can still answer pings. The type list goes well beyond these — keyword, JSON, push, and Docker checks — but these three plus the DNS type cover everything this collection built.
 
 ### Watch the cameras too
-The Reolink Video Doorbell is the one camera on Wi-Fi — the likeliest to drop unnoticed, and a doorbell that stopped recording is exactly the kind of silent failure this dashboard exists to catch. Add a **Ping** monitor for it, and one per EmpireTech turret at its static IP — wired cameras drop far less, but a per-camera ping is what tells you *which* one died if footage goes missing. Ping is right here because the cameras speak RTSP (Real-Time Streaming Protocol) and http-flv into Frigate rather than serving a plain web page, so a successful ping is the cleanest "it is still on the network" signal.
+The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — the likeliest to drop unnoticed, and a doorbell that stopped recording is exactly the kind of silent failure this dashboard exists to catch. Add a **Ping** monitor for each, and one per EmpireTech turret at its static IP — wired cameras drop far less, but a per-camera ping is what tells you *which* one died if footage goes missing. Ping is right here because the cameras speak RTSP (Real-Time Streaming Protocol) and http-flv into Frigate rather than serving a plain web page, so a successful ping is the cleanest "it is still on the network" signal.
 
 > [!INPUT] doorbell-ip | Reolink doorbell IP | 192.168.1.70
+
+> [!INPUT] camera-ip | Reolink RLC-510WA IP | 192.168.1.71
 
 > [!TIP]
 > A separate **HTTP(s)** monitor on Frigate (above) tells you the NVR (Network Video Recorder) software is alive; the per-camera Ping monitors tell you which *camera* dropped if footage goes missing. Together they point straight at the culprit instead of leaving you guessing.

@@ -1,12 +1,12 @@
 ---
 title: Cameras, Doorbell & Frigate
-subtitle: Frigate NVR with detection on the 1080 Ti — the Reolink doorbell plus four EmpireTech turrets and a full-colour indoor camera
+subtitle: Frigate NVR with detection on the 1080 Ti — the Reolink doorbell, four EmpireTech turrets, and two indoor cameras
 collection: My Build
 order: 12
 accent: spruce
 ---
 
-Frigate is the camera recorder (an NVR — network video recorder) that turns your cameras — the EmpireTech perimeter turrets, the full-colour indoor camera, and the Reolink doorbell — into searchable, object-aware footage on hardware you own. On this build it runs as its own container, hardware-decodes the camera streams, and runs object detection on the **EVGA GTX 1080 Ti** whose driver was set up on the host earlier and is shared from there into containers — no cloud, no subscription, no Coral. This page builds the container, points detection at the 1080 Ti via ONNX/CUDA, adds the black 4:3 Reolink doorbell over go2rtc, wires in the five EmpireTech PoE cameras — the four perimeter turrets and the full-colour indoor — and lands recordings on the dedicated footage drive.
+Frigate is the camera recorder (an NVR — network video recorder) that turns your cameras — the EmpireTech perimeter turrets, the two indoor cameras, and the Reolink doorbell — into searchable, object-aware footage on hardware you own. On this build it runs as its own container, hardware-decodes the camera streams, and runs object detection on the **EVGA GTX 1080 Ti** whose driver was set up on the host earlier and is shared from there into containers — no cloud, no subscription, no Coral. This page builds the container, points detection at the 1080 Ti via ONNX/CUDA, adds the black 4:3 Reolink doorbell and the WiFi RLC-510WA over go2rtc, wires in the five EmpireTech PoE cameras — the four perimeter turrets and the full-colour indoor — and lands recordings on the dedicated footage drive.
 
 ## Create the Frigate container
 
@@ -117,7 +117,7 @@ In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a 
 > Take the exact stream details from the Reolink app — do not guess them. In particular confirm **HTTP is enabled**, or the http-flv video path will not connect at all.
 
 ### Add the doorbell to the config
-There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the five EmpireTech cameras you add later get folded into these same two blocks rather than starting fresh ones. Add the doorbell first: fold its streams into the generated file's existing `go2rtc: streams:`, and the `doorbell:` camera into the existing `cameras:` — and while you are there, delete the `test:` sample camera (and its sample stream) that the install shipped with, so the file holds only real cameras. Swap in the doorbell's IP, username, and password:
+There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the cameras you add later — the RLC-510WA and the five EmpireTechs — get folded into these same two blocks rather than starting fresh ones. Add the doorbell first: fold its streams into the generated file's existing `go2rtc: streams:`, and the `doorbell:` camera into the existing `cameras:` — and while you are there, delete the `test:` sample camera (and its sample stream) that the install shipped with, so the file holds only real cameras. Swap in the doorbell's IP, username, and password:
 
 ```yaml
 go2rtc:
@@ -162,14 +162,62 @@ cameras:
 > [!WARNING]
 > Reolink doorbells have limited streaming capacity and dislike many simultaneous connections. Detecting on the sub stream, as above, keeps the load light — but every extra consumer is another connection, and adding Reolink's own Home Assistant integration is a common one. Running everything at once can cause dropouts, so add one thing at a time and watch the logs.
 
+## Add the RLC-510WA
+
+### Add the second indoor camera
+The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep instead: it becomes the **second indoor camera**, covering the big room from the opposite side so the far corner the Color4K-T can't identify into isn't blind. It stays on **WiFi with its 12 V adapter** — no PoE run, no switch port — and is added the same restream way as the doorbell, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Pin its IP with a DHCP reservation first, then take the exact stream paths from the Reolink app.
+
+These entries join the blocks you already have — they do **not** start a second `go2rtc:` or a second `cameras:`. Add the two `rlc510` streams as siblings under your existing `go2rtc: streams:` (right alongside `doorbell` and `doorbell_sub`), and add the `rlc510:` camera as a sibling under your existing `cameras:` (right alongside `doorbell:`). A duplicate top-level `go2rtc:` or `cameras:` is invalid YAML — the later one wins and the doorbell silently disappears. The snippet below shows the new entries with their parent keys for placement only; merge them in, do not paste a fresh copy of `go2rtc:`/`cameras:`.
+
+> [!INPUT] camera-ip | Reolink RLC-510WA IP | 192.168.1.71
+
+> [!INPUT] camera-user | RLC-510WA username
+
+> [!SECRET] camera-password | RLC-510WA password
+
+```yaml
+# add these two streams under your EXISTING go2rtc: streams: map
+go2rtc:
+  streams:
+    rlc510:
+      - "rtsp://CAMERA-USER:CAMERA-PASS@CAMERA-IP:554/h264Preview_01_main"
+    rlc510_sub:
+      - "rtsp://CAMERA-USER:CAMERA-PASS@CAMERA-IP:554/h264Preview_01_sub"
+
+# add this camera under your EXISTING cameras: map (sibling of doorbell:)
+cameras:
+  rlc510:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/rlc510
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/rlc510_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      enabled: true
+    record:
+      enabled: true
+```
+
+> [!NOTE]
+> `h264Preview_01_main` / `_sub` is the usual RLC spelling, but confirm it from the Reolink app rather than trusting the example. Detecting on the sub stream is correct anyway — frames get resized down to the model's small input, so a high-resolution detect stream loses the extra detail for nothing. Frigate tracks `person` by default; add an `objects: track:` list if you want `dog` and friends on this camera too.
+
+> [!WARNING]
+> WiFi cameras drop more than wired ones — Frigate's docs are blunt that wireless streams are less reliable. Indoors, close to the router, the RLC-510WA has an easier life than it would outside, but if it stutters, that is the link, not Frigate. It is the one deliberate WiFi exception in the fleet; the five EmpireTechs specced below all ride the wired GS308EPP.
+
 ## The PoE camera lineup
 
-The doorbell got the build going; every other camera is a wired **EmpireTech (Dahua-family) PoE turret**, settled on after weighing every alternative — five of them, no WiFi cameras at all. Here is the locked lineup.
+The doorbell and the RLC-510WA got the build going; the five wired cameras are **EmpireTech (Dahua-family) PoE turrets**, settled on after weighing every alternative. Here is the locked lineup.
 
 ### What to buy
 - **Four `IPC-T54PRO-AS` (WizColor dual-light) — the perimeter.** A Dahua-made 4MP turret on a large **1/1.8″** sensor with an **f/1.0** lens, **dual light** (IR to 60 m, *or* a warm LED for full-colour night), and **two-way talk**. **$199.99** each, direct from empiretech01.com. Get the **3.6mm** lens — the mounting section explains why it fits your corners. It supersedes the older IR-only `IPC-T54IR-AS-S3`: same price, but the PRO is the newer WizColor generation and adds the warm light and speaker for nothing extra.
-- **One `IPC-Color4K-T-S2` — indoor.** An **8MP 1/1.2″** full-colour turret, the biggest sensor in this class, so it holds clean colour in a dark room where an IR camera would glare off walls and glass. **$289.99** each with the **3.6mm** lens (the 2.8mm is $279.99) — it also sits in an inside 90° corner, so it takes the same wedge-fit lens as the outdoor turrets (3.6mm fills the 90° corner and reaches further for facial ID; 2.8mm would just waste width on the flanking walls). One camera recognises across a large room and identifies out to about 25 ft; if the far corner of the big room ever matters more, a **second** in the opposite corner is the upgrade path. The white finish sells out fast — back-order it rather than settle.
+- **One `IPC-Color4K-T-S2` — indoor.** An **8MP 1/1.2″** full-colour turret, the biggest sensor in this class, so it holds clean colour in a dark room where an IR camera would glare off walls and glass. **$289.99** each with the **3.6mm** lens (the 2.8mm is $279.99) — it also sits in an inside 90° corner, so it takes the same wedge-fit lens as the outdoor turrets (3.6mm fills the 90° corner and reaches further for facial ID; 2.8mm would just waste width on the flanking walls). One camera recognises across a large room and identifies out to about 25 ft; the **RLC-510WA covers the opposite side** (added above), so the far corner isn't blind. The white finish sells out fast — back-order it rather than settle.
 - **The Reolink doorbell stays** — already wired and already in Frigate above.
+- **The RLC-510WA stays too** — WiFi with its 12 V adapter, redeployed as the second indoor camera (added above); no PoE run, no switch port.
 
 > [!NOTE]
 > **Why EmpireTech (Dahua), not Reolink or Hikvision.** Frigate lives on an RTSP stream, and Dahua-family cameras give the clean kind: a plain `/cam/realmonitor` URL, no http-flv wrappers, no connection-limit juggling, and **fully configurable substreams** so detection gets a right-sized frame. They also expose a **real manual shutter** and *honour* it — the one thing that keeps a moving person sharp at night — where Reolink fakes that control and auto-blurs. And they behave when firewalled off the internet (the hardening below), which Reolink actively fights. Hikvision's hardware is just as good, but the legitimate English-firmware version costs *more* than the EmpireTech, splits you across two config styles, and the cheap listings are grey-market with no security patches — so it was considered and dropped.
@@ -194,7 +242,7 @@ go2rtc:
 ```
 
 > [!TIP]
-> The finished `/config/config.yml` holds **one** `go2rtc: streams:` map — the doorbell pair plus a main+sub pair per EmpireTech camera, twelve entries all told — and **one** `cameras:` map with six entries (`doorbell:` plus the five turrets). The `detectors:`, `model:`, `ffmpeg:`, `record:`, and `mqtt:` blocks each appear once at the top level.
+> The finished `/config/config.yml` holds **one** `go2rtc: streams:` map — the doorbell pair, the `rlc510` pair, and a main+sub pair per EmpireTech camera, fourteen entries all told — and **one** `cameras:` map with seven entries (`doorbell:`, `rlc510:`, and the five turrets). The `detectors:`, `model:`, `ffmpeg:`, `record:`, and `mqtt:` blocks each appear once at the top level.
 
 > [!TIP]
 > In each turret's own web UI, set the **substream** to roughly 720p at **5 fps** for a clean detect frame, and at night set a **manual shutter** — cap it near 1/120 s and hold the gain down — so a moving person doesn't smear (the control Reolink never gave you). On the `T54PRO-AS`, leave the warm light **off / IR mode** for any angle where you want to read a licence plate; the colour mode washes plates out.
@@ -231,7 +279,7 @@ Do this **after** the camera is configured and streaming to Frigate — initial 
 
 Give each camera a **static IP with a blank (or dead) gateway**. A device only needs its gateway to reach addresses *outside* its own subnet — i.e. the internet. Leave it blank and the camera can still talk to anything on `192.168.1.x` (so Frigate keeps pulling its stream, unchanged), but it physically **cannot route a packet to the internet**: it can't phone home, leak footage to a cloud, or be reached by anyone outside. Set it in the camera's own network settings, matching the address you reserved earlier:
 
-- **IP** — the address you pinned (e.g. `192.168.1.72`)
+- **IP** — the address you pinned (e.g. `192.168.1.71`)
 - **Subnet mask** — `255.255.255.0`
 - **Gateway** — leave **blank**; if the firmware insists on a value, enter an unused address on the subnet (even the camera's own IP) so packets route nowhere
 - **DNS** — blank or your router; it can't reach an external resolver anyway, which is the point
@@ -331,7 +379,7 @@ Apply any config change by restarting Frigate in the container's console:
 systemctl restart frigate
 ```
 
-Reload the web UI — the doorbell and EmpireTech live views should appear, and walking through a frame should produce a tracked person within a few seconds.
+Reload the web UI — the doorbell, RLC-510WA, and EmpireTech live views should appear, and walking through a frame should produce a tracked person within a few seconds.
 
 > [!TIP]
 > If a camera stays black, watch the logs while it starts: `journalctl -u frigate -f` in the console. A wrong RTSP path or password shows up there immediately. If detection feels sluggish or the CPU is pinned, the 1080 Ti probably is not doing the work — re-check that `nvidia-smi` sees the card inside the container and that the logs name the ONNX/CUDA detector, not a CPU fallback.
