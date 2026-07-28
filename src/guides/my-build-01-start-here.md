@@ -109,7 +109,6 @@ One map for the whole build: every physical device, how it is powered, and which
 <line x1="582" y1="364" x2="582" y2="384" style="stroke:#f59e0b;stroke-width:2"/>
 <line x1="30" y1="250" x2="30" y2="450" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
 <line x1="30" y1="450" x2="629" y2="450" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
-<text x="330" y="443" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">Wi-Fi — 2.4/5 GHz, everything wireless lives on the router</text>
 <line x1="460" y1="407" x2="42" y2="407" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
 <line x1="42" y1="407" x2="42" y2="720" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
 <rect x="56" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
@@ -198,8 +197,8 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="540" y="841" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>
 <rect x="376" y="910" width="328" height="180" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="540" y="932" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Lutron Clear Connect RF</text>
-<line x1="420" y1="240" x2="437" y2="240" style="stroke:#10b981;stroke-width:2.5"/>
-<line x1="437" y1="240" x2="437" y2="440" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="420" y1="232" x2="437" y2="232" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="437" y1="232" x2="437" y2="440" style="stroke:#10b981;stroke-width:2.5"/>
 <line x1="437" y1="440" x2="711" y2="440" style="stroke:#10b981;stroke-width:2.5"/>
 <line x1="711" y1="440" x2="711" y2="972" style="stroke:#10b981;stroke-width:2.5"/>
 <line x1="711" y1="972" x2="688" y2="972" style="stroke:#10b981;stroke-width:2.5"/>
