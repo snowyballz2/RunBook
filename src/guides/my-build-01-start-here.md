@@ -91,9 +91,8 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="582" y="214" text-anchor="middle" style="fill:currentColor;font-size:10.5px">192.168.1.50</text>
 <rect x="497" y="226" width="170" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="582" y="236" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery — Toughpower 850 W PSU</text>
-<line x1="100" y1="250" x2="100" y2="268" style="stroke:#10b981;stroke-width:2.5"/>
-<line x1="100" y1="268" x2="460" y2="268" style="stroke:#10b981;stroke-width:2.5"/>
-<text x="455" y="263" text-anchor="end" style="fill:#10b981;font-size:9px">server — straight to the router</text>
+<line x1="60" y1="178" x2="60" y2="166" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="60" y1="166" x2="460" y2="166" style="stroke:#10b981;stroke-width:2.5"/>
 <rect x="196" y="290" width="224" height="96" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="308" y="312" text-anchor="middle" style="fill:currentColor;font-weight:600">CyberPower CP1500PFCLCD</text>
 <text x="308" y="328" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">battery: server · router · ONT · Caséta</text>
@@ -109,8 +108,8 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="582" y="418" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">each on its included 1.5 m USB-C cable</text>
 <line x1="582" y1="364" x2="582" y2="384" style="stroke:#f59e0b;stroke-width:2"/>
 <line x1="30" y1="250" x2="30" y2="450" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
-<line x1="16" y1="450" x2="704" y2="450" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
-<text x="360" y="443" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">Wi-Fi — 2.4/5 GHz, everything wireless lives on the router</text>
+<line x1="30" y1="450" x2="629" y2="450" style="stroke:#8b5cf6;stroke-width:2;stroke-dasharray:5 3"/>
+<text x="330" y="443" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">Wi-Fi — 2.4/5 GHz, everything wireless lives on the router</text>
 <line x1="460" y1="407" x2="42" y2="407" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
 <line x1="42" y1="407" x2="42" y2="720" style="stroke:#06b6d4;stroke-width:2;stroke-dasharray:2 3"/>
 <rect x="56" y="470" width="150" height="76" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
@@ -163,6 +162,7 @@ One map for the whole build: every physical device, how it is powered, and which
 <rect x="584" y="619" width="90" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="629" y="629" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall / USB</text>
 <line x1="538" y1="620" x2="554" y2="620" style="stroke:var(--color-ink-faint);stroke-width:1.5"/>
+<line x1="548" y1="430" x2="548" y2="720" style="stroke:#d946ef;stroke-width:2;stroke-dasharray:2 3"/>
 <line x1="131" y1="651" x2="131" y2="706" style="stroke:#d946ef;stroke-width:2;stroke-dasharray:2 3"/>
 <line x1="131" y1="706" x2="540" y2="706" style="stroke:#d946ef;stroke-width:2;stroke-dasharray:2 3"/>
 <line x1="540" y1="706" x2="540" y2="720" style="stroke:#d946ef;stroke-width:2;stroke-dasharray:2 3"/>
@@ -198,9 +198,10 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="540" y="841" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>
 <rect x="376" y="910" width="328" height="180" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="540" y="932" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Lutron Clear Connect RF</text>
+<line x1="420" y1="946" x2="420" y2="900" style="stroke:#10b981;stroke-width:2.5"/>
 <rect x="392" y="946" width="296" height="52" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="540" y="963" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Caséta Pro bridge</text>
-<text x="540" y="976" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Ethernet — a wired switch port · UPS battery</text>
+<text x="540" y="976" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Ethernet — a switch port above · UPS battery</text>
 <rect x="470" y="1010" width="140" height="66" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="540" y="1030" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Wall dimmers</text>
 <rect x="485" y="1040" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
