@@ -91,8 +91,8 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="582" y="214" text-anchor="middle" style="fill:currentColor;font-size:10.5px">192.168.1.50</text>
 <rect x="497" y="226" width="170" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="582" y="236" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery — Toughpower 850 W PSU</text>
-<line x1="100" y1="250" x2="100" y2="268" style="stroke:#10b981;stroke-width:2.5"/>
-<line x1="100" y1="268" x2="460" y2="268" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="130" y1="250" x2="130" y2="268" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="130" y1="268" x2="460" y2="268" style="stroke:#10b981;stroke-width:2.5"/>
 <rect x="196" y="290" width="224" height="96" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="308" y="312" text-anchor="middle" style="fill:currentColor;font-weight:600">CyberPower CP1500PFCLCD</text>
 <text x="308" y="328" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:10px">battery: server · router · ONT · Caséta</text>
@@ -197,14 +197,13 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="540" y="841" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>
 <rect x="376" y="910" width="328" height="180" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
 <text x="540" y="932" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Lutron Clear Connect RF</text>
-<line x1="420" y1="232" x2="437" y2="232" style="stroke:#10b981;stroke-width:2.5"/>
-<line x1="437" y1="232" x2="437" y2="440" style="stroke:#10b981;stroke-width:2.5"/>
-<line x1="437" y1="440" x2="711" y2="440" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="100" y1="250" x2="100" y2="440" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="100" y1="440" x2="711" y2="440" style="stroke:#10b981;stroke-width:2.5"/>
 <line x1="711" y1="440" x2="711" y2="972" style="stroke:#10b981;stroke-width:2.5"/>
 <line x1="711" y1="972" x2="688" y2="972" style="stroke:#10b981;stroke-width:2.5"/>
 <rect x="392" y="946" width="296" height="52" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="540" y="963" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Caséta Pro bridge</text>
-<text x="540" y="976" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Ethernet — a switch port above · UPS battery</text>
+<text x="540" y="976" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Ethernet — straight to the router · UPS battery</text>
 <rect x="470" y="1010" width="140" height="66" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="540" y="1030" text-anchor="middle" style="fill:currentColor;font-size:10.5px">Wall dimmers</text>
 <rect x="485" y="1040" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
