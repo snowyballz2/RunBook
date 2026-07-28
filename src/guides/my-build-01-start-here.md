@@ -46,8 +46,8 @@ All three hard drives mount in the fixed rear drive trays of the case, behind th
 ### See how everything gets power and network
 One map for the whole build: every physical device, how it is powered, and which link it talks over. The line colors are the link types; the small rose tag inside each box is that device's power source. (The wiring *inside* the server case has its own diagrams on the Hardware & BIOS page.)
 
-<svg viewBox="0 0 720 1110" role="img" aria-label="Power and network map of every physical device in the build" style="width:100%;height:auto;max-width:720px;margin:0.75rem 0;font-family:inherit;font-size:11px">
-<rect x="1" y="1" width="718" height="1108" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
+<svg viewBox="0 0 720 1290" role="img" aria-label="Power and network map of every physical device in the build" style="width:100%;height:auto;max-width:720px;margin:0.75rem 0;font-family:inherit;font-size:11px">
+<rect x="1" y="1" width="718" height="1288" rx="12" style="fill:var(--color-surface);stroke:var(--color-line)"/>
 <text x="20" y="28" style="fill:currentColor;font-size:14px;font-weight:600">Power &amp; network — every physical device</text>
 <line x1="20" y1="58" x2="48" y2="58" style="stroke:#10b981;stroke-width:2.5"/>
 <text x="54" y="62" style="fill:var(--color-ink-soft);font-size:10px">Ethernet</text>
@@ -77,8 +77,8 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="83" y="234" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">UPS battery</text>
 <rect x="196" y="178" width="224" height="72" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="308" y="196" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">Rack switches — daisy-chained</text>
-<text x="308" y="210" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">VIMIN 26-port · 24× PoE 320 W → shades</text>
-<text x="308" y="223" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">→ GS308EPP 8-port PoE+ → the 5 cameras</text>
+<text x="308" y="210" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">VIMIN 26-port · 24× PoE 320 W</text>
+<text x="308" y="223" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">→ GS308EPP 8-port PoE+ · both feed below</text>
 <rect x="278" y="228" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="308" y="238" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">AC wall</text>
 <line x1="150" y1="214" x2="196" y2="214" style="stroke:#10b981;stroke-width:2.5"/>
@@ -209,6 +209,25 @@ One map for the whole build: every physical device, how it is powered, and which
 <rect x="485" y="1040" width="110" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="540" y="1050" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">in-wall house mains</text>
 <line x1="540" y1="998" x2="540" y2="1010" style="stroke:var(--color-ink-faint);stroke-width:1.5;stroke-dasharray:5 3"/>
+<line x1="196" y1="235" x2="175" y2="235" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="175" y1="235" x2="175" y2="462" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="175" y1="462" x2="380" y2="462" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="380" y1="462" x2="380" y2="700" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="380" y1="700" x2="360" y2="700" style="stroke:#10b981;stroke-width:2.5"/>
+<line x1="360" y1="700" x2="360" y2="1120" style="stroke:#10b981;stroke-width:2.5"/>
+<rect x="16" y="1120" width="688" height="150" rx="8" style="fill:var(--color-surface-2);stroke:var(--color-line-strong)"/>
+<text x="360" y="1144" text-anchor="middle" style="fill:currentColor;font-size:11.5px;font-weight:600">Wired PoE — everything off the rack switches</text>
+<text x="360" y="1160" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">power and data on one Cat6 run each, back to the patch panel</text>
+<rect x="32" y="1174" width="320" height="80" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="192" y="1196" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">5× EmpireTech cameras</text>
+<text x="192" y="1211" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">4 perimeter turrets + 1 full-colour indoor</text>
+<rect x="132" y="1222" width="120" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="192" y="1232" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">PoE — GS308EPP</text>
+<rect x="368" y="1174" width="320" height="80" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
+<text x="528" y="1196" text-anchor="middle" style="fill:currentColor;font-size:10.5px;font-weight:600">SmartWings PoE shades</text>
+<text x="528" y="1211" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">one run per shade · battery Thread ones ride Thread</text>
+<rect x="468" y="1222" width="120" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
+<text x="528" y="1232" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">PoE — VIMIN 24×</text>
 </svg>
 
 *Reading it top to bottom: the wall feeds the UPS; its battery side carries the server, the Fios router, and the Caséta bridge — and because the server plugs straight into the router, an outage keeps Wi-Fi, Tailscale, the dashboards, and every Zigbee/Thread automation alive with no switch involved — and with the ONT riding the battery too, internet and push notifications stay up as well. The rack switches stay on wall power, so the cameras stop recording and the shades go dark until mains returns — adding the switches to battery later is what would close that gap. Everything else wired rides the daisy-chained rack switches to the router; everything wireless rides the router's Wi-Fi. Three radio meshes hang off their own hubs — Zigbee off one ZBT-2 on the server, Thread off Home Assistant's own OpenThread border router (a second ZBT-2 on the server), and Lutron's own RF off the Caséta bridge. A HomePod added later just joins the Thread mesh as an extra border router; the build does not need it.*
