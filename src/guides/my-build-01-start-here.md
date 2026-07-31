@@ -314,6 +314,9 @@ The whole collection starts from one number — the static address you give the 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The static address for the server. Reach the web interface at `https://`-this-ip-`:8006` once Proxmox is installed. Every later page starts from this value.
 
+> [!WARNING]
+> **Carve out the static block first.** Every static address in this collection — the host here, the service guests in the .50s, the cameras in the .70s — assumes those numbers are *reserved territory*, but the Fios router's DHCP pool spans nearly the whole subnet out of the box, so nothing stops it handing .50 to a phone someday. Before setting anything static, open the router at `192.168.1.1` → its LAN/DHCP settings and **shrink the pool to `192.168.1.100 – 192.168.1.254`**. That leaves `.2 – .99` as the static zone every default below lives in, and the pool keeps 155 addresses for everything else — phones, guests, and the PoE shades (which get DHCP reservations *inside* the pool, one per motor). Devices currently leasing an address below `.100` migrate into the pool on their next renewal automatically; a router reboot does them all at once. One check while you are in there: if the device list shows anything squatting below `.100` that does not move after a reboot, it was statically configured on the device itself — reconfigure it into the pool range before it collides with a service.
+
 ## The build, in order
 
 ### Work through the pages top to bottom
