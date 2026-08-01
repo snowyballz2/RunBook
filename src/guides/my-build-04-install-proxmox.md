@@ -130,6 +130,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > - Corrects the apt source lists for your Proxmox VE version.
 > - Removes the "No valid subscription" login popup and keeps it removed after updates.
 > - May offer to disable the High-Availability services — accepting is fine on a single box like this; they only matter in a multi-node cluster.
+> - Asks to **add the (disabled) `pvetest` repository — say no.** Even "yes" only writes it disabled, so neither answer breaks anything, but this build never wants pre-release Proxmox packages, so there is no reason to carry the file at all.
 > - Optionally runs a full update and reboots — let it.
 
 > [!DETAILS] Prefer no script? Do the same by hand
