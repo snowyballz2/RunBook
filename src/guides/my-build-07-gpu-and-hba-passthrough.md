@@ -116,12 +116,16 @@ lspci -nn | grep -i -e LSI -e SAS -e Broadcom
 for g in /sys/kernel/iommu_groups/*/devices/*; do
   echo "Group $(basename $(dirname $(dirname $g))): $(lspci -nns $(basename $g))"
 done | grep -i -e LSI -e SAS -e Broadcom
+
+# The loop names the HBA's group — now list that group's folder directly
+# (swap 13 for yours). It must print the HBA's address and nothing else:
+ls /sys/kernel/iommu_groups/13/devices/
 ```
 
-You want the HBA in a group containing only itself (or only its own functions). If it shares a group with devices you care about, passthrough either fails or drags those neighbours into the VM — recheck that it's in the chipset-attached PCIEX4_3 slot.
+You want the HBA in a group containing only itself (or only its own functions) — and the `ls` is the command that proves it, since the loop's grep only shows the HBA's own line and would hide any neighbours sharing the group. If other devices do show up in there, passthrough either fails or drags those neighbours into the VM — recheck that the card is in the chipset-attached PCIEX4_3 slot.
 
 > [!NOTE]
-> The vendor:device IDs from `lspci -nn` (something like `[1000:0097]`) are what you bind to vfio-pci. Note them down — the next step uses them.
+> The vendor:device IDs from `lspci -nn` (something like `[1000:0097]`) are what you bind to vfio-pci. They sit in brackets at the very end of the line — exactly the part a console cuts off when the line runs past the screen edge. If you cannot see them, re-run scoped to just the card and the line stays short: `lspci -nn -s 03:00.0` (your address from the step above). Note the pair down — the next step uses it.
 
 ### Bind the card to vfio-pci
 Tell the host to claim the HBA for VFIO at boot so no host driver grabs it first. Create a modprobe entry with the IDs from the previous step, blacklist the card's native driver so it can never win the race for it, then refresh the initramfs and reboot:
@@ -147,6 +151,8 @@ lspci -nnk | grep -A3 -i -e LSI -e SAS -e Broadcom
 
 > [!NOTE]
 > The `ids=` option alone is not reliable here — both `vfio-pci` and the HBA's native driver load as modules at boot, and the native one commonly wins the race to claim the device even with `vfio-pci` loaded early via `/etc/modules`. Blacklisting the native driver outright is what actually guarantees `vfio-pci` gets it. Nothing else on this build uses `mpt3sas`, so losing it costs nothing.
+>
+> Still says `Kernel driver in use: mpt3sas` after the reboot? `cat /etc/modprobe.d/vfio.conf` — it must show **both** lines, the `ids=` and the `blacklist`; a `>` that overwrote instead of a `>>` that appended is the usual culprit. (`Kernel modules: mpt3sas` continuing to appear in `lspci -nnk` is fine — that line lists what *could* drive the card, not what does. And duplicate `vfio` lines in `/etc/modules` from running the setup block twice are harmless; no need to clean them up.)
 
 ### Add the HBA to the TrueNAS VM
 With the card on vfio-pci, hand the **whole device** to the TrueNAS VM. In the Proxmox web interface, select the TrueNAS VM, then **Hardware → Add → PCI Device**, choose the 9300-8i, and tick **All Functions**. Add it to the **TrueNAS VM only** — no other guest.

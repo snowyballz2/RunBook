@@ -174,18 +174,25 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 >
 > This project is open source with a large, active maintainer community, but it is community-run — not official Proxmox software. The same habit applies to every other one-liner the internet hands you.
 
-> [!DETAILS] What the script actually changes
-> Run it in the Proxmox shell (Datacenter → your node → Shell). It walks you through yes/no menus:
+> [!DETAILS] The script's prompts in order, with a home server's answers
+> Run it in the Proxmox shell (Datacenter → your node → Shell). There are more prompts than the summaries admit, and the wording drifts a little between script versions — the principles behind every answer: enterprise repos off, the free no-subscription repo on, no test repo, no Ceph, no clustering services on a single machine. On a current Proxmox 9 install the walk looks like this:
 >
-> - Disables the enterprise package repo, which errors without a paid subscription
-> - Enables the free no-subscription repo so updates work
-> - Corrects the apt source lists for your PVE (Proxmox Virtual Environment) version
-> - Removes the "No valid subscription" login popup, and keeps it removed after updates
-> - May offer to disable the High-Availability services — accepting is fine on a single machine like this; they only matter when several Proxmox servers work as a cluster
-> - Asks to add the (disabled) `pvetest` repository — say no; even "yes" leaves it disabled, but a home server has no reason to carry a pre-release package repo at all
-> - Optionally runs a full update and reboots
+> 1. **Start the Post Install Script?** → **Yes**.
+> 2. **Migrate to deb822 sources format?** → **Yes** — the current repo-file format.
+> 3. **Disable legacy sources?** *(only if old-format files exist)* → **Yes**.
+> 4. **`pve-enterprise` repository — Keep / Disable / Delete?** → **Disable**, not Delete. The disabled file is inert and keeps the door open if you ever buy a subscription.
+> 5. **Add the `pve-enterprise` repository?** *(only if it was missing)* → **No**.
+> 6. **Ceph enterprise repository — Keep / Disable / Delete?** → **Disable** — no Ceph on a single machine.
+> 7. **`pve-no-subscription` repository — Enable / Keep / Add?** *(whichever variant appears)* → end with it **enabled** — this is the one repo that should be live.
+> 8. **Add Ceph package sources?** → **No**.
+> 9. **Add the (disabled) `pvetest` repository?** → **No.** Even "yes" only writes it disabled, but a home server has no reason to carry a pre-release package repo at all.
+> 10. **Disable the subscription nag?** → **Yes** — removes the login popup and keeps it removed after updates.
+> 11. **High-Availability services** — asked as *Enable?* or *Disable?* depending on their current state → they should end **off**: HA only matters when several Proxmox servers work as a cluster.
+> 12. **Disable Corosync?** → **Yes** — no cluster, so nothing for the cluster-communication service to do.
+> 13. **Update Proxmox VE now?** → **Yes**.
+> 14. **Reboot now?** → **Yes** — finish on the freshly updated kernel.
 >
-> Answer yes to all of those for a home server, except the `pvetest` prompt.
+> If the script announces something **already exists** and skips it (the Ceph repo file is the common one — Proxmox ships it on every fresh install), that is fine: it found the state it wanted and moved on. Nothing to fix, nothing to re-run.
 
 > [!DETAILS] Prefer no script? Do the same by hand
 > The whole job is three small steps, straight from the official Proxmox docs.
