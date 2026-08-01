@@ -18,7 +18,7 @@ Container templates live in storage, and a fresh Proxmox install has none. Grab 
 
 - In the left tree, click the node, then the **local** storage under it.
 - Open **CT Templates**, then click the **Templates** button.
-- Find **debian** with the *standard* flavour and click **Download**.
+- Find **debian** with the *standard* flavour — the list offers more than one version; take the newest, **debian-13-standard** — and click **Download**. Debian 13 is the same generation Proxmox 9 itself runs on and stays in security support years longer than 12; containers share the host's kernel, so there is no compatibility reason to reach back.
 
 When the task log says `TASK OK`, the template is ready in the wizard.
 

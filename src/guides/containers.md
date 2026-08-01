@@ -33,7 +33,7 @@ Use a lightweight LXC (Linux Containers) container for services that don't need 
 >
 > - In the left tree, click your node, then the **local** storage under it.
 > - Open **CT Templates**, then click the **Templates** button.
-> - Find **debian** with the *standard* flavour in the list and click **Download**.
+> - Find **debian** with the *standard* flavour in the list — it offers more than one version; take the newest (**debian-13-standard** as of Proxmox 9) — and click **Download**. Containers share the host's kernel, so the newest stable Debian is the right default and carries the longest security support.
 >
 > When the task log says `TASK OK`, the template is ready to use in the wizard.
 
