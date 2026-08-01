@@ -502,7 +502,7 @@ Still under **Advanced**, a quick pass through the onboard extras — none of th
 - **Onboard Devices Configuration → LED lighting** — set the *working state* entry to **Aura Off** (or Stealth Mode) and the *sleep/soft-off* entry off too. A couple of watts, and a basement server has no audience.
 - **HD Audio Controller → Disabled** — nothing will ever play a sound through it.
 - **Wi-Fi and Bluetooth controllers → Disabled** *(only the Wi-Fi AC board variant shows these)* — Proxmox management is wired-only, and every radio this build uses lives on the two ZBT-2 sticks. The phone, not the server, does Bluetooth during Matter commissioning.
-- **Network Stack → Disabled** — drops the PXE boot ROM for a faster, quieter POST.
+- **Network Stack → Disabled** — drops the UEFI network-boot path for a faster, quieter POST. Its legacy twin, **LAN PXE Option ROM** (under Onboard Devices, next to the Intel LAN entry), goes **Disabled** too — same job, older mechanism, and with CSM off it could never run anyway. Neither touches the LAN controller itself; the NIC keeps working fully.
 - **APM Configuration → Restore AC Power Loss → Power On** — the one that really matters on a 24/7 box: after an outage outlasts the UPS, the returning mains only boots the server if the firmware agrees. The UPS page proves this setting out with a rehearsal; set it now while you are here.
 
 > [!WARNING]
