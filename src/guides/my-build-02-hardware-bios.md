@@ -492,6 +492,7 @@ Press `F6` to open **Q-Fan Control** (the same screen lives at *Advanced → Mon
 1. Set **CHA_FAN1, CHA_FAN2, CHA_FAN3** and **H_AMP** — the rear exhaust and the three front intakes — to the **Silent** profile. The Noctuas at low PWM are effectively inaudible, and they only need to ramp when the GPU is grinding through detection.
 2. **The optional top exhaust rides W_PUMP+ — deal with that header here.** The pump headers (W_PUMP+ and AIO_PUMP) ship at 100% because they expect a pump, not a fan — set **W_PUMP+ Control → PWM Mode** and give it the **Silent** profile, or it runs flat out forever.
 3. Leave **CPU_FAN** and **CPU_OPT** on **Standard**. The Phantom Spirit is quiet at idle and you want it free to ramp under load.
+4. **Stick to the preset profiles — skip the graphical curve editor and the Q-Fan Tuning sweep.** The hand-drawn curve screen can freeze the whole setup session (a hard power-off then costs every unsaved toggle; harmless otherwise — only a mid-*flash* power cut is dangerous). The presets are all this build needs, and **F10 right after the fan settings** so a hang can't take the rest of the session with it.
 
 > [!NOTE]
 > Treat this as a **noise** setting, not an energy one. Fan power scales with roughly the cube of speed, so halving the RPM cuts a fan to about an eighth of its draw — but five 120 mm fans only add up to a handful of watts to begin with, so the whole exercise saves single-digit watts. The real idle-power lever on this machine is the C-states toggle below; the fans are about living with the thing.
