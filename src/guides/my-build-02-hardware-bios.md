@@ -486,6 +486,16 @@ Flash the latest Maximus X Hero firmware before touching any toggle, so the sett
 1. In the onboard-devices / PCIe configuration section, find the lane setting for **`PCIEX4_3`** (the bottom slot, where the HBA now sits).
 2. Force it to **x4** rather than Auto. This keeps the HBA's lane allocation fixed and predictable inside its chipset-attached group.
 
+### Tune the fan curves
+Press `F6` to open **Q-Fan Control** (the same screen lives at *Advanced → Monitor → Q-Fan Configuration*). This box idles 24/7 in a basement, far below the thermal load the default curves assume:
+
+1. Set **CHA_FAN1, CHA_FAN2, CHA_FAN3** and **H_AMP** — the rear exhaust and the three front intakes — to the **Silent** profile. The Noctuas at low PWM are effectively inaudible, and they only need to ramp when the GPU is grinding through detection.
+2. **If the optional top exhaust landed on AIO_PUMP, deal with it here.** That header (and **W_PUMP+**) ships at 100% because it expects a pump, not a fan — enable Q-Fan control for it and give it a profile, or it runs flat out forever.
+3. Leave **CPU_FAN** and **CPU_OPT** on **Standard**. The Phantom Spirit is quiet at idle and you want it free to ramp under load.
+
+> [!NOTE]
+> Treat this as a **noise** setting, not an energy one. Fan power scales with roughly the cube of speed, so halving the RPM cuts a fan to about an eighth of its draw — but five 120 mm fans only add up to a handful of watts to begin with, so the whole exercise saves single-digit watts. The real idle-power lever on this machine is the C-states toggle below; the fans are about living with the thing.
+
 ### Save and confirm
 Press `F10`, confirm, and let the board reboot. Leave the monitor and keyboard attached for now — you will need them for the OS install.
 
