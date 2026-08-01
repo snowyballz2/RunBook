@@ -51,11 +51,11 @@ The board has eight fan/pump headers — more than enough to skip splitters enti
 - **CHA_FAN1** — rear exhaust
 - **CHA_FAN2, CHA_FAN3** — two front intakes
 - **H_AMP** — third front intake (a normal header with extra current headroom)
-- **AIO_PUMP** — the optional top exhaust
-- **W_PUMP+** — spare
+- **W_PUMP+** — the optional top exhaust
+- **AIO_PUMP** — spare
 
 > [!WARNING]
-> **AIO_PUMP and W_PUMP+ run at 100% by default** — they are meant for pumps. If the top fan lands on AIO_PUMP, enable fan control for that header in BIOS (**Advanced → Monitor → Q-Fan Configuration → AIO Pump control**) and give it a curve, or it will scream at full speed forever. The six other headers behave normally out of the box.
+> **AIO_PUMP and W_PUMP+ run at 100% by default** — they are meant for pumps. With the top fan on W_PUMP+, enable control for that header in BIOS (**Advanced → Monitor → Q-Fan Configuration → W_PUMP+ Control → PWM Mode**, then the Silent profile) or it will scream at full speed forever. AIO_PUMP has an identical twin control beside it if the fan ever moves there. The six other headers behave normally out of the box.
 
 > [!TIP]
 > While you are in the BIOS on the Hardware & BIOS page anyway, set the chassis-fan curves to **Silent** — this box idles 24/7 in a basement, and the Noctuas at low **PWM** (pulse-width modulation, the 4-pin speed signal) are effectively inaudible. The fans only need to ramp when the GPU is grinding.

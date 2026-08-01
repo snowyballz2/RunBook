@@ -490,7 +490,7 @@ Flash the latest Maximus X Hero firmware before touching any toggle, so the sett
 Press `F6` to open **Q-Fan Control** (the same screen lives at *Advanced → Monitor → Q-Fan Configuration*). This box idles 24/7 in a basement, far below the thermal load the default curves assume:
 
 1. Set **CHA_FAN1, CHA_FAN2, CHA_FAN3** and **H_AMP** — the rear exhaust and the three front intakes — to the **Silent** profile. The Noctuas at low PWM are effectively inaudible, and they only need to ramp when the GPU is grinding through detection.
-2. **If the optional top exhaust landed on AIO_PUMP, deal with it here.** That header (and **W_PUMP+**) ships at 100% because it expects a pump, not a fan — enable Q-Fan control for it and give it a profile, or it runs flat out forever.
+2. **The optional top exhaust rides W_PUMP+ — deal with that header here.** The pump headers (W_PUMP+ and AIO_PUMP) ship at 100% because they expect a pump, not a fan — set **W_PUMP+ Control → PWM Mode** and give it the **Silent** profile, or it runs flat out forever.
 3. Leave **CPU_FAN** and **CPU_OPT** on **Standard**. The Phantom Spirit is quiet at idle and you want it free to ramp under load.
 
 > [!NOTE]
