@@ -496,6 +496,21 @@ Press `F6` to open **Q-Fan Control** (the same screen lives at *Advanced → Mon
 > [!NOTE]
 > Treat this as a **noise** setting, not an energy one. Fan power scales with roughly the cube of speed, so halving the RPM cuts a fan to about an eighth of its draw — but five 120 mm fans only add up to a handful of watts to begin with, so the whole exercise saves single-digit watts. The real idle-power lever on this machine is the C-states toggle below; the fans are about living with the thing.
 
+### Turn off what a headless server never uses
+Still under **Advanced**, a quick pass through the onboard extras — none of these earn their keep on a box with no monitor, no speakers, and wired-only networking:
+
+- **Onboard Devices Configuration → LED lighting** — set the *working state* entry to **Aura Off** (or Stealth Mode) and the *sleep/soft-off* entry off too. A couple of watts, and a basement server has no audience.
+- **HD Audio Controller → Disabled** — nothing will ever play a sound through it.
+- **Wi-Fi and Bluetooth controllers → Disabled** *(only the Wi-Fi AC board variant shows these)* — Proxmox management is wired-only, and every radio this build uses lives on the two ZBT-2 sticks. The phone, not the server, does Bluetooth during Matter commissioning.
+- **Network Stack → Disabled** — drops the PXE boot ROM for a faster, quieter POST.
+- **APM Configuration → Restore AC Power Loss → Power On** — the one that really matters on a 24/7 box: after an outage outlasts the UPS, the returning mains only boots the server if the firmware agrees. The UPS page proves this setting out with a rehearsal; set it now while you are here.
+
+> [!WARNING]
+> Two things stay **on**: the **Intel LAN** controller is the server's only NIC, and **USB** carries the two ZBT-2 radios plus the UPS's data cable. Disable either and the build stops working in ways that take a while to trace back here.
+
+> [!TIP]
+> The FTW3's own lights are set from EVGA's Windows software, not this BIOS — and Linux has no tool for them. While Windows still exists on the NVMe, open **Precision X1** and turn the GPU LEDs off; settings made there generally persist on the card after the OS is gone. Two minutes now, or a glowing GPU in the basement indefinitely.
+
 ### Save and confirm
 Press `F10`, confirm, and let the board reboot. Leave the monitor and keyboard attached for now — you will need them for the OS install.
 
