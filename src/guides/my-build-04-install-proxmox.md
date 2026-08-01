@@ -94,7 +94,7 @@ Proxmox has no desktop of its own — you administer it from a browser. From you
 https://your-ip:8006
 ```
 
-The browser will warn about the certificate before the login screen — that is expected. Proxmox generates its own self-signed certificate, so the browser cannot vouch for it. Click **Advanced**, then **Proceed**. Log in as **`root`** with the realm left on **Linux PAM standard authentication** and the password you set during install. A "No valid subscription" popup appears on every login — click **OK**; the next step removes it.
+The browser will warn about the certificate before the login screen — that is expected. Proxmox generates its own self-signed certificate, so the browser cannot vouch for it. In Chrome or Edge: **Advanced → Proceed**. Safari words the same screen differently: **Show Details → visit this website**, then confirm. Either way, type the address with the **`https://`** spelled out — the Proxmox port speaks only HTTPS, and a browser that quietly tries plain `http` on 8006 reports a vague "can't open the page" instead of the certificate screen. Log in as **`root`** with the realm left on **Linux PAM standard authentication** and the password you set during install. A "No valid subscription" popup appears on every login — click **OK**; the next step removes it.
 
 ## Post-install: switch to the no-subscription repo
 
