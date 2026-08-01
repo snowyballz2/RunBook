@@ -171,7 +171,7 @@ Power-cycle the TrueNAS VM (a full stop and start, not a guest reboot). Once it 
 > [!WARNING]
 > Use disks with nothing on them you care about — ZFS claims them entirely. And only the two mirror drives belong here; the Frigate footage disk stays on the host's motherboard SATA port.
 
-## Keep the two policies straight
+### Keep the two policies straight
 
 The whole point of this page in one table — they coexist perfectly, but only if each card gets its own policy:
 

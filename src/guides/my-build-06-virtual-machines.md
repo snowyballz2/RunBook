@@ -66,14 +66,12 @@ Select the VM, click **Start**, then **Console**, and run the TrueNAS installer 
 ### Eject the installer ISO
 Once TrueNAS boots from its own disk, open the VM's **Hardware** tab, double-click the **CD/DVD Drive**, and choose **Do not use any media**. Otherwise it tries to boot the installer at every restart.
 
-## The other VM: Home Assistant OS
+## Run them like appliances
 
 The second VM — **Home Assistant OS**, the brain of the house — is built on its own page, the **Home Assistant & Zigbee2MQTT page**, where it has the exact commands and credential fields. It is **not** built with the Create VM wizard above: Home Assistant OS ships as a ready-made `.qcow2` disk image rather than an installer ISO, so the image is pulled by the server (community helper script or a short run of `qm create` + `qm disk import`) and the VM boots straight to its own setup. The appliance steps below — start at boot, start order, snapshots, growing a disk — apply to it equally once it exists.
 
 > [!NOTE]
 > The **Qemu Agent** is built into both these appliance OSes — Home Assistant OS and TrueNAS — so unlike a plain Debian guest you never `apt-get` it. You only flip the VM-side half on: tick the VM's **Qemu Agent** option (in the Create VM wizard, or later under **Hardware / Options**). With it on, Proxmox can read the VM's IP, freeze the filesystem during backups, and — important later — shut the VM down cleanly when the battery backup orders the host down.
-
-## Run them like appliances
 
 ### Start both at boot
 An appliance should come back on its own after a power cut or host reboot. In each VM's **Options** tab — TrueNAS now, the Home Assistant VM once it exists — edit **Start at boot** and enable it, or from the host shell, swapping in each VM's ID:
