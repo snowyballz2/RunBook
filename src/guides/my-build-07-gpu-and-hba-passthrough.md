@@ -124,11 +124,12 @@ You want the HBA in a group containing only itself (or only its own functions). 
 > The vendor:device IDs from `lspci -nn` (something like `[1000:0097]`) are what you bind to vfio-pci. Note them down — the next step uses them.
 
 ### Bind the card to vfio-pci
-Tell the host to claim the HBA for VFIO at boot so no host driver grabs it first. Create a modprobe entry with the IDs from the previous step, then refresh the initramfs and reboot:
+Tell the host to claim the HBA for VFIO at boot so no host driver grabs it first. Create a modprobe entry with the IDs from the previous step, blacklist the card's native driver so it can never win the race for it, then refresh the initramfs and reboot:
 
 ```bash
-# Replace 1000:0097 with your actual vendor:device IDs
-echo "options vfio-pci ids=1000:0097" > /etc/modprobe.d/vfio.conf
+# Replace 1000:0097 with your actual vendor:device IDs, and mpt3sas with
+# whatever the lspci step's "Kernel modules:" line printed for your card.
+echo -e "options vfio-pci ids=1000:0097\nblacklist mpt3sas" > /etc/modprobe.d/vfio.conf
 
 # Load the vfio modules early
 echo -e "vfio\nvfio_iommu_type1\nvfio_pci" >> /etc/modules
@@ -143,6 +144,9 @@ After the reboot, confirm the card is now bound to `vfio-pci` rather than a SAS 
 lspci -nnk | grep -A3 -i -e LSI -e SAS -e Broadcom
 # "Kernel driver in use: vfio-pci" is the line you want.
 ```
+
+> [!NOTE]
+> The `ids=` option alone is not reliable here — both `vfio-pci` and the HBA's native driver load as modules at boot, and the native one commonly wins the race to claim the device even with `vfio-pci` loaded early via `/etc/modules`. Blacklisting the native driver outright is what actually guarantees `vfio-pci` gets it. Nothing else on this build uses `mpt3sas`, so losing it costs nothing.
 
 ### Add the HBA to the TrueNAS VM
 With the card on vfio-pci, hand the **whole device** to the TrueNAS VM. In the Proxmox web interface, select the TrueNAS VM, then **Hardware → Add → PCI Device**, choose the 9300-8i, and tick **All Functions**. Add it to the **TrueNAS VM only** — no other guest.
