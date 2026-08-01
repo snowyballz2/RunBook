@@ -98,7 +98,11 @@ The browser will warn about the certificate before the login screen — that is 
 
 ## Post-install: switch to the no-subscription repo
 
-A fresh install points at Proxmox's paid *enterprise* package repo, so updates error until you switch to the free one. Open the host shell (**Datacenter → your node → Shell**) and run the community post-install helper — it switches repos **and** removes the "No valid subscription" popup, then offers a full update.
+A fresh install points at Proxmox's paid *enterprise* package repo, so updates error until you switch to the free one. The community post-install helper does the whole job — it switches repos **and** removes the "No valid subscription" popup, then offers a full update.
+
+### Run the post-install helper
+
+Open the host shell (**Datacenter → your node → Shell**) and run it:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh)"
@@ -123,26 +127,6 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > ```
 >
 > This project is open source with a large, active maintainer community, but it is community-run — not official Proxmox software. The same habit applies to every other one-liner the internet hands you.
-
-> [!DETAILS] The script's prompts in order, with this build's answers
-> There are more prompts than the summaries admit, and the wording drifts a little between script versions. The principles behind every answer below: enterprise repos off, the free no-subscription repo on, no test repo, no Ceph, no clustering services on a single box. On a current Proxmox 9 install the walk looks like this:
->
-> 1. **Start the Post Install Script?** → **Yes**.
-> 2. **Migrate to deb822 sources format?** → **Yes** — the current repo-file format, and the one the rest of this collection assumes.
-> 3. **Disable legacy sources?** *(only if old-format files exist)* → **Yes**.
-> 4. **`pve-enterprise` repository — Keep / Disable / Delete?** → **Disable**, not Delete. The disabled file is inert and keeps the door open if you ever buy a subscription.
-> 5. **Add the `pve-enterprise` repository?** *(only if it was missing)* → **No** — no subscription here.
-> 6. **Ceph enterprise repository — Keep / Disable / Delete?** → **Disable** — this build runs no Ceph.
-> 7. **`pve-no-subscription` repository — Enable / Keep / Add?** *(whichever variant appears)* → end with it **enabled** — this is the one repo that should be live.
-> 8. **Add Ceph package sources?** → **No**.
-> 9. **Add the (disabled) `pvetest` repository?** → **No.** Even "yes" only writes it disabled, so neither answer breaks anything — but this build never wants pre-release Proxmox packages, so there is no reason to carry the file at all.
-> 10. **Disable the subscription nag?** → **Yes** — removes the login popup and keeps it removed after updates.
-> 11. **High-Availability services** — asked as *Enable?* or *Disable?* depending on their current state → they should end **off**: answer **Yes** to disabling (or **No** to enabling). HA only matters when several Proxmox nodes form a cluster.
-> 12. **Disable Corosync?** → **Yes** — same reason: no cluster, so nothing for the cluster-communication service to do.
-> 13. **Update Proxmox VE now?** → **Yes**.
-> 14. **Reboot now?** → **Yes** — finish on the freshly updated kernel.
->
-> If the script announces something **already exists** and skips it (the Ceph repo file is the common one — Proxmox ships it on every fresh install), that is fine: it found the state it wanted and moved on. Nothing to fix, nothing to re-run.
 
 > [!DETAILS] Prefer no script? Do the same by hand
 > **Easiest: use the web UI.** Select your node → **Updates → Repositories**. Disable the two *enterprise* entries, then use **Add** to add the **No-Subscription** repository.
@@ -174,9 +158,35 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 >
 > The trade-off: done by hand the "No valid subscription" popup stays. It is purely cosmetic — click OK and everything works.
 
+### Answer the script's prompts
+
+Work through the menus with the answer key below, and let the final prompts run the full update and reboot the host.
+
+> [!DETAILS] The script's prompts in order, with this build's answers
+> There are more prompts than the summaries admit, and the wording drifts a little between script versions. The principles behind every answer below: enterprise repos off, the free no-subscription repo on, no test repo, no Ceph, no clustering services on a single box. On a current Proxmox 9 install the walk looks like this:
+>
+> 1. **Start the Post Install Script?** → **Yes**.
+> 2. **Migrate to deb822 sources format?** → **Yes** — the current repo-file format, and the one the rest of this collection assumes.
+> 3. **Disable legacy sources?** *(only if old-format files exist)* → **Yes**.
+> 4. **`pve-enterprise` repository — Keep / Disable / Delete?** → **Disable**, not Delete. The disabled file is inert and keeps the door open if you ever buy a subscription.
+> 5. **Add the `pve-enterprise` repository?** *(only if it was missing)* → **No** — no subscription here.
+> 6. **Ceph enterprise repository — Keep / Disable / Delete?** → **Disable** — this build runs no Ceph.
+> 7. **`pve-no-subscription` repository — Enable / Keep / Add?** *(whichever variant appears)* → end with it **enabled** — this is the one repo that should be live.
+> 8. **Add Ceph package sources?** → **No**.
+> 9. **Add the (disabled) `pvetest` repository?** → **No.** Even "yes" only writes it disabled, so neither answer breaks anything — but this build never wants pre-release Proxmox packages, so there is no reason to carry the file at all.
+> 10. **Disable the subscription nag?** → **Yes** — removes the login popup and keeps it removed after updates.
+> 11. **High-Availability services** — asked as *Enable?* or *Disable?* depending on their current state → they should end **off**: answer **Yes** to disabling (or **No** to enabling). HA only matters when several Proxmox nodes form a cluster.
+> 12. **Disable Corosync?** → **Yes** — same reason: no cluster, so nothing for the cluster-communication service to do.
+> 13. **Update Proxmox VE now?** → **Yes**.
+> 14. **Reboot now?** → **Yes** — finish on the freshly updated kernel.
+>
+> If the script announces something **already exists** and skips it (the Ceph repo file is the common one — Proxmox ships it on every fresh install), that is fine: it found the state it wanted and moved on. Nothing to fix, nothing to re-run.
+
 ## Enable IOMMU on the kernel command line
 
 The BIOS already has **VT-d + VMX** on and the `PCIEX4_3` slot at x4. The last piece is on the host: add `intel_iommu=on iommu=pt` to the kernel command line so the 9300-8i HBA can be isolated into its own group and passed through to the TrueNAS VM (virtual machine) later. The 1080 Ti is **not** affected — it stays on the host to be shared into LXCs (Linux Containers).
+
+### Add the kernel flags and reboot
 
 This build installed Proxmox on **ext4 on LVM** (the default chosen earlier), which boots with **GRUB** — so the kernel command line lives in `/etc/default/grub`. From the host shell:
 
@@ -195,12 +205,20 @@ reboot
 > [!NOTE]
 > Not sure which bootloader you have? Run `proxmox-boot-tool status`. The GRUB steps above match this build's ext4-on-LVM install. If you instead installed on **ZFS root** with Secure Boot off, Proxmox boots with systemd-boot — add the same `intel_iommu=on iommu=pt` to `/etc/kernel/cmdline`, then run `proxmox-boot-tool refresh` and reboot. (With Secure Boot **on**, even a ZFS install uses GRUB — follow the GRUB steps above.)
 
-After the reboot, confirm IOMMU came up and that the HBA landed in a clean group:
+### Confirm IOMMU is live
+
+After the reboot, back in the host shell:
 
 ```bash
 # Should print DMAR / IOMMU enabled lines:
 dmesg | grep -e DMAR -e IOMMU
+```
 
+Two lines are the actual confirmation — **`DMAR: IOMMU enabled`** near the top and **`DMAR: Intel(R) Virtualization Technology for Directed I/O`** at the end. Lines like `[Firmware Bug]: RMRR entry for device ... is broken - applying workaround` may appear between them; that is a common, harmless BIOS-table quirk the kernel patches around on its own. Ignore those.
+
+### Confirm the HBA sits alone in its group
+
+```bash
 # Find the HBA's PCI address (e.g. 02:00.0):
 lspci -nn | grep -i -e LSI -e SAS -e Broadcom
 
@@ -208,9 +226,7 @@ lspci -nn | grep -i -e LSI -e SAS -e Broadcom
 find /sys/kernel/iommu_groups/ -type l
 ```
 
-Reading the `dmesg` output first: two lines are the actual confirmation — **`DMAR: IOMMU enabled`** near the top and **`DMAR: Intel(R) Virtualization Technology for Directed I/O`** at the end. Lines like `[Firmware Bug]: RMRR entry for device ... is broken - applying workaround` may appear between them; that is a common, harmless BIOS-table quirk the kernel patches around on its own. Ignore those.
-
-Then the group check. The `find` output has no count column — each line is one device, and the number right after `iommu_groups/` in the path is that device's group. "Alone" simply means the HBA's group number appears on **exactly one line** of the whole listing. Rather than eyeball it, list the group's own folder directly (swap `13` for the group number the HBA landed in):
+The `find` output has no count column — each line is one device, and the number right after `iommu_groups/` in the path is that device's group. "Alone" simply means the HBA's group number appears on **exactly one line** of the whole listing. Rather than eyeball it, list the group's own folder directly (swap `13` for the group number the HBA landed in):
 
 ```bash
 ls /sys/kernel/iommu_groups/13/devices/
