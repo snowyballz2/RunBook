@@ -11,6 +11,9 @@ Most of the always-on services on this box are not full virtual machines — the
 > [!NOTE]
 > The rule for this box: if it is a Linux service, it goes in an LXC. If it needs its own kernel or is not Linux (Home Assistant OS, TrueNAS), it gets a VM. Every container here is **unprivileged**, with exactly one exception on this build (Frigate, explained below).
 
+> [!NOTE]
+> **What this page is for.** None of the services above are actually built here — each one arrives later on its own page, installed by a community helper script that creates its container for you. This page exists for the two things those pages assume you already have. First, a **practice run**: building one container by hand, and throwing it away afterwards if you like, is how the helper scripts stop being magic — you will recognise every question they ask. Second, the **operating skills** in the back half — start at boot, snapshot before you touch anything, growing a disk or adding cores while it runs, getting inside from the Console or over SSH. Every service page from AdGuard onwards leans on those without re-explaining them, so this is the page to come back to.
+
 ## Create a container
 
 ### Download a Debian template first
