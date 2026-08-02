@@ -61,7 +61,7 @@ Select the VM, click **Start**, then **Console**, and run the TrueNAS installer 
 > 3. **Destination media** — one ~32 GB QEMU disk is listed (the boot disk from the wizard). Press **spacebar** to tick it, then OK.
 > 4. **"This erases everything on the disk" warning** — proceed; the disk is empty.
 > 5. **Authentication method** — pick **Administrative user (`truenas_admin`)** and set the password. This is the web UI login — the two credential fields below record exactly this pair. Do not pick the root or configure-later options; the rest of this build assumes `truenas_admin`.
-> 6. **Legacy/EFI boot question** (if it appears) — with this page's wizard defaults (SeaBIOS), give the **BIOS/legacy** answer, not EFI.
+> 6. **"Allow EFI boot?"** — answer **No**. The wording feels backwards because it is written for physical hardware ("Yes for systems with newer components such as NVMe") — but what matters is the *VM's virtual firmware*, not the host's parts, and this VM's SeaBIOS default is exactly the "legacy BIOS boot workaround" case. Answering Yes on a SeaBIOS VM is the classic route to a "no bootable device" error after the reboot.
 > 7. **Installation succeeded** — OK, then **Reboot System** from the menu. The VM's boot order tries the disk before the ISO, so the installer will not hijack the reboot; the ISO gets ejected in a moment.
 > 8. After the reboot, the console shows the **Console Setup menu** with the web UI address at the top — a temporary DHCP address for now; the step below gives it its permanent one.
 
