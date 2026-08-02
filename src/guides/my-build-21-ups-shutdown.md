@@ -182,6 +182,9 @@ After the shutdown the UPS cuts its outlets, and when mains returns it switches 
 > [!TIP]
 > With this set, the stack reassembles itself: the host boots when the outlets wake, and every guest marked to start at boot returns in its startup order — TrueNAS first, then the rest, with the HA VM ahead of the Frigate LXC. Nobody has to be home for the house to recover.
 
+> [!WARNING]
+> One failure the self-heal cannot fix: a **tripped breaker** never resets itself, so the whole recovery story ends at the panel. Check what kind of breaker feeds the server's outlet — a **TEST button** means AFCI or GFCI (the label says which), and both have nuisance modes with exactly this equipment: AFCIs can read a big PSU's power-on inrush or a UPS charger as an arc (this build tripped one during setup), and GFCIs can trip on the summed ground leakage of many switching supplies. If the server's permanent circuit nuisance-trips, have an electrician look at it — a worn breaker can be replaced in kind, or the server can get a dedicated circuit. Never swap an AFCI/GFCI for a plain breaker to stop the trips; it is fire and shock protection required by code. Day to day: power the UPS first, let it settle, then the server — one strip slamming everything on at once is the sharpest inrush spike.
+
 ### Rehearse the outage
 Two rehearsals, gentle then real. First the gentle one — pull the CyberPower's plug from the wall for half a minute while everything runs:
 
