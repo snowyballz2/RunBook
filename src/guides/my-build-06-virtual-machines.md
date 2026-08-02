@@ -23,7 +23,7 @@ Log in to the Proxmox web UI and confirm the host is in the state the earlier pa
 > The password set during the Proxmox install. Record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build).
 
 ### Get the TrueNAS installer into Proxmox storage
-TrueNAS ships as a standard installer **ISO**, and the server fetches it itself — no upload from a laptop. In the left tree, click the **local** storage under your node, then **ISO Images → Download from URL**, and paste the TrueNAS Community Edition `.iso` link from the official download page ([truenas.com/download-truenas-community-edition](https://www.truenas.com/download-truenas-community-edition/)). Wait for `TASK OK`.
+TrueNAS ships as a standard installer **ISO**, and the server fetches it itself — no upload from a laptop. First get the *direct file link*: on the official download page ([truenas.com/download-truenas-community-edition](https://www.truenas.com/download-truenas-community-edition/)), **right-click the stable release's Download button and Copy Link Address** — the link you want ends in **`.iso`**. Do not paste the download page's own address; that is a web page, not the file. Then in the left tree, click the **local** storage under your node, then **ISO Images → Download from URL**, paste the `.iso` link, and click **Query URL** — the **File name** field fills itself in and the size shows a couple of gigabytes. If instead the file name stays empty and **MIME type** says `text/html`, you pasted the page, not the file. Click **Download** and wait for `TASK OK`.
 
 > [!TIP]
 > The download page lists a **SHA256** checksum next to the ISO. In the **Download from URL** dialog, click **Advanced** to reveal the **Checksum** and **Hash algorithm** fields — paste the checksum in, pick `SHA256`, and Proxmox confirms the file arrived intact before you boot it. Same habit you used for the Proxmox installer.
@@ -41,7 +41,7 @@ Click **Create VM** (top right) and step through the tabs with these values:
 
 - **General** — name it `truenas`. Accept the suggested VM ID (VMs and containers share one pool of ID numbers; the suggestion is the next free one).
 - **OS** — pick the TrueNAS ISO you downloaded into local storage.
-- **System** — leave the defaults, but tick **Qemu Agent** so Proxmox can read the VM's IP address and shut it down cleanly later.
+- **System** — set **Machine** to **q35** (the modern chipset; Proxmox only supports native-PCIe passthrough on q35, so this is what lets the HBA arrive as a true PCIe device later) and tick **Qemu Agent** so Proxmox can read the VM's IP address and shut it down cleanly later. Leave the rest, including the BIOS choice, at the defaults.
 - **Disks** — a **32 GB** boot disk on the NVMe is plenty; TrueNAS keeps its OS small and its data on the pool.
 - **CPU** — **2 cores**.
 - **Memory** — **8192 MB**. ZFS leans on RAM for its cache, so this is the one VM worth feeding generously.
@@ -53,10 +53,20 @@ Confirm — and do **not** add the HBA on this page. The TrueNAS install needs o
 > The 9300-8i is still claimed by the host's SAS driver at this point — it has not been bound to vfio-pci yet, so adding it as a PCI device now would either fail to pass through or pull the host's driver out from under it. The binding, the **Hardware → Add → PCI Device → All Functions** step, and the power-cycle all happen on the **GPU Sharing & HBA Passthrough page**. The whole controller is passed through (rather than individual disks) so TrueNAS sees the **two** mirror IronWolf disks as raw bare-metal drives with genuine SMART and real serials — no per-disk `serial=` plumbing. Those disks appear, and the mirrored pool is built, on the **TrueNAS Storage page**, after the passthrough is done. (The third IronWolf is Frigate's footage drive on a motherboard SATA port, so it stays with the host and never appears in TrueNAS.)
 
 ### Install from the console
-Select the VM, click **Start**, then **Console**, and run the TrueNAS installer exactly as you would on physical hardware — it installs to the **32 GB NVMe boot disk** (the only disk it can see right now, which is correct). When it finishes and reboots, the console prints the management IP address.
+Select the VM, click **Start**, then **Console**, and run the TrueNAS installer exactly as you would on physical hardware — it installs to the **32 GB boot disk** (the only disk it can see right now, which is correct).
+
+> [!DETAILS] Every prompt the installer shows, in order
+> 1. **Boot menu** — let it time out, or press Enter on the default entry.
+> 2. **Console setup menu** — choose **Install/Upgrade**.
+> 3. **Destination media** — one ~32 GB QEMU disk is listed (the boot disk from the wizard). Press **spacebar** to tick it, then OK.
+> 4. **"This erases everything on the disk" warning** — proceed; the disk is empty.
+> 5. **Authentication method** — pick **Administrative user (`truenas_admin`)** and set the password. This is the web UI login — the two credential fields below record exactly this pair. Do not pick the root or configure-later options; the rest of this build assumes `truenas_admin`.
+> 6. **Legacy/EFI boot question** (if it appears) — with this page's wizard defaults (SeaBIOS), give the **BIOS/legacy** answer, not EFI.
+> 7. **Installation succeeded** — OK, then **Reboot System** from the menu. The VM's boot order tries the disk before the ISO, so the installer will not hijack the reboot; the ISO gets ejected in a moment.
+> 8. After the reboot, the console shows the **Console Setup menu** with the web UI address at the top — a temporary DHCP address for now; the step below gives it its permanent one.
 
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
-> Pin it with a DHCP reservation on the router so it never moves.
+> The permanent address, set **statically inside TrueNAS** in the next step — it lives in the `.2–.99` static zone carved out on the Start Here page, alongside the host at `.50`. The first boot comes up on a temporary DHCP address from the console screen; that one is just for reaching the web UI once.
 
 > [!INPUT] truenas-admin-user | TrueNAS admin username | | truenas_admin
 
@@ -65,6 +75,15 @@ Select the VM, click **Start**, then **Console**, and run the TrueNAS installer 
 
 ### Eject the installer ISO
 Once TrueNAS boots from its own disk, open the VM's **Hardware** tab, double-click the **CD/DVD Drive**, and choose **Do not use any media**. Otherwise it tries to boot the installer at every restart.
+
+### Give it its permanent address
+The storage server is the one machine half this build leans on by address — backups, shares, Frigate's footage path — so it gets a device-set static in the protected zone, not a DHCP lease. Browse to the temporary address the console showed (`http://` that IP), log in as `truenas_admin`, then:
+
+1. Open **Network**, click the interface (the VM's single virtual NIC), and edit it: untick **DHCP**, add **`192.168.1.20/24`** under aliases, and save.
+2. TrueNAS offers **Test Changes** with a rollback timer — confirm within the window, and the browser reconnects at the new address. (If anything goes wrong, it reverts on its own; the console's network option is the fallback.)
+3. Still under **Network**, open **Global Configuration** and set the **default gateway** (`192.168.1.1`) and a **DNS nameserver** (the router, or `1.1.1.1`) — a static interface does not inherit these from DHCP, and without them TrueNAS cannot fetch updates or send alert emails.
+
+From here on, every page that asks for the TrueNAS IP means this address.
 
 ## Run them like appliances
 

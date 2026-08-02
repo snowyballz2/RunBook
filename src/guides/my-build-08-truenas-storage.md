@@ -37,7 +37,7 @@ By the time you reach this page, two earlier steps in the build have done the he
 So this page picks up after both of those: it confirms the raw disks arrived, then builds the pool and shares. Do **not** re-create the VM or re-download the ISO.
 
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
-> The address the console printed after install (captured on the Virtual Machines page). Pin it with a DHCP (Dynamic Host Configuration Protocol) reservation on the router so it never moves.
+> The static address set inside TrueNAS on the Virtual Machines page — `.20` sits in the protected `.2–.99` static zone, so it never moves.
 
 > [!INPUT] truenas-admin-user | TrueNAS admin username | | truenas_admin
 > Current versions create `truenas_admin` — leave as-is unless yours differs.
