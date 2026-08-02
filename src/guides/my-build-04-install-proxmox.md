@@ -96,6 +96,9 @@ https://your-ip:8006
 
 The browser will warn about the certificate before the login screen — that is expected. Proxmox generates its own self-signed certificate, so the browser cannot vouch for it. In Chrome or Edge: **Advanced → Proceed**. Safari words the same screen differently: **Show Details → visit this website**, then confirm. Either way, type the address with the **`https://`** spelled out — the Proxmox port speaks only HTTPS, and a browser that quietly tries plain `http` on 8006 reports a vague "can't open the page" instead of the certificate screen. Log in as **`root`** with the realm left on **Linux PAM standard authentication** and the password you set during install. A "No valid subscription" popup appears on every login — click **OK**; the next step removes it.
 
+> [!WARNING]
+> If **one machine cannot reach the page while others can, check that machine's VPN client first.** A consumer VPN (NordVPN and friends) silently blocks the local network while connected — internet works, the router works, but LAN devices like this server go completely dark, with no error saying why. It cost this build a solid diagnostic detour. The fix is one toggle, kept on: NordVPN on macOS calls it **Local Network Discovery** (Settings → General); other clients call it "allow LAN access" or similar. Disconnecting the VPN to test is the fastest way to confirm.
+
 ## Post-install: switch to the no-subscription repo
 
 A fresh install points at Proxmox's paid *enterprise* package repo, so updates error until you switch to the free one. The community post-install helper does the whole job — it switches repos **and** removes the "No valid subscription" popup, then offers a full update.
