@@ -27,7 +27,7 @@ The driver lives in Debian package sections this host does not read yet: **non-f
 sed -i 's/^Components:.*/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
 ```
 
-That rewrites every `Components:` line in the file to `Components: main contrib non-free non-free-firmware`. Prefer to see it happen? `nano /etc/apt/sources.list.d/debian.sources` and type ` non-free non-free-firmware` onto the end of each `Components:` line yourself — same result.
+That rewrites every `Components:` line in the file to `Components: main contrib non-free non-free-firmware`. There is no way to edit this from the web UI — Proxmox has no file editor — but there is a click path to *verify* it: **`pve` → Updates → Repositories** lists the Debian entries, and after the command their Components column shows `non-free non-free-firmware`. (To eyeball the file itself: `nano /etc/apt/sources.list.d/debian.sources`, Ctrl+X to leave.)
 
 Then refresh, install the kernel headers (matched to the running kernel by `uname -r`), the driver, and the persistence daemon, and confirm the card is seen:
 
