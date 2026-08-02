@@ -21,19 +21,15 @@ Because of this, the driver lives on the **Proxmox host**, which owns the hardwa
 ### Install the NVIDIA driver on the host
 Do this on the **host**, not inside any container, and install it from Debian's package archive — never a `.run` installer downloaded from nvidia.com. The packaged driver builds its kernel module through **DKMS (Dynamic Kernel Module Support)** against the headers you install below and rebuilds itself automatically on every kernel update; a `.run` installer does not, and it silently breaks the card after the next Proxmox upgrade (exactly the "GPU vanished after an update" failure this page warns about). The server pulls everything over its own network connection — nothing to download on another PC.
 
-First enable Debian's **non-free** and **non-free-firmware** components (the NVIDIA driver lives there). Where the Debian repo is defined depends on the Proxmox version: **Proxmox 9** (Debian 13 Trixie) uses the newer **deb822 `.sources` files** under `/etc/apt/sources.list.d/` — you edit the `Components:` line — while **Proxmox 8** (Debian 12 Bookworm) still keeps it in the legacy single-file `/etc/apt/sources.list`. Rather than guess, find which file holds the Debian entry:
+The driver lives in Debian package sections this host does not read yet: **non-free** and **non-free-firmware**. On this build's Proxmox 9, the Debian repo is defined in one file — `/etc/apt/sources.list.d/debian.sources` — and each repo entry inside it has a `Components:` line saying which sections to read. Turn the two extra sections on with one command, in the host shell (**Datacenter → the `pve` node → Shell**):
 
 ```bash
-grep -rl 'non-free\|Components:\|deb http' /etc/apt/sources.list /etc/apt/sources.list.d/
+sed -i 's/^Components:.*/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
 ```
 
-On **Proxmox 9**, open the Debian `.sources` file the `grep` pointed at (typically `/etc/apt/sources.list.d/debian.sources`) and edit its `Components:` line so it reads:
+That rewrites every `Components:` line in the file to `Components: main contrib non-free non-free-firmware`. Prefer to see it happen? `nano /etc/apt/sources.list.d/debian.sources` and type ` non-free non-free-firmware` onto the end of each `Components:` line yourself — same result.
 
-```
-Components: main contrib non-free non-free-firmware
-```
-
-Then refresh, install the kernel headers (matched to the running kernel by `uname -r`), the driver, and the persistence daemon, and confirm the card is seen — from the host shell (**Datacenter → the `pve` node → Shell**):
+Then refresh, install the kernel headers (matched to the running kernel by `uname -r`), the driver, and the persistence daemon, and confirm the card is seen:
 
 ```bash
 apt update
@@ -45,10 +41,7 @@ nvidia-smi
 `nvidia-smi` should print the 1080 Ti with a driver version. **Write that version down** — it has to match the userspace driver inside each container.
 
 > [!NOTE]
-> Proxmox 8 (Debian 12) path: there the Debian repo is the one-line format in `/etc/apt/sources.list` (the `grep` above shows it there, not in a `.sources` file), and Proxmox's default entries end in `main contrib`. Append the two components — `sed -i 's/main contrib$/main contrib non-free non-free-firmware/' /etc/apt/sources.list` — then `apt update`. On Proxmox 9 there is no such `main` line to edit; the deb822 `Components:` edit above is the path.
-
-> [!NOTE]
-> If `apt install -y nvidia-driver` still cannot find the package, the non-free components are not enabled — re-check that you edited the `Components:` line in the right `.sources` file and ran `apt update`. The `nvidia-persistenced` package ships the persistence daemon's systemd unit; install it alongside the driver so the next step has a unit to enable.
+> If `apt install -y nvidia-driver` cannot find the package, the extra components did not take — open `/etc/apt/sources.list.d/debian.sources` and check its `Components:` lines end with `non-free non-free-firmware`, then run `apt update` again. The `nvidia-persistenced` package ships the persistence daemon's systemd unit; installing it alongside the driver is what gives the next step a unit to enable.
 
 > [!NOTE]
 > The 1080 Ti is Pascal — compute capability 6.1 — which clears Frigate's detection bar (compute capability 5.0+, NVIDIA driver 545 or newer, CUDA 12.x). Debian's packaged `nvidia-driver` on this host is the 550 series, which clears that bar — confirm the version `nvidia-smi` printed is 545 or newer so the same card can run the ONNX/CUDA detector later. A YOLOv9 model is the right pick on this card; RF-DETR runs very slowly on Pascal, so avoid it.
@@ -68,7 +61,7 @@ The host now owns a working driver. Each container that needs the card borrows i
 - **Frigate** — on the Cameras, Doorbell & Frigate page.
 - **Ollama** and **faster-whisper** — on the Voice page.
 
-So there is nothing to edit right now. Keep this recipe; you will come back to it. When each container is built, edit its config file on the host (`/etc/pve/lxc/<ctid>.conf`, where `<ctid>` is that container's ID) and add the same three NVIDIA device nodes, using Proxmox 8.1+'s `dev0:` device syntax rather than hand-writing `lxc.cgroup2` lines — the newer syntax is what Proxmox officially supports and it survives upgrades:
+So there is nothing to edit right now. Keep this recipe; you will come back to it. When each container is built, edit its config file on the host (`/etc/pve/lxc/<ctid>.conf`, where `<ctid>` is that container's ID) and add the same three NVIDIA device nodes, using the `dev0:` device syntax rather than hand-writing `lxc.cgroup2` lines — `dev0:` is what Proxmox officially supports and it survives upgrades:
 
 ```ini
 dev0: /dev/nvidia0,gid=44
