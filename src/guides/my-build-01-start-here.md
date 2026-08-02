@@ -6,7 +6,7 @@ order: 1
 accent: amber
 ---
 
-This collection is a complete, hands-on build of one all-in-one home server: a single full-tower PC that runs the smart home, the cameras, the file storage, and a handful of self-hosted services — all locally, all on hardware you own. Each page is a self-contained how-to for one stage of the build. Work through them top to bottom, in order, and at the end you have a quiet box in the basement running the whole house.
+This collection is a complete, hands-on build of one all-in-one home server: a single full-tower PC that runs the smart home, the cameras, the file storage, and a handful of self-hosted services — all locally, all on hardware you own. Each page is a self-contained how-to for one stage of the build. Work through them top to bottom, in order, and at the end you have a quiet box upstairs running the whole house.
 
 This first page is the map. Read it, gather the parts, set the server's address, then start building.
 

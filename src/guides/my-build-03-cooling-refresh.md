@@ -58,7 +58,7 @@ The board has eight fan/pump headers — more than enough to skip splitters enti
 > **AIO_PUMP and W_PUMP+ run at 100% by default** — they are meant for pumps. With the top fan on W_PUMP+, enable control for that header in BIOS (**Advanced → Monitor → Q-Fan Configuration → W_PUMP+ Control → PWM Mode**, then the Silent profile) or it will scream at full speed forever. AIO_PUMP has an identical twin control beside it if the fan ever moves there. The six other headers behave normally out of the box.
 
 > [!TIP]
-> While you are in the BIOS on the Hardware & BIOS page anyway, set the chassis-fan curves to **Silent** — this box idles 24/7 in a basement, and the Noctuas at low **PWM** (pulse-width modulation, the 4-pin speed signal) are effectively inaudible. The fans only need to ramp when the GPU is grinding.
+> While you are in the BIOS on the Hardware & BIOS page anyway, set the chassis-fan curves to **Silent** — this box idles 24/7 upstairs in lived-in space, and the Noctuas at low **PWM** (pulse-width modulation, the 4-pin speed signal) are effectively inaudible, which is exactly what a server you share a floor with needs to be. The fans only need to ramp when the GPU is grinding.
 
 ## Repaste the GPU — gather everything first
 
