@@ -190,7 +190,7 @@ With the card on vfio-pci, hand the **whole device** to the TrueNAS VM. In the P
 qm set 100 -hostpci0 0000:03:00,pcie=1
 ```
 
-Power-cycle the TrueNAS VM (a full stop and start, not a guest reboot). Once it boots, the two mirror disks appear under **Storage** in TrueNAS as raw drives — real SMART, real serials, ready for a mirrored ZFS pool.
+Power-cycle the TrueNAS VM — a full **stop and start**, not a guest reboot; the PCI device only attaches on a cold VM start. Then confirm in the TrueNAS web UI: **Storage** in the left nav, then the **Disks** button in the dashboard's top-right corner. The two mirror IronWolfs should be listed by their **real model (`ST4000VN…`) and real serial numbers** — the same serials as the stickers on the drives — alongside the 32 GB QEMU boot disk. Real model and serial is the proof the passthrough is genuine; the mirrored pool gets built from them on the TrueNAS Storage page.
 
 > [!WARNING]
 > Use disks with nothing on them you care about — ZFS claims them entirely. And only the two mirror drives belong here; the Frigate footage disk stays on the host's motherboard SATA port.
