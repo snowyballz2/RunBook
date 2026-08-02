@@ -264,6 +264,9 @@ Routing into the wall cavity means the cable and its waterproof connector tuck *
 2. **Caulk the base to the wall, leaving a gap at the bottom** so any wind-driven water drains out instead of pooling in the wall.
 3. The RJ45 connection now lives in the dry cavity — protected, no weatherproofing tape needed (a dab of dielectric grease is belt-and-braces).
 
+> [!DANGER]
+> **Know what is already in the cavity before the bit goes in.** Exterior walls carry mains wiring, and a drill bit, a screw, or a fish tape dragged across existing cable does not have to sever it to matter — a nick in the insulation or a pinched conductor arcs *intermittently*, sometimes for weeks, at any hour and under any load. That is precisely the fault an **AFCI breaker** exists to catch, so a circuit that starts tripping after wall work should be treated as a damaged cable until proven otherwise, not as a nuisance to reset. Scan with a stud finder in AC-detect mode first, kill the breakers feeding that wall while drilling, and keep low-voltage runs from resting against Romex on the way through. If a circuit does start tripping afterwards, stop resetting it and get an electrician to open the wall — most modern AFCIs blink a diagnostic code after a trip that tells them whether it saw an arc, a ground fault, or an overload.
+
 > [!NOTE]
 > The one exception is a corner that turns out to be **solid brick or stucco with no cavity** behind it — there you would want EmpireTech's **`PFA130-E`** junction box (about $20) to hold the connector, since you cannot fish into the wall. For framed walls with a cavity, buy no boxes.
 
