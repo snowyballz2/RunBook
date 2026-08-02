@@ -155,15 +155,10 @@ lspci -nnk | grep -A3 -i -e LSI -e SAS -e Broadcom
 > Still says `Kernel driver in use: mpt3sas` after the reboot? `cat /etc/modprobe.d/vfio.conf` — it must show **both** lines, the `ids=` and the `blacklist`; a `>` that overwrote instead of a `>>` that appended is the usual culprit. (`Kernel modules: mpt3sas` continuing to appear in `lspci -nnk` is fine — that line lists what *could* drive the card, not what does. And duplicate `vfio` lines in `/etc/modules` from running the setup block twice are harmless; no need to clean them up.)
 
 ### Add the HBA to the TrueNAS VM
-With the card on vfio-pci, hand the **whole device** to the TrueNAS VM. In the Proxmox web interface, select the TrueNAS VM, then **Hardware → Add → PCI Device**, choose the 9300-8i, and tick **All Functions**. Add it to the **TrueNAS VM only** — no other guest.
+With the card on vfio-pci, hand the **whole device** to the TrueNAS VM. In the Proxmox web interface, select the TrueNAS VM, then **Hardware → Add → PCI Device**, choose the 9300-8i, and tick **All Functions** and **PCI-Express**. Add it to the **TrueNAS VM only** — no other guest. Or, equivalently, from the host shell — this build's values are the TrueNAS VM ID (`100`) and the HBA's chipset-side bus address from the `lspci` step (`03:00.0`, entered without the `.0` function suffix so all functions pass, matching the GUI ticks; the top-slot `01:00` is the 1080 Ti — never that one):
 
 ```bash
-# Equivalent from the host shell. Use the HBA's PCI address captured by the
-# lspci step above, without the ".0" function suffix (e.g. 0000:02:00 — a
-# chipset-side bus; omitting the suffix passes all functions, matching the
-# GUI's All Functions tick). NOT 0000:01:00, which on this board is the top
-# x16 slot where the 1080 Ti lives.
-qm set <truenas-vmid> -hostpci0 <hba-pci-address>
+qm set 100 -hostpci0 0000:03:00,pcie=1
 ```
 
 Power-cycle the TrueNAS VM (a full stop and start, not a guest reboot). Once it boots, the two mirror disks appear under **Storage** in TrueNAS as raw drives — real SMART, real serials, ready for a mirrored ZFS pool.

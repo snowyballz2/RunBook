@@ -93,35 +93,23 @@ The second VM — **Home Assistant OS**, the brain of the house — is built on 
 > [!NOTE]
 > The **Qemu Agent** is built into both these appliance OSes — Home Assistant OS and TrueNAS — so unlike a plain Debian guest you never `apt-get` it. You only flip the VM-side half on: tick the VM's **Qemu Agent** option (in the Create VM wizard, or later under **Hardware / Options**). With it on, Proxmox can read the VM's IP, freeze the filesystem during backups, and — important later — shut the VM down cleanly when the battery backup orders the host down.
 
-### Start both at boot
-An appliance should come back on its own after a power cut or host reboot. In each VM's **Options** tab — TrueNAS now, the Home Assistant VM once it exists — edit **Start at boot** and enable it, or from the host shell, swapping in each VM's ID:
+### Start at boot
+An appliance should come back on its own after a power cut or host reboot. Two ways, same result. In the web UI: select the **truenas** VM in the left tree, open its **Options** tab, double-click **Start at boot**, tick it, **OK**. Or from the **host shell** — **Datacenter → the `pve` node → Shell**, the same shell the post-install script ran in:
 
 ```bash
-qm set <truenas-vmid> -onboot 1
-qm set <ha-vmid> -onboot 1
+qm set 100 -onboot 1
 ```
 
-Only the TrueNAS half is doable today; run the second line once that VM is built on the Home Assistant & Zigbee2MQTT page.
+`100` is the VM ID the wizard assigned, shown next to the VM's name in the left tree. Every later guest gets this same setting on the page that builds it.
 
-### Set the Start/Shutdown order — TrueNAS first, HA before Frigate
-The same **Options** panel holds **Start/Shutdown order**, and on this build it is load-bearing. The **Home Assistant OS VM must start before the Frigate LXC**: Frigate publishes detection events to the Mosquitto MQTT broker that lives inside the Home Assistant stack, and VMs boot slower than containers. Without an explicit order, Frigate comes up first, finds no broker, and its Home Assistant entities stay dead until something restarts. And **TrueNAS gets the lowest number of all**, so the storage boots first and — because shutdown runs the order in reverse — goes down last, after the guests that write to its shares.
-
-What you can set **now** is the TrueNAS VM's number: **order=1**. The Home Assistant VM does not exist yet — it gets **order=2** when it is built on the Home Assistant & Zigbee2MQTT page. The Frigate container does not exist yet either; its matching higher number (order=3) is set on the **Cameras, Doorbell & Frigate page** when that container is created.
+### Set the Start/Shutdown order
+The same **Options** panel holds **Start/Shutdown order**, and on this build it is load-bearing: TrueNAS gets the **lowest number**, so the storage boots first and — because shutdown runs the order in reverse — goes down last, after the guests that write to its shares. Set it to **1** in the panel, or:
 
 ```bash
-# Lower order number starts first. TrueNAS exists, so set its side today:
-qm set <truenas-vmid> -onboot 1 -startup order=1
-# Once the HA VM exists (Home Assistant & Zigbee2MQTT page):
-qm set <ha-vmid> -onboot 1 -startup order=2
-# The Frigate side is set later, on the Cameras, Doorbell & Frigate page,
-# with a number higher than the HA VM's (order=3).
+qm set 100 -startup order=1
 ```
 
-> [!TIP]
-> The same panel also has a **Startup delay** field. Because a VM boots noticeably slower than a container, you can give the Home Assistant VM a few seconds of head start there in addition to the lower order number — handy insurance that the broker is fully up before the Frigate container reaches for it.
-
-> [!TIP]
-> Enable **Start at boot** on every guest — TrueNAS, the Home Assistant VM, and all the service LXCs — so the whole stack returns on its own after an outage. Only the HA-before-Frigate ordering has to be exact; the rest can keep the defaults. When a battery-backup shutdown later orders the server down, the Qemu Agent channel you enabled above is what closes each VM cleanly instead of yanking its power.
+That is all this page sets. The two guests that care about ordering take the next slots when their own pages build them — the Home Assistant VM becomes order=2 and Frigate order=3, so the broker Frigate depends on is always up first.
 
 ### Snapshot before anything risky
 Snapshots are instant and nearly free. Before an OS upgrade or a config experiment on either VM, select it in the left tree, open **Snapshots → Take Snapshot**, and name it for *what you're about to do* (`before-ha-core-upgrade`), not the date. For a running VM, tick **Include RAM** so a rollback returns it running exactly where it was. To undo, select the snapshot and click **Rollback** — everything since is discarded.
