@@ -43,8 +43,8 @@ Click **Create VM** (top right) and step through the tabs with these values:
 - **OS** — pick the TrueNAS ISO you downloaded into local storage.
 - **System** — set **Machine** to **q35** (the modern chipset; Proxmox only supports native-PCIe passthrough on q35, so this is what lets the HBA arrive as a true PCIe device later) and tick **Qemu Agent** so Proxmox can read the VM's IP address and shut it down cleanly later. Leave the rest, including the BIOS choice, at the defaults.
 - **Disks** — a **32 GB** boot disk on the NVMe is plenty; TrueNAS keeps its OS small and its data on the pool.
-- **CPU** — **2 cores**.
-- **Memory** — **8192 MB**. ZFS leans on RAM for its cache, so this is the one VM worth feeding generously.
+- **CPU** — **1 socket, 2 cores**. Sockets stay at 1 on any single-CPU machine; only the core count is a real choice.
+- **Memory** — **8192 MiB** (the field is in MiB, so that reads as 8 GB — TrueNAS's own minimum). ZFS leans on RAM for its read cache, so this is the one VM worth feeding generously. Expand **Advanced** on this tab and **untick Ballooning Device**: ballooning lets the host claw RAM back from a guest under pressure, which is fine for most VMs and wrong for ZFS — the cache assumes it owns its memory outright.
 - **Network** — leave it on bridge **vmbr0** so the VM sits on the LAN like any other device.
 
 Confirm — and do **not** add the HBA on this page. The TrueNAS install needs only the 32 GB boot disk; the data controller is attached later.
