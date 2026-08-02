@@ -24,7 +24,6 @@ Do this on the **host**, not inside any container, and install it from Debian's 
 First enable Debian's **non-free** and **non-free-firmware** components (the NVIDIA driver lives there). Where the Debian repo is defined depends on the Proxmox version: **Proxmox 9** (Debian 13 Trixie) uses the newer **deb822 `.sources` files** under `/etc/apt/sources.list.d/` — you edit the `Components:` line — while **Proxmox 8** (Debian 12 Bookworm) still keeps it in the legacy single-file `/etc/apt/sources.list`. Rather than guess, find which file holds the Debian entry:
 
 ```bash
-# Where is the Debian repo defined? Proxmox 9: a .sources file; Proxmox 8: /etc/apt/sources.list.
 grep -rl 'non-free\|Components:\|deb http' /etc/apt/sources.list /etc/apt/sources.list.d/
 ```
 
@@ -34,16 +33,12 @@ On **Proxmox 9**, open the Debian `.sources` file the `grep` pointed at (typical
 Components: main contrib non-free non-free-firmware
 ```
 
-Then refresh and install the headers and driver from the Proxmox node shell:
+Then refresh, install the kernel headers (matched to the running kernel by `uname -r`), the driver, and the persistence daemon, and confirm the card is seen — from the host shell (**Datacenter → the `pve` node → Shell**):
 
 ```bash
 apt update
-
-# Headers matching the running Proxmox kernel, plus the driver and persistence daemon.
 apt install -y proxmox-headers-$(uname -r) build-essential
 apt install -y nvidia-driver nvidia-smi nvidia-persistenced
-
-# Confirm the card is seen:
 nvidia-smi
 ```
 
@@ -104,21 +99,24 @@ The card is already the right tool: a 9300-8i in **IT mode (Initiator-Target mod
 ### Confirm the HBA sits in a clean IOMMU group
 Passthrough needs the card isolated in its own **IOMMU (Input/Output Memory Management Unit)** group. The HBA is in the bottom **PCIEX4_3 chipset-attached slot** (set to x4 in BIOS) precisely so it lands in a group by itself. Verify before binding anything:
 
+First prove IOMMU is active (the DMAR/IOMMU lines from the Install Proxmox page — VT-d on in BIOS plus the kernel flags, which are belt-and-braces since `intel_iommu` defaults on in current kernels):
+
 ```bash
-# IOMMU must be active — VT-d on in BIOS. (intel_iommu defaults to on since kernel 6.8/PVE 8.2;
-# the cmdline flags you set on the Install Proxmox page are belt-and-braces, not required.)
 dmesg | grep -e DMAR -e IOMMU
+```
 
-# Find the HBA's PCI address and its vendor:device IDs
+Then find the card's PCI address and vendor:device IDs, and the IOMMU group it landed in — on this build the card sits at **`03:00.0`**, IDs **`[1000:0097]`**, in **group 13** (all verified during the build; re-run to confirm nothing moved):
+
+```bash
 lspci -nn | grep -i -e LSI -e SAS -e Broadcom
-
-# Confirm the 9300-8i is alone in its IOMMU group
 for g in /sys/kernel/iommu_groups/*/devices/*; do
   echo "Group $(basename $(dirname $(dirname $g))): $(lspci -nns $(basename $g))"
 done | grep -i -e LSI -e SAS -e Broadcom
+```
 
-# The loop names the HBA's group — now list that group's folder directly
-# (swap 13 for yours). It must print the HBA's address and nothing else:
+The loop names the HBA's group; listing that group's folder directly must print the HBA's address and nothing else:
+
+```bash
 ls /sys/kernel/iommu_groups/13/devices/
 ```
 
@@ -128,25 +126,19 @@ You want the HBA in a group containing only itself (or only its own functions) �
 > The vendor:device IDs from `lspci -nn` (something like `[1000:0097]`) are what you bind to vfio-pci. They sit in brackets at the very end of the line — exactly the part a console cuts off when the line runs past the screen edge. If you cannot see them, re-run scoped to just the card and the line stays short: `lspci -nn -s 03:00.0` (your address from the step above). Note the pair down — the next step uses it.
 
 ### Bind the card to vfio-pci
-Tell the host to claim the HBA for VFIO at boot so no host driver grabs it first. Create a modprobe entry with the IDs from the previous step, blacklist the card's native driver so it can never win the race for it, then refresh the initramfs and reboot:
+Tell the host to claim the HBA for VFIO at boot so no host driver grabs it first: a modprobe entry with the card's IDs, a blacklist of its native driver so it can never win the race for the device, the vfio modules loaded early, then a refreshed initramfs and a reboot. The values below are this build's, both verified live — `1000:0097` from the `lspci -nn` brackets, `mpt3sas` from its `Kernel modules:` line:
 
 ```bash
-# Replace 1000:0097 with your actual vendor:device IDs, and mpt3sas with
-# whatever the lspci step's "Kernel modules:" line printed for your card.
 echo -e "options vfio-pci ids=1000:0097\nblacklist mpt3sas" > /etc/modprobe.d/vfio.conf
-
-# Load the vfio modules early
 echo -e "vfio\nvfio_iommu_type1\nvfio_pci" >> /etc/modules
-
 update-initramfs -u -k all
 reboot
 ```
 
-After the reboot, confirm the card is now bound to `vfio-pci` rather than a SAS driver:
+After the reboot, confirm the card is bound to `vfio-pci` — `Kernel driver in use: vfio-pci` is the line you want, not a SAS driver:
 
 ```bash
 lspci -nnk | grep -A3 -i -e LSI -e SAS -e Broadcom
-# "Kernel driver in use: vfio-pci" is the line you want.
 ```
 
 > [!NOTE]

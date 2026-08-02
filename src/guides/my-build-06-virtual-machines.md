@@ -120,8 +120,9 @@ Snapshots are instant and nearly free. Before an OS upgrade or a config experime
 ### Grow a disk later
 When a VM's disk fills, adding space is a two-part job and Proxmox only does the first part. From the host, grow the virtual disk; then, inside the guest, extend the partition and filesystem into the new space. Shrinking isn't supported, so size changes are one-way.
 
+Check the disk name (`scsi0`, `virtio0`, …) in the VM's Hardware tab first, and swap in the VM's ID — this is a someday command, so both vary:
+
 ```bash
-# Check the disk name (scsi0, virtio0, ...) in the VM's Hardware tab first:
 qm disk resize <vmid> scsi0 +16G
 ```
 
