@@ -29,16 +29,27 @@ sed -i 's/^Components:.*/Components: main contrib non-free non-free-firmware/' /
 
 That rewrites every `Components:` line in the file to `Components: main contrib non-free non-free-firmware`. There is no way to edit this from the web UI — Proxmox has no file editor — but there is a click path to *verify* it: **`pve` → Updates → Repositories** lists the Debian entries, and after the command their Components column shows `non-free non-free-firmware`. (To eyeball the file itself: `nano /etc/apt/sources.list.d/debian.sources`, Ctrl+X to leave.)
 
-Then refresh, install the kernel headers (matched to the running kernel by `uname -r`), the driver, and the persistence daemon, and confirm the card is seen:
+Then refresh, and install the kernel headers (matched to the running kernel by `uname -r`), the driver, and the persistence daemon — the middle command compiles a kernel module, so it takes a few minutes:
 
 ```bash
 apt update
 apt install -y proxmox-headers-$(uname -r) build-essential
 apt install -y nvidia-driver nvidia-smi nvidia-persistenced
+```
+
+Midway, a text dialog interrupts: **"Conflicting nouveau kernel module loaded."** Expected — nouveau is the free driver that grabbed the card at boot, and it has to let go before NVIDIA's module can load. Press Enter on **Ok**, let the install finish, then do what the dialog says:
+
+```bash
+reboot
+```
+
+The TrueNAS VM rides the reboot on its own (Start at boot, previous page). Once the host is back, reopen the Shell and confirm the card is seen — before the reboot this command errors, which is nouveau still holding on, not a failed install:
+
+```bash
 nvidia-smi
 ```
 
-`nvidia-smi` should print the 1080 Ti with a driver version. **Write that version down** — it has to match the userspace driver inside each container.
+It should print the 1080 Ti with a driver version. **Write that version down** — it has to match the userspace driver inside each container.
 
 > [!NOTE]
 > If `apt install -y nvidia-driver` cannot find the package, the extra components did not take — open `/etc/apt/sources.list.d/debian.sources` and check its `Components:` lines end with `non-free non-free-firmware`, then run `apt update` again. The `nvidia-persistenced` package ships the persistence daemon's systemd unit; installing it alongside the driver is what gives the next step a unit to enable.
