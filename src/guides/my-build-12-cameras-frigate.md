@@ -48,7 +48,11 @@ dev1: /dev/nvidiactl,gid=44
 dev2: /dev/nvidia-uvm,gid=44
 ```
 
-Restart the container. Then, inside it, install the **in-container NVIDIA userspace driver at the same version** the host's `nvidia-smi` reports — a version mismatch is the classic cause of "the GPU vanished." The container's Debian release ships a different driver version than the host's, so skip `apt` for this one: download NVIDIA's installer for the exact host version and run it userspace-only — `sh NVIDIA-Linux-x86_64-<version>.run --no-kernel-module`. The kernel module lives on the host, so only the libraries install inside; the host-side "never a `.run`" rule is about kernel modules and does not apply in an LXC.
+Restart the container. Then, inside it, install the **in-container NVIDIA userspace driver at the same version** the host's `nvidia-smi` reports — recorded on the GPU/HBA page:
+
+> [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01
+
+A version mismatch is the classic cause of "the GPU vanished," so trust the field, not memory. The container's Debian release ships a different driver version than the host's, so skip `apt` for this one: download NVIDIA's installer for the exact host version and run it userspace-only — `sh NVIDIA-Linux-x86_64-<version>.run --no-kernel-module`. The kernel module lives on the host, so only the libraries install inside; the host-side "never a `.run`" rule is about kernel modules and does not apply in an LXC.
 
 ### Confirm the GPU made it into the container
 Confirm the card is visible from inside the container. Open the container's **Console** and run:

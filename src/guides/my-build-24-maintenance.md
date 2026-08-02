@@ -21,7 +21,7 @@ apt update
 apt full-upgrade
 ```
 
-If the upgrade pulls a new kernel, finish with a host reboot to actually run it — but pick a kind moment, because rebooting the host takes every guest down and back up with it. The order this build cares about reasserts itself on the way back up: the Home Assistant VM (virtual machine) must be running before the Frigate LXC (Linux Container), since Frigate's detections publish to the Mosquitto broker the Zigbee and camera stack depends on.
+One deliberate wrinkle on this host: the kernel is **pinned** (to the version recorded on the GPU/HBA Passthrough page) because NVIDIA's driver does not build on the kernel-7 series. Upgrades will keep installing newer kernels — that is fine and expected — but the host keeps booting the pinned one, so "the upgrade pulled a new kernel" does **not** mean a reboot switches to it. Leave the pin alone during routine updates; lift it (`proxmox-boot-tool kernel unpin`, then reboot and confirm `nvidia-smi` still answers) only once a kernel-7-compatible driver has shipped. When you do reboot the host for any reason, pick a kind moment — it takes every guest down and back up, and the startup order reasserts itself on the way back: the Home Assistant VM (virtual machine) before the Frigate LXC (Linux Container), since Frigate publishes to the Mosquitto broker that lives with HA.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > Open the web UI at `https://`-this-ip-`:8006` and log in as **root@pam** to reach **Updates** and the node Shell.

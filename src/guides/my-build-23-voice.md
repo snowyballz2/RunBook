@@ -133,7 +133,9 @@ dev1: /dev/nvidiactl,gid=44
 dev2: /dev/nvidia-uvm,gid=44
 ```
 
-Restart each container after editing its config. Then, inside each one, install the **in-container NVIDIA userspace driver at the same version** you noted from the host's `nvidia-smi` on the GPU/HBA Passthrough page — a version mismatch is the classic cause of "the GPU vanished." The container's Debian release ships a *different* driver version than the host's, so do not use `apt` for this one: download NVIDIA's installer for the **exact host version** and run it userspace-only —
+Restart each container after editing its config. Then, inside each one, install the **in-container NVIDIA userspace driver at the same version** recorded on the GPU/HBA Passthrough page — a version mismatch is the classic cause of "the GPU vanished":
+
+> [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01 The container's Debian release ships a *different* driver version than the host's, so do not use `apt` for this one: download NVIDIA's installer for the **exact host version** and run it userspace-only —
 
 ```bash
 # Inside the container — match <version> to the host's nvidia-smi exactly:

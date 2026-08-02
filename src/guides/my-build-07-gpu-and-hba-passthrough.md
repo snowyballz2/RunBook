@@ -18,8 +18,8 @@ LXCs (Linux Containers) share the host's kernel, so a GPU lent into them is **no
 
 Because of this, the driver lives on the **Proxmox host**, which owns the hardware, and each container borrows it.
 
-### Install the NVIDIA driver on the host
-Do this on the **host**, not inside any container, and install it from Debian's package archive — never a `.run` installer downloaded from nvidia.com. The packaged driver builds its kernel module through **DKMS (Dynamic Kernel Module Support)** against the headers you install below and rebuilds itself automatically on every kernel update; a `.run` installer does not, and it silently breaks the card after the next Proxmox upgrade (exactly the "GPU vanished after an update" failure this page warns about). The server pulls everything over its own network connection — nothing to download on another PC.
+### Prepare the driver's package sources
+The driver goes on the **host**, not inside any container, and it comes from Debian's package archive — never a `.run` installer downloaded from nvidia.com. The packaged driver builds its kernel module through **DKMS (Dynamic Kernel Module Support)** against the headers you install below and rebuilds itself automatically on every kernel update; a `.run` installer does not, and it silently breaks the card after the next Proxmox upgrade (exactly the "GPU vanished after an update" failure this page warns about). The server pulls everything over its own network connection — nothing to download on another PC.
 
 The driver lives in Debian package sections this host does not read yet: **non-free** and **non-free-firmware**. On this build's Proxmox 9, the Debian repo is defined in one file — `/etc/apt/sources.list.d/debian.sources` — and each repo entry inside it has a `Components:` line saying which sections to read. Turn the two extra sections on with one command, in the host shell — click **`pve`** in the left tree (nested under Datacenter), then **Shell** in the menu that appears; it is its own entry above the System section, and the terminal it opens is already logged in as root:
 
@@ -29,12 +29,39 @@ sed -i 's/^Components:.*/Components: main contrib non-free non-free-firmware/' /
 
 That rewrites every `Components:` line in the file to `Components: main contrib non-free non-free-firmware`. There is no way to edit this from the web UI — Proxmox has no file editor — but there is a click path to *verify* it: **`pve` → Updates → Repositories** lists the Debian entries, and after the command their Components column shows `non-free non-free-firmware`. (To eyeball the file itself: `nano /etc/apt/sources.list.d/debian.sources`, Ctrl+X to leave.)
 
-Then refresh, and install the kernel headers (matched to the running kernel by `uname -r`), the driver, and the persistence daemon — the middle command compiles a kernel module, so it takes a few minutes:
+Finish this step with a refresh:
 
 ```bash
 apt update
-apt install -y proxmox-headers-$(uname -r) build-essential
-apt install -y nvidia-driver nvidia-smi nvidia-persistenced
+```
+
+### Pin the kernel the driver can build against
+
+The step nobody warns you about, hit live on this build (August 2026): **no NVIDIA driver branch compiles against the kernel-7.0 series** that current Proxmox 9.2 boots by default. Kernel 7.0 rewrote its memory-management interfaces, and every driver build dies in `VMA_LOCK_OFFSET` compile errors — a DKMS "Bad return status / exit status 10" — on all branches and all card generations, per the Proxmox forums. The stable fix: boot the **6.14 kernel series** (Proxmox 9's original GA kernel, still maintained) and pin it, so later updates cannot silently put the host back on 7.0:
+
+```bash
+apt install -y proxmox-kernel-6.14 proxmox-headers-6.14
+proxmox-boot-tool kernel list
+```
+
+The list names every installed kernel. This build's 6.14 entry is `6.14.11-9-pve`; if your list shows a newer 6.14.x, pin that one instead:
+
+```bash
+proxmox-boot-tool kernel pin 6.14.11-9-pve
+reboot
+```
+
+The TrueNAS VM rides every reboot on this page by itself — Start at boot, previous page. Back in the Shell afterwards, `uname -r` must print the pinned version.
+
+> [!INPUT] pinned-kernel | Pinned Proxmox kernel | 6.14.11-9-pve
+> A deliberate hold, recorded here so it is never a mystery later: newer kernels keep installing with normal updates but are not booted. When a driver that builds on kernel 7 ships (watch Debian's `nvidia-driver` changelog or the Proxmox forum's kernel threads), `proxmox-boot-tool kernel unpin` plus a reboot lifts the hold — and after any unpin, confirm `nvidia-smi` still answers before trusting the box again.
+
+### Install the driver and record the version
+
+With the host on the pinned kernel, install the driver and persistence daemon — the first command compiles the kernel module through DKMS, so it takes a few minutes:
+
+```bash
+apt install -y build-essential nvidia-driver nvidia-smi nvidia-persistenced
 ```
 
 Midway, a text dialog interrupts: **"Conflicting nouveau kernel module loaded."** Expected — nouveau is the free driver that grabbed the card at boot, and it has to let go before NVIDIA's module can load. Press Enter on **Ok**, let the install finish, then do what the dialog says:
@@ -43,13 +70,16 @@ Midway, a text dialog interrupts: **"Conflicting nouveau kernel module loaded."*
 reboot
 ```
 
-The TrueNAS VM rides the reboot on its own (Start at boot, previous page). Once the host is back, reopen the Shell and confirm the card is seen — before the reboot this command errors, which is nouveau still holding on, not a failed install:
+Once the host is back, reopen the Shell and confirm the card is seen — before that reboot this command errors, which is nouveau still holding on, not a failed install:
 
 ```bash
 nvidia-smi
 ```
 
-It should print the 1080 Ti with a driver version. **Write that version down** — it has to match the userspace driver inside each container.
+It should print the GTX 1080 Ti with the driver version in its top line. Record that version here — it is a number three later pages depend on:
+
+> [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01
+> From the top line of the host's `nvidia-smi`. Frigate, Ollama, and faster-whisper each install an in-container userspace driver that must match this **exactly** — check this field before building any of them, and update it whenever a host upgrade bumps the driver (the Maintenance page's update pass calls that out).
 
 > [!NOTE]
 > If `apt install -y nvidia-driver` cannot find the package, the extra components did not take — open `/etc/apt/sources.list.d/debian.sources` and check its `Components:` lines end with `non-free non-free-firmware`, then run `apt update` again. The `nvidia-persistenced` package ships the persistence daemon's systemd unit; installing it alongside the driver is what gives the next step a unit to enable.
