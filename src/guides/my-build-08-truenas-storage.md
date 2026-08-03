@@ -52,9 +52,9 @@ So this page picks up after both of those: it confirms the raw disks arrived, th
 > VFIO is for the HBA only. The GTX 1080 Ti is *shared* across the service containers from the host driver and must never be VFIO-bound or handed to a VM. Keep the two policies straight: the HBA locks to this one VM; the GPU never locks to anyone.
 
 ### Confirm the raw disks appear
-Boot the VM and open **Storage → Disks**. You should see both **mirror Seagate IronWolf ST4000VN006 4 TB** drives by their real model and serial, each reporting genuine SMART — exactly as if TrueNAS were running on bare metal. The third (footage) IronWolf sits on a motherboard SATA port with the host, so it does not — and should not — appear here.
+Boot the VM and open **System → Disks** in the left nav (the Storage dashboard's *Disks* card reaches the same screen). You should see both **mirror Seagate IronWolf ST4000VN006 4 TB** drives by their real model and serial, each reporting genuine SMART — exactly as if TrueNAS were running on bare metal. The third (footage) IronWolf sits on a motherboard SATA port with the host, so it does not — and should not — appear here.
 
-While the serials are on screen, record them — with **which physical tray each one sits in** (the drives are identical at a glance, and the dead-disk drill on the next page keys on serial). The footage disk's serial is on the Proxmox side: node → **Disks**.
+While the serials are on screen, record them — with **which physical tray each one sits in** (the drives are identical at a glance, and the dead-disk drill on the next page keys on serial). The footage disk's serial is on the Proxmox side instead: in the Proxmox web UI, click the **`pve`** node, then **Disks** in its menu.
 
 > [!INPUT] mirror-a-serial | Mirror disk A — serial + tray position
 
