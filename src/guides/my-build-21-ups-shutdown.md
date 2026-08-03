@@ -40,28 +40,32 @@ The metapackage pulls in both halves: `nut-server` (the `usbhid-ups` driver plus
 ### Write the four config files
 NUT's behaviour lives in `/etc/nut/`. Four small edits: switch it on, name the UPS, create an account, and point the watcher at it.
 
+Open `/etc/nut/nut.conf` and change the existing `MODE=` line to:
+
 ```ini
-# /etc/nut/nut.conf — change the existing MODE= line to:
 MODE=standalone
 ```
 
+Append at the end of `/etc/nut/ups.conf`:
+
 ```ini
-# /etc/nut/ups.conf — append at the end:
 [cyberpower]
     driver = usbhid-ups
     port = auto
     desc = "CyberPower CP1500PFCLCD"
 ```
 
+Append to `/etc/nut/upsd.users` — the account `upsmon` signs in with:
+
 ```ini
-# /etc/nut/upsd.users — append: the account upsmon signs in with
 [admin]
     password = pick-a-long-password
     upsmon primary
 ```
 
+Append to `/etc/nut/upsmon.conf` — watch that UPS, same password:
+
 ```ini
-# /etc/nut/upsmon.conf — append: watch that UPS (same password)
 MONITOR cyberpower@localhost 1 admin pick-a-long-password primary
 ```
 
@@ -102,10 +106,9 @@ A healthy answer is a screenful of live variables. Three are worth knowing by na
 CyberPower units, this model included, have a well-documented habit: the `usbhid-ups` driver loses the USB device under load or after a glitch and never reconnects on its own. `upsc` starts answering "Driver not connected" or the data goes stale, and a UPS the host can no longer hear is a UPS that will not trigger a shutdown when it matters — the silent failure this whole page exists to prevent. Three settings make the driver resilient, and a watchdog catches the case where it still wedges.
 
 ### Make the driver reconnect itself
-Add three lines to the UPS's section so the driver polls steadily and re-grabs the device when the kernel re-enumerates it:
+Edit `/etc/nut/ups.conf` so the `[cyberpower]` section gains three lines — the driver then polls steadily and re-grabs the device when the kernel re-enumerates it:
 
 ```ini
-# /etc/nut/ups.conf — the [cyberpower] section becomes:
 [cyberpower]
     driver = usbhid-ups
     port = auto
@@ -135,10 +138,9 @@ EOF
 chmod +x /usr/local/bin/nut-watchdog.sh
 ```
 
-Then a service and a timer that fire it every two minutes:
+Then create `/etc/systemd/system/nut-watchdog.service`:
 
 ```ini
-# /etc/systemd/system/nut-watchdog.service
 [Unit]
 Description=Restart NUT driver if the CyberPower USB link drops
 [Service]
@@ -146,8 +148,9 @@ Type=oneshot
 ExecStart=/usr/local/bin/nut-watchdog.sh
 ```
 
+And `/etc/systemd/system/nut-watchdog.timer`, which fires it every two minutes:
+
 ```ini
-# /etc/systemd/system/nut-watchdog.timer
 [Unit]
 Description=Run the NUT USB watchdog every two minutes
 [Timer]
@@ -190,8 +193,9 @@ After the shutdown the UPS cuts its outlets, and when mains returns it switches 
 ### Rehearse the outage
 Two rehearsals, gentle then real. First the gentle one — pull the CyberPower's plug from the wall for half a minute while everything runs:
 
+Run this before pulling the plug, then again while on battery:
+
 ```bash
-# Run before pulling the plug, then again while on battery:
 upsc cyberpower@localhost ups.status
 ```
 
@@ -217,24 +221,27 @@ This raises the forced-shutdown flag exactly as a critical battery would, and th
 ### Open the UPS to the LAN
 So far `upsd` speaks only to the host. Three edits open it to the LAN, read-only, and Home Assistant's native NUT integration does the rest.
 
+In `/etc/nut/nut.conf`, change `MODE` once more:
+
 ```ini
-# /etc/nut/nut.conf — change MODE once more:
 MODE=netserver
 ```
 
+Append to `/etc/nut/upsd.conf` — keep localhost, add the host's LAN address:
+
 ```ini
-# /etc/nut/upsd.conf — append: keep localhost, add the host's LAN address
 LISTEN 127.0.0.1 3493
 LISTEN 192.168.1.50 3493
 ```
 
+Append to `/etc/nut/upsd.users` — a watch-only account for Home Assistant:
+
 ```ini
-# /etc/nut/upsd.users — append: a watch-only account for Home Assistant
 [hauser]
     password = a-different-long-password
 ```
 
-Swap in the Proxmox host's actual IP on the second `LISTEN` line, then `systemctl restart nut-server nut-monitor`. In Home Assistant, go to **Settings → Devices & services**; the integration may already be waiting under discovered devices, otherwise add **Network UPS Tools (NUT)** and enter the host's IP, port `3493`, and the `hauser` credentials. The CyberPower appears as a device with **Battery charge** and **Status** sensors enabled out of the box — the latter reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime** and the rest arrive disabled; enable them per entity if you want them.
+Then `systemctl restart nut-server nut-monitor`. In Home Assistant, go to **Settings → Devices & services**; the integration may already be waiting under discovered devices, otherwise add **Network UPS Tools (NUT)** and enter the host's IP, port `3493`, and the `hauser` credentials. The CyberPower appears as a device with **Battery charge** and **Status** sensors enabled out of the box — the latter reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime** and the rest arrive disabled; enable them per entity if you want them.
 
 > [!INPUT] nut-ha-user | NUT read-only username | | hauser
 > The `[hauser]` section name in `upsd.users` — the account Home Assistant signs in with.
