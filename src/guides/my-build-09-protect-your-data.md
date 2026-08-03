@@ -28,7 +28,7 @@ The pool's other guardian is already on duty. TrueNAS generated a default **scru
 ### Let the disk watchdog work
 Snapshots guard the data; S.M.A.R.T. watches the drives themselves. On current TrueNAS there is nothing to schedule — the old S.M.A.R.T. Tests service is gone, replaced by **Drive Health Management**, which polls every disk's S.M.A.R.T. data automatically (roughly every 90 minutes) and raises alerts that name the affected disk and what tripped. Check the **Disk Health** card on the **Storage** dashboard; active alerts land in the **Alerts** panel behind the bell icon, top right.
 
-Because the two mirror drives reach TrueNAS through the LSI 9300-8i HBA (host bus adapter) passed through whole with VFIO (Virtual Function I/O), TrueNAS talks to the real disks and its S.M.A.R.T. data is genuine — no QEMU emulation in the way. Deeper self-tests run from TrueNAS's own shell (**System → Shell**). First identify the two mirror drives — match model and serial, and note their device names (`sda`, `sdb`, …):
+Because the two mirror drives reach TrueNAS through the LSI 9300-8i HBA (host bus adapter) passed through whole with VFIO (Virtual Function I/O), TrueNAS talks to the real disks and its S.M.A.R.T. data is genuine — no QEMU emulation in the way. Deeper self-tests run from TrueNAS's own shell (**System → Shell**) — which signs you in as `truenas_admin`, not root, so the `smartctl` commands need their `sudo` (it asks for the `truenas_admin` password). First identify the two mirror drives — match model and serial, and note their device names (`sda`, `sdb`, …):
 
 ```bash
 lsblk -o +MODEL,SERIAL
@@ -37,19 +37,19 @@ lsblk -o +MODEL,SERIAL
 A quick self-test finishes in under ten minutes:
 
 ```bash
-smartctl -t short /dev/sda
+sudo smartctl -t short /dev/sda
 ```
 
 The full-surface test takes hours on a 4 TB disk and slows it noticeably while it runs — keep it off scrub Sunday:
 
 ```bash
-smartctl -t long /dev/sda
+sudo smartctl -t long /dev/sda
 ```
 
 And the verdict, once a test completes:
 
 ```bash
-smartctl -a /dev/sda
+sudo smartctl -a /dev/sda
 ```
 
 Run each against both mirror drives in turn, swapping in the device names `lsblk` showed.
