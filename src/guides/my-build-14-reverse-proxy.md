@@ -124,7 +124,7 @@ Then the **SSL** tab: under **SSL Certificate** choose the `*.example.com` certi
 ### Tell Home Assistant to trust the proxy
 Add the next host the same way — `ha.example.com`, Scheme `http`, Forward to your `ha-ip`, port `8123`, **Websockets Support** on, then the same SSL tab (wildcard certificate, **Force SSL**). Browse to `https://ha.example.com` and meet a deliberate roadblock: a bare **400: Bad Request**. Home Assistant OS refuses proxied requests until you name your proxy.
 
-The fix is a few lines in `configuration.yaml`. The way in is the **File editor** app: **Settings → Apps → Install app**, install **File editor**, toggle **Show in sidebar**, start it, open `configuration.yaml`, and add:
+The fix is a few lines in `configuration.yaml` — this happens in the **Home Assistant UI** (`192.168.1.51:8123`), not NPM. The way in is the **File editor** app: **Settings → Apps → Install app**, install **File editor**, toggle **Show in sidebar**, start it, open `configuration.yaml`, and add:
 
 ```yaml
 http:
