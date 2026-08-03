@@ -114,7 +114,12 @@ The whole build talks over one **Mosquitto** broker, and it lives here on the Ho
 > Created now so the broker knows it; Frigate itself enters this pair on the Cameras, Doorbell & Frigate page.
 
 ### Point Z2M at the Mosquitto broker
-Install Z2M as a Home Assistant app. Its apps live in a separate repository: in **Settings → Apps → Install app**, open the **⋮ menu → Repositories**, add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`, then install **Zigbee2MQTT** from the store. In its MQTT settings, point it at the broker below and enter the `zigbee2mqtt` username and password you just created; everything Z2M publishes namespaces under `zigbee2mqtt/...` and stays out of Frigate's way. In Z2M's settings, select the **`ember`** driver — that is the one for the ZBT-2 — and set the serial **baud rate to `460800`** with **hardware flow control (`rtscts`) on**. Both are required: the ZBT-2 is a Silicon Labs MG24 behind a USB bridge that runs faster than Z2M's defaults (115200, no flow control), and Z2M does not negotiate them, so leaving the defaults is the usual reason a ZBT-2 coordinator never connects or keeps dropping. Point the port at the stable by-id path (`/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_...-if00`) so it survives a reboot.
+Install Z2M as a Home Assistant app. Its apps live in a separate repository: in **Settings → Apps → Install app**, open the **⋮ menu → Repositories**, add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`, then install **Zigbee2MQTT** from the store. In its MQTT settings, point it at the broker below and enter the `zigbee2mqtt` username and password you just created; everything Z2M publishes namespaces under `zigbee2mqtt/...` and stays out of Frigate's way. Then Z2M's serial settings — four fields, all in its settings UI, all load-bearing, because the ZBT-2 is a Silicon Labs MG24 behind a USB bridge that runs faster than Z2M's defaults and Z2M does not negotiate (wrong values here are the usual reason a ZBT-2 never connects or keeps dropping):
+
+- **Adapter / driver** → `ember` (the one for the ZBT-2)
+- **Baud rate** → `460800`
+- **RTS/CTS hardware flow control** → on
+- **Port** → the stable `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_…-if00` path, never `ttyACM0` — by-id survives reboots
 
 > [!INPUT] mqtt-host | Mosquitto broker address | 192.168.1.51
 > Where the broker listens — the Home Assistant VM, on the standard port `1883`. Frigate connects to this same broker with its `mqtt-user` login on the Cameras, Doorbell & Frigate page.

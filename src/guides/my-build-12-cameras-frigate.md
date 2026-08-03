@@ -17,7 +17,7 @@ Frigate runs as a privileged **LXC (Linux Container)** here. The community-scrip
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/frigate.sh)"
 ```
 
-Accept the defaults — **8 cores, 4 GB RAM, a 20 GB disk** on Debian 12 — and let it work. It compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
+When it asks **Default or Advanced**, pick **Advanced**: keep the offered resources (**8 cores, 4 GB RAM, a 20 GB disk**, privileged) but set the **network to a static IP** — `192.168.1.52/24`, gateway `192.168.1.1` — instead of DHCP; the address lives in the protected static zone, where the router could not reserve it. Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
 
 > [!TIP]
 > This is the fussiest script in the build — it pulls large AI components and occasionally stumbles partway. If it errors, just re-run it; a second attempt is normal.
@@ -31,11 +31,11 @@ The script prints the container's address when it finishes — browse to it on p
 > [!WARNING]
 > Port 5000 serves the UI with **no login** — the generated config ships with authentication disabled, and in Frigate's port scheme 5000 is the internal unauthenticated port. That is tolerable on the home LAN behind the router, but never create a port-forward to it. Camera footage stays on the network; remote access comes through Tailscale instead.
 
-### Pin its address and start at boot
-Give the container a fixed IP via the router's DHCP (Dynamic Host Configuration Protocol) reservation page, the same habit used for every guest, so Home Assistant and bookmarks never lose it. Then, in Proxmox, select the container, open **Options**, and enable **Start at boot** so a power cut does not silently end recordings.
+### Confirm its address and start at boot
+The static address was set in the script's Advanced walk, so there is nothing to reserve at the router. In Proxmox, select the container and open **Options**: enable **Start at boot** so a power cut does not silently end recordings, and set **Start/Shutdown order** to **3** while the panel is open — the MQTT broker this page connects to later lives in the Home Assistant VM (order=2), and Frigate must come up after it.
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
-> Pin it with a DHCP reservation so it never moves.
+> Device-set static from the script's Advanced mode — in the `.2–.99` static zone, so it never moves.
 
 ## Detect on the 1080 Ti
 
@@ -52,7 +52,14 @@ Restart the container. Then, inside it, install the **in-container NVIDIA usersp
 
 > [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01
 
-A version mismatch is the classic cause of "the GPU vanished," so trust the field, not memory. The container's Debian release ships a different driver version than the host's, so skip `apt` for this one: download NVIDIA's installer for the exact host version and run it userspace-only — `sh NVIDIA-Linux-x86_64-<version>.run --no-kernel-module`. The kernel module lives on the host, so only the libraries install inside; the host-side "never a `.run`" rule is about kernel modules and does not apply in an LXC.
+A version mismatch is the classic cause of "the GPU vanished," so trust the field, not memory. The container's Debian release ships a different driver version than the host's, so skip `apt` for this one: in the **container's console**, download NVIDIA's installer for the exact host version and run it userspace-only. With the host on `550.163.01`:
+
+```bash
+wget https://us.download.nvidia.com/XFree86/Linux-x86_64/550.163.01/NVIDIA-Linux-x86_64-550.163.01.run
+sh NVIDIA-Linux-x86_64-550.163.01.run --no-kernel-module
+```
+
+If a host upgrade ever bumps the driver, swap the new version into both lines — the URL follows that pattern for any version. The kernel module lives on the host, so only the libraries install inside; the host-side "never a `.run`" rule is about kernel modules and does not apply in an LXC.
 
 ### Confirm the GPU made it into the container
 Confirm the card is visible from inside the container. Open the container's **Console** and run:
@@ -67,7 +74,43 @@ You should see the GTX 1080 Ti listed with a driver version. If the command is m
 > The card is shared across containers, not handed to one guest — Frigate detection now, the Ollama LLM (large language model) and faster-whisper STT (speech-to-text) voice stack later. Keep `nvidia-persistenced` enabled on the host and the host/in-container driver versions matched. VFIO is reserved for the HBA (host bus adapter) feeding the TrueNAS VM; the GPU stays shared. The moment the GPU is VFIO-bound, every container loses detection at once.
 
 ### Fetch the detection model
-Frigate does not bundle YOLO models — the file the config below points at has to be produced once, by you. Frigate's object-detector documentation (YOLOv9 section) gives a **one-line Docker command that exports the model** from the official YOLOv9 repo — run it with `MODEL_SIZE=t` and `IMG_SIZE=320`, then copy the resulting `yolov9-t.onnx` into the container at `/config/model_cache/yolov9-t.onnx`, creating the `model_cache` directory first if it does not exist. Without this file, detection fails to start with a missing-model error.
+Frigate does not bundle YOLO models — the file the config below points at has to be produced once, by you. This is the one step that runs on **your desk computer**, because it needs Docker and nothing in the server stack has it: install **Docker Desktop** (docker.com, free for this) on the Mac or the Windows PC, and open a terminal — the Mac's Terminal, or on Windows the **WSL** shell Docker Desktop sets up, since the command below is bash syntax. Then run this, exactly as Frigate's own docs publish it — one command, ending at the `EOF` line:
+
+```bash
+docker build . --build-arg MODEL_SIZE=t --build-arg IMG_SIZE=320 --output . -f- <<'EOF'
+FROM python:3.11 AS build
+RUN apt-get update && apt-get install --no-install-recommends -y cmake libgl1 && rm -rf /var/lib/apt/lists/*
+COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /bin/
+WORKDIR /yolov9
+ADD https://github.com/WongKinYiu/yolov9.git .
+RUN uv pip install --system -r requirements.txt
+RUN uv pip install --system onnx==1.18.0 onnxruntime onnx-simplifier==0.4.* onnxscript
+ARG MODEL_SIZE
+ARG IMG_SIZE
+ADD https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-${MODEL_SIZE}-converted.pt yolov9-${MODEL_SIZE}.pt
+RUN sed -i "s/ckpt = torch.load(attempt_download(w), map_location='cpu')/ckpt = torch.load(attempt_download(w), map_location='cpu', weights_only=False)/g" models/experimental.py
+RUN python3 export.py --weights ./yolov9-${MODEL_SIZE}.pt --imgsz ${IMG_SIZE} --simplify --include onnx
+FROM scratch
+ARG MODEL_SIZE
+ARG IMG_SIZE
+COPY --from=build /yolov9/yolov9-${MODEL_SIZE}.onnx /yolov9-${MODEL_SIZE}-${IMG_SIZE}.onnx
+EOF
+```
+
+It leaves **`yolov9-t-320.onnx`** in the folder you ran it from. Move it to the server in two hops. From that same terminal, copy it to the Proxmox host:
+
+```bash
+scp yolov9-t-320.onnx root@192.168.1.50:/tmp/
+```
+
+Then, in the **Proxmox host shell**, push it into the container under the name the config expects, swapping in the container's ID:
+
+```bash
+pct exec <frigate-ctid> -- mkdir -p /config/model_cache
+pct push <frigate-ctid> /tmp/yolov9-t-320.onnx /config/model_cache/yolov9-t.onnx
+```
+
+Without this file, detection fails to start with a missing-model error.
 
 ### Point detection at ONNX on CUDA
 This build does **not** use the Intel iGPU + OpenVINO path that Frigate defaults to. Detection runs on the 1080 Ti via the **ONNX (Open Neural Network Exchange) detector on the CUDA (NVIDIA's GPU compute platform) execution provider** — this install's Frigate build ships the ONNX runtime, which picks up CUDA automatically once the card is visible, so pointing Frigate at ONNX is enough to find the card. Edit `/config/config.yml` (easiest in the web UI's built-in config editor, which validates as you type; `nano /config/config.yml` in the console works too) and set:
@@ -108,7 +151,7 @@ The doorbell is the camera most people actually want, and the pick here is the *
 On Reolink doorbells, plain RTSP video is **less reliable** — it drops and stutters — while video carried over **http-flv (video over HTTP)** is steady. But the two-way talk audio only rides on RTSP. So the trick is to pull *video* over http-flv for stability and add a *secondary RTSP stream just for the audio*, then let Frigate's bundled **go2rtc** restreamer fuse them into one feed it can record, detect on, and talk back through.
 
 ### Prepare the doorbell in the Reolink app
-In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a username and password. Set the bitrate to **"On, fluency first"** (constant bitrate, which Frigate prefers) and the **Interframe Space to 1×** (an I-frame interval matching the frame rate). Pin the doorbell's IP with a DHCP reservation while you are there so the config below never goes stale.
+In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a username and password. Set the bitrate to **"On, fluency first"** (constant bitrate, which Frigate prefers) and the **Interframe Space to 1×** (an I-frame interval matching the frame rate). While you are there, give it its **permanent static address** in the app's network settings — IP `192.168.1.70`, mask `255.255.255.0`, gateway `192.168.1.1` for now (the hardening section at the end of this page blanks that gateway) — so the config below never goes stale.
 
 > [!INPUT] doorbell-ip | Reolink doorbell IP | 192.168.1.70
 
@@ -121,16 +164,16 @@ In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a 
 > Take the exact stream details from the Reolink app — do not guess them. In particular confirm **HTTP is enabled**, or the http-flv video path will not connect at all.
 
 ### Add the doorbell to the config
-There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the cameras you add later — the RLC-510WA and the five EmpireTechs — get folded into these same two blocks rather than starting fresh ones. Add the doorbell first: fold its streams into the generated file's existing `go2rtc: streams:`, and the `doorbell:` camera into the existing `cameras:` — and while you are there, delete the `test:` sample camera (and its sample stream) that the install shipped with, so the file holds only real cameras. Swap in the doorbell's IP, username, and password:
+There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the cameras you add later — the RLC-510WA and the five EmpireTechs — get folded into these same two blocks rather than starting fresh ones. Add the doorbell first: fold its streams into the generated file's existing `go2rtc: streams:`, and the `doorbell:` camera into the existing `cameras:` — and while you are there, delete the `test:` sample camera (and its sample stream) that the install shipped with, so the file holds only real cameras. The doorbell's static `.70` is already in place below — swap in only its username and password:
 
 ```yaml
 go2rtc:
   streams:
     doorbell:
-      - "ffmpeg:http://DOORBELL-IP/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=USER&password=PASS#video=copy#audio=copy#audio=opus"
-      - "rtsp://USER:PASS@DOORBELL-IP/Preview_01_sub"
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=USER&password=PASS#video=copy#audio=copy#audio=opus"
+      - "rtsp://USER:PASS@192.168.1.70/Preview_01_sub"
     doorbell_sub:
-      - "ffmpeg:http://DOORBELL-IP/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=USER&password=PASS"
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=USER&password=PASS"
 
 cameras:
   doorbell:
@@ -169,7 +212,7 @@ cameras:
 ## Add the RLC-510WA
 
 ### Add the second indoor camera
-The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep instead: it becomes the **second indoor camera**, covering the big room from the opposite side so the far corner the Color4K-T can't identify into isn't blind. It stays on **WiFi with its 12 V adapter** — no PoE run, no switch port — and is added the same restream way as the doorbell, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Pin its IP with a DHCP reservation first, then prep it in the Reolink app the same way the doorbell was: bitrate to **"On, fluency first"** and **Interframe Space 1×** (an I-frame interval matching the frame rate — what keeps Frigate's recording segments clean), and take the exact stream paths from the app while you are there.
+The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep instead: it becomes the **second indoor camera**, covering the big room from the opposite side so the far corner the Color4K-T can't identify into isn't blind. It stays on **WiFi with its 12 V adapter** — no PoE run, no switch port — and is added the same restream way as the doorbell, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Give it its permanent static in the app first — `192.168.1.71`, gateway `192.168.1.1` until the hardening step blanks it — then prep it in the Reolink app the same way the doorbell was: bitrate to **"On, fluency first"** and **Interframe Space 1×** (an I-frame interval matching the frame rate — what keeps Frigate's recording segments clean), and take the exact stream paths from the app while you are there.
 
 These entries join the blocks you already have — they do **not** start a second `go2rtc:` or a second `cameras:`. Add the two `rlc510` streams as siblings under your existing `go2rtc: streams:` (right alongside `doorbell` and `doorbell_sub`), and add the `rlc510:` camera as a sibling under your existing `cameras:` (right alongside `doorbell:`). A duplicate top-level `go2rtc:` or `cameras:` is invalid YAML — the later one wins and the doorbell silently disappears. The snippet below shows the new entries with their parent keys for placement only; merge them in, do not paste a fresh copy of `go2rtc:`/`cameras:`.
 
@@ -180,15 +223,13 @@ These entries join the blocks you already have — they do **not** start a secon
 > [!SECRET] camera-password | RLC-510WA password
 
 ```yaml
-# add these two streams under your EXISTING go2rtc: streams: map
 go2rtc:
   streams:
     rlc510:
-      - "rtsp://CAMERA-USER:CAMERA-PASS@CAMERA-IP:554/h264Preview_01_main"
+      - "rtsp://CAMERA-USER:CAMERA-PASS@192.168.1.71:554/h264Preview_01_main"
     rlc510_sub:
-      - "rtsp://CAMERA-USER:CAMERA-PASS@CAMERA-IP:554/h264Preview_01_sub"
+      - "rtsp://CAMERA-USER:CAMERA-PASS@192.168.1.71:554/h264Preview_01_sub"
 
-# add this camera under your EXISTING cameras: map (sibling of doorbell:)
 cameras:
   rlc510:
     ffmpeg:
@@ -233,10 +274,9 @@ The doorbell and the RLC-510WA got the build going; the five wired cameras are *
 > Buy EmpireTech **direct from empiretech01.com** (or its own Amazon storefront). Newegg and marketplace resellers list the identical cameras at a steep markup. These prices are a mid-2026 snapshot — check the store for the day's number — and EmpireTech runs limited stock, so order the four together.
 
 ### Add each one to the config
-A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv work. Wire it to the **GS308EPP**, give it a DHCP reservation, and fold its two streams into the same `go2rtc: streams:` and its camera into the same `cameras:` block you built above:
+A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv work. Wire it to the **GS308EPP**, assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it — and fold its two streams into the same `go2rtc: streams:` and its camera into the same `cameras:` block you built above:
 
 ```yaml
-# main = record, sub = detect — fold into your EXISTING blocks
 go2rtc:
   streams:
     front_turret:
@@ -284,9 +324,9 @@ A cheap IP camera is the least-trusted device on your network — closed firmwar
 ### Cut the camera's route to the internet
 Do this **after** the camera is configured and streaming to Frigate — initial setup in the vendor app often needs internet to activate the device, so lock it down last.
 
-Give each camera a **static IP with a blank (or dead) gateway**. A device only needs its gateway to reach addresses *outside* its own subnet — i.e. the internet. Leave it blank and the camera can still talk to anything on `192.168.1.x` (so Frigate keeps pulling its stream, unchanged), but it physically **cannot route a packet to the internet**: it can't phone home, leak footage to a cloud, or be reached by anyone outside. Set it in the camera's own network settings, matching the address you reserved earlier:
+Every camera already runs the static address you assigned during setup; the hardening move is **blanking its gateway**. A device only needs its gateway to reach addresses *outside* its own subnet — i.e. the internet. Blank it and the camera can still talk to anything on `192.168.1.x` (so Frigate keeps pulling its stream, unchanged), but it physically **cannot route a packet to the internet**: it can't phone home, leak footage to a cloud, or be reached by anyone outside. In each camera's network settings:
 
-- **IP** — the address you pinned (e.g. `192.168.1.71`)
+- **IP** — already set (`.70`–`.76`, per camera); leave it
 - **Subnet mask** — `255.255.255.0`
 - **Gateway** — leave **blank**; if the firmware insists on a value, enter an unused address on the subnet (even the camera's own IP) so packets route nowhere
 - **DNS** — blank or your router; it can't reach an external resolver anyway, which is the point
@@ -322,13 +362,24 @@ Note its device name (for example `/dev/sda`) and double-check the serial before
 mkfs.ext4 -L frigate-footage /dev/sdX
 ```
 
-**Mount it by UUID via `/etc/fstab`** so it comes back on every boot. Make the mount point with `mkdir -p /mnt/frigate-footage`, read the disk's UUID (universally unique identifier) with `blkid /dev/sdX`, and add this line to `/etc/fstab`, swapping in the UUID `blkid` printed:
+**Mount it by UUID via `/etc/fstab`** so it comes back on every boot. Make the mount point and read the disk's UUID (universally unique identifier):
+
+```bash
+mkdir -p /mnt/frigate-footage
+blkid /dev/sdX
+```
+
+Add this line to `/etc/fstab` (`nano /etc/fstab`, the usual Ctrl+O / Enter / Ctrl+X to save), swapping in the UUID `blkid` printed:
 
 ```ini
 UUID=<uuid-from-blkid> /mnt/frigate-footage ext4 defaults 0 2
 ```
 
-Run `mount -a` to mount it now and prove the entry parses.
+Mount it now, which also proves the entry parses:
+
+```bash
+mount -a
+```
 
 **Hand it to the container** as a mount point at `/media/frigate`:
 
@@ -361,7 +412,7 @@ Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This bui
 ```yaml
 mqtt:
   enabled: true
-  host: HA-VM-IP
+  host: 192.168.1.51
   user: mqtt-user
   password: your-mqtt-password
 ```
