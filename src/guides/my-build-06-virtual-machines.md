@@ -102,8 +102,8 @@ qm set 100 -onboot 1
 
 `100` is the VM ID the wizard assigned, shown next to the VM's name in the left tree. Every later guest gets this same setting on the page that builds it.
 
-> [!NOTE]
-> If a console session ever left the impression the VM needs keypresses to boot — it doesn't. Enter at the boot menu only skips a countdown that expires on its own, and a keypress in a quiet console just wakes the blanked display. Prove unattended boot once, since the whole outage-recovery story rests on it: stop the VM, start it, leave the console closed, and load the web UI a couple of minutes later. If it answers, the VM boots with nobody watching — which is exactly what an outage recovery requires.
+> [!WARNING]
+> **Prove unattended boot, do not assume it.** Some keypresses at the console are harmless — Enter at TrueNAS's boot menu only skips a countdown that expires by itself, and a key in a quiet console just wakes the blanked display. But one is fatal to the whole outage-recovery story: once the HBA is passed through on the GPU/HBA page, the VM's SeaBIOS can halt at `Press any key to continue...` after an option-ROM fault, and there it waits for a human that a 3 a.m. power cut does not provide. That page's `rombar=0` prevents it. Either way, prove it: stop the VM, start it, **leave the console closed**, and load the web UI a couple of minutes later. If it answers, the VM boots with nobody watching — which is what an outage recovery actually requires.
 
 ### Set the Start/Shutdown order
 The same **Options** panel holds **Start/Shutdown order**, and on this build it is load-bearing: TrueNAS gets the **lowest number**, so the storage boots first and — because shutdown runs the order in reverse — goes down last, after the guests that write to its shares. Set it to **1** in the panel, or:
