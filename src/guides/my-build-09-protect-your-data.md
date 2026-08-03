@@ -52,7 +52,7 @@ The test runs silently inside the drive's firmware — this same command is both
 sudo smartctl -a /dev/sdb
 ```
 
-While running, **"Self-test execution status"** near the top counts down ("XX% of test remaining"); when done it reads "completed without error" and a new top row appears in the **SMART Self-test log** table near the bottom — `Short offline  Completed without error`. Short tests finish in a minute or two.
+While running, **"Self-test execution status"** near the top counts down ("XX% of test remaining"); when done it reads "completed without error" and a new top row appears in the **SMART Self-test log** table near the bottom — `Short offline  Completed without error`. Short tests finish in a minute or two. Two readings that look scarier than they are: the closing "only provides legacy SMART information — try 'smartctl -x'" line is informational (`-a` prints the classic pages, `-x` adds extended ones; pass/fail lives in `-a`), and Seagate's huge `Hardware_ECC_Recovered` raw number is normal bookkeeping. The columns that actually matter: `Current_Pending_Sector`, `Offline_Uncorrectable`, and `UDMA_CRC_Error_Count` — all should read **0**.
 
 Run each against both mirror drives in turn, swapping in the IronWolfs' device names from `lsblk` (typically `sdb` and `sdc` here — the names can shift between boots, which is why `lsblk` comes first). If an IronWolf itself answers `unsupported scsi opcode`, add `-d sat` after `smartctl` — it tells the tool there is a SCSI-to-ATA translation layer between it and the disk, a known quirk behind SAS controllers.
 
