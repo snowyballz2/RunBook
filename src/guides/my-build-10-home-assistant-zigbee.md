@@ -167,7 +167,7 @@ On their own, those backups land on the VM's disk — the copy lives on the very
 ## Where this leads
 
 ### Confirm the entities exist
-Open **Settings → Devices & services → Entities** and filter for the new arrivals: twelve `binary_sensor.*_leak` sensors, the `switch.main_water` valve actuator, and the smart-plug switches and power readings. Each should sit in its Area with a human-readable name. That inventory is the prerequisite for the leak-to-valve automation built later in this collection — until the sensors and the valve exist as entities, there is nothing for that rule to listen to or close.
+In the Home Assistant UI (`192.168.1.51:8123`), open **Settings → Devices & services → Entities** and filter for the new arrivals: twelve `binary_sensor.*_leak` sensors, the `switch.main_water` valve actuator, and the smart-plug switches and power readings. Each should sit in its Area with a human-readable name. That inventory is the prerequisite for the leak-to-valve automation built later in this collection — until the sensors and the valve exist as entities, there is nothing for that rule to listen to or close.
 
 > [!TIP]
 > The Lutron Caséta lights, the ecobee thermostats, the cameras through Frigate, and the Aqara U400 locks join Home Assistant through their own integrations rather than Zigbee — the locks and cameras are covered on their own pages, the ecobee is onboarded on the Automations page, and the Caséta bridge was added under Devices & services earlier on this page. This page's job is the Zigbee mesh and the safety devices riding it.
