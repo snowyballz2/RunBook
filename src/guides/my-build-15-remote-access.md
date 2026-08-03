@@ -28,16 +28,11 @@ Tailscale calls your private network a *tailnet*; it is created the moment you f
 > Pick the account you are most certain you will still control in five years; it *is* your Tailscale identity, and the same account goes on every device here. Signing in with one account everywhere is the whole trick — that is what puts the host, your iPhone, and your MacBook on the same network.
 
 ### Install Tailscale on the Proxmox host
-Tailscale's documented path for Proxmox is to install directly on the host — Proxmox VE 9 is Debian 13 "Trixie" underneath, so the standard Debian packages are correct. Open the host shell in the web UI (select the **pve** node, then **Shell**) and run the commands below. They are Tailscale's official Debian Trixie instructions with `sudo` removed, because this shell is already root.
+Tailscale's documented path for Proxmox is to install directly on the host — Proxmox VE 9 is Debian 13 "Trixie" underneath, so the standard Debian packages are correct. Open the host shell in the web UI (select the **pve** node, then **Shell**) and run the block below — Tailscale's official Debian Trixie instructions with `sudo` removed, because this shell is already root. The first command adds Tailscale's signing key, the second its package repository, and then apt installs the signed package:
 
 ```bash
-# 1. Add Tailscale's signing key:
 curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
-
-# 2. Add the package repository:
 curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list
-
-# 3. Install:
 apt-get update
 apt-get install tailscale
 ```
@@ -62,14 +57,6 @@ apt-get install tailscale
 > [!DETAILS] Why the host, not a container or VM
 > It is tempting to drop Tailscale into one of the service LXCs, but the host is the right home for it here. Install it on the host and remote access is up the moment the i7-8700K is — independent of whether any guest is running, and able to route to *all* of them at once. A container-bound install ties your only way in to one container that has to stay up, and on this build the host is what you most need to reach when something has gone wrong. (Frigate, Home Assistant OS, and TrueNAS each keep their own normal LAN IPs; the subnet route below reaches every one of them without installing Tailscale inside any of them.)
 
-> [!DETAILS] Running Proxmox VE 8 instead of 9
-> PVE 9 is built on Debian 13 "Trixie" — hence `trixie` above. If this host is on PVE 8 (Debian 12 "Bookworm"), swap the two repo lines for the `bookworm` variants, then run the same `apt-get update` and `apt-get install tailscale`:
->
-> ```bash
-> curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
-> curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list
-> ```
-
 ### Connect the host to your tailnet
 In the same shell, bring Tailscale up:
 
@@ -77,7 +64,7 @@ In the same shell, bring Tailscale up:
 tailscale up
 ```
 
-The output prints a URL. Open it in the browser on your MacBook (the server has no desktop of its own), sign in with the account from the first step, and the host joins your tailnet. Confirm with `tailscale ip -4`, which prints the host's new `100.x` Tailscale address.
+The output prints a URL. Open it in a browser on the Mac or the PC (the server has no desktop of its own), sign in with the account from the first step, and the host joins your tailnet. Confirm with `tailscale ip -4`, which prints the host's new `100.x` Tailscale address.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 
@@ -107,26 +94,20 @@ sysctl -p /etc/sysctl.d/99-tailscale.conf
 > The first two write one kernel setting each — forward IPv4 packets, forward IPv6 packets — into a small config file under `/etc/sysctl.d/`, so the settings survive reboots. The third applies them immediately, no reboot needed. These are Tailscale's exact subnet-router commands, minus `sudo`.
 
 ### Advertise your home subnet
-Still in the host shell, tell Tailscale which network the host can hand out. This build's LAN is `192.168.1.0/24` — take the host IP, keep the first three numbers, and end with `.0/24`:
+Still in the host shell, tell Tailscale which network the host can hand out — this build's LAN, `192.168.1.0/24`:
 
 ```bash
 tailscale set --advertise-routes=192.168.1.0/24
 ```
 
-> [!DETAILS] Adapting the example to your network
-> The `/24` is the standard home network mask. Worked examples:
->
-> - Host at `192.168.1.50` → `--advertise-routes=192.168.1.0/24`
-> - Host at `192.168.0.50` → `--advertise-routes=192.168.0.0/24`
-> - Host at `10.0.0.50` → `--advertise-routes=10.0.0.0/24`
->
+> [!DETAILS] Why `set`, not `up`
 > Prefer `tailscale set` over passing `--advertise-routes` to `tailscale up`: `tailscale up` expects you to re-specify *every* setting each time, an easy way to accidentally undo something, while `set` changes the one route.
 
 ### Approve the route in the admin console
 Advertised routes do nothing until an admin — you — approves them, so a stray device can never quietly announce itself as a gateway. Open the [Machines page](https://login.tailscale.com/admin/machines), select **pve** (its row now shows a **Subnets** badge), go to the **Subnets** section and select **Edit**; in the panel, tick `192.168.1.0/24` under **Subnet routes** and select **Save**.
 
 > [!NOTE]
-> Your other Apple devices need nothing extra: macOS, iOS, and tvOS automatically pick up new subnet routes. Only Linux clients opt in manually, with `tailscale set --accept-routes` — relevant only if you later run a Linux laptop on the tailnet.
+> The household's other devices need nothing extra: macOS, iOS, tvOS, and Windows all pick up new subnet routes automatically. Only Linux clients opt in manually, with `tailscale set --accept-routes` — relevant only if you later run a Linux laptop on the tailnet.
 
 ## Prove it from your iPhone
 
@@ -136,11 +117,11 @@ A phone on cellular data is the cleanest test: a device that is definitely not o
 ### Reach every service from anywhere
 Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app shows connected, then browse to each service on its normal LAN address — no Tailscale install needed on any of them, because the subnet route carries them all:
 
-- **Proxmox** — `https://192.168.1.50:8006` (the same self-signed certificate warning as on the LAN; **Advanced**, then **Proceed**).
-- **Home Assistant** — the HA (Home Assistant) dashboard at the HA VM's IP.
-- **TrueNAS** — the storage UI at the TrueNAS VM's IP.
-- **Frigate and AdGuard** — each at its own LXC IP, exactly as on the couch.
-- **Nginx Proxy Manager** — its admin UI at its LXC IP. The `*.example.com` hostnames it serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System): on the admin console's [DNS page](https://login.tailscale.com/admin/dns), add AdGuard's LAN IP (`192.168.1.53`) under **Global nameservers** and enable **Override DNS servers** — the step previewed on the Reverse Proxy page. After that, `https://proxmox.example.com` and the rest work from anywhere too.
+- **Proxmox** — `https://192.168.1.50:8006` (the same self-signed certificate warning as on the LAN — Chrome's **Advanced → Proceed**, Safari's **Show Details → visit this website**).
+- **Home Assistant** — `http://192.168.1.51:8123`.
+- **TrueNAS** — `http://192.168.1.20`.
+- **Frigate and AdGuard** — `https://192.168.1.52:8971` and `http://192.168.1.53`, exactly as on the couch.
+- **Nginx Proxy Manager** — its admin UI at `http://192.168.1.54:81`. The `*.example.com` hostnames it serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System): on the admin console's [DNS page](https://login.tailscale.com/admin/dns), add AdGuard's LAN IP (`192.168.1.53`) under **Global nameservers** and enable **Override DNS servers** — the step previewed on the Reverse Proxy page. After that, `https://proxmox.example.com` and the rest work from anywhere too.
 
 Served to a phone nowhere near the house, through zero opened ports. Nextcloud, Vaultwarden, Homepage, and Uptime Kuma join this same list automatically as you build them in the pages ahead — no extra remote-access setup per service.
 
