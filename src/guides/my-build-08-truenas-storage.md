@@ -101,8 +101,10 @@ SMB — served by Samba — is the network-drive protocol Macs speak natively, a
 > [!SECRET] smb-password | SMB share password
 > The password typed on every Mac and phone that connects.
 
-### Create the SMB shares
-Go to **Shares** and click **Add** on the **Windows (SMB) Shares** widget, and add **two** shares — one per dataset. Leave **Purpose** at **Default Share** (the other purposes are specialty presets this build does not use). Point the first at the `tank/files` dataset and the second at `tank/backups`; each share name pre-fills from its dataset name, courtesy of the SMB preset. If Add complains the name **already exists**, check the shares list behind the panel — the share is probably already there from an earlier pass, and there is nothing to redo. Save each. When TrueNAS prompts to enable or restart the **SMB service**, accept: that is what puts the shares on the network. The `files` share is for everyday household storage; the `backups` share is where the Proxmox backups land later in the build, so it must exist now.
+### Confirm the shares the presets created
+There is nothing to create here — **the SMB preset already made each dataset's share** when the dataset was created (that is also why TrueNAS asked to start the SMB service back then). So this step is a check, not a task: go to **Shares** and confirm the **Windows (SMB) Shares** widget lists **`files`** and **`backups`**, both **Enabled**, with the widget's badge reading **RUNNING**. The `files` share is everyday household storage; `backups` is where the Proxmox backups land later in the build.
+
+Only if a share is missing — a dataset created without the preset — does the **Add** button come out: leave **Purpose** at **Default Share**, point it at the dataset, and accept any prompt to enable the SMB service.
 
 ### Connect from your Macs
 The share answers at the VM's address. In Finder, choose **Go → Connect to Server**, enter this, and give your SMB user's credentials when asked:
