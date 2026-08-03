@@ -96,7 +96,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 
 Read the script before piping it into a root shell. Accept its defaults; it installs Ollama and exposes its HTTP API on port `11434`.
 
-**Build the faster-whisper LXC.** If a community helper exists for it, use it the same way; otherwise create a plain **Debian 12** container through the Proxmox wizard (a few cores, 2–4 GB RAM, a small disk) and install faster-whisper's Wyoming server inside it by hand — `wyoming-faster-whisper` is a **pip** package, not an apt one. Either way you end with a Debian-based LXC that will run STT against the card, listening on port `10300`.
+**Build the faster-whisper LXC.** If a community helper exists for it, use it the same way; otherwise create a plain **Debian 13** container through the Proxmox wizard (a few cores, 2–4 GB RAM, a small disk) and install faster-whisper's Wyoming server inside it by hand — `wyoming-faster-whisper` is a **pip** package, not an apt one. Either way you end with a Debian-based LXC that will run STT against the card, listening on port `10300`.
 
 > [!DETAILS] The hand-rolled install, start to finish
 > Inside the Debian LXC's console, put the Wyoming server in its own Python virtual environment:
@@ -135,15 +135,18 @@ dev2: /dev/nvidia-uvm,gid=44
 
 Restart each container after editing its config. Then, inside each one, install the **in-container NVIDIA userspace driver at the same version** recorded on the GPU/HBA Passthrough page — a version mismatch is the classic cause of "the GPU vanished":
 
-> [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01 The container's Debian release ships a *different* driver version than the host's, so do not use `apt` for this one: download NVIDIA's installer for the **exact host version** and run it userspace-only —
+> [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01
+
+The container's Debian release ships a *different* driver version than the host's, so do not use `apt` for this one: in each container's console, download NVIDIA's installer for the **exact host version** and run it userspace-only. With the host on `550.163.01`:
 
 ```bash
-# Inside the container — match <version> to the host's nvidia-smi exactly:
-wget https://us.download.nvidia.com/XFree86/Linux-x86_64/<version>/NVIDIA-Linux-x86_64-<version>.run
-sh NVIDIA-Linux-x86_64-<version>.run --no-kernel-module
+wget https://us.download.nvidia.com/XFree86/Linux-x86_64/550.163.01/NVIDIA-Linux-x86_64-550.163.01.run
+sh NVIDIA-Linux-x86_64-550.163.01.run --no-kernel-module
 ```
 
-The `--no-kernel-module` flag is what makes this safe: containers share the host's kernel (and its DKMS-managed module), so only the userspace libraries install here — the host-side "never a `.run`" rule is about kernel modules and does not apply inside an LXC. Give each container a fixed IP via a DHCP (Dynamic Host Configuration Protocol) reservation and enable **Start at boot**, the same habit as every other guest.
+If a host upgrade ever bumps the driver, swap the new version into both lines — the URL follows that pattern for any version.
+
+The `--no-kernel-module` flag is what makes this safe: containers share the host's kernel (and its DKMS-managed module), so only the userspace libraries install here — the host-side "never a `.run`" rule is about kernel modules and does not apply inside an LXC. Give each container its static — **`192.168.1.59/24`** for Ollama, **`192.168.1.60/24`** for faster-whisper, gateway `192.168.1.1`, set at creation like every other container in the static zone — and enable **Start at boot**.
 
 > [!NOTE]
 > Home Assistant's native **Ollama** integration is what routes your spoken sentences through the model, and it needs **HA 2024.8 or later** — the release where local models gained the ability to actually *control* Home Assistant rather than only chat. The Home Assistant OS VM updates from inside itself — its own **Settings → System → Updates** screen — so keep it current; on an older core the model can talk but cannot turn anything on.
@@ -177,10 +180,10 @@ Speech-to-text is the one real decision, and on this build the GPU settles it: r
 > [!TIP]
 > With **Prefer handling commands locally** enabled, Home Assistant tries its built-in intents *first*: "turn off the kitchen" matches instantly and never bothers the model, while only genuinely open-ended questions reach the LLM. Instant response on the 90% of commands that are simple, conversational smarts on the rest, and lighter load on the shared GPU.
 
-> [!INPUT] ollama-ip | Ollama LXC IP
+> [!INPUT] ollama-ip | Ollama LXC IP | 192.168.1.59
 > The GPU-backed container running the conversation model. Home Assistant reaches it over the LAN on the Ollama HTTP API (default port `11434`).
 
-> [!INPUT] whisper-ip | faster-whisper LXC IP
+> [!INPUT] whisper-ip | faster-whisper LXC IP | 192.168.1.60
 > The GPU-backed STT container. Home Assistant reaches it over Wyoming (default port `10300`).
 
 > [!DETAILS] Where each stage runs, end to end
