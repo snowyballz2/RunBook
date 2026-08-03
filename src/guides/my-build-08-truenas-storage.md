@@ -87,6 +87,9 @@ Datasets are the folders-with-superpowers inside a pool — each carries its own
 > [!NOTE]
 > The SMB preset tunes a dataset for network sharing — case-insensitive filenames and NFSv4 ACLs. Both datasets here get exposed over the network (the `backups` dataset receives the Proxmox vzdump archives over SMB), so SMB is the right choice for both. If you ever add a dataset that stays internal and is never shared, pick the **Generic** preset instead.
 
+> [!NOTE]
+> Two prompts pop up around dataset creation; both have one-word answers. Asked to **start/enable the SMB service** → yes, that is the service the shares need. The **"Set ACL for this dataset"** dialog → **Return to pool list**, skipping the ACL Manager: the SMB preset already applied the right default permissions, including what the SMB user created below needs to read and write. The ACL Manager is for per-person carve-outs this build does not use.
+
 ## Share it
 
 ### Create the SMB user
