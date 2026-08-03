@@ -46,11 +46,13 @@ The full-surface test takes hours on a 4 TB disk and slows it noticeably while i
 sudo smartctl -t long /dev/sdb
 ```
 
-And the verdict, once a test completes:
+The test runs silently inside the drive's firmware — this same command is both the progress check and the verdict:
 
 ```bash
 sudo smartctl -a /dev/sdb
 ```
+
+While running, **"Self-test execution status"** near the top counts down ("XX% of test remaining"); when done it reads "completed without error" and a new top row appears in the **SMART Self-test log** table near the bottom — `Short offline  Completed without error`. Short tests finish in a minute or two.
 
 Run each against both mirror drives in turn, swapping in the IronWolfs' device names from `lsblk` (typically `sdb` and `sdc` here — the names can shift between boots, which is why `lsblk` comes first). If an IronWolf itself answers `unsupported scsi opcode`, add `-d sat` after `smartctl` — it tells the tool there is a SCSI-to-ATA translation layer between it and the disk, a known quirk behind SAS controllers.
 
