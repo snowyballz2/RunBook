@@ -35,7 +35,6 @@ triggers:
       - binary_sensor.washer_leak
       - binary_sensor.dishwasher_leak
       - binary_sensor.kitchen_sink_leak
-      # ... all twelve Third Reality sensors
     to: "on"
 actions:
   - action: switch.turn_off
