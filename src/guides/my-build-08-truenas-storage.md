@@ -32,7 +32,7 @@ This wiring happened during the physical build on the **Hardware & BIOS** page �
 By the time you reach this page, two earlier steps in the build have done the heavy lifting — there is nothing to download and no VM to create here:
 
 - **The TrueNAS VM** (VM 100) was built on the **Virtual Machines** page: the Create VM wizard with **q35, 1 socket / 2 cores, 8192 MiB memory with ballooning off** (ZFS is memory-hungry and wants its RAM fixed), a **32 GB boot disk** on the NVMe, network on bridge `vmbr0`, TrueNAS Community Edition installed from the console, the `truenas_admin` password set, the installer ISO ejected, and the static `.20` address set inside TrueNAS.
-- **The 9300-8i HBA** was VFIO (Virtual Function I/O)-bound on the host and the whole card attached to this VM on the **GPU Sharing & HBA Passthrough** page (`qm set 100 -hostpci0 0000:03:00,pcie=1` — the GUI equivalent of All Functions + PCI-Express). There is no per-disk `serial=` plumbing on this build — passing the entire controller is the whole reason the card exists.
+- **The 9300-8i HBA** was VFIO (Virtual Function I/O)-bound on the host and the whole card attached to this VM on the **GPU Sharing & HBA Passthrough** page (`qm set 100 -hostpci0 0000:03:00,pcie=1,rombar=0` — All Functions + PCI-Express, with the card's option ROM hidden so the VM boots unattended). There is no per-disk `serial=` plumbing on this build — passing the entire controller is the whole reason the card exists.
 
 So this page picks up after both of those: it confirms the raw disks arrived, then builds the pool and shares. Do **not** re-create the VM or re-download the ISO.
 
