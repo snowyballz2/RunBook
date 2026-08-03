@@ -35,10 +35,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > You can build a plain unprivileged Debian container and install by hand from the project README, but on this build the native LXC above is the default — no Docker layer to manage, and updates are one command. The app is identical either way; this collection runs services as LXCs, not as containers-inside-a-VM.
 
 ### Pin a static IP and start it at boot
-Two habits from earlier in the build. First, give it a **static IP** rather than DHCP (Dynamic Host Configuration Protocol) — set it during the script's Advanced prompts, or pin it with a reservation on the router. A monitor that wanders to a new address after a power cut is worse than none. Second, in the left tree select the container, open **Options**, and set **Start at boot** to Yes:
+Two habits from earlier in the build. First, the **static IP**: set **`192.168.1.57/24`** with gateway **`192.168.1.1`** during the script's Advanced prompts — a monitor that wanders to a new address after a power cut is worse than none. Second, in the left tree select the container, open **Options**, and set **Start at boot** to Yes — or from the node Shell, swapping `109` for the ID shown next to the container's name:
 
 ```bash
-pct set 109 -onboot 1        # swap in the container's actual ID
+pct set 109 -onboot 1
 ```
 
 > [!INPUT] kuma-ip | Uptime Kuma container IP | 192.168.1.57
@@ -47,7 +47,7 @@ pct set 109 -onboot 1        # swap in the container's actual ID
 > This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief power blips never reach the container. Start-at-boot covers the longer outages that drain the battery and force a clean shutdown — exactly when you most want the monitor back.
 
 ### Create your admin account
-The script prints the address when it finishes — `http://`-the-IP-`:3001`. There are no default credentials. The first visit asks which database to use; pick **SQLite**, the simple single-file choice that suits a home install. Then the **Create your admin account** form appears with **Username**, **Password**, and **Repeat Password**. This login will know about everything you run and send alerts on your behalf, so give it a strong password and store both in Vaultwarden.
+The script prints the address when it finishes — `http://192.168.1.57:3001`. There are no default credentials. The first visit asks which database to use; pick **SQLite**, the simple single-file choice that suits a home install. Then the **Create your admin account** form appears with **Username**, **Password**, and **Repeat Password**. This login will know about everything you run and send alerts on your behalf, so give it a strong password and store both in Vaultwarden.
 
 > [!INPUT] kuma-user | Uptime Kuma admin username
 
