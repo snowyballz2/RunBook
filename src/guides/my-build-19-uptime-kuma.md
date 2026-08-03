@@ -16,7 +16,7 @@ It is the lightest guest on the i7-8700K — a single Node.js application with a
 ## Create the container
 
 ### Run the install script
-In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the ASUS ROG Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Read the script first, then paste and press Return:
+In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the ASUS ROG Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Read the script first, then paste and press Return. When it asks **Default or Advanced**, pick **Advanced** — the static IP in the next step is set there; every other prompt keeps its prefilled default:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/uptimekuma.sh)"

@@ -274,7 +274,13 @@ The doorbell and the RLC-510WA got the build going; the five wired cameras are *
 > Buy EmpireTech **direct from empiretech01.com** (or its own Amazon storefront). Newegg and marketplace resellers list the identical cameras at a steep markup. These prices are a mid-2026 snapshot — check the store for the day's number — and EmpireTech runs limited stock, so order the four together.
 
 ### Add each one to the config
-A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv work. Wire it to the **GS308EPP**, assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it — and fold its two streams into the same `go2rtc: streams:` and its camera into the same `cameras:` block you built above:
+A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv work. Each camera's own web UI has you set an admin password on first login — use **one login for all five EmpireTechs** and record it once; it fills every `USER`/`PASS` slot below:
+
+> [!INPUT] empiretech-user | EmpireTech cameras admin username | | admin
+
+> [!SECRET] empiretech-password | EmpireTech cameras admin password (all five)
+
+Wire it to the **GS308EPP**, assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it — and fold its two streams into the same `go2rtc: streams:` and its camera into the same `cameras:` block you built above:
 
 ```yaml
 go2rtc:
