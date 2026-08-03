@@ -22,10 +22,10 @@ Same move as the other service containers: in the Proxmox web interface, click y
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nginxproxymanager.sh)"
 ```
 
-When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 2 GB RAM, an 8 GB disk, an unprivileged Debian 13 container — except networking: set a **static IP** on `vmbr0`. The script finishes by printing `http://<IP>:81`. Before you open it, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
+When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 2 GB RAM, an 8 GB disk, an unprivileged Debian 13 container — except networking: set the static **`192.168.1.54/24`** with gateway **`192.168.1.1`** on `vmbr0`. The script finishes by printing `http://<IP>:81`. Before you open it, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
 
 > [!INPUT] proxy-ip | Proxy container IP | 192.168.1.54
-> You set this statically during the install — record it here and keep it out of the router's DHCP (Dynamic Host Configuration Protocol) pool; every name below points here.
+> Set statically during the install — in the `.2–.99` static zone, so the router can never hand it out; every name below points here.
 
 > [!NOTE]
 > The catalog also carries `npmplus.sh`, a different project despite the similar name. The script above, `nginxproxymanager.sh`, is the one this page is written against.
@@ -37,7 +37,7 @@ When it asks **Default or Advanced**, pick **Advanced** and press Enter through 
 > Not Docker, despite most NPM tutorials. The script builds everything from source inside the Debian container: OpenResty (the nginx flavor that does the proxying), the NPM app on Node.js, and Certbot — the Let's Encrypt client with DNS plugins — running as the `openresty` and `npm` systemd services. Settings live in a SQLite file at `/data/database.sqlite`. Two consequences: Docker advice from the wider internet does not apply, and updating has its own command — open the container's **Console** and run `update`. Snapshot the container first.
 
 ### Create your admin account
-Browse to the proxy at `http://<proxy-ip>:81` and log in with NPM's default credentials — **`admin@example.com`** / **`changeme`**. It immediately forces a first-run step: set your real **Full Name** and **Email address**, then a strong **New Password**. This login controls where every name in your house points, so make the password strong and record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
+Browse to the proxy at `http://192.168.1.54:81` and log in with NPM's default credentials — **`admin@example.com`** / **`changeme`**. It immediately forces a first-run step: set your real **Full Name** and **Email address**, then a strong **New Password**. This login controls where every name in your house points, so make the password strong and record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
 
 > [!INPUT] npm-email | NPM admin email
 
@@ -94,7 +94,7 @@ Save, and after a short wait the certificate appears, valid for every name under
 ## Teach the LAN the names
 
 ### Point the wildcard at the proxy
-In the AdGuard dashboard, open **Filters → DNS rewrites** and click **Add DNS rewrite**. Domain: `*.example.com`. Answer: your `proxy-ip`. With the wildcard, every name under your domain now answers with the proxy's address for every device that asks AdGuard. Verify from any Mac in the house:
+In the AdGuard dashboard, open **Filters → DNS rewrites** and click **Add DNS rewrite**. Domain: `*.example.com`. Answer: your `proxy-ip`. With the wildcard, every name under your domain now answers with the proxy's address for every device that asks AdGuard. Verify from any computer in the house:
 
 ```bash
 nslookup proxmox.example.com
@@ -127,11 +127,10 @@ Add the next host the same way — `ha.example.com`, Scheme `http`, Forward to y
 The fix is a few lines in `configuration.yaml`. The way in is the **File editor** app: **Settings → Apps → Install app**, install **File editor**, toggle **Show in sidebar**, start it, open `configuration.yaml`, and add:
 
 ```yaml
-# configuration.yaml — Home Assistant
 http:
   use_x_forwarded_for: true
   trusted_proxies:
-    - 192.168.1.54    # the proxy container's IP — use your proxy-ip
+    - 192.168.1.54
 ```
 
 Save, restart Home Assistant, and reload `https://ha.example.com` — the normal dashboard, behind a real lock.
@@ -142,7 +141,7 @@ Save, restart Home Assistant, and reload `https://ha.example.com` — the normal
 ### Work down the rack
 More proxy hosts, same dialog. Every one gets the wildcard certificate and **Force SSL** on the SSL tab, and **Websockets Support** on — some need it outright and it is harmless elsewhere. The two services up at this point:
 
-- **TrueNAS** — `nas.example.com`, forwarding to your `truenas-ip`. A bare-IP HTTP address means Scheme `http`, port `80`; if yours serves HTTPS with a self-signed certificate, `https` and `443`. The proxy accepts either.
+- **TrueNAS** — `nas.example.com`, Scheme `http`, forwarding to `192.168.1.20`, port `80` — the address you browse to today, just named.
 - **Frigate** — `frigate.example.com`, Scheme `http`, the Frigate LXC's IP, port **`8971`** — deliberately *not* `5000`. The warning below is why.
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
@@ -160,7 +159,6 @@ More proxy hosts get added later, once their containers exist — come back and 
 > If `frigate.example.com` answers with a 400 carrying that phrase, Frigate's own TLS (Transport Layer Security) is on at port 8971 while the proxy speaks plain HTTP to it. Turn Frigate's TLS off and let the proxy own encryption — in Frigate's config editor:
 >
 > ```yaml
-> # config.yml — Frigate
 > tls:
 >   enabled: false
 > ```
@@ -191,8 +189,8 @@ More proxy hosts get added later, once their containers exist — come back and 
 ### Decide what keeps its number
 Walk the bookmarks bar and replace what you have today: `proxmox.`, `ha.`, `nas.`, `frigate.` — `cloud.`, `status.`, and more join the set as later pages bring their services up, every name behind the same lock, and Force SSL means even a typed `http://` lands on HTTPS. Three addresses deliberately stay raw, because they are the system's own foundations:
 
-- **NPM's admin interface** at `http://<proxy-ip>:81`. When the proxy is the thing that is sick, a name routed through itself is no way to reach its controls.
-- **AdGuard's dashboard** at its IP. The names are answered there — if AdGuard is down, every name is down with it.
-- **Proxmox** at `https://<proxmox-ip>:8006`, the emergency door. A stopped proxy container takes every name with it; this is the address you start it again from.
+- **NPM's admin interface** at `http://192.168.1.54:81`. When the proxy is the thing that is sick, a name routed through itself is no way to reach its controls.
+- **AdGuard's dashboard** at `192.168.1.53`. The names are answered there — if AdGuard is down, every name is down with it.
+- **Proxmox** at `https://192.168.1.50:8006`, the emergency door. A stopped proxy container takes every name with it; this is the address you start it again from.
 
 Machine-to-machine settings keep their IPs too. The Home Assistant ↔ Frigate integration stays on the LAN address at port `5000`, and Uptime Kuma's monitors should keep watching services at their direct addresses — through the proxy, every alert would be ambiguous (service down, or proxy down?). If you want the front door watched as well, add one HTTP(s) monitor pointed at a proxied name — that single check exercises the DNS rewrite, the proxy, and the certificate in one pass.
