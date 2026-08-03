@@ -93,10 +93,16 @@ Snapshots are only as good as your ability to use one under pressure, so rehears
 > **Rollback** rewinds the entire dataset to the snapshot, and TrueNAS's own dialog warns it destroys newer data and can cause permanent loss. Unless the whole dataset is wrecked, use **Clone to New Dataset** instead: the clone appears with the snapshot's contents, you copy out what you need, then delete the clone. Nothing on disk is destroyed — it is the flow the official docs recommend.
 
 ### Rehearse the dead-disk drill
-When a mirror IronWolf fails, the pool drops to **Degraded** — the dashboard pool widget shows it, the alert you just tested emails you, and the share keeps answering from the surviving drive. The drill:
+When a mirror IronWolf fails, the pool drops to **Degraded** — the dashboard pool widget shows it, the alert you just tested emails you, and the share keeps answering from the surviving drive. The serial-to-tray map captured on the TrueNAS Storage page is the drill's anchor:
+
+> [!INPUT] mirror-a-serial | Mirror disk A — serial + tray position
+
+> [!INPUT] mirror-b-serial | Mirror disk B — serial + tray position
+
+The drill:
 
 1. On the **Storage** dashboard, click **View VDEVs** on the pool's VDEVs widget. Expand the vdev (the pool's disk group), click the failed disk (often shown as **REMOVED**), and click **Offline** on its **ZFS Info** widget.
-2. **Verify the serial before you pull anything.** Note the failed disk's serial from its **Disk Info** widget (or the alert email), then confirm `lsblk -o +MODEL,SERIAL` — run from the **TrueNAS shell** (System → Shell), since the passed-through HBA means the Proxmox host cannot see these disks — maps that serial to the device you are about to remove. The two ST4000VN006 drives are identical at a glance — pull the *healthy* one and a degraded mirror goes straight to dead. The drives sit in the View 71's fixed rear trays behind the motherboard tray, so check the label there too.
+2. **Verify the serial before you pull anything.** Note the failed disk's serial from its **Disk Info** widget (or the alert email), then confirm `lsblk -o +MODEL,SERIAL` — run from the **TrueNAS shell** (System → Shell), since the passed-through HBA means the Proxmox host cannot see these disks — maps that serial to the device you are about to remove. The serial-to-tray map recorded on the TrueNAS Storage page (the `mirror-a-serial` / `mirror-b-serial` fields) tells you which bay to open. The two ST4000VN006 drives are identical at a glance — pull the *healthy* one and a degraded mirror goes straight to dead. The drives sit in the View 71's fixed rear trays behind the motherboard tray, so check the label there too.
 3. Shut the TrueNAS VM (virtual machine) down, swap the physical drive, and boot. Because the whole HBA is passed through, there is no per-disk passthrough line to rewire — TrueNAS simply sees the new drive on the controller.
 4. Back in TrueNAS, click **Replace** on the disk's **Disk Info** widget, pick the new drive from **Member Disk**, and click **Replace Disk**.
 
