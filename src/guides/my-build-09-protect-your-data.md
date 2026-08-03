@@ -28,37 +28,37 @@ The pool's other guardian is already on duty. TrueNAS generated a default **scru
 ### Let the disk watchdog work
 Snapshots guard the data; S.M.A.R.T. watches the drives themselves. On current TrueNAS there is nothing to schedule — the old S.M.A.R.T. Tests service is gone, replaced by **Drive Health Management**, which polls every disk's S.M.A.R.T. data automatically (roughly every 90 minutes) and raises alerts that name the affected disk and what tripped. Check the **Disk Health** card on the **Storage** dashboard; active alerts land in the **Alerts** panel behind the bell icon, top right.
 
-Because the two mirror drives reach TrueNAS through the LSI 9300-8i HBA (host bus adapter) passed through whole with VFIO (Virtual Function I/O), TrueNAS talks to the real disks and its S.M.A.R.T. data is genuine — no QEMU emulation in the way. Deeper self-tests run from TrueNAS's own shell (**System → Shell**) — which signs you in as `truenas_admin`, not root, so the `smartctl` commands need their `sudo` (it asks for the `truenas_admin` password). First identify the two mirror drives — match model and serial, and note their device names (`sda`, `sdb`, …):
+Because the two mirror drives reach TrueNAS through the LSI 9300-8i HBA (host bus adapter) passed through whole with VFIO (Virtual Function I/O), TrueNAS talks to the real disks and its S.M.A.R.T. data is genuine — no QEMU emulation in the way. Deeper self-tests run from TrueNAS's own shell (**System → Shell**) — which signs you in as `truenas_admin`, not root, so the `smartctl` commands need their `sudo` (it asks for the `truenas_admin` password). First identify the two mirror drives — the `ST4000VN006` rows; the `QEMU HARDDISK` row is the 32 GB virtual boot disk, which speaks no SMART and answers any self-test with `unsupported scsi opcode`, so never point a test at it:
 
 ```bash
-lsblk -o +MODEL,SERIAL
+lsblk -o NAME,MODEL,SERIAL
 ```
 
 A quick self-test finishes in under ten minutes:
 
 ```bash
-sudo smartctl -t short /dev/sda
+sudo smartctl -t short /dev/sdb
 ```
 
 The full-surface test takes hours on a 4 TB disk and slows it noticeably while it runs — keep it off scrub Sunday:
 
 ```bash
-sudo smartctl -t long /dev/sda
+sudo smartctl -t long /dev/sdb
 ```
 
 And the verdict, once a test completes:
 
 ```bash
-sudo smartctl -a /dev/sda
+sudo smartctl -a /dev/sdb
 ```
 
-Run each against both mirror drives in turn, swapping in the device names `lsblk` showed.
+Run each against both mirror drives in turn, swapping in the IronWolfs' device names from `lsblk` (typically `sdb` and `sdc` here — the names can shift between boots, which is why `lsblk` comes first). If an IronWolf itself answers `unsupported scsi opcode`, add `-d sat` after `smartctl` — it tells the tool there is a SCSI-to-ATA translation layer between it and the disk, a known quirk behind SAS controllers.
 
 > [!NOTE]
 > The third IronWolf — Frigate's footage disk — is *not* on the HBA; it sits on a motherboard SATA (Serial ATA) port and belongs to the host. Watch its health from the Proxmox node's **Disks** view (it shows a S.M.A.R.T. column), or with the same `smartctl` calls from the **Proxmox host shell**. That disk holds replaceable camera recordings, so it never goes offsite — but a dying drive is still worth knowing about early.
 
 > [!TIP]
-> Keep disk-intensive tasks apart: if you schedule a recurring LONG test, never put it on Sunday with the scrub, and pick low-usage hours. A weekly SHORT plus a monthly LONG is a sensible cadence on top of the automatic polling. To make those recur instead of running them by hand, add them as **Cron Jobs** under **System → Advanced Settings** — for example a weekly `smartctl -t short /dev/sda` and a monthly `smartctl -t long /dev/sda` (and the same for the second mirror disk), keeping the LONG test off Sunday so it never overlaps the scrub.
+> Keep disk-intensive tasks apart: if you schedule a recurring LONG test, never put it on Sunday with the scrub, and pick low-usage hours. A weekly SHORT plus a monthly LONG is a sensible cadence on top of the automatic polling. To make those recur instead of running them by hand, add them as **Cron Jobs** under **System → Advanced Settings** — for example a weekly `smartctl -t short /dev/sdb` and a monthly `smartctl -t long /dev/sdb` (and the same for the second mirror disk), keeping the LONG test off Sunday so it never overlaps the scrub.
 
 ## Make alerts reach you
 
