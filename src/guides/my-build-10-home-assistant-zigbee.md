@@ -73,6 +73,9 @@ The brain of the house gets a device-set static in the protected zone, like the 
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
+> [!WARNING]
+> **Wrong app = hijacked host.** Proxmox has a nearly identically named screen — `pve` **→ System → Network** — that sets the *host's* address, and typing `.51` there moves the hypervisor itself on the next apply or reboot (this build did exactly that: Proxmox vanished from `.50` and turned up at `.51`). This step happens **inside Home Assistant** at port `8123`, nowhere in the Proxmox UI. If the host does get moved by mistake: the web UI is still alive at the new address — log in there, `pve` → **System → Network** → `vmbr0` → set **IPv4/CIDR** back to `192.168.1.50/24` → **Apply Configuration**, and reconnect at `.50`.
+
 ## First boot
 
 ### Walk the onboarding
