@@ -20,7 +20,7 @@ Open the Proxmox web interface at the host (log in as **root@pam**), click the n
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nextcloudpi.sh)"
 ```
 
-Accept the defaults — an **unprivileged** container with **2 cores, 2 GB RAM, and an 8 GB disk** on Debian 12 (at the time of writing NCP ships Nextcloud 33 on PHP 8.3, a handy way to confirm the install landed on a current stack rather than a stale image). Nextcloud has no reason to touch host hardware the way the TrueNAS VM (virtual machine) does, so it stays unprivileged — the secure default on this build.
+When it asks **Default or Advanced**, pick **Advanced**: keep the offered resources — an **unprivileged** container with **2 cores, 2 GB RAM, and an 8 GB disk** — and set the network to the static **`192.168.1.58/24`** with gateway **`192.168.1.1`** instead of DHCP. (At the time of writing NCP ships Nextcloud 33 on PHP 8.3 — a handy way to confirm the install landed on a current stack.) Nextcloud has no reason to touch host hardware the way the TrueNAS VM (virtual machine) does, so it stays unprivileged — the secure default on this build.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The node these containers live on. Reach the web UI at `https://`-this-ip-`:8006`.
@@ -31,8 +31,8 @@ Accept the defaults — an **unprivileged** container with **2 cores, 2 GB RAM, 
 > [!NOTE]
 > The plain **Nextcloud** entry in the catalog is a TurnKey **VM**, not a container — the repo's two LXC options are this NextCloudPi one and a lighter Alpine variant. NCP is the relaxed household choice; take it.
 
-### Reserve its IP and start it at boot
-The script finishes by printing the container's address as `http://<IP>` — no port, no passwords yet; those come in the browser. Before opening it, pin that address with a **DHCP (Dynamic Host Configuration Protocol)** reservation on the router — the same habit AdGuard Home enforces house-wide — because it is about to be baked into every device's sync client. Then enable **Options → Start at boot** in Proxmox so the family cloud survives a power cut.
+### Start it at boot
+The script finishes by printing the container's address as `http://192.168.1.58` — no port, no passwords yet; those come in the browser. The address was set statically in the Advanced walk (it is about to be baked into every device's sync client, so it must never move — nothing to reserve at the router). Before opening it, enable **Options → Start at boot** in Proxmox so the family cloud survives a power cut.
 
 > [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.58
 
