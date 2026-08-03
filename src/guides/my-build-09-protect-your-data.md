@@ -146,40 +146,36 @@ The replacement must be the same 4TB capacity or larger, and TrueNAS wipes it. R
 
 ## Get a copy off the property
 
-### Reserve offsite for the irreplaceable
-The discipline that keeps the bill sane: bulk, replaceable data — the camera footage on Frigate's disk, any downloaded media — stays local-only. Offsite is reserved for the irreplaceable: family photos and documents with no other home, plus the password-manager vault you will host later in the build (Vaultwarden) and the small things you cannot recreate. Keep those in a dataset of their own so the offsite job has a clean target — create it the same way you built the others on the TrueNAS Storage page (**Datasets**, select `tank`, **Add Dataset**) and name it `irreplaceable`.
+### Everything on the mirror counts
+On this build the call is deliberately simple: **everything on the mirror is treated as irreplaceable.** No separate dataset to sort into, no judging photo by photo — the bulk that is *not* worth protecting (camera footage) was kept off the mirror by design, on Frigate's own disk. So the offsite target is simply `tank/files`, the household's whole file store, as-is. (The `backups` dataset stays local — its vzdump archives are rebuildable from the running system.)
 
-### Push the irreplaceable to Backblaze B2
-A decision point before the clicks: **Backblaze B2** is a cloud-storage service — the build's one paid, cloud-dependent piece, chosen because TrueNAS supports it natively, the copy is encrypted with your own password before a byte leaves the house, and a few hundred gigabytes runs a couple of dollars a month. It needs an account created at backblaze.com (with payment details) before this step. Not sold on a cloud account? The closing DETAILS on this page covers the no-cloud routes — replication to a second ZFS box, or a rotated USB drive kept off the property — and this phase can simply wait; nothing later in the build depends on it.
+### The offsite copy: a rotated USB drive
+The build's offsite leg is the free one. Plug an external drive into the Mac or the Windows PC, **encrypt it first** so a lost drive is not a leak — Mac: Disk Utility, erase as **APFS (Encrypted)**; Windows PC: **BitLocker To Go** — and record that password in your password manager. Then mount the `files` share (the connection saved on the TrueNAS Storage page) and copy the whole share onto the drive.
 
-Go to **Data Protection** and click **Add** on the **Cloud Sync Task** widget. Pick a **Credential** for Backblaze B2 or click **Add New** (credentials live under **Credentials → Backup Credentials → Cloud Credentials**; B2 needs an Application Key ID and its key). Set **Direction** to **PUSH**, point the source at the `tank/irreplaceable` dataset, click the folder icon on the remote **Folder** field to pick the bucket, choose a **Transfer Mode**, and give it a schedule — nightly is plenty.
-
-> [!DETAILS] SYNC or COPY, and the monthly bill
-> **SYNC** makes the bucket match the source — tidy, but a deletion at home propagates offsite on the next run. **COPY** only ever adds and updates, so deleted files linger as a safety net at the cost of slow clutter. For irreplaceable data, COPY's paranoia is the right default; the snapshots from the first phase remain your fast undo either way. Backblaze B2 runs roughly $7 per terabyte per month ($6.95 as of May 2026 — check current pricing), so a few hundred gigabytes of photos and documents costs a few dollars, and it stays small as long as the footage never goes up.
-
-### Encrypt it before it leaves the house
-Make the copy private so Backblaze only ever stores ciphertext. Under the task's **Advanced Options**, turn on **Remote Encryption** and set an **Encryption Password** and **Encryption Salt** — TrueNAS encrypts with rclone before the bytes leave the NAS. Use the field values below for these, and record the same two values in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). The fields below are your durable record until then.
-
-> [!SECRET] b2-encryption-password | Backblaze B2 remote-encryption password
-
-> [!SECRET] b2-encryption-salt | Backblaze B2 remote-encryption salt
-
-> [!WARNING]
-> Record the encryption password and salt now, before the first run — capture them in the fields above and in your password manager (move them into Vaultwarden once it exists later in this build). Lose them and the offsite copy is unreadable by anyone, including you — the one way an encrypted backup fails you completely. Leave **Filename Encryption** off; current docs advise against it, and the directory structure stays visible regardless.
-
-### Drill the offsite restore
-The snapshot and dead-disk drills rehearse copies you can see. The B2 copy is the one you cannot — and the encryption you just added is a second way to fail silently: a password that does not actually unlock the data looks identical to a good backup until the afternoon you reach for it. So prove the whole leg end to end.
-
-Use a one-off **PULL** task that never touches live data. Go to **Data Protection → Add** on the **Cloud Sync Task** widget, set **Direction** to **PULL**, pick the same **Credential** and remote **Folder** as the push, and point the local **Folder** at an empty scratch dataset (`restore-test`, deleted afterward). Under **Advanced Options**, re-enter the **Remote Encryption** password and salt — this is the part actually being tested. Run it once, then open a recovered photo and confirm it is the file, not scrambled bytes. If the password or salt is wrong, the data comes back garbled — far better to learn that today.
+Store the drive **somewhere that is not this house** — a desk at work, a relative's — and refresh the copy on a rhythm: each Maintenance & Upkeep pass, or quarterly at worst. Low-tech is the feature: no account, no bill, no cloud, and stored off-property it genuinely closes the fire-and-theft gap.
 
 > [!TIP]
-> Do this drill once when you set the offsite copy up, then once a year — fold it into the recurring maintenance rhythm the Maintenance & Upkeep page sets up at the end of this build. It is the only drill that also tests the encryption secret you recorded above — which is exactly the value most likely to have rotted by the time it matters.
+> Open a few files straight from the drive after each refresh — a copy you have never read back is a hope, not a backup. Same principle as the alert test buttons.
 
 ### Home Assistant's backups land here too — later
 One more consumer of the `backups` share arrives soon: Home Assistant's own scheduled backups default to its VM's disk, so a dead HA VM disk would take its config and history with it. Redirecting them onto the mirror is done on the Home Assistant & Zigbee2MQTT page, once that VM exists — the share you published when you set up TrueNAS storage is already waiting for it.
 
 ### Count to 3-2-1
-The scorecard is **3-2-1**: three copies of anything that matters, on at least two kinds of hardware, one of them offsite. Count honestly — the mirror is *one* copy, because redundancy inside a single pool is not a second copy, and neither are snapshots. The B2 Cloud Sync task gives the irreplaceable files their second copy, which is also the offsite one, and the Proxmox guest backups you will schedule later in the build (on the Proxmox Backups page) will land second copies of every guest on this same NAS. For a home server, that is a respectable score, and you now know exactly where the gaps are.
+The scorecard is **3-2-1**: three copies of anything that matters, on at least two kinds of hardware, one of them offsite. Count honestly — the mirror is *one* copy, because redundancy inside a single pool is not a second copy, and neither are snapshots. The rotated USB drive is the second copy *and* the offsite one, on different hardware; the Proxmox guest backups scheduled later in the build (on the Proxmox Backups page) land second copies of every guest on this same NAS. For a home server, that is a respectable score — the honest caveat being that a rotated drive is only as current as its last refresh, which is exactly what the automated option below fixes if the gap ever bothers you.
 
-> [!DETAILS] Closing the third-copy gap without the cloud
-> Two routes beyond Backblaze, both pointed at the `tank/irreplaceable` dataset from the first section here. **Replication** (**Data Protection → Replication Tasks**) sends ZFS snapshots of the dataset to a second ZFS system — ideally another TrueNAS box at a relative's house — over SSH (Secure Shell). The first run transfers everything; after that only incremental changes move, and because it ships snapshots themselves, the destination keeps the same point-in-time history a file-level cloud copy cannot. The humblest variant needs no subscription and no second box: copy the irreplaceable dataset to an external USB drive now and then, and keep that drive somewhere that isn't your house.
+> [!DETAILS] Optional, future: automate the offsite leg with Backblaze B2
+> **Backblaze B2** is a cloud-storage service — roughly $7 per terabyte per month, so a few hundred gigabytes of files costs a few dollars — and TrueNAS drives it natively. It turns the offsite copy from a chore you remember into a nightly job that never forgets, encrypted with your own password before a byte leaves the house so Backblaze only ever stores ciphertext. If the USB rhythm ever lapses in practice, this is the upgrade; it needs an account (with payment details) created at backblaze.com first.
+>
+> **The push:** go to **Data Protection → Add** on the **Cloud Sync Task** widget. Pick a **Credential** for Backblaze B2 or **Add New** (credentials live under **Credentials → Backup Credentials → Cloud Credentials**; B2 needs an Application Key ID and its key). **Direction → PUSH**, source `tank/files`, click the folder icon on the remote **Folder** field to pick the bucket, and schedule it nightly. **Transfer Mode: COPY** beats SYNC for this job — SYNC propagates a deletion at home into the offsite copy on the next run; COPY only ever adds and updates, so deleted files linger offsite as a safety net.
+>
+> **The encryption:** under the task's **Advanced Options**, turn on **Remote Encryption** and set an **Encryption Password** and **Encryption Salt** — TrueNAS encrypts with rclone before upload. Record both in the fields below *before the first run* and in your password manager: lose them and the offsite copy is unreadable by anyone, including you. Leave **Filename Encryption** off (current docs advise against it).
+>
+> **The drill:** an encrypted backup fails silently — a wrong password looks identical to a good backup until the day you reach for it. So once at setup and once a year, run a one-off **PULL** task: same credential and remote folder, local folder pointed at an empty scratch dataset (`restore-test`, deleted afterward), the password and salt re-entered under Advanced Options — that re-entry is the part being tested. Open a recovered photo and confirm it is the file, not scrambled bytes.
+>
+> The other automated route, no subscription: **Replication** (**Data Protection → Replication Tasks**) ships ZFS snapshots over SSH (Secure Shell) to a second ZFS box — ideally another TrueNAS at a relative's house — incremental after the first run, and it preserves point-in-time history a file-level copy cannot.
+
+> [!SECRET] b2-encryption-password | Backblaze B2 remote-encryption password
+> Only used if the optional B2 route above is ever taken — set before its first run.
+
+> [!SECRET] b2-encryption-salt | Backblaze B2 remote-encryption salt
+> Only used if the optional B2 route above is ever taken.
