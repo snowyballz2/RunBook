@@ -6,7 +6,7 @@ order: 17
 accent: rose
 ---
 
-Every page in this build has told you to put a value in your password manager — the Proxmox root password, the TrueNAS admin login, the camera and doorbell credentials, the MQTT (MQ Telemetry Transport) users, the Backblaze encryption secrets. **Vaultwarden** is where all of that finally lives. It is a lightweight, fully compatible Bitwarden server, so the official Bitwarden apps and browser extensions on every iPhone, iPad, and Mac in this all-Apple household sync against this box instead of someone else's cloud. End-to-end encrypted, autofill everywhere, two-factor codes included — and the features Bitwarden sells as Premium work here, because Vaultwarden simply implements them with nothing to license. This is the synced secret store the rest of the build assumed all along.
+Every page in this build has told you to put a value in your password manager — the Proxmox root password, the TrueNAS admin login, the camera and doorbell credentials, the MQTT (MQ Telemetry Transport) users, the Backblaze encryption secrets. **Vaultwarden** is where all of that finally lives. It is a lightweight, fully compatible Bitwarden server, so the official Bitwarden apps and browser extensions on every iPhone, iPad, Mac, and the Windows PC in this household sync against this box instead of someone else's cloud. End-to-end encrypted, autofill everywhere, two-factor codes included — and the features Bitwarden sells as Premium work here, because Vaultwarden simply implements them with nothing to license. This is the synced secret store the rest of the build assumed all along.
 
 > [!NOTE]
 > One gate before anything else: the moment passwords move in, you become the household's backup department. The nightly Proxmox vzdump job to the TrueNAS share — set up later in this build, on the Proxmox Backups page — must be running and have produced at least one archive you have actually seen before you trust real credentials to this vault. If you have not reached that page yet, you can stand the container up now, but do not move secrets in until that backup job exists and has proven itself. A vault with no proven backup is a single drive away from a household lockout.
@@ -137,7 +137,7 @@ Install the official Bitwarden app from the App Store and the browser extension 
 > PUSH_INSTALLATION_KEY=
 > ```
 >
-> The honest trade: notification events now route through Bitwarden's servers (the vault contents stay end-to-end encrypted). The one documented downside — F-Droid app builds do not support it — is moot here, since this all-Apple household runs the official App Store Bitwarden apps. Skipping the relay costs nothing but immediacy.
+> The honest trade: notification events now route through Bitwarden's servers (the vault contents stay end-to-end encrypted). The one documented downside — F-Droid app builds do not support it — is moot here, since the household's phones run the official App Store Bitwarden apps. Skipping the relay costs nothing but immediacy.
 
 ## Run it like a vault
 

@@ -102,7 +102,7 @@ The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — th
 > A separate **HTTP(s)** monitor on Frigate (above) tells you the NVR (Network Video Recorder) software is alive; the per-camera Ping monitors tell you which *camera* dropped if footage goes missing. Together they point straight at the culprit instead of leaving you guessing.
 
 ### Give the family a status page
-Your dashboard sits behind your login; a status page is the version everyone else in the all-Apple household can check. Open **Status Pages → New Status Page**, give it a **Name** and a **Slug**, add your monitors, and share the address: `http://`-the-Kuma-IP-`:3001/status/`-your-slug. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
+Your dashboard sits behind your login; a status page is the version everyone else in the household can check. Open **Status Pages → New Status Page**, give it a **Name** and a **Slug**, add your monitors, and share the address: `http://`-the-Kuma-IP-`:3001/status/`-your-slug. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
 
 > [!NOTE]
 > Slugs accept lowercase letters, digits, and dashes. The slug `default` is special — `/status` with no slug points to it. Status pages refresh on a roughly five-minute cache, so they lag the live dashboard slightly; for "is it down, or is it just me", that is plenty.

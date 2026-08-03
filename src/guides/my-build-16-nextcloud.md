@@ -58,7 +58,7 @@ The activation page generates two random passwords for a user named **ncp** — 
 > Older write-ups call the Nextcloud user `admin`; current NCP uses **ncp** for both logins. Lose one and you can review or reset both via `sudo ncp-config` in the container's console (the `nc-admin` and `nc-passwd` tools).
 
 > [!DETAILS] Getting to know the 4443 panel
-> `https://<IP>:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. It can run Let's Encrypt to get a real certificate if you ever give this box a public name — but this is a local-first, all-Apple household, so living with the self-signed warning is a legitimate choice. The router blocks unsolicited inbound traffic and nothing here needs a port-forward; don't create one. Remote access rides the Tailscale tunnel set up on the previous page.
+> `https://<IP>:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. It can run Let's Encrypt to get a real certificate if you ever give this box a public name — but this is a local-first household, so living with the self-signed warning is a legitimate choice. The router blocks unsolicited inbound traffic and nothing here needs a port-forward; don't create one. Remote access rides the Tailscale tunnel set up on the previous page.
 
 ### Sign in to Nextcloud itself
 Back at `https://<IP>/`, log in as **ncp** with the Nextcloud password. There is no first-run wizard — NCP already created the account and the stack behind it — so you land straight in your files.
@@ -116,7 +116,7 @@ The share appears as a folder in everyone's files. Photo archives and media sit 
 ## Make it yours
 
 ### Put it on every device
-Get the desktop client from [nextcloud.com/install](https://nextcloud.com/install/) — for this all-Apple household that means the macOS app — and the mobile app from the App Store. The desktop wizard asks for the server address (the same URL you type into the browser), opens the browser to log in, and after **Grant access** syncs into a local **Nextcloud** folder. The Google-Photos replacement is **Auto upload** in the iOS app: point it at the camera roll and every photo lands on your server from then on.
+Get the desktop client from [nextcloud.com/install](https://nextcloud.com/install/) — the macOS app for the Macs and the Windows app for the PC, since both get used equally here — and the mobile app from the App Store. The desktop wizard asks for the server address (the same URL you type into the browser), opens the browser to log in, and after **Grant access** syncs into a local **Nextcloud** folder. The Google-Photos replacement is **Auto upload** in the iOS app: point it at the camera roll and every photo lands on your server from then on.
 
 > [!NOTE]
 > Each new device raises the same self-signed-certificate objection the browser did. On a LAN-only box, accepting it per device is the usual compromise; the clean fix is the panel's Let's Encrypt tool plus a public name, which this build deliberately skips.

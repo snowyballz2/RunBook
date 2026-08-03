@@ -6,7 +6,7 @@ order: 18
 accent: spruce
 ---
 
-By now the build answers at a dozen addresses, and nobody in an all-Apple, local-first household should have to remember any of them. **Homepage** puts everything on one fast page: a tile per service, a live up/down dot on each, an optional strip of host stats across the top. No accounts, no database, nothing to log into — just a few **YAML (YAML Ain't Markup Language)** files you edit once. Set it as the start page on the family's devices and the server finally has a front door.
+By now the build answers at a dozen addresses, and nobody in a local-first household should have to remember any of them. **Homepage** puts everything on one fast page: a tile per service, a live up/down dot on each, an optional strip of host stats across the top. No accounts, no database, nothing to log into — just a few **YAML (YAML Ain't Markup Language)** files you edit once. Set it as the start page on the family's devices and the server finally has a front door.
 
 This is one more small service **LXC (Linux Container)** on the Proxmox host, alongside AdGuard, Nginx Proxy Manager, Nextcloud, and Vaultwarden — with Uptime Kuma joining on the next page. Build it after the services above exist, so its tiles point at things that are actually running.
 

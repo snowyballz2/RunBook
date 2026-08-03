@@ -106,17 +106,25 @@ There is nothing to create here — **the SMB preset already made each dataset's
 
 Only if a share is missing — a dataset created without the preset — does the **Add** button come out: leave **Purpose** at **Default Share**, point it at the dataset, and accept any prompt to enable the SMB service.
 
-### Connect from your Macs
-The share answers at the VM's address. In Finder, choose **Go → Connect to Server**, enter this, and give your SMB user's credentials when asked:
+### Connect from every computer
+The share answers at the VM's address from both sides of the house — the Macs and the Windows PC alike, same SMB user either way.
+
+**On a Mac**: in Finder, choose **Go → Connect to Server**, enter this, and give the SMB credentials when asked:
 
 ```
 smb://192.168.1.20
 ```
 
-This is an all-Apple household, so the `files` share showing up in every Finder sidebar is the goal.
+**On the Windows PC**: in File Explorer's address bar, enter this, and give the same credentials:
+
+```
+\\192.168.1.20
+```
+
+Both shares appear; open `files` on each machine and confirm you can drop a file in.
 
 > [!TIP]
-> Make the mount stick across reboots so the share is there at every login. With the share mounted, open **System Settings → General → Login Items & Extensions → Open at Login**, click **+**, and pick the mounted `files` share. macOS re-mounts it automatically each time that Mac logs in — otherwise the share drops out of the sidebar after every restart or logout.
+> Make the mounts stick. **Mac:** with the share mounted, open **System Settings → General → Login Items & Extensions → Open at Login**, click **+**, and pick the mounted `files` share — macOS re-mounts it at every login. **Windows:** right-click the `files` share in File Explorer, choose **Map network drive**, pick a letter, and tick **Reconnect at sign-in** (plus **Connect using different credentials** the first time, entering the SMB user) — the drive letter is then always there.
 
 > [!NOTE]
 > The `backups` share you just created is the landing zone for the build's safety copies — the Proxmox vzdump archives and the host-config backup point at it once the storage is up. Snapshots, scrubs, disk-health alerts, and the offsite copy to Backblaze B2 get their own steps later in this collection.

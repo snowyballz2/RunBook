@@ -91,7 +91,7 @@ Set a username and a strong password for the dashboard, then finish the wizard. 
 ## Point the network at it
 
 ### Set AdGuard as the router's DNS
-Log into the router, find the DHCP or DNS settings, and set the **primary DNS server** to AdGuard's static IP (`192.168.1.53` in this example). Save, and reboot the router if it asks. As devices renew their leases, every phone, TV, Apple device, and laptop in this all-Apple household starts using AdGuard automatically — nothing to configure per device.
+Log into the router, find the DHCP or DNS settings, and set the **primary DNS server** to AdGuard's static IP (`192.168.1.53` in this example). Save, and reboot the router if it asks. As devices renew their leases, every phone, TV, and computer in the household starts using AdGuard automatically — nothing to configure per device.
 
 > [!TIP]
 > Set it once at the router and it covers everything: the HomePod mini, the Family Hub fridge, the ecobee thermostats, the Nest speakers, all of it. The handful of devices with hardcoded DNS (some smart-home gear) are the only exceptions.
