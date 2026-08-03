@@ -123,15 +123,21 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > [!DETAILS] How to check a script yourself before running it
 > Piping `curl` to `bash` runs whatever the server sends at that exact moment. The safer habit costs one minute — download, read, then run the copy you read:
 >
+> Download to a file instead of executing it:
+>
 > ```bash
-> # 1. Download to a file instead of executing it:
 > curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh -o post-install.sh
+> ```
 >
-> # 2. Read it (press q to quit). Skim for the URLs it contacts
-> #    and anything it deletes or installs:
+> Read it — press `q` to quit, skimming for the URLs it contacts and anything it deletes or installs:
+>
+> ```bash
 > less post-install.sh
+> ```
 >
-> # 3. Run the exact copy you just read:
+> Run the exact copy you just read:
+>
+> ```bash
 > bash post-install.sh
 > ```
 >
@@ -199,11 +205,15 @@ The BIOS already has **VT-d + VMX** on and the `PCIEX4_3` slot at x4. The last p
 
 This build installed Proxmox on **ext4 on LVM** (the default chosen earlier), which boots with **GRUB** — so the kernel command line lives in `/etc/default/grub`. From the host shell:
 
-```bash
-# Add the flags inside the quotes on the GRUB_CMDLINE_LINUX_DEFAULT line:
-nano /etc/default/grub          # ...="quiet intel_iommu=on iommu=pt"
+Open the file:
 
-# Apply the change and reboot:
+```bash
+nano /etc/default/grub
+```
+
+Find the `GRUB_CMDLINE_LINUX_DEFAULT` line and add the two flags inside its quotes, so it reads `GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"`. Save and exit, then apply the change and reboot:
+
+```bash
 update-grub
 reboot
 ```
@@ -219,7 +229,6 @@ reboot
 After the reboot, back in the host shell:
 
 ```bash
-# Should print DMAR / IOMMU enabled lines:
 dmesg | grep -e DMAR -e IOMMU
 ```
 
@@ -227,11 +236,15 @@ Two lines are the actual confirmation — **`DMAR: IOMMU enabled`** near the top
 
 ### Confirm the HBA sits alone in its group
 
-```bash
-# Find the HBA's PCI address (e.g. 02:00.0):
-lspci -nn | grep -i -e LSI -e SAS -e Broadcom
+Find the HBA's PCI address (on this build it lands at `03:00.0`):
 
-# List the groups:
+```bash
+lspci -nn | grep -i -e LSI -e SAS -e Broadcom
+```
+
+Then list the groups:
+
+```bash
 find /sys/kernel/iommu_groups/ -type l
 ```
 
