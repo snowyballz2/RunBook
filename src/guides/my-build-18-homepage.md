@@ -26,12 +26,12 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Read any script before piping it into a root shell — the same download-read-run habit used throughout this build. These are the well-regarded successor to the tteck scripts, but the habit stands regardless of source.
 
 ### Choose Advanced and pin a static IP
-This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 4 GB RAM, an unprivileged Debian container — with one exception: the network. Set a **static IP** instead of DHCP (Dynamic Host Configuration Protocol), and record it; the installer bakes this exact address into Homepage's safety allow-list, and you will reuse it everywhere below. Then settle in — the script announces "Installing Homepage (Patience)" and means it. It downloads the latest release's source and compiles the page on the container's own CPU, which can take a quarter of an hour. It finishes by printing the address: `http://`-the-IP-`:3000`.
+This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 4 GB RAM, an unprivileged Debian container — with one exception: the network. Set the static **`192.168.1.55/24`** with gateway **`192.168.1.1`** instead of DHCP — the installer bakes this exact address into Homepage's safety allow-list, and it recurs everywhere below. Then settle in — the script announces "Installing Homepage (Patience)" and means it. It downloads the latest release's source and compiles the page on the container's own CPU, which can take a quarter of an hour. It finishes by printing the address: `http://192.168.1.55:3000`.
 
 > [!INPUT] homepage-ip | Homepage container IP | 192.168.1.55
 
 > [!WARNING]
-> The static IP matters more than usual here. Homepage ships a safety feature called **host validation**, and the installer writes this exact address into the allow-list. If the container's IP ever wandered, the page would answer every visit with "Host validation failed" instead of your dashboard. Keep the address outside the router's DHCP range so it can never be handed out elsewhere.
+> The static IP matters more than usual here. Homepage ships a safety feature called **host validation**, and the installer writes this exact address into the allow-list. If the container's IP ever wandered, the page would answer every visit with "Host validation failed" instead of your dashboard. The `.55` static sits in the `.2–.99` zone the router's pool can never touch — exactly why the zone exists.
 
 > [!DETAILS] What the script actually builds
 > Node.js and the pnpm package manager; the source of the latest Homepage release unpacked to `/opt/homepage`; then a full `pnpm install` and `pnpm build` — the compile step is why the RAM default is a generous 4 GB and the install is slow. It runs as a systemd service named `homepage` on port 3000, seeds starter config into `/opt/homepage/config/`, and writes one more file worth remembering: `/opt/homepage/.env`, containing `HOMEPAGE_ALLOWED_HOSTS=localhost:3000,`-your-IP-`:3000`. That is the allow-list from the warning above, and it comes back when you wire in a proxy name.
@@ -176,8 +176,9 @@ Save, click the refresh icon, done.
 ### Give it a name behind the proxy
 Add one more proxy host in Nginx Proxy Manager, the same routine used for the other services: **Hosts → Proxy Hosts → Add Proxy Host**, domain `home.example.com`, Scheme `http`, forwarding to the Homepage IP on port `3000`, **Websockets Support** on, then the wildcard certificate and **Force SSL** on the SSL tab. The wildcard `*.example.com` DNS rewrite in AdGuard already answers for any new name, so there is nothing to add there. But there *is* one step unique to Homepage — teaching it to answer to the new name. In the container's console, edit `/opt/homepage/.env`:
 
+The allow-list is comma-separated with no spaces — add the new name to the end:
+
 ```ini
-# /opt/homepage/.env — add the name to the allow-list (comma-separated, no spaces)
 HOMEPAGE_ALLOWED_HOSTS=localhost:3000,192.168.1.55:3000,home.example.com
 ```
 
