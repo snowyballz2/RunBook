@@ -123,7 +123,13 @@ Read the script before piping it into a root shell. Accept its defaults; it inst
 > WantedBy=multi-user.target
 > ```
 >
-> Enable it at boot with `systemctl enable --now wyoming-faster-whisper`. The `--device cuda` flag needs the card, so the service only starts cleanly once the lend-the-card step below is done.
+> Enable it at boot — in the whisper container's console:
+>
+> ```bash
+> systemctl enable --now wyoming-faster-whisper
+> ```
+>
+> The `--device cuda` flag needs the card, so the service only starts cleanly once the lend-the-card step below is done.
 
 **Lend each container the card.** Both LXCs borrow the 1080 Ti exactly as Frigate does — the host owns the driver, each container adds the three NVIDIA device lines to **its own** config file. On the host, edit `/etc/pve/lxc/<ctid>.conf` for each container (`<ctid>` is that container's ID) and add:
 

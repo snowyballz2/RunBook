@@ -64,7 +64,11 @@ In the same shell, bring Tailscale up:
 tailscale up
 ```
 
-The output prints a URL. Open it in a browser on the Mac or the PC (the server has no desktop of its own), sign in with the account from the first step, and the host joins your tailnet. Confirm with `tailscale ip -4`, which prints the host's new `100.x` Tailscale address.
+The output prints a URL. Open it in a browser on the Mac or the PC (the server has no desktop of its own), sign in with the account from the first step, and the host joins your tailnet. Confirm it, still in the host shell — it prints the host's new `100.x` Tailscale address:
+
+```bash
+tailscale ip -4
+```
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 
