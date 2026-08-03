@@ -132,7 +132,10 @@ smb://192.168.1.20
 \\192.168.1.20\files
 ```
 
-`\\192.168.1.20` alone is a *server*, not something Windows can mount; a drive letter must point at one share. Tick **Reconnect at sign-in** *and* **Connect using different credentials**, then click Finish.
+`\\192.168.1.20` alone is a *server*, not something Windows can mount; a drive letter must point at one share. Pick a letter from the **far end of the alphabet — `Z:` is the convention** — and tick **Reconnect at sign-in** *and* **Connect using different credentials**, then click Finish.
+
+> [!WARNING]
+> Do not give the mapping a letter anywhere near the local disks (`C:` through `H:`). Windows lets a network drive take a letter a local volume already owns, and after the next reboot that local drive comes back **with no letter at all** — it disappears from File Explorer while remaining perfectly healthy — and the mapping fails too, because the letter is contested. One collision, two mysteries. If it has already happened: **Win+X → Disk Management**, find the volume listed as Healthy with no letter, right-click → **Change Drive Letter and Paths → Add**, give it its letter back, then re-map the share at `Z:`.
 
 Map **`files` only**. The `backups` share is for machines — the Proxmox host and the Home Assistant VM mount it themselves to write their archives — and a permanently mapped drive letter full of backups on a daily-driver PC is exactly what ransomware enumerates and encrypts. Proxmox also manages its own retention, so hand-deleting archives to reclaim space corrupts its bookkeeping; change the retention setting instead, and check backups ran from **Datacenter → Backup** rather than by browsing files. If you ever need a file out of an archive, map it for that one job and disconnect after.
 
@@ -140,6 +143,9 @@ Open `files` on each machine and confirm you can drop a file in.
 
 > [!WARNING]
 > On the credential prompt Windows shows next, click **More choices → Use a different account** — otherwise it aims your **Microsoft account** at TrueNAS (a sign-in/certificate picker appears) and the password is rejected, because the NAS has never heard of that account. Enter the plain SMB username with no prefix; if Windows keeps prepending the PC's name, force the local scope by typing `192.168.1.20\<smb-user>` instead. And if it fails once, Windows caches the bad attempt and replays it forever: open **Credential Manager → Windows Credentials**, delete every `192.168.1.20` entry, run `net use * /delete` in Command Prompt, and map again.
+
+> [!TIP]
+> If the drive shows a red X after every reboot but connects the moment you click it, the mapping is losing a race at login rather than failing outright. Two usual causes: a VPN client that auto-connects at startup and blocks the LAN before the mapping restores (the same trap as reaching the server from a VPN'd machine — turn on its allow-LAN setting), or credentials that were never persisted. For the latter, pre-store them: **Credential Manager → Windows Credentials → Add a Windows credential**, address `192.168.1.20`, with the SMB username and password.
 
 > [!TIP]
 > Keep the Mac mount too: with the share mounted, open **System Settings → General → Login Items & Extensions → Open at Login**, click **+**, and pick the mounted `files` share — macOS re-mounts it at every login.
