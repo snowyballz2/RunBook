@@ -76,19 +76,19 @@ Go to **System → Advanced Settings**, find the **Cron Jobs** widget, and click
 smartctl -t short /dev/disk/by-id/<disk-A> && smartctl -t short /dev/disk/by-id/<disk-B>
 ```
 
-**Job 2 — monthly long, mirror A.** Schedule `0 3 7 * *` (the 7th, 3 a.m.):
+**Job 2 — monthly long, mirror A.** Schedule `0 4 7 * *` (the 7th, 4 a.m.):
 
 ```
 smartctl -t long /dev/disk/by-id/<disk-A>
 ```
 
-**Job 3 — monthly long, mirror B.** Schedule `0 3 21 * *` (the 21st, 3 a.m.):
+**Job 3 — monthly long, mirror B.** Schedule `0 4 21 * *` (the 21st, 4 a.m.):
 
 ```
 smartctl -t long /dev/disk/by-id/<disk-B>
 ```
 
-The longs are **staggered** on purpose: a long test slows its drive for hours, and two weeks apart means the mirror always has one full-speed member — and neither long is anchored to a Sunday, so overlap with the scrub is a rare coincidence rather than the design (harmless when it happens, just slow). Any test that fails raises the same disk alert the email step below delivers.
+The scheduling has two deliberate offsets. The longs are **staggered two weeks apart** so the mirror always has one full-speed member, and they run at **4 a.m., an hour after the shorts** — because when the 7th or 21st lands on a Monday, both jobs would otherwise fire at the same instant, and a second self-test command *replaces* one already running; by 4 a.m. the short finished long ago. When a long's date lands on a Sunday it can overlap the tail of the midnight scrub — both are reads, so that rare coincidence is merely slow, not harmful. Any test that fails raises the same disk alert the email step below delivers.
 
 ## Make alerts reach you
 
