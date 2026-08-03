@@ -30,7 +30,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Read any script before piping it into a root shell — the same download-read-run habit used for the rest of this build.
 
 ### Choose Advanced and pin a static IP
-When the script asks **Default or Advanced**, pick **Advanced**, and accept the generous defaults — 4 cores, 6 GB RAM, a 20 GB disk on unprivileged Debian. The one value to change is the network: set a **static IP** instead of DHCP (Dynamic Host Configuration Protocol). Then walk away. This script *compiles* Vaultwarden from source — it is a Rust program — announces "Building Vaultwarden (Patience)", and takes the better part of half an hour. It finishes by printing `https://<IP>:8000`.
+When the script asks **Default or Advanced**, pick **Advanced**, and accept the generous defaults — 4 cores, 6 GB RAM, a 20 GB disk on unprivileged Debian. The one value to change is the network: set the static **`192.168.1.56/24`** with gateway **`192.168.1.1`** instead of DHCP. Then walk away. This script *compiles* Vaultwarden from source — it is a Rust program — announces "Building Vaultwarden (Patience)", and takes the better part of half an hour. It finishes by printing `https://192.168.1.56:8000`.
 
 > [!INPUT] vaultwarden-ip | Vaultwarden container IP | 192.168.1.56
 
@@ -67,8 +67,9 @@ Vaultwarden's own wiki calls its built-in TLS (Transport Layer Security) "not re
 nano /opt/vaultwarden/.env
 ```
 
+Open `/opt/vaultwarden/.env` in the container's console (`nano /opt/vaultwarden/.env`), add the `DOMAIN` line, and delete any `ROCKET_TLS` line:
+
 ```ini
-# /opt/vaultwarden/.env — add the DOMAIN line, delete any ROCKET_TLS line:
 DOMAIN=https://vault.example.com
 ```
 
@@ -96,8 +97,9 @@ At `https://vault.example.com`, click **Create account** for yourself, then once
 ### Close the doors behind you
 Out of the box, anyone who can reach the page can register an account. On this LAN that is family — but a vault does not run on "probably fine". One more `.env` edit in the container's console, then restart:
 
+Append to `/opt/vaultwarden/.env`:
+
 ```ini
-# /opt/vaultwarden/.env — append:
 SIGNUPS_ALLOWED=false
 ```
 
@@ -131,7 +133,6 @@ Install the official Bitwarden app from the App Store and the browser extension 
 > By default the apps sync on login, periodically while unlocked, and on demand — fine for a household. If you want an edit on one iPhone to appear on another within seconds, Vaultwarden can use Bitwarden's push relay: request a free installation id and key at [bitwarden.com/host](https://bitwarden.com/host/), then add three lines to `/opt/vaultwarden/.env` in the container's console and restart:
 >
 > ```ini
-> # /opt/vaultwarden/.env — append:
 > PUSH_ENABLED=true
 > PUSH_INSTALLATION_ID=
 > PUSH_INSTALLATION_KEY=

@@ -45,7 +45,7 @@ Browse to the printed address. Plain `http://` redirects to HTTPS, and the brows
 > NCP's docs mention `https://nextcloudpi.local`, an mDNS name that may not resolve to this unprivileged container from another Mac. The IP always works, and lives on the container's **Network** tab if you lose it (Proxmox does not show an LXC's address on the Summary tab — only VMs with the guest agent get that).
 
 ### Save both passwords, then Activate
-The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (the **Print** button captures them too), recording them in your password manager for now — you will consolidate these into Vaultwarden when you set it up later in this build. Then click **Activate**: the page opens `https://<IP>:4443` (the second certificate warning), landing you in the NCP panel.
+The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (the **Print** button captures them too), recording them in your password manager for now — you will consolidate these into Vaultwarden when you set it up later in this build. Then click **Activate**: the page opens `https://192.168.1.58:4443` (the second certificate warning), landing you in the NCP panel.
 
 > [!INPUT] nextcloud-user | Nextcloud / NCP username | | ncp
 > The same `ncp` user signs in to both — only the passwords differ.
@@ -58,10 +58,10 @@ The activation page generates two random passwords for a user named **ncp** — 
 > Older write-ups call the Nextcloud user `admin`; current NCP uses **ncp** for both logins. Lose one and you can review or reset both via `sudo ncp-config` in the container's console (the `nc-admin` and `nc-passwd` tools).
 
 > [!DETAILS] Getting to know the 4443 panel
-> `https://<IP>:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. It can run Let's Encrypt to get a real certificate if you ever give this box a public name — but this is a local-first household, so living with the self-signed warning is a legitimate choice. The router blocks unsolicited inbound traffic and nothing here needs a port-forward; don't create one. Remote access rides the Tailscale tunnel set up on the previous page.
+> `https://192.168.1.58:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. It can run Let's Encrypt to get a real certificate if you ever give this box a public name — but this is a local-first household, so living with the self-signed warning is a legitimate choice. The router blocks unsolicited inbound traffic and nothing here needs a port-forward; don't create one. Remote access rides the Tailscale tunnel set up on the previous page.
 
 ### Sign in to Nextcloud itself
-Back at `https://<IP>/`, log in as **ncp** with the Nextcloud password. There is no first-run wizard — NCP already created the account and the stack behind it — so you land straight in your files.
+Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. There is no first-run wizard — NCP already created the account and the stack behind it — so you land straight in your files.
 
 > [!DETAILS] Fixing "Access through untrusted domain"
 > Reach Nextcloud by any name or address it doesn't already know and it stops with that heading. It's a security check, not breakage: the `trusted_domains` setting in `config/config.php` lists the names and addresses this instance will answer to, and specifying them prevents host-header poisoning. From the container's console, list what it trusts, then add the new name at the next free index:
