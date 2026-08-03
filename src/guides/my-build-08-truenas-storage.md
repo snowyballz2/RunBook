@@ -93,7 +93,7 @@ Datasets are the folders-with-superpowers inside a pool — each carries its own
 ## Share it
 
 ### Create the SMB user
-SMB — served by Samba — is the network-drive protocol Macs speak natively, and TrueNAS requires at least one local SMB user before it will create any share. You cannot connect as root or a built-in account. Go to **Credentials → Users → Add**, fill in a Full Name, a username, and a strong password, and under **Allow Access** leave **SMB Access** selected (it is the default) — that is what makes these credentials valid for share access.
+SMB — served by Samba — is the network-drive protocol Macs speak natively, and TrueNAS requires at least one local SMB user before it will create any share. You cannot connect as root or a built-in account. Go to **Credentials → Users → Add**: a username, a strong password, and under **Allow Access** leave **SMB Access** ticked and everything else off — this account exists purely for share logins, so it deliberately gets no web UI, shell, or SSH access (`truenas_admin` covers administration). Full Name lives under Additional Details and is optional — skip it or not, nothing uses it. Save.
 
 > [!INPUT] smb-user | SMB share username
 > One shared household user is fine to start; add per-person users later.
