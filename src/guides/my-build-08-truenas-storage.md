@@ -107,7 +107,10 @@ SMB — served by Samba — is the network-drive protocol Macs speak natively, a
 > One shared household user is fine to start; add per-person users later.
 
 > [!SECRET] smb-password | SMB share password
-> The password typed on every Mac and phone that connects.
+> The password typed on every Mac, PC, and phone that connects.
+
+> [!NOTE]
+> Three accounts now exist, and the ladder is deliberate: **root** (Linux's built-in superuser — present because the OS needs it, login-disabled on modern TrueNAS, never used), **`truenas_admin`** (the administrator — web UI and `sudo`, used only to run the NAS), and this **SMB user** (shares only — no UI, no shell). The point of the separation: the one password scattered across household devices can open the file shares and *nothing else*; the password that can reconfigure the NAS never leaves the admin's hands.
 
 ### Confirm the shares the presets created
 There is nothing to create here — **the SMB preset already made each dataset's share** when the dataset was created (that is also why TrueNAS asked to start the SMB service back then). So this step is a check, not a task: go to **Shares** and confirm the **Windows (SMB) Shares** widget lists **`files`** and **`backups`**, both **Enabled**, with the widget's badge reading **RUNNING**. The `files` share is everyday household storage; `backups` is where the Proxmox backups land later in the build.
