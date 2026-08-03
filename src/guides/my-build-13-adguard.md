@@ -35,27 +35,31 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > wget https://static.adtidy.org/adguardhome/release/AdGuardHome_linux_amd64.tar.gz
 > tar -xf AdGuardHome_linux_amd64.tar.gz
 > cd AdGuardHome
-> ./AdGuardHome -s install        # installs and starts it as a boot service
+> ./AdGuardHome -s install
 > ```
+>
+> The `-s install` flag registers it as a boot service and starts it.
 >
 > Done this way you have already covered the static-IP step too — continue at **Set it to start at boot**.
 
 ### Choose Advanced and pin a static IP
-This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced**. Every prompt is pre-filled sensibly — 1 CPU core, 512 MB RAM, 2 GB disk is more than enough — so press Enter through them. The one value to change is the network: set a **static IP** instead of DHCP (Dynamic Host Configuration Protocol). Record the address you choose; you will use it everywhere below. Let the script finish — it prints the setup URL when done.
+This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced**. Every prompt is pre-filled sensibly — 1 CPU core, 512 MB RAM, 2 GB disk is more than enough — so press Enter through them. The one value to change is the network: instead of DHCP (Dynamic Host Configuration Protocol), set the static **`192.168.1.53/24`** with gateway **`192.168.1.1`**. Let the script finish — it prints the setup URL when done.
 
 > [!INPUT] adguard-ip | AdGuard container IP | 192.168.1.53
 
 > [!WARNING]
 > AdGuard is about to become the whole network's DNS server, and its address must never change. A static IP is mandatory — if it ever moves, every device in the house loses name resolution at once.
 
-> [!DETAILS] How to pick a safe number
-> Keep the first three octets identical to the rest of the LAN (matching the Proxmox host at `192.168.1.50`), and choose a final number **outside** the router's DHCP range so it can never be handed out to another device. You found this range when picking the Proxmox host address: it lives on the router's DHCP settings page, which lists the start and end of the pool (often `.100` and up) — pick anything below it. The memorable `.53` mirrors DNS port 53 and is easy to remember later.
+> [!DETAILS] Why .53
+> It sits in the `.2–.99` static zone carved out of the Fios DHCP pool on the Start Here page — an address the router can never hand to anything else — and it mirrors DNS port 53, which makes it easy to remember forever.
 
 ### Set it to start at boot
 DNS for the entire house cannot depend on you remembering to start a container after a power cut. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
 
+The `102` is the container ID the script assigned — it shows next to the container's name in the left tree; swap it if yours differs:
+
 ```bash
-pct set 102 -onboot 1        # swap in the container's actual ID
+pct set 102 -onboot 1
 ```
 
 > [!NOTE]
@@ -69,8 +73,6 @@ In a browser, go to the static IP you chose on port 3000 and click **Get Started
 ```text
 http://192.168.1.53:3000
 ```
-
-Swap in your own address.
 
 ### Set the ports
 Leave the **Admin Web Interface** on its default port, and leave the **DNS server** on port 53, listening on all interfaces. Click Next.
@@ -91,7 +93,7 @@ Set a username and a strong password for the dashboard, then finish the wizard. 
 ## Point the network at it
 
 ### Set AdGuard as the router's DNS
-Log into the router, find the DHCP or DNS settings, and set the **primary DNS server** to AdGuard's static IP (`192.168.1.53` in this example). Save, and reboot the router if it asks. As devices renew their leases, every phone, TV, and computer in the household starts using AdGuard automatically — nothing to configure per device.
+Log into the Fios router at `192.168.1.1`, find the DHCP or DNS settings, and set the **primary DNS server** to AdGuard's static `192.168.1.53`. Save, and reboot the router if it asks. As devices renew their leases, every phone, TV, and computer in the household starts using AdGuard automatically — nothing to configure per device.
 
 > [!TIP]
 > Set it once at the router and it covers everything: the HomePod mini, the Family Hub fridge, the ecobee thermostats, the Nest speakers, all of it. The handful of devices with hardcoded DNS (some smart-home gear) are the only exceptions.
