@@ -66,11 +66,27 @@ The automatic polling reads what the drives already report; only a *self-test* m
 ls /dev/disk/by-id/ | grep ST4000VN006
 ```
 
-That prints one `ata-ST4000VN006-…_<serial>` name per drive (ignore any `-partN` entries) — the serials match the `mirror-a-serial`/`mirror-b-serial` fields. Then create **three Cron Jobs** under **System → Advanced Settings → Cron Jobs → Add**, each with **Run As User: `root`** (no `sudo` needed there) and **Enabled** ticked, swapping in the two by-id names:
+That prints one `ata-ST4000VN006-…_<serial>` name per drive (ignore any `-partN` entries) — the serials match the `mirror-a-serial`/`mirror-b-serial` fields. Keep those two names on screen; they get pasted into the jobs below. **The shell's job is now done** — everything else happens in the web UI.
 
-1. **Weekly short, both drives** — Command: `smartctl -t short /dev/disk/by-id/<disk-A> && smartctl -t short /dev/disk/by-id/<disk-B>` — Schedule: custom `0 3 * * 1` (Mondays 3 a.m., clear of the Sunday scrub).
-2. **Monthly long, mirror A** — Command: `smartctl -t long /dev/disk/by-id/<disk-A>` — Schedule: custom `0 3 7 * *` (the 7th, 3 a.m.).
-3. **Monthly long, mirror B** — same command with disk B — Schedule: custom `0 3 21 * *` (the 21st, 3 a.m.).
+Go to **System → Advanced Settings**, find the **Cron Jobs** widget, and click **Add** three times — one job per block below. On every job: **Run As User `root`**, **Enabled** ticked, **Schedule → Custom** with the given five-field line. Each block is the **Command** field's exact content, with `<disk-A>`/`<disk-B>` swapped for the two names the shell just printed.
+
+**Job 1 — weekly short, both drives.** Schedule `0 3 * * 1` (Mondays 3 a.m., clear of the Sunday scrub):
+
+```
+smartctl -t short /dev/disk/by-id/<disk-A> && smartctl -t short /dev/disk/by-id/<disk-B>
+```
+
+**Job 2 — monthly long, mirror A.** Schedule `0 3 7 * *` (the 7th, 3 a.m.):
+
+```
+smartctl -t long /dev/disk/by-id/<disk-A>
+```
+
+**Job 3 — monthly long, mirror B.** Schedule `0 3 21 * *` (the 21st, 3 a.m.):
+
+```
+smartctl -t long /dev/disk/by-id/<disk-B>
+```
 
 The longs are **staggered** on purpose: a long test slows its drive for hours, and two weeks apart means the mirror always has one full-speed member — and neither long is anchored to a Sunday, so overlap with the scrub is a rare coincidence rather than the design (harmless when it happens, just slow). Any test that fails raises the same disk alert the email step below delivers.
 
