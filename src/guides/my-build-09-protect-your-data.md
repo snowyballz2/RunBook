@@ -59,8 +59,20 @@ Run each against both mirror drives in turn, swapping in the IronWolfs' device n
 > [!NOTE]
 > The third IronWolf — Frigate's footage disk — is *not* on the HBA; it sits on a motherboard SATA (Serial ATA) port and belongs to the host. Watch its health from the Proxmox node's **Disks** view (it shows a S.M.A.R.T. column), or with the same `smartctl` calls from the **Proxmox host shell**. That disk holds replaceable camera recordings, so it never goes offsite — but a dying drive is still worth knowing about early.
 
-> [!TIP]
-> Keep disk-intensive tasks apart: if you schedule a recurring LONG test, never put it on Sunday with the scrub, and pick low-usage hours. A weekly SHORT plus a monthly LONG is a sensible cadence on top of the automatic polling. To make those recur instead of running them by hand, add them as **Cron Jobs** under **System → Advanced Settings** — for example a weekly `smartctl -t short /dev/sdb` and a monthly `smartctl -t long /dev/sdb` (and the same for the second mirror disk), keeping the LONG test off Sunday so it never overlaps the scrub.
+### Schedule the recurring self-tests
+The automatic polling reads what the drives already report; only a *self-test* makes them actually exercise the platters. Put both cadences on a schedule — a weekly short and a monthly long per drive — so they run without you. First get each drive's **stable name**: the `sdb`/`sdc` names can swap between boots, so scheduled jobs target the serial-based paths instead. In the TrueNAS shell:
+
+```bash
+ls /dev/disk/by-id/ | grep ST4000VN006
+```
+
+That prints one `ata-ST4000VN006-…_<serial>` name per drive (ignore any `-partN` entries) — the serials match the `mirror-a-serial`/`mirror-b-serial` fields. Then create **three Cron Jobs** under **System → Advanced Settings → Cron Jobs → Add**, each with **Run As User: `root`** (no `sudo` needed there) and **Enabled** ticked, swapping in the two by-id names:
+
+1. **Weekly short, both drives** — Command: `smartctl -t short /dev/disk/by-id/<disk-A> && smartctl -t short /dev/disk/by-id/<disk-B>` — Schedule: custom `0 3 * * 1` (Mondays 3 a.m., clear of the Sunday scrub).
+2. **Monthly long, mirror A** — Command: `smartctl -t long /dev/disk/by-id/<disk-A>` — Schedule: custom `0 3 7 * *` (the 7th, 3 a.m.).
+3. **Monthly long, mirror B** — same command with disk B — Schedule: custom `0 3 21 * *` (the 21st, 3 a.m.).
+
+The longs are **staggered** on purpose: a long test slows its drive for hours, and two weeks apart means the mirror always has one full-speed member — and neither long is anchored to a Sunday, so overlap with the scrub is a rare coincidence rather than the design (harmless when it happens, just slow). Any test that fails raises the same disk alert the email step below delivers.
 
 ## Make alerts reach you
 
