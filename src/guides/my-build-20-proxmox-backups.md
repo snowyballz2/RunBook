@@ -35,7 +35,7 @@ In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacent
 ## Schedule the guest backups
 
 ### Schedule automatic vzdump of every guest
-Go to **Datacenter → Backup** and click **Add**. Set **Storage** to `nas-backups`, choose a schedule from the dropdown — a quiet hour like `02:30` daily works on this build — and set **Selection mode** to **All** so any guest you create later is covered without touching the job again.
+Still in the Proxmox web UI, go to **Datacenter → Backup** and click **Add**. Set **Storage** to `nas-backups`, choose a schedule from the dropdown — a quiet hour like `02:30` daily works on this build — and set **Selection mode** to **All** so any guest you create later is covered without touching the job again.
 
 > [!WARNING]
 > Proxmox offers `local` as a storage choice out of the box — but `local` is a directory on the **NVMe boot disk**, the exact disk holding the Proxmox OS and Frigate's cache that everything on this page is meant to survive. A backup job pointed at `local` dies with the disk it is supposed to protect. Make sure **Storage** reads `nas-backups`, never `local`.
