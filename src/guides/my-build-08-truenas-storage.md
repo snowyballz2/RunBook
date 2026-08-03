@@ -82,7 +82,7 @@ The **third** ST4000VN006 is **not** part of `tank`. It is the dedicated **Friga
 Datasets are the folders-with-superpowers inside a pool — each carries its own settings, and snapshot tasks target them individually. Go to **Datasets**, select the `tank` root dataset, click **Add Dataset**, and create:
 
 - **`files`** — general household storage. Set **Dataset Preset → SMB (Server Message Block)** so it gets case-insensitive names and NFSv4 ACLs, the permission style SMB expects.
-- **`backups`** — a separate dataset (also SMB preset) so the build's safety copies stay out of your file snapshots.
+- **`backups`** — a separate dataset (also SMB preset) so the build's safety copies stay out of your file snapshots. **Re-select the `tank` root before clicking Add Dataset for this one** — after creating `files`, the selection stays on `files`, and Add Dataset then nests the new one *inside* it as `tank/files/backups`. If that happens: select the nested dataset, delete it (the dialog has you type its full path to confirm — it is empty, so this is safe), then create it again from the root.
 
 > [!NOTE]
 > The SMB preset tunes a dataset for network sharing — case-insensitive filenames and NFSv4 ACLs. Both datasets here get exposed over the network (the `backups` dataset receives the Proxmox vzdump archives over SMB), so SMB is the right choice for both. If you ever add a dataset that stays internal and is never shared, pick the **Generic** preset instead.
