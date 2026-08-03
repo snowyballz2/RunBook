@@ -58,14 +58,19 @@ Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's
 > [!DETAILS] Restoring into a fresh ID from the host shell
 > From the host **Shell** you can restore an archive into a brand-new guest ID, leaving the original untouched:
 >
+> A VM backup — the Home Assistant VM (101) — into brand-new ID 901:
+>
 > ```bash
-> # VM backup (e.g. Home Assistant) into new ID 901:
-> qmrestore /mnt/pve/nas-backups/dump/vzdump-qemu-110-....vma.zst 901
-> # Container backup (e.g. AdGuard) into new ID 900:
+> qmrestore /mnt/pve/nas-backups/dump/vzdump-qemu-101-....vma.zst 901
+> ```
+>
+> A container backup — AdGuard (102) — into brand-new ID 900:
+>
+> ```bash
 > pct restore 900 /mnt/pve/nas-backups/dump/vzdump-lxc-102-....tar.zst
 > ```
 >
-> Swap in the archive's real filename. This is also how you test restores safely.
+> Swap in the archive's real filename (the `....` is its timestamp). This is also how you test restores safely.
 
 > [!NOTE]
 > Scope worth keeping straight: this job protects your *guests* — the VMs and containers as machines. The files *inside* TrueNAS (documents, photos) are in none of these archives, and the TrueNAS VM's backup carries only its small boot disk, not the passed-through mirror data. Protecting what is on the NAS — snapshots, the Sunday scrub, the offsite copy — is handled separately for the storage itself.
@@ -101,7 +106,6 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 > From the host **Shell**, roll the lot into one dated tarball on the backup share, already mounted at `/mnt/pve/nas-backups`:
 >
 > ```bash
-> # One dated archive of the host's config, onto the NAS share:
 > tar czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +%F).tar.gz \
 >   /etc/pve /etc/network/interfaces /etc/fstab /etc/modprobe.d \
 >   /etc/default/grub /etc/nut /etc/modules
