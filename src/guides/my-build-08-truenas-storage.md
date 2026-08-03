@@ -126,16 +126,21 @@ The share answers at the VM's address from both sides of the house — the Macs 
 smb://192.168.1.20
 ```
 
-**On the Windows PC**: in File Explorer's address bar, enter this, and give the same credentials:
+**On the Windows PC**: map each share to its own drive letter — **This PC → Map network drive**, and give the **full share path**, not the bare address:
 
 ```
-\\192.168.1.20
+\\192.168.1.20\files
 ```
 
-Both shares appear; open `files` on each machine and confirm you can drop a file in.
+`\\192.168.1.20` alone is a *server*, not something Windows can mount; a drive letter must point at one share. Repeat for `\\192.168.1.20\backups` if you want that lettered too. Tick **Reconnect at sign-in** *and* **Connect using different credentials**, then click Finish.
+
+Open `files` on each machine and confirm you can drop a file in.
+
+> [!WARNING]
+> On the credential prompt Windows shows next, click **More choices → Use a different account** — otherwise it aims your **Microsoft account** at TrueNAS (a sign-in/certificate picker appears) and the password is rejected, because the NAS has never heard of that account. Enter the plain SMB username with no prefix; if Windows keeps prepending the PC's name, force the local scope by typing `192.168.1.20\<smb-user>` instead. And if it fails once, Windows caches the bad attempt and replays it forever: open **Credential Manager → Windows Credentials**, delete every `192.168.1.20` entry, run `net use * /delete` in Command Prompt, and map again.
 
 > [!TIP]
-> Make the mounts stick. **Mac:** with the share mounted, open **System Settings → General → Login Items & Extensions → Open at Login**, click **+**, and pick the mounted `files` share — macOS re-mounts it at every login. **Windows:** right-click the `files` share in File Explorer, choose **Map network drive**, pick a letter, and tick **Reconnect at sign-in** (plus **Connect using different credentials** the first time, entering the SMB user) — the drive letter is then always there.
+> Keep the Mac mount too: with the share mounted, open **System Settings → General → Login Items & Extensions → Open at Login**, click **+**, and pick the mounted `files` share — macOS re-mounts it at every login.
 
 > [!NOTE]
 > The `backups` share you just created is the landing zone for the build's safety copies — the Proxmox vzdump archives and the host-config backup point at it once the storage is up. Snapshots, scrubs, disk-health alerts, and the offsite copy to Backblaze B2 get their own steps later in this collection.
