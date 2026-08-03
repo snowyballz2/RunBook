@@ -31,8 +31,8 @@ This wiring happened during the physical build on the **Hardware & BIOS** page �
 ### The VM and the HBA already exist
 By the time you reach this page, two earlier steps in the build have done the heavy lifting — there is nothing to download and no VM to create here:
 
-- **The TrueNAS VM** was built on the **Virtual Machines** page: the Create VM wizard with **2 cores, 8192 MB memory** (ZFS is memory-hungry — it uses RAM as cache), a **32 GB boot disk** on the NVMe, network on bridge `vmbr0`, TrueNAS Community Edition installed from the console, the administrative password set, the installer ISO ejected, and the VM's IP captured. The ISO was pulled by the server itself (**local → ISO Images → Download from URL**), never uploaded from a laptop.
-- **The 9300-8i HBA** was VFIO (Virtual Function I/O)-bound on the host and the whole card attached to this VM on the **GPU Sharing & HBA Passthrough** page (**Hardware → Add → PCI Device → 9300-8i → All Functions**). There is no per-disk `serial=` plumbing on this build — passing the entire controller is the whole reason the card exists.
+- **The TrueNAS VM** (VM 100) was built on the **Virtual Machines** page: the Create VM wizard with **q35, 1 socket / 2 cores, 8192 MiB memory with ballooning off** (ZFS is memory-hungry and wants its RAM fixed), a **32 GB boot disk** on the NVMe, network on bridge `vmbr0`, TrueNAS Community Edition installed from the console, the `truenas_admin` password set, the installer ISO ejected, and the static `.20` address set inside TrueNAS.
+- **The 9300-8i HBA** was VFIO (Virtual Function I/O)-bound on the host and the whole card attached to this VM on the **GPU Sharing & HBA Passthrough** page (`qm set 100 -hostpci0 0000:03:00,pcie=1` — the GUI equivalent of All Functions + PCI-Express). There is no per-disk `serial=` plumbing on this build — passing the entire controller is the whole reason the card exists.
 
 So this page picks up after both of those: it confirms the raw disks arrived, then builds the pool and shares. Do **not** re-create the VM or re-download the ISO.
 
@@ -40,7 +40,7 @@ So this page picks up after both of those: it confirms the raw disks arrived, th
 > The static address set inside TrueNAS on the Virtual Machines page — `.20` sits in the protected `.2–.99` static zone, so it never moves.
 
 > [!INPUT] truenas-admin-user | TrueNAS admin username | | truenas_admin
-> Current versions create `truenas_admin` — leave as-is unless yours differs.
+> Chosen at the installer's Authentication Method screen on the Virtual Machines page.
 
 > [!SECRET] truenas-admin-password | TrueNAS admin password
 > Set during install — the web UI login.
@@ -102,14 +102,13 @@ SMB — served by Samba — is the network-drive protocol Macs speak natively, a
 Go to **Shares** and click **Add** on the **Windows (SMB) Shares** widget, and add **two** shares — one per dataset. Point the first at the `tank/files` dataset and the second at `tank/backups`; each share name pre-fills from its dataset name, courtesy of the SMB preset. Save each. When TrueNAS prompts to enable or restart the **SMB service**, accept: that is what puts the shares on the network. The `files` share is for everyday household storage; the `backups` share is where the Proxmox backups land later in the build, so it must exist now.
 
 ### Connect from your Macs
-The share answers at the VM's IP address. In Finder, choose **Go → Connect to Server** and enter the address, then your SMB user's credentials when asked:
+The share answers at the VM's address. In Finder, choose **Go → Connect to Server**, enter this, and give your SMB user's credentials when asked:
 
-```bash
-# macOS — Finder > Go > Connect to Server:
+```
 smb://192.168.1.20
 ```
 
-Swap in your own TrueNAS IP. This is an all-Apple household, so the `files` share showing up in every Finder sidebar is the goal.
+This is an all-Apple household, so the `files` share showing up in every Finder sidebar is the goal.
 
 > [!TIP]
 > Make the mount stick across reboots so the share is there at every login. With the share mounted, open **System Settings → General → Login Items & Extensions → Open at Login**, click **+**, and pick the mounted `files` share. macOS re-mounts it automatically each time that Mac logs in — otherwise the share drops out of the sidebar after every restart or logout.

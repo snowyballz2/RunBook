@@ -28,18 +28,31 @@ The pool's other guardian is already on duty. TrueNAS generated a default **scru
 ### Let the disk watchdog work
 Snapshots guard the data; S.M.A.R.T. watches the drives themselves. On current TrueNAS there is nothing to schedule — the old S.M.A.R.T. Tests service is gone, replaced by **Drive Health Management**, which polls every disk's S.M.A.R.T. data automatically (roughly every 90 minutes) and raises alerts that name the affected disk and what tripped. Check the **Disk Health** card on the **Storage** dashboard; active alerts land in the **Alerts** panel behind the bell icon, top right.
 
-Because the two mirror drives reach TrueNAS through the LSI 9300-8i HBA (host bus adapter) passed through whole with VFIO (Virtual Function I/O), TrueNAS talks to the real disks and its S.M.A.R.T. data is genuine — no QEMU emulation in the way. Deeper self-tests run from TrueNAS's own shell (**System → Shell**):
+Because the two mirror drives reach TrueNAS through the LSI 9300-8i HBA (host bus adapter) passed through whole with VFIO (Virtual Function I/O), TrueNAS talks to the real disks and its S.M.A.R.T. data is genuine — no QEMU emulation in the way. Deeper self-tests run from TrueNAS's own shell (**System → Shell**). First identify the two mirror drives — match model and serial, and note their device names (`sda`, `sdb`, …):
 
 ```bash
-# Find the two mirror drives first (match model + serial):
 lsblk -o +MODEL,SERIAL
-# Quick self-test — usually under ten minutes:
+```
+
+A quick self-test finishes in under ten minutes:
+
+```bash
 smartctl -t short /dev/sda
-# Full-surface test — hours on a 4TB disk, noticeable slowdown:
+```
+
+The full-surface test takes hours on a 4 TB disk and slows it noticeably while it runs — keep it off scrub Sunday:
+
+```bash
 smartctl -t long /dev/sda
-# Read the verdict:
+```
+
+And the verdict, once a test completes:
+
+```bash
 smartctl -a /dev/sda
 ```
+
+Run each against both mirror drives in turn, swapping in the device names `lsblk` showed.
 
 > [!NOTE]
 > The third IronWolf — Frigate's footage disk — is *not* on the HBA; it sits on a motherboard SATA (Serial ATA) port and belongs to the host. Watch its health from the Proxmox node's **Disks** view (it shows a S.M.A.R.T. column), or with the same `smartctl` calls from the **Proxmox host shell**. That disk holds replaceable camera recordings, so it never goes offsite — but a dying drive is still worth knowing about early.

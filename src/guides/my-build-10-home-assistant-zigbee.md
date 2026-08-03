@@ -16,43 +16,60 @@ This is the brain of the house. Home Assistant runs as its own **VM (virtual mac
 ### Create the Home Assistant OS VM
 Home Assistant OS ships as a ready-made disk image, **not** an installer ISO — so skip the Create VM wizard and use one of the two paths below. Either way, give it **2 cores and 8 GB RAM** (this box has it to spare, and apps want the headroom) and a 32 GB disk.
 
-> [!DETAILS] The quick way — helper script
-> The community-scripts helper downloads the official image and builds the VM for you. Run it in the Proxmox host shell, pick **Advanced**, and bump it to **8 GB RAM** while keeping the 2 cores and 32 GB disk:
+> [!DETAILS] The quick way — helper script, with every prompt answered
+> The community-scripts helper downloads the official image and builds the VM for you. Run it in the Proxmox host shell (**`pve` → Shell**) — you are piping a script into a root shell, so download and read it first, the same habit as always:
 >
 > ```bash
 > bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/vm/haos-vm.sh)"
 > ```
 >
-> You are piping a script into a root shell, so download it and read it first, then make that call yourself.
+> Pick **Advanced** when asked, then walk the prompts. Two get changed; everything else keeps its default (just press Enter):
+>
+> 1. **HAOS Version** → Stable (default).
+> 2. **VM ID** → accept the suggested next-free number.
+> 3. **Machine Type** → q35 (default).
+> 4. **Disk Cache** → Write Through (default).
+> 5. **Hostname** → change to **`haos`** if you prefer a clean name; cosmetic either way.
+> 6. **CPU Model** → KVM64 (default).
+> 7. **Core Count** → 2 (default).
+> 8. **RAM** → **8192** — the one that matters; the 2048 default starves the apps this build stacks on.
+> 9. **Bridge** → vmbr0 (default). MAC, VLAN, MTU → leave blank/default.
+> 10. **Storage pool** → `local-lvm`.
+> 11. **Start Virtual Machine** → Yes.
 
 > [!DETAILS] The manual way — no scripts
-> Four commands in the host shell, official sources only. Check the [HA OS releases page](https://github.com/home-assistant/operating-system/releases) for the current version and substitute it for `17.3` below. Replace `110` with a **free VM ID** (`qm list` and `pct list` show the taken ones — the next free number is whatever the web UI's Create wizard would suggest) and `local-lvm` with your storage name if it differs:
+> Four moves in the host shell, official sources only. The two values you may need to adjust before pasting: the version (`17.3` — check the [HA OS releases page](https://github.com/home-assistant/operating-system/releases) for current) and the VM ID (`101` is the next free on this build after TrueNAS's 100; `qm list` confirms).
+>
+> Download and unpack the official image:
 >
 > ```bash
-> # 1. Download and unpack the official image:
 > cd /tmp
 > wget https://github.com/home-assistant/operating-system/releases/download/17.3/haos_ova-17.3.qcow2.xz
 > unxz haos_ova-17.3.qcow2.xz
+> ```
 >
-> # 2. Create the VM shell. HA OS needs UEFI boot with secure boot off:
-> qm create 110 --name haos --ostype l26 --bios ovmf \
+> Create the VM — HA OS needs UEFI boot (`ovmf`) with secure boot off (`pre-enrolled-keys=0`):
+>
+> ```bash
+> qm create 101 --name haos --ostype l26 --bios ovmf \
 >   --efidisk0 local-lvm:0,efitype=4m,pre-enrolled-keys=0 \
 >   --cores 2 --memory 8192 --scsihw virtio-scsi-pci \
 >   --net0 virtio,bridge=vmbr0 --agent enabled=1
+> ```
 >
-> # 3. Import the image and attach it as the boot disk:
-> qm set 110 --scsi0 local-lvm:0,import-from=/tmp/haos_ova-17.3.qcow2
-> qm set 110 --boot order=scsi0
+> Import the image as the boot disk, then start it:
 >
-> # 4. Start it:
-> qm start 110
+> ```bash
+> qm set 101 --scsi0 local-lvm:0,import-from=/tmp/haos_ova-17.3.qcow2
+> qm set 101 --boot order=scsi0
+> qm start 101
 > ```
 
 > [!NOTE]
-> Set the **Start/Shutdown order** so this VM boots **before** the Frigate LXC every time. Frigate points at the Mosquitto MQTT (MQ Telemetry Transport) broker that lives alongside it, and keeping Home Assistant up first holds the dependency order clean. Open the VM's **Options → Start/Shutdown order** and set it to **order=2** — TrueNAS is `order=1` from the Virtual Machines page and the Frigate container becomes `order=3`, so the storage boots first, then this VM, then Frigate.
+> In the VM's **Options** panel, enable **Start at boot** and set **Start/Shutdown order** to **order=2**. The order is load-bearing: Frigate points at the Mosquitto MQTT (MQ Telemetry Transport) broker that lives alongside this VM, so Home Assistant must be up first — TrueNAS is `order=1` from the Virtual Machines page and the Frigate container becomes `order=3`, so the storage boots first, then this VM, then Frigate.
 
 ### Pin its address
-Give the VM a fixed IP before anything else points at it: a DHCP (Dynamic Host Configuration Protocol) reservation on the router, or a static address inside Home Assistant under **Settings → System → Network** (that screen only exists once the onboarding below is done). Pick one. Phone apps, dashboards, and the MQTT links all use this address, and `homeassistant.local` does not resolve reliably on every network.
+The brain of the house gets a device-set static in the protected zone, like the host and TrueNAS before it — not a router reservation, which the Fios router can only make for in-pool `.100+` addresses. The screen only exists after onboarding, so do this **right after the onboarding below finishes**: go to **Settings → System → Network**, expand the interface, set **IPv4 → Static**, address **`192.168.1.51/24`**, gateway **`192.168.1.1`**, DNS **`192.168.1.1`**, and save. Phone apps, dashboards, and the MQTT links all use this address — `homeassistant.local` does not resolve reliably on every network, and every later page assumes `.51`.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
