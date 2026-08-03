@@ -132,7 +132,9 @@ smb://192.168.1.20
 \\192.168.1.20\files
 ```
 
-`\\192.168.1.20` alone is a *server*, not something Windows can mount; a drive letter must point at one share. Repeat for `\\192.168.1.20\backups` if you want that lettered too. Tick **Reconnect at sign-in** *and* **Connect using different credentials**, then click Finish.
+`\\192.168.1.20` alone is a *server*, not something Windows can mount; a drive letter must point at one share. Tick **Reconnect at sign-in** *and* **Connect using different credentials**, then click Finish.
+
+Map **`files` only**. The `backups` share is for machines — the Proxmox host and the Home Assistant VM mount it themselves to write their archives — and a permanently mapped drive letter full of backups on a daily-driver PC is exactly what ransomware enumerates and encrypts. Proxmox also manages its own retention, so hand-deleting archives to reclaim space corrupts its bookkeeping; change the retention setting instead, and check backups ran from **Datacenter → Backup** rather than by browsing files. If you ever need a file out of an archive, map it for that one job and disconnect after.
 
 Open `files` on each machine and confirm you can drop a file in.
 
