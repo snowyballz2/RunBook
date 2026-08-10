@@ -147,9 +147,9 @@ Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT
 ## Pair the mesh
 
 ### Lay down the routers first
-Plug in the **Third Reality 3RSP019BZ smart plugs** and pair them **before** anything battery-powered. They are mains-powered Zigbee **routers** — they build and extend the mesh that the battery sensors lean on. Place them **near the sensor clusters and near the valve** so the leak devices and the shut-off always have a strong hop home. Pairing them takes three steps, and the first one is the trap — these plugs support both Zigbee and Matter/Thread, and a plug in the wrong mode simply never appears, with no error to explain why:
+Plug in the **Third Reality 3RSP019BZ smart plugs** and pair them **before** anything battery-powered. They are mains-powered Zigbee **routers** — they build and extend the mesh that the battery sensors lean on. (Zigbee only — the 3RSP019BZ is a Zigbee/BLE device with no Thread support, so it can never extend the *Thread* mesh the locks use; that gap is discussed on the Matter Locks page.) Place them **near the sensor clusters and near the valve** so the leak devices and the shut-off always have a strong hop home. Pairing them takes three steps, and the first one is the trap — these plugs **ship in BLE mode**, not Zigbee, and a plug left in BLE simply never appears in Z2M, with no error to explain why:
 
-1. **Force Zigbee mode.** Press and **hold** the plug's button while inserting it into the outlet, until the **green** light comes on. Release, then **immediately press the button once**. The LED flashes **red** — that is Zigbee mode confirmed. Do this even on a brand-new plug.
+1. **Switch it to Zigbee mode.** Press and **hold** the plug's button while inserting it into the outlet, until the **green** light comes on (green = BLE, the factory default, used by Third Reality's own app). Release, then **immediately press the button once**. The LED flashes **red** — Zigbee mode confirmed. Do this on every plug, including brand-new ones.
 2. **Enter pairing mode.** Press and hold the button for **more than 10 seconds**, until the LED flashes.
 3. **Open the network.** With **Permit join** already running in Z2M's frontend, the plug joins within a minute and appears in the device list.
 
