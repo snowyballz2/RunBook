@@ -261,7 +261,7 @@ function CollectionHeader({
   let done = 0;
   let total = 0;
   for (const { guide } of items) {
-    done += Math.min(store.getProgressCount(guide.id), guide.totalSteps);
+    done += store.getProgressCountIn(guide);
     total += guide.totalSteps;
   }
   return (
@@ -352,7 +352,9 @@ function GuideCard({
   onRemove: () => void;
 }) {
   const { guide, origin } = item;
-  const doneCount = store.getProgressCount(guide.id);
+  // Counted against the guide's real steps: saved IDs from edited-away steps
+  // must not inflate this (see getProgressCountIn).
+  const doneCount = store.getProgressCountIn(guide);
   // Per-guide accent: overrides the accent tokens for this card (ring, status,
   // left rail) and falls back to the app accent for the default palette. A
   // soft wash of the accent fades in from the rail so groups read at a glance.

@@ -16,7 +16,10 @@ export function ProgressRing({
   stroke = 4,
   showLabel = true,
 }: Props) {
-  const fraction = total > 0 ? done / total : 0;
+  // Clamped to 0..1: a caller passing done > total (stale saved progress against
+  // a guide that lost steps) would otherwise make the dash offset negative, which
+  // draws a partial arc instead of a closed ring.
+  const fraction = total > 0 ? Math.min(done / total, 1) : 0;
   const complete = total > 0 && done >= total;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;

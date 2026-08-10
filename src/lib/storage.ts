@@ -83,6 +83,27 @@ export function getProgressCount(guideId: string): number {
   return read<string[]>(K.progress(guideId), []).length;
 }
 
+/**
+ * Count saved progress that still matches a step the guide actually has.
+ *
+ * Progress is stored as step IDs, and those IDs outlive the steps they came
+ * from: editing a guide renames or removes steps, leaving entries behind that
+ * match nothing. The raw count then overstates progress — and when a guide
+ * loses steps it can exceed the step count outright, which reads as complete
+ * while the ring draws a partial arc. Counting by intersection is what the
+ * reader effectively does (`done.has(step.id)`), so this keeps the library
+ * card and the open guide telling the same story.
+ */
+export function getProgressCountIn(guide: Guide): number {
+  const saved = getProgress(guide.id);
+  if (saved.size === 0) return 0;
+  let n = 0;
+  for (const phase of guide.phases) {
+    for (const step of phase.steps) if (saved.has(step.id)) n++;
+  }
+  return n;
+}
+
 export function saveProgress(guideId: string, done: Set<string>): void {
   if (done.size === 0) remove(K.progress(guideId));
   else write(K.progress(guideId), [...done]);
