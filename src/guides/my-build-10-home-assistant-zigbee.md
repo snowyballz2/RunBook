@@ -135,6 +135,11 @@ Install Z2M as a Home Assistant app. Its apps live in a separate repository: in 
 
 In Z2M's **mqtt** section, the **server** field wants a URL, and the right one is the broker's *internal* name — **`mqtt://core-mosquitto:1883`** — not the VM's LAN address. Both are add-ons on this same Home Assistant, so the traffic never leaves the box, and the setting keeps working even if the VM's IP changes. Leave **ca / key / cert** blank (those are for TLS, unnecessary internally) and **base_topic** at `zigbee2mqtt`.
 
+First run opens Z2M's **onboarding wizard** rather than its normal frontend — the Permit join button does not exist yet, and appears only once the wizard is submitted and Z2M is running. The wizard's **Network** panel auto-generates a **PAN ID**, **Extended PAN ID**, and **Network key**. Leave them exactly as generated (their shuffle buttons would force re-pairing every device), but **write all three down**: they are what lets a rebuilt Z2M — new container, restored backup, migrated install — have all thirteen devices rejoin *without* walking to each sensor and valve to re-pair it.
+
+> [!SECRET] z2m-network-values | Zigbee network identity — PAN ID, Extended PAN ID, Network key
+> From Z2M's onboarding **Network** panel. Recreating a Zigbee network without these means re-pairing every device by hand; with them, a restored Z2M adopts the existing mesh.
+
 > [!INPUT] mqtt-host | Mosquitto broker address (for external clients) | 192.168.1.51
 > Z2M uses `mqtt://core-mosquitto:1883` internally, but **Frigate is a separate container off-box** — it connects to the broker at this LAN address with its `mqtt-user` login, on the Cameras, Doorbell & Frigate page.
 
