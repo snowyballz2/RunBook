@@ -130,8 +130,10 @@ Install Z2M as a Home Assistant app. Its apps live in a separate repository: in 
 - **RTS/CTS hardware flow control** → on
 - **Port** → the stable `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_…-if00` path, never `ttyACM0` — by-id survives reboots
 
-> [!INPUT] mqtt-host | Mosquitto broker address | 192.168.1.51
-> Where the broker listens — the Home Assistant VM, on the standard port `1883`. Frigate connects to this same broker with its `mqtt-user` login on the Cameras, Doorbell & Frigate page.
+In Z2M's **mqtt** section, the **server** field wants a URL, and the right one is the broker's *internal* name — **`mqtt://core-mosquitto:1883`** — not the VM's LAN address. Both are add-ons on this same Home Assistant, so the traffic never leaves the box, and the setting keeps working even if the VM's IP changes. Leave **ca / key / cert** blank (those are for TLS, unnecessary internally) and **base_topic** at `zigbee2mqtt`.
+
+> [!INPUT] mqtt-host | Mosquitto broker address (for external clients) | 192.168.1.51
+> Z2M uses `mqtt://core-mosquitto:1883` internally, but **Frigate is a separate container off-box** — it connects to the broker at this LAN address with its `mqtt-user` login, on the Cameras, Doorbell & Frigate page.
 
 ### Surface Z2M in Home Assistant
 Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT integration**. Home Assistant auto-discovers the local Mosquitto app: in **Settings → Devices & services**, confirm the discovered **MQTT** integration and accept it — it connects with the app's own internal login, so there are no credentials to type. With both Z2M and Home Assistant on the broker, every device Z2M reports shows up as an ordinary Home Assistant entity automatically — no per-device wiring.
