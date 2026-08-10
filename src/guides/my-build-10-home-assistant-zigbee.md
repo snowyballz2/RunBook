@@ -126,19 +126,27 @@ The whole build talks over one **Mosquitto** broker, and it lives here on the Ho
 > Leave **`password_pre_hashed` off** (its default). That option tells the add-on the password you typed is *already* a PBKDF2 hash, for migrating credentials from an existing Mosquitto install. Switch it on with a plain password and the broker stores your literal text as though it were a hash — nothing ever authenticates, and every client just reports a wrong password.
 
 ### Point Z2M at the Mosquitto broker
-Install Z2M as a Home Assistant app. Its apps live in a separate repository: in **Settings → Apps → Install app**, open the **⋮ menu → Repositories**, add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`, then install **Zigbee2MQTT** from the store. In its MQTT settings, point it at the broker below and enter the `zigbee2mqtt` username and password you just created; everything Z2M publishes namespaces under `zigbee2mqtt/...` and stays out of Frigate's way. Then Z2M's serial settings — four fields, all in its settings UI, all load-bearing, because the ZBT-2 is a Silicon Labs MG24 behind a USB bridge that runs faster than Z2M's defaults and Z2M does not negotiate (wrong values here are the usual reason a ZBT-2 never connects or keeps dropping):
+Install Z2M as a Home Assistant app. Its apps live in a separate repository: in **Settings → Apps → Install app**, open the **⋮ menu → Repositories**, add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`, then install **Zigbee2MQTT** from the store and start it.
 
-- **Adapter / driver** → `ember` (the one for the ZBT-2)
-- **Baud rate** → `460800`
-- **RTS/CTS hardware flow control** → on
-- **Port** → the stable `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_…-if00` path, never `ttyACM0` — by-id survives reboots
+Opening it the first time gives you the **Zigbee2MQTT Onboarding** wizard, not the normal frontend — so there is no **Permit join** button yet; that appears only after this wizard is submitted and Z2M is running. The wizard is one page with a **Coordinator/Adapter** picker, a **Network** panel, and a row of tabs (Main, Frontend, MQTT, Serial…). Work it in this order, and note that **nothing commits until you submit at the bottom** — tab-hopping is safe, closing the page is not.
 
-In Z2M's **mqtt** section, the **server** field wants a URL, and the right one is the broker's *internal* name — **`mqtt://core-mosquitto:1883`** — not the VM's LAN address. Both are add-ons on this same Home Assistant, so the traffic never leaves the box, and the setting keeps working even if the VM's IP changes. Leave **ca / key / cert** blank (those are for TLS, unnecessary internally) and **base_topic** at `zigbee2mqtt`.
+**1. Pick the coordinator.** In **Devices found**, select the `usb-Nabu_Casa_ZBT-2_<serial>-if00 (Nabu Casa)` entry. This pre-fills the Serial tab for you — but not correctly, which the next step fixes.
 
-First run opens Z2M's **onboarding wizard** rather than its normal frontend — the Permit join button does not exist yet, and appears only once the wizard is submitted and Z2M is running. The wizard's **Network** panel auto-generates a **PAN ID**, **Extended PAN ID**, and **Network key**. Leave them exactly as generated (their shuffle buttons would force re-pairing every device), but **write all three down**: they are what lets a rebuilt Z2M — new container, restored backup, migrated install — have all thirteen devices rejoin *without* walking to each sensor and valve to re-pair it.
+**2. Fix the Serial tab.** Four fields, all load-bearing; wrong values here are the usual reason a ZBT-2 looks configured and then never connects or keeps dropping:
+
+- **adapter** → `ember` — the dropdown's auto-fill usually gets this right already
+- **baudrate** → **`460800`**. It defaults to `115200`, and the field's own hint says that is "most common" — ignore it. That advice is for older sticks; the ZBT-2 runs at four times the ZBT-1's rate and Z2M does not negotiate it.
+- **rtscts** → **ticked**. Defaults off.
+- **port** → the auto-fill puts the raw `/dev/ttyACM0` here. **Replace it with the `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_<serial>-if00…` path**, copied verbatim from **Settings → System → Hardware → All Hardware**. `ttyACM0` is assigned in plug order, so once the second ZBT-2 arrives for Thread it can silently point Z2M at the wrong radio after a reboot; the by-id path carries the stick's serial and cannot be confused.
+
+**3. Fill the MQTT tab.** **server** wants a URL, and the right one is the broker's *internal* name — **`mqtt://core-mosquitto:1883`** — not the VM's LAN address, since both are add-ons on this same Home Assistant. **user** and **password** are the `zigbee2mqtt` pair you created in Mosquitto. Leave **ca / key / cert** blank (TLS, unnecessary internally) and **base_topic** at `zigbee2mqtt` — everything Z2M publishes namespaces under `zigbee2mqtt/…` and stays out of Frigate's way.
+
+**4. Leave the Network panel alone.** Its **PAN ID**, **Extended PAN ID**, and **Network key** are auto-generated; the shuffle buttons beside them would force re-pairing every device. Do **write all three down** first, though — they are what lets a rebuilt Z2M (new container, restored backup, migration) have all thirteen devices rejoin without walking to each sensor and valve.
+
+Then submit. Z2M starts, and the sidebar entry now opens the real frontend with **Permit join** in its top-right nav.
 
 > [!SECRET] z2m-network-values | Zigbee network identity — PAN ID, Extended PAN ID, Network key
-> From Z2M's onboarding **Network** panel. Recreating a Zigbee network without these means re-pairing every device by hand; with them, a restored Z2M adopts the existing mesh.
+> From the onboarding wizard's **Network** panel. These are also inside Home Assistant's own backups and the Proxmox vzdump, so this field is belt-and-braces — but recreating a Zigbee network without them means re-pairing every device by hand.
 
 > [!INPUT] mqtt-host | Mosquitto broker address (for external clients) | 192.168.1.51
 > Z2M uses `mqtt://core-mosquitto:1883` internally, but **Frigate is a separate container off-box** — it connects to the broker at this LAN address with its `mqtt-user` login, on the Cameras, Doorbell & Frigate page.
