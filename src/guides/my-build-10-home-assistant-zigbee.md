@@ -182,6 +182,9 @@ Plug in the **Third Reality 3RSP019BZ smart plugs** and pair them **before** any
 > [!TIP]
 > A few routers spread through the house turn a flaky single-hop mesh into a solid one. Pairing them first also means the sensors join *through* a nearby router rather than straining to reach the coordinator directly.
 
+> [!NOTE]
+> Two things on each plug's page in Z2M once it joins. Set **Power-on behavior** to **`previous`** (it defaults to `off`) so anything plugged into that outlet returns to its prior state after an outage, matching how the rest of this build recovers — it does not affect the plug's routing, since the radio is live whenever the plug is in the wall. And glance at **Linkquality**: it is a reading, not a setting, but a plug well below its siblings (say 88 against 140+) is the weakest router in the mesh, and the first thing to suspect if sensors near it later go unavailable — try another outlet in that room, away from appliances and metal. Renaming a device also makes Z2M log a "Device left / Device joined" pair for it; that is the re-registration under the new name, not a fault.
+
 ### Join the leak sensors
 With routers in place, pair the **12× Third Reality 3RWS18BZ** siren leak sensors — one at every water risk: water heater, washer, dishwasher, each sink, the sump, and the fridge water line. Put each into pairing mode (pull the battery tab, or hold its button until it blinks), join it in Z2M, then immediately **rename it for its location** and assign it the matching Area. They arrive in Home Assistant as `binary_sensor.*_leak` entities.
 
