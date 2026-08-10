@@ -130,14 +130,24 @@ Install Z2M as a Home Assistant app. Its apps live in a separate repository: in 
 
 Opening it the first time gives you the **Zigbee2MQTT Onboarding** wizard, not the normal frontend — so there is no **Permit join** button yet; that appears only after this wizard is submitted and Z2M is running. The wizard is one page with a **Coordinator/Adapter** picker, a **Network** panel, and a row of tabs (Main, Frontend, MQTT, Serial…). Work it in this order, and note that **nothing commits until you submit at the bottom** — tab-hopping is safe, closing the page is not.
 
-**1. Pick the coordinator.** In **Devices found**, select the `usb-Nabu_Casa_ZBT-2_<serial>-if00 (Nabu Casa)` entry. This pre-fills the Serial tab for you — but not correctly, which the next step fixes.
+**1. Skip the coordinator dropdown.** It is tempting to select the ZBT-2 under **Devices found**, and its help text calls it optional for good reason: it pre-fills the Serial tab *incorrectly* (raw `/dev/ttyACM0` for the port), and worse, it **re-applies that auto-fill later** — re-selecting it or reloading the page silently reverts the corrections you make below. Leave it on **`-`** and fill the Serial tab by hand.
 
 **2. Fix the Serial tab.** Four fields, all load-bearing; wrong values here are the usual reason a ZBT-2 looks configured and then never connects or keeps dropping:
 
 - **adapter** → `ember` — the dropdown's auto-fill usually gets this right already
 - **baudrate** → **`460800`**. It defaults to `115200`, and the field's own hint says that is "most common" — ignore it. That advice is for older sticks; the ZBT-2 runs at four times the ZBT-1's rate and Z2M does not negotiate it.
 - **rtscts** → **ticked**. Defaults off.
-- **port** → the auto-fill puts the raw `/dev/ttyACM0` here. **Replace it with the `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_<serial>-if00…` path**, copied verbatim from **Settings → System → Hardware → All Hardware**. `ttyACM0` is assigned in plug order, so once the second ZBT-2 arrives for Thread it can silently point Z2M at the wrong radio after a reboot; the by-id path carries the stick's serial and cannot be confused.
+- **port** → the full **`/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_<serial>-if00…`** path, copied verbatim from **Settings → System → Hardware → All Hardware**. Never the raw `/dev/ttyACM0`: that is assigned in plug order, so once the second ZBT-2 arrives for Thread it can silently point Z2M at the wrong radio after a reboot, while the by-id path carries the stick's serial and cannot be confused.
+
+If any of these revert on you, the coordinator dropdown is re-applying its auto-fill — set it back to `-`, redo the four fields, and submit without reloading. Failing that, bypass the form entirely: **Settings → Apps → Zigbee2MQTT → Configuration → ⋮ → Edit in YAML** writes the same values where autodetect cannot overwrite them:
+
+```yaml
+serial:
+  adapter: ember
+  port: /dev/serial/by-id/usb-Nabu_Casa_ZBT-2_441BF68633DC-if00
+  baudrate: 460800
+  rtscts: true
+```
 
 **3. Fill the MQTT tab.** **server** wants a URL, and the right one is the broker's *internal* name — **`mqtt://core-mosquitto:1883`** — not the VM's LAN address, since both are add-ons on this same Home Assistant. **user** and **password** are the `zigbee2mqtt` pair you created in Mosquitto. Leave **ca / key / cert** blank (TLS, unnecessary internally) and **base_topic** at `zigbee2mqtt` — everything Z2M publishes namespaces under `zigbee2mqtt/…` and stays out of Frigate's way.
 
