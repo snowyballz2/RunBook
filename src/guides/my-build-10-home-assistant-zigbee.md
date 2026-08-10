@@ -147,7 +147,11 @@ Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT
 ## Pair the mesh
 
 ### Lay down the routers first
-Plug in the **Third Reality 3RSP019BZ smart plugs** and pair them **before** anything battery-powered. They are mains-powered Zigbee **routers** — they build and extend the mesh that the battery sensors lean on. Place them **near the sensor clusters and near the valve** so the leak devices and the shut-off always have a strong hop home. To pair, power the plug on and put Z2M into pairing mode with **Permit join (All)**; the plug joins within a minute.
+Plug in the **Third Reality 3RSP019BZ smart plugs** and pair them **before** anything battery-powered. They are mains-powered Zigbee **routers** — they build and extend the mesh that the battery sensors lean on. Place them **near the sensor clusters and near the valve** so the leak devices and the shut-off always have a strong hop home. Pairing them takes three steps, and the first one is the trap — these plugs support both Zigbee and Matter/Thread, and a plug in the wrong mode simply never appears, with no error to explain why:
+
+1. **Force Zigbee mode.** Press and **hold** the plug's button while inserting it into the outlet, until the **green** light comes on. Release, then **immediately press the button once**. The LED flashes **red** — that is Zigbee mode confirmed. Do this even on a brand-new plug.
+2. **Enter pairing mode.** Press and hold the button for **more than 10 seconds**, until the LED flashes.
+3. **Open the network.** With **Permit join** already running in Z2M's frontend, the plug joins within a minute and appears in the device list.
 
 > [!TIP]
 > A few routers spread through the house turn a flaky single-hop mesh into a solid one. Pairing them first also means the sensors join *through* a nearby router rather than straining to reach the coordinator directly.
