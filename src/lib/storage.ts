@@ -186,6 +186,51 @@ export function onCredentialsChange(fn: () => void): () => void {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Port mapping — the patch panel's record. Device-local, like credentials.  */
+/*                                                                           */
+/* Not guide-derived: a panel is a fact about the house, not a build step, so */
+/* these rows are owned here rather than declared in markdown. Keyed by port  */
+/* number so a row survives being renamed or reordered.                      */
+/* -------------------------------------------------------------------------- */
+
+const PORTS_KEY = `${NS}:ports`;
+const PORTS_EVENT = "runbook:ports-changed";
+
+/** What one patch-panel port feeds, and where it patches to. */
+export type PortRow = { feeds: string; switchPort: string };
+
+export type PortMap = Record<string, PortRow>;
+
+export function getPortMap(): PortMap {
+  return read<PortMap>(PORTS_KEY, {});
+}
+
+export function setPortRow(port: number, row: PortRow): void {
+  const all = getPortMap();
+  const key = String(port);
+  if (row.feeds.trim() || row.switchPort.trim()) all[key] = row;
+  else delete all[key];
+  if (Object.keys(all).length === 0) remove(PORTS_KEY);
+  else write(PORTS_KEY, all);
+  window.dispatchEvent(new CustomEvent(PORTS_EVENT));
+}
+
+/** Ports with anything recorded against them. */
+export function countMappedPorts(): number {
+  return Object.keys(getPortMap()).length;
+}
+
+export function clearPortMap(): void {
+  remove(PORTS_KEY);
+  window.dispatchEvent(new CustomEvent(PORTS_EVENT));
+}
+
+export function onPortMapChange(fn: () => void): () => void {
+  window.addEventListener(PORTS_EVENT, fn);
+  return () => window.removeEventListener(PORTS_EVENT, fn);
+}
+
+/* -------------------------------------------------------------------------- */
 /* Reader mode — phones default to the one-step-at-a-time swipe deck.        */
 /* -------------------------------------------------------------------------- */
 

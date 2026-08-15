@@ -5,6 +5,7 @@ import * as store from "./lib/storage";
 import type { Theme } from "./lib/storage";
 import type { Guide } from "./lib/types";
 import { CredentialsView } from "./components/CredentialsView";
+import { PortMapView } from "./components/PortMapView";
 import { ImportPanel } from "./components/ImportPanel";
 import { LibraryView, type LibraryItem } from "./components/LibraryView";
 import { ReaderView } from "./components/ReaderView";
@@ -12,12 +13,14 @@ import { ReaderView } from "./components/ReaderView";
 type Route =
   | { name: "library" }
   | { name: "reader"; id: string }
-  | { name: "credentials"; scope?: string };
+  | { name: "credentials"; scope?: string }
+  | { name: "ports" };
 
 function parseHash(): Route {
   try {
     const m = location.hash.match(/^#\/g\/(.+)$/);
     if (m) return { name: "reader", id: decodeURIComponent(m[1]) };
+    if (/^#\/ports$/.test(location.hash)) return { name: "ports" };
     const c = location.hash.match(/^#\/credentials(?:\/(.+))?$/);
     if (c) {
       return { name: "credentials", ...(c[1] ? { scope: decodeURIComponent(c[1]) } : {}) };
@@ -135,6 +138,8 @@ export function App() {
           onToggleTheme={toggleTheme}
           onBack={goLibrary}
         />
+      ) : route.name === "ports" ? (
+        <PortMapView theme={theme} onToggleTheme={toggleTheme} onBack={goLibrary} />
       ) : route.name === "credentials" ? (
         <CredentialsView
           items={items}
@@ -151,6 +156,9 @@ export function App() {
           onOpen={openGuide}
           onOpenCredentials={(scope) => {
             location.hash = `#/credentials/${encodeURIComponent(scope)}`;
+          }}
+          onOpenPorts={() => {
+            location.hash = "#/ports";
           }}
           onAdd={() => setShowImport(true)}
           onReset={onReset}

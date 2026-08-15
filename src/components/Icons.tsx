@@ -148,6 +148,14 @@ export const Rows = (p: IconProps) => (
   </Icon>
 );
 
+export const Plug = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M9 2v6M15 2v6" />
+    <path d="M6 8h12v3a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8Z" />
+    <path d="M12 17v5" />
+  </Icon>
+);
+
 export const Key = (p: IconProps) => (
   <Icon {...p}>
     <circle cx="7.5" cy="15.5" r="4.5" />

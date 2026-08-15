@@ -8,7 +8,7 @@ import {
 } from "../lib/credentials";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
-import { BookOpen, ChevronDown, Key, More, Plus, Search, Trash } from "./Icons";
+import { BookOpen, ChevronDown, Key, More, Plug, Plus, Search, Trash } from "./Icons";
 import { ProgressRing } from "./ProgressRing";
 import { ThemeToggle } from "./ThemeToggle";
 import type { Theme } from "../lib/storage";
@@ -26,6 +26,8 @@ type Props = {
   onOpen: (id: string) => void;
   /** Open the Credentials view scoped to one collection (or standalone). */
   onOpenCredentials: (scope: string) => void;
+  /** Open the Port Mapping view — the patch panel's own record. */
+  onOpenPorts: () => void;
   onAdd: () => void;
   onReset: (id: string) => void;
   onRemove: (id: string) => void;
@@ -37,6 +39,7 @@ export function LibraryView({
   onToggleTheme,
   onOpen,
   onOpenCredentials,
+  onOpenPorts,
   onAdd,
   onReset,
   onRemove,
@@ -124,7 +127,7 @@ export function LibraryView({
         </p>
       ) : (
         <>
-          {grouped.collections.map((col) => (
+          {grouped.collections.map((col, colIndex) => (
             <section key={col.name} aria-label={`${col.name} collection`}>
               <CollectionHeader
                 name={col.name}
@@ -134,10 +137,15 @@ export function LibraryView({
               />
               <Collapsible collapsed={isCollapsed(col.name)}>
                 {!q && (
-                  <CredentialsCard
-                    items={col.items}
-                    onOpen={() => onOpenCredentials(col.name)}
-                  />
+                  <>
+                    <CredentialsCard
+                      items={col.items}
+                      onOpen={() => onOpenCredentials(col.name)}
+                    />
+                    {/* One physical panel, so one card — under the first
+                        collection rather than repeated in every group. */}
+                    {colIndex === 0 && <PortMapCard onOpen={onOpenPorts} />}
+                  </>
                 )}
                 <CardGrid
                   items={col.items}
@@ -240,6 +248,40 @@ function CredentialsCard({
         </span>
         <span className="mt-0.5 block text-[13px] leading-snug text-ink-soft">
           {filled} of {fields.length} filled in · stored only on this device
+        </span>
+      </span>
+      <ChevronDown size={17} className="shrink-0 -rotate-90 text-ink-faint" />
+    </button>
+  );
+}
+
+/**
+ * The patch panel's own record, sitting under Credentials because it is the
+ * same kind of thing: a device-local fact about this house that no guide can
+ * declare for you. Shown once per collection, since there is one panel.
+ */
+function PortMapCard({ onOpen }: { onOpen: () => void }) {
+  const [mapped, setMapped] = useState(() => store.countMappedPorts());
+  useEffect(() => {
+    setMapped(store.countMappedPorts());
+    return store.onPortMapChange(() => setMapped(store.countMappedPorts()));
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="rb-card mt-3 flex w-full cursor-pointer items-center gap-3.5 px-4 py-3 text-left transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-lift focus-visible:-translate-y-0.5"
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
+        <Plug size={18} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-[1rem] font-semibold leading-snug text-ink">
+          Port Mapping
+        </span>
+        <span className="mt-0.5 block text-[13px] leading-snug text-ink-soft">
+          {mapped} of 48 mapped · every in-wall run and where it lands
         </span>
       </span>
       <ChevronDown size={17} className="shrink-0 -rotate-90 text-ink-faint" />
