@@ -141,6 +141,17 @@ Every U400 has a **Matter QR code** — on a sticker inside the battery compartm
 
 ## Commission the locks into Home Assistant
 
+### If a lock is already paired to another app, reset it first
+These locks may already be commissioned — to **Aqara Home**, **SmartThings**, or both — from an earlier setup. That changes what you can do, in two ways:
+
+- **The QR code on the sticker will not work.** A Matter setup code commissions a device *once*. After that the device leaves commissioning mode, and adding a second controller requires a fresh, time-limited code minted by the existing admin through its own share flow. The sticker is dead until the lock is reset — at which point it works again, which is exactly why you keep it.
+- **Sharing into Home Assistant would not move the lock onto your network.** Multi-admin adds a *controller*; it never re-runs network commissioning. A lock commissioned by SmartThings or Aqara joined whatever Thread network *they* used, and it stays there. Home Assistant would still control it, routed through that foreign border router — but your own radio would serve nothing, and the network you just built would be decorative.
+
+So **factory reset every lock that has been paired elsewhere**, commission it into Home Assistant per the steps below, and only then share it back out to Aqara Home (worth having for firmware updates) or SmartThings. Sharing in that direction is safe: it leaves the Thread network alone, so the lock stays on yours.
+
+> [!WARNING]
+> Confirm the reset procedure against the **quick-start card or manual in your hand**, not a forum post — published procedures for the U400 disagree, variously describing **Reset + Set held together for 5 seconds** and the **Reset button alone under the battery cover for 10 seconds**, releasing on the beep. Expect the lock to want **re-calibration** afterwards (bolt direction and travel) and expect to re-enter keypad codes.
+
 ### Add the first U400
 With the OTBR up and the companion app open on a Bluetooth phone:
 
