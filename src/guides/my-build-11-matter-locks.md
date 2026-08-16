@@ -47,13 +47,18 @@ That is the right outcome — take it, do not fight it. Two things get conflated
 
 The locks commission into *Home Assistant's* Matter fabric no matter whose Thread network carries the packets; Matter payloads are encrypted end to end to your fabric, so Samsung gets no control of, and no visibility into, a lock. Sharing the transport costs nothing in local control — and it buys the one thing this build otherwise lacks: a **mains-powered Thread router**. Every Thread device here runs on batteries, so a network of your own would have zero relaying, one radio in the rack serving three locks at three separate doors. The Family Hub is mains-powered and already a border router, so joining it anchors the mesh a second time elsewhere in the house. Forming your own instead leaves two Thread meshes competing for the same 2.4 GHz airtime, neither relaying for the other.
 
-So make the network it joined the preferred one. Credentials come from the phone, which must be on the **same Wi-Fi** as that third-party border router:
+So make the network it joined the preferred one. **Check the browser first** — scroll that network's card in the Thread panel at `192.168.1.51:8123`. Home Assistant offers **Make preferred network** as soon as it holds the credentials, and it may already hold them by way of your own OTBR sitting on that network. If the button is there, press it, wait 30–60 seconds, and you are done.
+
+If it is not, the credentials have to come from the phone. Note where this happens: **not** in the SmartThings app. The Home Assistant companion app reads from the phone's operating-system credential locker — Apple's Thread store on iOS, Google Play Services on Android — and SmartThings' only role was publishing the network there earlier. The phone must be on the **same Wi-Fi** as the third-party border router.
 
 1. In the **Home Assistant companion app**, go to **Settings → Devices & services → Thread → Configure**.
 2. On iOS select **Send credentials to Home Assistant**; on Android select **Import credentials** (lower right).
-3. Refresh, then select **Make preferred network** on that network's card.
+3. Back in the **browser**, refresh the Thread panel and select **Make preferred network** on that network's card.
 
-If **Make preferred network** is already offered on the card in the browser, just press it — the companion-app step exists only to hand Home Assistant the credentials, which it may already have from your own OTBR.
+If step 2 stalls or does nothing, the route widely reported as more reliable is **Settings → Companion app → Troubleshooting → Sync Thread credentials** in the same app.
+
+> [!TIP]
+> **"You don't have any credentials to import"** means the phone's OS locker has no entry for that network, not that anything is broken. Open the **SmartThings app** on that same phone once so it publishes the network to the locker, then run the sync again. On Android, clearing Google Play Services' cache is the other fix that keeps working for people. There is also a SmartThings-side **Share SmartThings network** flow that hands out a QR code and a one-time passcode — but that exists for a border router that has *not* joined yet, so it is not your path.
 
 > [!WARNING]
 > Home Assistant's own documentation is candid that the preferred-network feature **is not fully implemented**: when you add a Matter device through the companion app, *the phone's* preferred network is used, not Home Assistant's. With a Nest Hub Max in the house, an Android phone may well prefer **NEST-PAN** through Google Play Services — and your locks would land on a network your border router is not on. Once the preferred network is set, use **Send credentials to phone** at the foot of the preferred-network section so both sides agree, **before** you scan the first lock.
