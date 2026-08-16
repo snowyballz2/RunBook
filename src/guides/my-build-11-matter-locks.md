@@ -37,10 +37,22 @@ A ZBT-2 ships with **Zigbee (ember) firmware**, and it cannot run Zigbee and Thr
 
 Use the wizard, which flashes the firmware *and* installs and configures the app for you. In Home Assistant, go to **Settings → Devices & services**. Where you go next depends on whether the adapter has been set up as an integration yet:
 
-- **Under "Discovered"** — which is where both sticks sit on this build, since Zigbee2MQTT drives its radio through a serial path rather than an integration — press **Add** on the card and choose **Thread** in the flow.
+- **Under "Discovered"** — which is where both sticks sit on this build, since Zigbee2MQTT drives its radio through a serial path rather than an integration — press **Add** on the card, then **Use as Thread adapter** in the *Pick your protocol* dialog.
 - **Already configured** — select the entry's **cog wheel** and choose **Use as Thread adapter**.
 
-Either way it takes a few minutes. Press **Ignore** on the *other* ZBT-2 card: that is the Zigbee radio, Zigbee2MQTT already owns it, and adding it hands it to ZHA.
+Never choose **Use as Zigbee adapter** on either stick. That sets up **ZHA**, Home Assistant's own Zigbee stack and a direct competitor to Zigbee2MQTT — only one process can hold a radio's serial port, and this build runs Z2M. The Zigbee stick's card is meant to sit in Discovered untouched.
+
+#### Work out which stick you are flashing, by elimination
+The *Pick your protocol* dialog names no serial and no port, and both discovery cards read **Home Assistant Connect ZBT-2** with nothing to separate them. Do not guess — establish it, without ever taking the Zigbee radio away from Z2M:
+
+1. Close the dialog and **unplug one ZBT-2** at the server.
+2. Reload **Settings → Devices & services**. One ZBT-2 card disappears — that is the stick you pulled.
+3. Check **Zigbee2MQTT**. If it is still running with its devices online, you pulled the **Thread** stick, and the card still on screen is the **Zigbee** one. (If Z2M went down instead, you pulled the Zigbee stick: return it to the same port and pull the other.)
+4. Press **Ignore** on that remaining card. It is the Zigbee radio, Z2M owns it, and ignoring it is what you wanted regardless.
+5. Plug the Thread stick back into **the same USB port** it came out of — passthrough is port-based (`host=1-5` / `host=1-6`), so the port matters.
+6. Exactly one ZBT-2 card returns, and it can only be the Thread one. **Add → Use as Thread adapter.**
+
+It takes a few minutes to flash and configure.
 
 > [!WARNING]
 > **Confirm the serial before you start.** This writes Thread-only firmware, and that adapter can never run Zigbee again. Two identical ZBT-2s are plugged in and **both discovery cards carry the same name with nothing to tell them apart** — flashing the Zigbee one destroys your coordinator, and every plug, leak sensor, and the valve drops off and needs re-pairing from scratch. Open the dialog and stop at the first screen: nothing is flashed until you pick Thread and confirm, so reading it is safe. Compare what it identifies against the `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_…` path already in **Settings → Apps → Zigbee2MQTT → Configuration** — that serial is the Zigbee radio and is the one you must **not** touch. If the dialog does not name the device clearly, back out and map the ports from the **Proxmox host shell** with the loop earlier on this page, which is unambiguous. Zigbee2MQTT holding its serial port open may block a wrong choice, but that is luck, not a safeguard.
