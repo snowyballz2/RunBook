@@ -35,10 +35,31 @@ Match the serial already in Z2M's port setting to its port — that is the Zigbe
 ### Install the OpenThread Border Router app
 In Home Assistant, go to **Settings → Apps → Install app**, install **OpenThread Border Router (OTBR)**, and in its configuration point it at the **second ZBT-2's device path** (not the Zigbee one). The two radios are identical hardware, so tell them apart by serial number: open **Settings → Apps → Zigbee2MQTT → Configuration** and note the `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_…` path it already uses — the OTBR gets the **other** `by-id` entry in its device dropdown. The rest of its options need no thought, but know why: **Baudrate `460800`** and **Hardware flow control on** for the same reason Z2M needs them — same hardware. **OTBR firewall on** (blocks traffic with no business crossing between Thread and the LAN). **NAT64 off** — it exists to give Thread devices a route to the IPv4 internet, and nothing here wants one: the locks and battery shades are commissioned into Home Assistant, not into Aqara's or SmartWings' clouds. **Beta off** — this radio carries the door locks. Leave the log level at `notice`; raise it to `debug` only while chasing a lock that will not commission.
 
-Start it. Home Assistant's **Thread** integration picks it up automatically and forms a network — check **Settings → Devices & services → Thread**, where you should see your own network listed as *preferred*, with the OTBR as its border router.
+Start it, then open **Settings → Devices & services → Thread**. What you see there depends on what else is already broadcasting Thread in the house, and this house has plenty.
+
+### Join the existing Thread network rather than starting a third
+The OTBR only forms its own `ha-thread-xxxx` network when it finds **no** existing Thread network. This house has two — **NEST-PAN-…** from the Google Nest Hub Max and **ST-TIZEN** from the Samsung Family Hub — so on first start the add-on **joins one of them instead**, and it appears nested under that network's card as an *OpenThread BorderRouter* at `localhost.local` (that hostname is how you spot your own add-on among the neighbours). The **Preferred network** panel stays empty, because Home Assistant can only mark a network preferred once it holds that network's credentials.
+
+That is the right outcome — take it, do not fight it. Two things get conflated here and they are worth separating for good:
+
+- The **Thread network** is the radio transport. It can be shared.
+- The **Matter fabric** is who controls the device. That stays yours alone.
+
+The locks commission into *Home Assistant's* Matter fabric no matter whose Thread network carries the packets; Matter payloads are encrypted end to end to your fabric, so Samsung gets no control of, and no visibility into, a lock. Sharing the transport costs nothing in local control — and it buys the one thing this build otherwise lacks: a **mains-powered Thread router**. Every Thread device here runs on batteries, so a network of your own would have zero relaying, one radio in the rack serving three locks at three separate doors. The Family Hub is mains-powered and already a border router, so joining it anchors the mesh a second time elsewhere in the house. Forming your own instead leaves two Thread meshes competing for the same 2.4 GHz airtime, neither relaying for the other.
+
+So make the network it joined the preferred one. Credentials come from the phone, which must be on the **same Wi-Fi** as that third-party border router:
+
+1. In the **Home Assistant companion app**, go to **Settings → Devices & services → Thread → Configure**.
+2. On iOS select **Send credentials to Home Assistant**; on Android select **Import credentials** (lower right).
+3. Refresh, then select **Make preferred network** on that network's card.
+
+If **Make preferred network** is already offered on the card in the browser, just press it — the companion-app step exists only to hand Home Assistant the credentials, which it may already have from your own OTBR.
+
+> [!WARNING]
+> Home Assistant's own documentation is candid that the preferred-network feature **is not fully implemented**: when you add a Matter device through the companion app, *the phone's* preferred network is used, not Home Assistant's. With a Nest Hub Max in the house, an Android phone may well prefer **NEST-PAN** through Google Play Services — and your locks would land on a network your border router is not on. Once the preferred network is set, use **Send credentials to phone** at the foot of the preferred-network section so both sides agree, **before** you scan the first lock.
 
 > [!NOTE]
-> This is the piece a HomePod would otherwise provide, and running it yourself means full local control and visibility. Be honest about the trade-off, though: it is **one** border router, where an Apple household gets a whole-house mesh from every HomePod. Worse, every Thread device on this build is **battery-powered** — the locks and the battery shades — and only mains-powered Thread devices become Thread *routers*, so there is no relaying at all: each device talks straight to this one radio. (The Third Reality plugs cannot fill the gap; they are Zigbee/BLE, not Thread. Nor can the PoE shades — Matter-over-Ethernet devices never join the Thread mesh.) A **HomePod** later, or any mains-powered Matter-over-Thread device near a problem door, is what adds relaying. Plan around it — commission Thread devices within solid range of this radio, and lean on the fact that most of this build's Matter devices (the **PoE shades**, wired over Ethernet) are not on Thread at all. The Thread mesh here carries only these locks and any **battery** shades, so its footprint is light.
+> Running the border router yourself is the piece a HomePod would otherwise provide, and it keeps control local and visible. Know the shape of the mesh regardless: only **mains-powered** Thread devices become Thread *routers* that relay, and every Thread device in this build is **battery-powered** — the locks and the battery shades. (The Third Reality plugs cannot fill the gap; they are Zigbee/BLE, not Thread. Nor can the PoE shades — Matter-over-Ethernet devices never join the Thread mesh.) Joining the Family Hub's network is what gives you a relay today; a **HomePod** later, or any mains-powered Matter-over-Thread device near a problem door, adds more. Plan around it — commission Thread devices within solid range of a border router. The consolation is that most of this build's Matter devices (the **PoE shades**, wired over Ethernet) are not on Thread at all, so the mesh's footprint stays light.
 
 ## Before you commission
 
