@@ -37,33 +37,41 @@ In Home Assistant, go to **Settings → Apps → Install app**, install **OpenTh
 
 Start it, then open **Settings → Devices & services → Thread**. What you see there depends on what else is already broadcasting Thread in the house, and this house has plenty.
 
-### Join the existing Thread network rather than starting a third
-The OTBR only forms its own `ha-thread-xxxx` network when it finds **no** existing Thread network. This house has two — **NEST-PAN-…** from the Google Nest Hub Max and **ST-TIZEN** from the Samsung Family Hub — so on first start the add-on **joins one of them instead**, and it appears nested under that network's card as an *OpenThread BorderRouter* at `localhost.local` (that hostname is how you spot your own add-on among the neighbours). The **Preferred network** panel stays empty, because Home Assistant can only mark a network preferred once it holds that network's credentials.
+### Own the network — do this before you commission anything
+The OTBR only forms its own `ha-thread-xxxx` network when it finds **no** existing Thread network. This house has two — **NEST-PAN-…** from the Google Nest Hub Max and **ST-TIZEN** from the Samsung Family Hub — so on first start the add-on **joins one of them instead**, and appears nested under that network's card as an *OpenThread BorderRouter* at `localhost.local` (that hostname is how you spot your own add-on among the neighbours). The **Preferred network** panel stays empty, because Home Assistant can only mark a network preferred once it holds that network's credentials.
 
-That is the right outcome — take it, do not fight it. Two things get conflated here and they are worth separating for good:
+Do not accept that. **Form your own network and make it the one everything else answers to.** The alternative — commissioning the locks onto Google's or Samsung's mesh — works fine today and costs a **factory reset of all three U400s** the day you want out, because a commissioned Matter device cannot be moved between Thread networks without re-commissioning. Doing this before the first QR scan costs nothing; doing it later costs an evening.
 
-- The **Thread network** is the radio transport. It can be shared.
-- The **Matter fabric** is who controls the device. That stays yours alone.
+Separate two things that get conflated, because the answer turns on them:
 
-The locks commission into *Home Assistant's* Matter fabric no matter whose Thread network carries the packets; Matter payloads are encrypted end to end to your fabric, so Samsung gets no control of, and no visibility into, a lock. Sharing the transport costs nothing in local control — and it buys the one thing this build otherwise lacks: a **mains-powered Thread router**. Every Thread device here runs on batteries, so a network of your own would have zero relaying, one radio in the rack serving three locks at three separate doors. The Family Hub is mains-powered and already a border router, so joining it anchors the mesh a second time elsewhere in the house. Forming your own instead leaves two Thread meshes competing for the same 2.4 GHz airtime, neither relaying for the other.
+- The **Thread network** is the radio transport. It *can* be shared, and sharing it is not a security failure — Matter payloads are encrypted end to end to Home Assistant's fabric, so a foreign border router can neither read nor operate a lock.
+- The **Matter fabric** is who controls the device. That is yours either way.
 
-### Converge on the network your phone already prefers
-Which network the OTBR happened to join is **not** the one to standardise on. Standardise on the one your **phone** prefers, and move the border router to meet it. Two facts force this:
+So the case for joining someone else's mesh was never about control — it was about borrowing a **mains-powered Thread router**. Every Thread device in this build runs on batteries (the locks, the battery shades), and only mains-powered devices become Thread routers that relay. But you can buy that outright for $25–40 — an Eve Energy plug, a Nanoleaf Essentials bulb, any mains-powered Matter-over-Thread device — commission it onto **your** network, and it relays for your locks forever. That is worth vastly more than a dependency on two vendors who each want to be the hub.
 
-- The companion app hands Home Assistant the phone's *preferred* credentials only. A network the phone does not prefer cannot be imported — which makes "get the credentials for the network the OTBR joined" circular and unwinnable.
-- Home Assistant's own docs concede the preferred-network feature is incomplete, and that **the phone's** preferred network is what gets used when commissioning Matter devices through the companion app. The phone wins regardless, so stop fighting it.
+> [!NOTE]
+> The obvious idea — make the ZBT-2 the main network and have the Nest and Samsung hubs join it as nodes — is architecturally correct and mostly blocked by the vendors. **Google will not join**: its Play Services API is documented for border-router *vendors*, and Google Home exposes no user-facing option to make a Nest hub adopt another ecosystem's network. It stays an island. **Samsung might**: SmartThings shipped a **Manage Thread Network** menu in hub settings (app 1.7.37 iOS / 1.8.37 Android, hub firmware 0.58.10) that lists networks to join — but the published hardware list covers the SmartThings v2/v3 and Aeotec hubs and does not name **Family Hub** refrigerators. Check yours in the **SmartThings app** before assuming either way. Nothing here blocks the plan below; a hub that can join is a bonus router, not a prerequisite.
 
-First, get the credentials off the phone. This happens in the **Home Assistant companion app** — **not** in the SmartThings or Google Home app. It reads the phone's operating-system credential locker (Apple's Thread store on iOS, Google Play Services on Android); the other ecosystem's app is only what published the network there earlier. Keep the phone on the **same Wi-Fi** as the border routers.
+### Form the network and point everything at it
+Work in the **browser** at `192.168.1.51:8123`, **Settings → Devices & services → Thread**.
 
-1. In the **Home Assistant companion app**, go to **Settings → Devices & services → Thread → Configure**.
-2. On iOS select **Send credentials to Home Assistant**; on Android select **Import credentials** (lower right). If that stalls or does nothing, the route widely reported as more reliable is **Settings → Companion app → Troubleshooting → Sync Thread credentials**.
-3. Back in the **browser** at `192.168.1.51:8123`, refresh the Thread panel. Exactly one network now offers **Make preferred network** — that is the one the phone prefers. Press it and wait 30–60 seconds.
-4. Now move the border router to it. On your own OTBR's row — the one whose hostname is `localhost.local` — open the **⋮** menu and select **Add to my network**, then confirm. That writes the preferred network's dataset onto the radio, moving it off whatever it originally joined.
-
-Order matters: **Add to my network** means "join whatever is preferred right now," so the preferred network has to be set first. When it finishes, the panel should list your OTBR nested under the preferred network alongside that ecosystem's border router.
+1. On your own OTBR's row — hostname `localhost.local` — open the **⋮** menu and select **Reset border router**. This erases the radio's configuration and forms a **brand-new** Thread network on it, which is exactly what you want here. Confirm the dialog.
+2. On the new `ha-thread-…` network that appears, select **Make preferred network**. Wait 30–60 seconds.
+3. At the foot of the preferred-network box, select **Send credentials to phone** so the phone stops defaulting to the Google network.
 
 > [!WARNING]
-> The same **⋮** menu offers **Reset border router**, which sounds like the tool for this job and is not. It erases the radio's configuration and forms a **brand-new** Thread network — the fast route to Home Assistant trying to commission onto a network name that no longer exists, a state that survives reinstalls and has been [reported and closed as not planned](https://github.com/home-assistant/core/issues/162401). Use **Add to my network**. Leave **Reset border router** alone.
+> **Reset border router** is the right tool *only* when you intend to form a new network, as here. Reaching for it to move a radio onto an **existing** network is how people end up with Home Assistant commissioning against a network name that no longer exists — a state that survives reinstalls and has been [reported and closed as not planned](https://github.com/home-assistant/core/issues/162401). To join an existing network, the correct action on that same **⋮** menu is **Add to my network**, which writes the currently-preferred network's dataset onto the radio.
+
+> [!WARNING]
+> Home Assistant's own docs concede the preferred-network feature **is not fully implemented**: when adding a Matter device through the companion app, *the phone's* preferred network is used, not Home Assistant's — and it is not documented that **Send credentials to phone** promotes yours to preferred rather than merely storing it. So commission **one** lock first and confirm in the Thread panel that it landed on your network before doing the other two. With a Nest Hub Max in the house this is a live risk, not a theoretical one.
+
+### If you ever do want to join an existing network instead
+Credentials have to come from the phone, and the direction is fixed: the **Home Assistant companion app** reads the phone's operating-system credential locker (Apple's Thread store on iOS, Google Play Services on Android). The SmartThings or Google Home app is only what published a network there earlier — you never import from it directly. Keep the phone on the **same Wi-Fi** as the border routers.
+
+1. In the **Home Assistant companion app**, go to **Settings → Devices & services → Thread → Configure**.
+2. On iOS select **Send credentials to Home Assistant**; on Android select **Import credentials** (lower right). If that stalls, the route widely reported as more reliable is **Settings → Companion app → Troubleshooting → Sync Thread credentials**.
+3. Back in the **browser**, refresh the Thread panel. Exactly one network offers **Make preferred network** — the one the phone prefers, since the app exports only the phone's *preferred* credentials. Press it.
+4. On your OTBR's row, **⋮ → Add to my network** to move the radio onto it.
 
 > [!TIP]
 > **"You don't have any credentials to import"** means the phone's OS locker holds nothing, not that anything is broken. Open the other ecosystem's app once on that same phone — **SmartThings** or **Google Home** — so it publishes its network to the locker, then run the sync again. On Android, clearing Google Play Services' cache is the other fix that keeps working for people.
