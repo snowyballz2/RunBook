@@ -199,7 +199,12 @@ With routers in place, pair the **12× Third Reality 3RWS18BZ** siren leak senso
 > Name each sensor as you pair it — "Water Heater Leak", "Dishwasher Leak" — and drop it in its Area on the spot. Twelve identical sensors paired silently are impossible to tell apart later; named-as-you-go takes seconds.
 
 ### Join the shut-off valve
-Pair the **Aqara Valve Controller T1** last. It is the clamp-on actuator on the **quarter-turn lever** main water valve — it physically turns the lever, so there are no plumbing changes. Put it in pairing mode, join it in Z2M, then **rename it so it surfaces as the `switch.main_water` entity** in Home Assistant — Z2M exposes the T1 as a plain **switch** (ON = open, OFF = closed), not a `valve.*` device, and that exact entity ID is what the leak-to-valve automation built later in this collection targets. A default name like `switch.aqara_valve_controller_t1` would leave that automation pointing at nothing.
+Pair the **Aqara Valve Controller T1** last. It is the clamp-on actuator on the **quarter-turn lever** main water valve — it physically turns the lever, so there are no plumbing changes.
+
+1. **Open the network** — Permit join in Z2M, as with everything else.
+2. **Hold the valve's power / On-Off button for about 5 seconds**, until its LED blinks. That is pairing mode.
+3. It joins as `lumi.valve.agl001`. If it refuses — most likely on a unit that has been paired before — force a reset the way that actually works on stubborn ones: **pull a battery, then hold the button while reinserting it**.
+4. **Rename it so it surfaces as the `switch.main_water` entity** in Home Assistant — Z2M exposes the T1 as a plain **switch** (ON = open, OFF = closed), not a `valve.*` device, and that exact entity ID is what the leak-to-valve automation built later in this collection targets. A default name like `switch.aqara_valve_controller_t1` would leave that automation pointing at nothing.
 
 > [!WARNING]
 > Before trusting it, confirm the T1 throws the lever through its **full travel** — fully open to fully closed. Mount it so closed is genuinely closed; a clamp that slips is worse than no automation at all.
