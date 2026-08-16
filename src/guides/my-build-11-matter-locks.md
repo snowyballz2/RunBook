@@ -47,18 +47,26 @@ That is the right outcome — take it, do not fight it. Two things get conflated
 
 The locks commission into *Home Assistant's* Matter fabric no matter whose Thread network carries the packets; Matter payloads are encrypted end to end to your fabric, so Samsung gets no control of, and no visibility into, a lock. Sharing the transport costs nothing in local control — and it buys the one thing this build otherwise lacks: a **mains-powered Thread router**. Every Thread device here runs on batteries, so a network of your own would have zero relaying, one radio in the rack serving three locks at three separate doors. The Family Hub is mains-powered and already a border router, so joining it anchors the mesh a second time elsewhere in the house. Forming your own instead leaves two Thread meshes competing for the same 2.4 GHz airtime, neither relaying for the other.
 
-So make the network it joined the preferred one. **Check the browser first** — scroll that network's card in the Thread panel at `192.168.1.51:8123`. Home Assistant offers **Make preferred network** as soon as it holds the credentials, and it may already hold them by way of your own OTBR sitting on that network. If the button is there, press it, wait 30–60 seconds, and you are done.
+### Converge on the network your phone already prefers
+Which network the OTBR happened to join is **not** the one to standardise on. Standardise on the one your **phone** prefers, and move the border router to meet it. Two facts force this:
 
-If it is not, the credentials have to come from the phone. Note where this happens: **not** in the SmartThings app. The Home Assistant companion app reads from the phone's operating-system credential locker — Apple's Thread store on iOS, Google Play Services on Android — and SmartThings' only role was publishing the network there earlier. The phone must be on the **same Wi-Fi** as the third-party border router.
+- The companion app hands Home Assistant the phone's *preferred* credentials only. A network the phone does not prefer cannot be imported — which makes "get the credentials for the network the OTBR joined" circular and unwinnable.
+- Home Assistant's own docs concede the preferred-network feature is incomplete, and that **the phone's** preferred network is what gets used when commissioning Matter devices through the companion app. The phone wins regardless, so stop fighting it.
+
+First, get the credentials off the phone. This happens in the **Home Assistant companion app** — **not** in the SmartThings or Google Home app. It reads the phone's operating-system credential locker (Apple's Thread store on iOS, Google Play Services on Android); the other ecosystem's app is only what published the network there earlier. Keep the phone on the **same Wi-Fi** as the border routers.
 
 1. In the **Home Assistant companion app**, go to **Settings → Devices & services → Thread → Configure**.
-2. On iOS select **Send credentials to Home Assistant**; on Android select **Import credentials** (lower right).
-3. Back in the **browser**, refresh the Thread panel and select **Make preferred network** on that network's card.
+2. On iOS select **Send credentials to Home Assistant**; on Android select **Import credentials** (lower right). If that stalls or does nothing, the route widely reported as more reliable is **Settings → Companion app → Troubleshooting → Sync Thread credentials**.
+3. Back in the **browser** at `192.168.1.51:8123`, refresh the Thread panel. Exactly one network now offers **Make preferred network** — that is the one the phone prefers. Press it and wait 30–60 seconds.
+4. Now move the border router to it. On your own OTBR's row — the one whose hostname is `localhost.local` — open the **⋮** menu and select **Add to my network**, then confirm. That writes the preferred network's dataset onto the radio, moving it off whatever it originally joined.
 
-If step 2 stalls or does nothing, the route widely reported as more reliable is **Settings → Companion app → Troubleshooting → Sync Thread credentials** in the same app.
+Order matters: **Add to my network** means "join whatever is preferred right now," so the preferred network has to be set first. When it finishes, the panel should list your OTBR nested under the preferred network alongside that ecosystem's border router.
+
+> [!WARNING]
+> The same **⋮** menu offers **Reset border router**, which sounds like the tool for this job and is not. It erases the radio's configuration and forms a **brand-new** Thread network — the fast route to Home Assistant trying to commission onto a network name that no longer exists, a state that survives reinstalls and has been [reported and closed as not planned](https://github.com/home-assistant/core/issues/162401). Use **Add to my network**. Leave **Reset border router** alone.
 
 > [!TIP]
-> **"You don't have any credentials to import"** means the phone's OS locker has no entry for that network, not that anything is broken. Open the **SmartThings app** on that same phone once so it publishes the network to the locker, then run the sync again. On Android, clearing Google Play Services' cache is the other fix that keeps working for people. There is also a SmartThings-side **Share SmartThings network** flow that hands out a QR code and a one-time passcode — but that exists for a border router that has *not* joined yet, so it is not your path.
+> **"You don't have any credentials to import"** means the phone's OS locker holds nothing, not that anything is broken. Open the other ecosystem's app once on that same phone — **SmartThings** or **Google Home** — so it publishes its network to the locker, then run the sync again. On Android, clearing Google Play Services' cache is the other fix that keeps working for people.
 
 > [!WARNING]
 > Home Assistant's own documentation is candid that the preferred-network feature **is not fully implemented**: when you add a Matter device through the companion app, *the phone's* preferred network is used, not Home Assistant's. With a Nest Hub Max in the house, an Android phone may well prefer **NEST-PAN** through Google Play Services — and your locks would land on a network your border router is not on. Once the preferred network is set, use **Send credentials to phone** at the foot of the preferred-network section so both sides agree, **before** you scan the first lock.
