@@ -147,10 +147,28 @@ These locks may already be commissioned — to **Aqara Home**, **SmartThings**, 
 - **The QR code on the sticker will not work.** A Matter setup code commissions a device *once*. After that the device leaves commissioning mode, and adding a second controller requires a fresh, time-limited code minted by the existing admin through its own share flow. The sticker is dead until the lock is reset — at which point it works again, which is exactly why you keep it.
 - **Sharing into Home Assistant would not move the lock onto your network.** Multi-admin adds a *controller*; it never re-runs network commissioning. A lock commissioned by SmartThings or Aqara joined whatever Thread network *they* used, and it stays there. Home Assistant would still control it, routed through that foreign border router — but your own radio would serve nothing, and the network you just built would be decorative.
 
-So **factory reset every lock that has been paired elsewhere**, commission it into Home Assistant per the steps below, and only then share it back out to Aqara Home (worth having for firmware updates) or SmartThings. Sharing in that direction is safe: it leaves the Thread network alone, so the lock stays on yours.
+So **factory reset every lock that has been paired elsewhere** before commissioning it into Home Assistant.
+
+### Two QR codes, and why Aqara Home is worth keeping
+The battery compartment holds **two different codes**, and they are not interchangeable:
+
+- **Magicpair Code** — binds the lock to **Aqara Home**, Aqara's own account binding.
+- **Matter Pairing Code** — commissions the lock into a **Matter fabric**.
+
+Aqara Home is optional, but the manual is blunt about the cost of skipping it: *"unique features such as Night Latch mode, Auto-Lock settings and more will be unavailable to you."* Those are firmware features that keep working with the network down, so they are worth having alongside Home Assistant's automations rather than instead of them. Aqara Home is also the practical route for **firmware updates**.
+
+The key fact that makes both possible: a lock receives Thread credentials **only when it is commissioned into a Matter fabric**. Binding to Aqara Home is not that — absent an Aqara Thread hub it puts the lock on nobody's mesh. So run them in this order:
+
+1. **Send credentials to phone first**, before touching any lock. This is the insurance: whichever app performs the Matter commissioning, the phone hands out *your* network.
+2. **Factory reset** the lock.
+3. **Bind to Aqara Home** with the **Magicpair Code** — Night Latch, Auto-Lock, firmware updates.
+4. In Aqara Home, open the lock → **Matter** → **Matter Pairing Code** to generate a code, then use it in the **Home Assistant companion app** under **Settings → Matter → Add device**. This step is what provisions Thread, from Home Assistant, onto your network.
+5. **Do not let SmartThings commission it.** If you want it there afterwards, share out from Home Assistant — sharing leaves the Thread network alone.
+
+If Aqara Home proves awkward, the direct route is to press **Set** once to enter pairing mode and scan the **Matter Pairing Code** on the inner panel straight from the Home Assistant app — at the cost of those firmware features. Either way, confirm on **lock one** which network it landed on before doing the other two.
 
 > [!WARNING]
-> Confirm the reset procedure against the **quick-start card or manual in your hand**, not a forum post — published procedures for the U400 disagree, variously describing **Reset + Set held together for 5 seconds** and the **Reset button alone under the battery cover for 10 seconds**, releasing on the beep. Expect the lock to want **re-calibration** afterwards (bolt direction and travel) and expect to re-enter keypad codes.
+> To reset a U400, open the **battery compartment** on the inner panel and **long-press the Reset button for 5 seconds** — it sits directly below the **Set** button, and it is a single button, not a combination (forum posts describing a Reset+Set chord or a 10-second hold are wrong). Expect the lock to want **re-calibration** afterwards (bolt direction and travel) and expect to re-enter keypad codes.
 
 ### Add the first U400
 With the OTBR up and the companion app open on a Bluetooth phone:
