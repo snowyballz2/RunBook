@@ -127,6 +127,7 @@ The exit, if you ever want one, is a factory reset of each U400 and a re-commiss
 Three things need to be true before you touch a lock:
 
 - The **Home Assistant OS VM** is up, with the **Matter** integration available (it ships with Home Assistant) and the **OTBR** running from the step above.
+- The **Matter Server** app is **up to date**. Check **Settings → Apps** for an *Update available* badge on it and clear it before you commission anything — the Matter integration refuses to add devices when the server is behind the version it expects, and the failure names the version rather than the cause. Updating is cheap while no devices are commissioned yet.
 - You have an **iPhone or Android phone with Bluetooth on**, signed in to the **Home Assistant companion app**. Commissioning a Matter device happens over Bluetooth from a phone — the HA web UI alone cannot do it, which surprises people running HA in a VM with no Bluetooth. The phone bridges that gap and hands the device HA's Thread credentials.
 - Each lock is **physically installed and powered** — the U400's rechargeable lithium pack charged (it takes USB-C, not disposable cells) and seated, the door able to throw the bolt.
 
