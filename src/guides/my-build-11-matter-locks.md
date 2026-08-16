@@ -14,7 +14,20 @@ The three Aqara U400 deadbolts are **Matter-over-Thread** devices, and this buil
 ## Stand up Home Assistant's Thread border router
 
 ### Add a second ZBT-2 for Thread
-Your first **HA Connect ZBT-2** is busy running Zigbee2MQTT — and one radio cannot cleanly do Zigbee and Thread at once (the multi-protocol firmware is experimental and degrades both). So Thread gets its **own** ZBT-2. Plug a **second ZBT-2** into another rear USB port on its included 1.5 m USB-C cable (stand the antenna away from the case, and away from the first radio), then pass it to the Home Assistant OS VM exactly like the first: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the second ZBT-2 by name, and reboot the VM.
+Your first **HA Connect ZBT-2** is busy running Zigbee2MQTT — and one radio cannot cleanly do Zigbee and Thread at once (the multi-protocol firmware is experimental and degrades both). So Thread gets its **own** ZBT-2. Plug a **second ZBT-2** into another rear USB port on its included 1.5 m USB-C cable (stand the antenna away from the case, and away from the first radio), then pass it to the Home Assistant OS VM — but **not** the way the first one was added. Both sticks report the identical USB ID `303a:831a`, so **Use USB Vendor/Device ID cannot tell them apart** and a second entry with the same ID may hand Proxmox the same physical stick twice. Select **Use USB Port** instead, which binds to the physical port and is unambiguous. To learn which port holds which stick, run this in the **Proxmox host shell**:
+
+```bash
+for d in /sys/bus/usb/devices/*; do
+  [ -f "$d/idVendor" ] || continue
+  [ "$(cat $d/idVendor)" = "303a" ] && [ "$(cat $d/idProduct)" = "831a" ] &&
+    echo "port $(basename $d)  serial $(cat $d/serial 2>/dev/null)"
+done
+```
+
+Match the serial already in Z2M's port setting to its port — that is the Zigbee radio, and the *other* port is the one to pass through now. Then reboot the VM. While here, switch the **first** stick's entry to port-based too if it is still bound by Vendor/Device ID (`grep usb /etc/pve/qemu-server/101.conf`), so a reboot can never shuffle which is which.
+
+> [!NOTE]
+> Inside Home Assistant the two sort themselves out regardless: each appears as its own `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_<serial>-if00` path, so Z2M keeps the radio it was configured against and OTBR takes the other. The serial in that path is the whole reason the guide insists on by-id rather than `ttyACM0`.
 
 > [!WARNING]
 > Two identical ZBT-2s are easy to mix up. Note which USB port each is on, and after the reboot confirm Zigbee2MQTT still sees *its* coordinator before you point Thread at the other one — do not let the OTBR app grab the Zigbee radio, or the whole mesh drops.
