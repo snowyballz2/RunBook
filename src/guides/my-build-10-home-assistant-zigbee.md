@@ -217,6 +217,14 @@ Pair the **Aqara Valve Controller T1** last. It is the clamp-on actuator on the 
 ### Turn on Home Assistant's own backups
 Home Assistant keeps its own backups separate from the whole-VM copy Proxmox takes. Turn them on now in the Home Assistant UI, under **Settings → System → Backups → Set up backups**: pick a **daily** schedule and **System optimal** for the time, and Home Assistant handles it from then on. These local backups are the fast in-app undo — one click to roll back a bad app or a broken automation.
 
+Setup generates an **encryption key** and shows it once, alongside a downloadable **emergency kit**. Record it before clicking past — this is the highest-stakes secret on the page:
+
+> [!SECRET] ha-backup-key | Home Assistant backup encryption key
+> Generated at **Settings → System → Backups → Set up backups**. Every HA backup is encrypted with it, and **without it a backup cannot be restored by anyone** — Nabu Casa does not hold a copy and cannot recover it. Still have a working HA? Retrieve it any time from the backup settings on that same screen.
+
+> [!WARNING]
+> Also **download the emergency kit** and put it somewhere that is not this server — the encrypted USB drive from the Protect Your Data page is the right home, and Vaultwarden once it exists. A key stored only inside the machine it restores is no key at all: the failure that makes you need the backup is exactly the one that takes the key with it.
+
 ### Point the backups at the NAS
 On their own, those backups land on the VM's disk — the copy lives on the very thing it is protecting. Send them to the NAS instead — still in the Home Assistant UI: go to **Settings → System → Storage**, click **Add network storage**, and point it at the TrueNAS `backups` SMB (Server Message Block) share from the TrueNAS Storage page (server `192.168.1.20`, your SMB share credentials, **Usage: Backups**). Then under **Settings → System → Backups**, pick that network location as where backups go.
 
