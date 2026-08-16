@@ -177,12 +177,16 @@ If Aqara Home proves awkward, the direct route is to press **Set** once to enter
 With the OTBR up and the companion app open on a Bluetooth phone:
 
 1. In the **Home Assistant companion app**, go to **Settings → Matter** and select **Add device**. (Matter and Thread moved out of *Devices & services* to their own top-level Settings entry in Home Assistant 2026.2.)
-2. Scan the lock's **Matter QR code** (or tap to enter the numeric setup code by hand).
-3. The phone commissions the lock over **Bluetooth**, hands it Home Assistant's **Thread credentials**, and the lock joins HA's Thread network. After a moment it appears in Home Assistant as a `lock.*` entity.
-4. Assign it to the matching **Area** — **Carport Door**, **Front Door**, or **Basement Door** — and give it a clear name.
+2. **Press the lock's Set button once** to put it into pairing mode — a single press, in the battery compartment above Reset. A lock that is not factory-fresh does *not* advertise on its own, and removing it from another ecosystem does not start it advertising either. Skip this and the phone reports **"Unable to Add Accessory — you may need to restart your accessory"**, which names the symptom rather than the cause.
+3. Scan the lock's **Matter Pairing Code** — the lower of the two QR codes in the battery compartment, *not* the Magicpair code above it — or tap to enter the numeric setup code by hand. Do it promptly: the commissioning window is time-limited. Keep the phone within a couple of feet of the lock with Bluetooth on, since commissioning runs over BLE before Thread is involved.
+4. The phone commissions the lock over **Bluetooth**, hands it Home Assistant's **Thread credentials**, and the lock joins HA's Thread network. After a moment it appears in Home Assistant as a `lock.*` entity.
+5. Assign it to the matching **Area** — **Carport Door**, **Front Door**, or **Basement Door** — and give it a clear name.
 
 > [!WARNING]
 > Do this from the **companion app**, not the desktop browser — the Matter add flow needs the phone's Bluetooth radio to reach the lock, and the Home Assistant VM has none.
+
+> [!TIP]
+> **"Unable to Add Accessory"** almost always means the lock is not advertising. Press **Set** once and rescan immediately. If that fails, pull a battery for ten seconds, reseat it, press **Set**, and try again. If it still refuses, a Matter fabric survived somewhere and the sticker code is dead — generate a fresh one from **Aqara Home → the lock → Matter → Matter Pairing Code**. A factory reset is the last resort, not the first.
 
 > [!TIP]
 > If the first join is slow, commission the lock **near the ZBT-2 Thread radio**, then move it to its door. Thread is a mesh, but the initial handshake is more reliable with a strong first hop.
