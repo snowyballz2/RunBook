@@ -191,7 +191,7 @@ One map for the whole build: every physical device, how it is powered, and which
 <text x="540" y="758" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">border router: HA OTBR — 2nd ZBT-2 on the server</text>
 <rect x="392" y="772" width="296" height="88" rx="6" style="fill:var(--color-surface);stroke:var(--color-line-strong)"/>
 <text x="540" y="792" text-anchor="middle" style="fill:currentColor;font-size:10.5px">3× Aqara U400 deadbolts</text>
-<text x="540" y="807" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Front · Side · Garage</text>
+<text x="540" y="807" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">Carport · Front · Basement</text>
 <text x="540" y="821" text-anchor="middle" style="fill:var(--color-ink-soft);font-size:9.5px">commissioned straight into Home Assistant</text>
 <rect x="510" y="831" width="60" height="14" rx="3" style="fill:#f43f5e;fill-opacity:0.12"/>
 <text x="540" y="841" text-anchor="middle" style="fill:#f43f5e;font-size:9.5px">battery</text>

@@ -168,7 +168,7 @@ actions:
       message: "Front door has been unlocked for 10 minutes."
 ```
 
-Repeat the patterns you want for `lock.side_door` and `lock.garage_door` too — the Side and Garage locks from the Matter Locks page (your real names from **Entities**).
+Repeat the patterns you want for `lock.carport_door` and `lock.basement_door` too — the Carport and Basement locks from the Matter Locks page (confirm your real entity IDs under **Entities**).
 
 > [!TIP]
 > If you later add an Aqara door/window **contact sensor** to the Zigbee mesh and pair it (the same way you joined the leak sensors), you can swap the auto-lock trigger to fire on the *door* closing and holding (`binary_sensor.front_door_contact` reading `off` `for: "00:05:00"`) for a more natural "lock after the door is shut" behaviour. The build does not ship one, so the lock-state version above is the default.
@@ -196,7 +196,7 @@ actions:
   - action: light.turn_off
     target: { entity_id: all }
   - action: lock.lock
-    target: { entity_id: [lock.front_door, lock.side_door, lock.garage_door] }
+    target: { entity_id: [lock.carport_door, lock.front_door, lock.basement_door] }
   - action: climate.set_temperature
     target: { entity_id: climate.downstairs }
     data: { temperature: 16 }

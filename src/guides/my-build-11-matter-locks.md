@@ -137,7 +137,7 @@ Three things need to be true before you touch a lock:
 Every U400 has a **Matter QR code** — on a sticker inside the battery compartment, on the quick-start card, and usually a peel-off duplicate for your records. You scan each one **once**, into Home Assistant. Record all three now so this checklist stands on its own, and keep them in your password manager (you consolidate these into Vaultwarden later in the build) — you re-commission from them after any factory reset.
 
 > [!SECRET] matter-lock-codes | Aqara U400 Matter setup codes (all three)
-> The 11-digit numeric pairing code under each QR (shown grouped like `XXXX-XXX-XXXX`). Capture all three — one per lock — labelled by door (Front, Side, Garage). If a lock ever needs a factory reset, you re-commission from these.
+> The 11-digit numeric pairing code under each QR (shown grouped like `XXXX-XXX-XXXX`). Capture all three — one per lock — labelled by door (Carport, Front, Basement). If a lock ever needs a factory reset, you re-commission from these.
 
 ## Commission the locks into Home Assistant
 
@@ -178,7 +178,7 @@ With the OTBR up and the companion app open on a Bluetooth phone:
 1. In the **Home Assistant companion app**, go to **Settings → Matter** and select **Add device**. (Matter and Thread moved out of *Devices & services* to their own top-level Settings entry in Home Assistant 2026.2.)
 2. Scan the lock's **Matter QR code** (or tap to enter the numeric setup code by hand).
 3. The phone commissions the lock over **Bluetooth**, hands it Home Assistant's **Thread credentials**, and the lock joins HA's Thread network. After a moment it appears in Home Assistant as a `lock.*` entity.
-4. Assign it to the matching **Area** (Front Door, Side Door, Garage) and give it a clear name.
+4. Assign it to the matching **Area** — **Carport Door**, **Front Door**, or **Basement Door** — and give it a clear name.
 
 > [!WARNING]
 > Do this from the **companion app**, not the desktop browser — the Matter add flow needs the phone's Bluetooth radio to reach the lock, and the Home Assistant VM has none.
