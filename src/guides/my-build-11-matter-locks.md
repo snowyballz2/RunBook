@@ -82,9 +82,12 @@ So the case for joining someone else's mesh was never about control — it was a
 ### Form the network and point everything at it
 Work in the **browser** at `192.168.1.51:8123`, **Settings → Devices & services → Thread**.
 
-1. On your own OTBR's row — hostname `localhost.local` — open the **⋮** menu and select **Reset border router**. This erases the radio's configuration and forms a **brand-new** Thread network on it, which is exactly what you want here. Confirm the dialog.
-2. On the new `ha-thread-…` network that appears, select **Make preferred network**. Wait 30–60 seconds.
-3. At the foot of the preferred-network box, select **Send credentials to phone** so the phone stops defaulting to the Google network.
+1. Check where your border router landed. Flashed through the **Use as Thread adapter** wizard it usually forms its own network and marks it preferred unasked — look for a **`ha-thread-…`** card sitting *above* the **Other networks** heading, holding a router named **Home Assistant OpenThread Border Router** at `homeassistant-otbr.local`. If that is what you see, steps 1 and 2 are already done; go to step 3.
+2. Otherwise, on your own OTBR's row open the **⋮** menu and select **Reset border router** — this erases the radio's configuration and forms a **brand-new** Thread network, which is what you want here — then select **Make preferred network** on the `ha-thread-…` card that appears and wait 30–60 seconds. Do not assume the automatic case: the ZBT-2's network is [not always auto-selected as preferred](https://github.com/home-assistant/core/issues/165279).
+3. Hand the network to your phone, so it stops defaulting to a neighbouring one. **This cannot be done from a desktop browser** — **Send credentials to phone** is gated on a keychain capability only the companion app exposes, and simply does not render anywhere else. Open the same **Thread** panel in the **Home Assistant companion app** on your phone; the button sits at the foot of the preferred network's card, below its border router.
+
+> [!NOTE]
+> A small phone-and-key icon beside a router's name marks it as that network's **default router** — on a single-router network, just your own radio. Expect a **stale row** as well: a border router you have reset or reflashed lingers under its old network for a while, because the panel builds rows from live mDNS rather than from the OTBR integration. It ages out on its own.
 
 > [!WARNING]
 > **Reset border router** is the right tool *only* when you intend to form a new network, as here. Reaching for it to move a radio onto an **existing** network is how people end up with Home Assistant commissioning against a network name that no longer exists — a state that survives reinstalls and has been [reported and closed as not planned](https://github.com/home-assistant/core/issues/162401). To join an existing network, the correct action on that same **⋮** menu is **Add to my network**, which writes the currently-preferred network's dataset onto the radio.
