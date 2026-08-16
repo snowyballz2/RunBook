@@ -226,7 +226,17 @@ Setup generates an **encryption key** and shows it once, alongside a downloadabl
 > Also **download the emergency kit** and put it somewhere that is not this server — the encrypted USB drive from the Protect Your Data page is the right home, and Vaultwarden once it exists. A key stored only inside the machine it restores is no key at all: the failure that makes you need the backup is exactly the one that takes the key with it.
 
 ### Point the backups at the NAS
-On their own, those backups land on the VM's disk — the copy lives on the very thing it is protecting. Send them to the NAS instead — still in the Home Assistant UI: go to **Settings → System → Storage**, click **Add network storage**, and point it at the TrueNAS `backups` SMB (Server Message Block) share from the TrueNAS Storage page (server `192.168.1.20`, your SMB share credentials, **Usage: Backups**). Then under **Settings → System → Backups**, pick that network location as where backups go.
+On their own, those backups land on the VM's disk — the copy lives on the very thing it is protecting. Send them to the NAS as well — still in the Home Assistant UI, go to **Settings → System → Storage → Add network storage**:
+
+- **Name** → `truenas-backups` (this also becomes the folder name on the share)
+- **Usage** → **Backup**
+- **Server** → `192.168.1.20`
+- **Protocol** → **Samba/Windows (CIFS)**
+- **Share** → `backups`, with the **SMB user** below — the share account from the TrueNAS Storage page, not `truenas_admin`
+
+Then back under **Settings → System → Backups**, enable that location and **leave "This system" on as well**: local gives the instant rollback, the NAS gives the copy that survives the VM's disk. Ignore **Home Assistant Cloud backup** — that is the Nabu Casa subscription, and this build is deliberately local-first.
+
+While on that screen, the **Backup data** toggles: **History on** (the recorder database — sensor history and the energy dashboard; it grows the backups, but they land on a 4 TB mirror and a restore that quietly loses months of leak-sensor history is a nasty surprise), **Media off** (camera recordings live on Frigate's own disk), **Share folder off** (unused here), and **Apps: All** — that last one matters more than it looks, because it is what carries **Mosquitto's logins and Z2M's configuration including the Zigbee network key**. Narrow it and a restored Home Assistant comes back with a broker nothing can log into and a Zigbee network it cannot rejoin.
 
 > [!NOTE]
 > Parked on the NAS, Home Assistant's own backups are a real second copy as well as the quick in-app undo. The other layer is the **nightly Proxmox vzdump of the whole VM** (set up on the Proxmox Backups page) — that is what survives a dead VM disk and feeds the restore drill later in the build. The two layers do different jobs: HA's backups are the quick undo, the vzdump is the rebuild-from-scratch copy.
