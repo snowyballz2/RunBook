@@ -68,6 +68,15 @@ Order matters: **Add to my network** means "join whatever is preferred right now
 > [!TIP]
 > **"You don't have any credentials to import"** means the phone's OS locker holds nothing, not that anything is broken. Open the other ecosystem's app once on that same phone — **SmartThings** or **Google Home** — so it publishes its network to the locker, then run the sync again. On Android, clearing Google Play Services' cache is the other fix that keeps working for people.
 
+### What happens if you drop that ecosystem later
+Nothing breaks, and this is structural rather than a promise anyone made you. A Thread network is not owned by a border router — it **is** a dataset (network name, extended PAN ID, network key, channel), and once **Add to my network** runs, your OTBR holds a full copy. Unplug the Nest Hub Max or the Family Hub and your radio keeps operating the network, becomes leader, and every lock stays joined. Nothing is re-paired. The network keeps its original name forever, which is cosmetic and the entire cost.
+
+What you would actually lose is the **mains-powered relay** — back to a single anchor in the rack serving battery locks at three separate doors. That is the real dependency, not the credentials.
+
+Be equally clear about what it costs while that ecosystem *is* present: its border router holds the Thread network key, so it can see link-layer traffic on the mesh. Matter payloads stay encrypted end to end to Home Assistant's fabric, so it can neither read nor operate a lock — but that is not nothing. Weighed against a mesh with no relaying at all, across three doors, the relay is still the better trade.
+
+The exit, if you ever want one, is a factory reset of each U400 and a re-commission onto a network you form yourself — which is precisely what the `matter-lock-codes` field below is insurance for. Three locks, three QR codes. The moment to spend that time is when you have a **mains-powered Thread device of your own** to act as a router, so you are not swapping a working mesh for a principled but weaker one.
+
 > [!WARNING]
 > Home Assistant's own documentation is candid that the preferred-network feature **is not fully implemented**: when you add a Matter device through the companion app, *the phone's* preferred network is used, not Home Assistant's. With a Nest Hub Max in the house, an Android phone may well prefer **NEST-PAN** through Google Play Services — and your locks would land on a network your border router is not on. Once the preferred network is set, use **Send credentials to phone** at the foot of the preferred-network section so both sides agree, **before** you scan the first lock.
 
