@@ -90,6 +90,8 @@ pct set 100 -onboot 1      # swap in the container's ID
 
 Enable this on **every** service container so the whole stack reassembles itself after mains returns.
 
+The panel's **Protection** flag is worth knowing at the same time: it blocks deleting the guest until you untick it, and costs nothing day to day — snapshots, backups, and reboots all still work. This build sets it on every guest whose loss would cost real rebuild pain — both VMs, Frigate, Vaultwarden, Nextcloud — each on its own page. A container a helper script rebuilds in five minutes can go without it.
+
 > [!NOTE]
 > The same **Options** panel holds **Start/Shutdown order**, which matters once on this build: the **Home Assistant OS VM must start before the Frigate LXC**, because Frigate points at the Mosquitto MQTT (MQ Telemetry Transport) broker inside that VM. Give the HA VM a lower order number than Frigate so the broker is up first — you will set this later in the build, once both guests exist, on their own pages; nothing to do here yet. The plain service containers can stay at the default. The same panel also has a **Startup delay** — useful here because a VM boots slower than a container, so a few seconds of delay gives the HA VM time to bring its broker up before Frigate starts. On host shutdown, Proxmox asks each guest to stop cleanly and waits before moving on — by default up to 60 seconds for a container and 180 for a VM.
 

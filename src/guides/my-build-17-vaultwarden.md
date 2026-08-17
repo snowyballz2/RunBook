@@ -55,6 +55,8 @@ Once you have seen the login, make it permanent. A password manager that does no
 pct set 106 -onboot 1        # swap in the container's actual ID
 ```
 
+In the same **Options** panel, set **Protection** to **Yes** — the vault holding every password in the house should not be deletable by a stray click.
+
 > [!NOTE]
 > This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief blips never reach the container. Start-at-boot covers the longer outages that drain the battery and force a clean shutdown.
 

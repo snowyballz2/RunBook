@@ -35,6 +35,7 @@ When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of
 - **TUN/TAP** — **No**; Tailscale runs on the Proxmox host, not in this container.
 - **NESTING SUPPORT** — **Yes**, the offered default. The script's own warning: Debian 13's systemd can start degraded without it, with services failing on error 243.
 - **GPU PASSTHROUGH** — **Yes**, the offered default for Frigate. This detects the 1080 Ti and writes the NVIDIA device lines into the container's config **itself** — it is why the *Lend the GPU* step below verifies rather than edits. The in-container driver install there still applies.
+- **CONTAINER PROTECTION** — **Yes**, against the dialog's default of No. It only blocks *deleting* the container — snapshots, backups, and reboots are untouched, and at the rebuild-style upgrade this page describes you untick it once, on purpose. What it buys: the hand-built `config.yml` below cannot be lost to a stray Destroy click.
 - Anything else (APT cache, proxies, timezone, **Verbose: No**) — accept the defaults, then confirm **Yes** to create.
 
 Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
@@ -83,7 +84,7 @@ Log in at `https://192.168.1.52:8971` as **`admin`** with that password, open **
 > Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and it stays open because the Home Assistant integration later on this page talks to it. Tolerable on the home LAN behind the router; never create a port-forward to it. Camera footage stays on the network — remote access comes through Tailscale instead.
 
 ### Confirm its address and start at boot
-The static address was set in the script's Advanced walk, so there is nothing to reserve at the router. In Proxmox, select the container and open **Options**: enable **Start at boot** so a power cut does not silently end recordings, and set **Start/Shutdown order** to **3** while the panel is open — the MQTT broker this page connects to later lives in the Home Assistant VM (order=2), and Frigate must come up after it.
+The static address was set in the script's Advanced walk, so there is nothing to reserve at the router. In Proxmox, select the container and open **Options**: enable **Start at boot** so a power cut does not silently end recordings, and set **Start/Shutdown order** to **3** while the panel is open — the MQTT broker this page connects to later lives in the Home Assistant VM (order=2), and Frigate must come up after it. If the install dialog's **CONTAINER PROTECTION** was answered No, fix it here while the panel is open: **Protection → Yes**.
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
 > Device-set static from the script's Advanced mode — in the `.2–.99` static zone, so it never moves.

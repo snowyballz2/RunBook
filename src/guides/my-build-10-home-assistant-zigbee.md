@@ -66,7 +66,7 @@ Home Assistant OS ships as a ready-made disk image, **not** an installer ISO —
 > ```
 
 > [!NOTE]
-> In the VM's **Options** panel, enable **Start at boot** and set **Start/Shutdown order** to **order=2**. The order is load-bearing: Frigate points at the Mosquitto MQTT (MQ Telemetry Transport) broker that lives alongside this VM, so Home Assistant must be up first — TrueNAS is `order=1` from the Virtual Machines page and the Frigate container becomes `order=3`, so the storage boots first, then this VM, then Frigate.
+> In the VM's **Options** panel, enable **Start at boot**, set **Start/Shutdown order** to **order=2**, and set **Protection** to **Yes** — this VM *is* the smart home, and the flag blocks accidental deletion. The order is load-bearing: Frigate points at the Mosquitto MQTT (MQ Telemetry Transport) broker that lives alongside this VM, so Home Assistant must be up first — TrueNAS is `order=1` from the Virtual Machines page and the Frigate container becomes `order=3`, so the storage boots first, then this VM, then Frigate.
 
 ### Pin its address
 The brain of the house gets a device-set static in the protected zone, like the host and TrueNAS before it — not a router reservation, which the Fios router can only make for in-pool `.100+` addresses. The screen only exists after onboarding, so do this **right after the onboarding below finishes**: in the Home Assistant UI, go to **Settings → System → Network**, expand the interface, set **IPv4 → Static**, address **`192.168.1.51/24`**, gateway **`192.168.1.1`**, DNS **`192.168.1.1`**, and save. Phone apps, dashboards, and the MQTT links all use this address — `homeassistant.local` does not resolve reliably on every network, and every later page assumes `.51`.

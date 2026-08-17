@@ -32,7 +32,7 @@ When it asks **Default or Advanced**, pick **Advanced**: keep the offered resour
 > The plain **Nextcloud** entry in the catalog is a TurnKey **VM**, not a container — the repo's two LXC options are this NextCloudPi one and a lighter Alpine variant. NCP is the relaxed household choice; take it.
 
 ### Start it at boot
-The script finishes by printing the container's address as `http://192.168.1.58` — no port, no passwords yet; those come in the browser. The address was set statically in the Advanced walk (it is about to be baked into every device's sync client, so it must never move — nothing to reserve at the router). Before opening it, enable **Options → Start at boot** in Proxmox so the family cloud survives a power cut.
+The script finishes by printing the container's address as `http://192.168.1.58` — no port, no passwords yet; those come in the browser. The address was set statically in the Advanced walk (it is about to be baked into every device's sync client, so it must never move — nothing to reserve at the router). Before opening it, enable **Options → Start at boot** in Proxmox so the family cloud survives a power cut, and set **Options → Protection** to **Yes** while you are there — family data should not be deletable by a stray click.
 
 > [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.58
 
