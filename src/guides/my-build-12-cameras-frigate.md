@@ -35,8 +35,14 @@ When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of
 - **TUN/TAP** — **No**; Tailscale runs on the Proxmox host, not in this container.
 - **NESTING SUPPORT** — **Yes**, the offered default. The script's own warning: Debian 13's systemd can start degraded without it, with services failing on error 243.
 - **GPU PASSTHROUGH** — **Yes**, the offered default for Frigate. This detects the 1080 Ti and writes the NVIDIA device lines into the container's config **itself** — it is why the *Lend the GPU* step below verifies rather than edits. The in-container driver install there still applies.
+- **KEYCTL SUPPORT** — **No**, the default. It exists for Docker and systemd-networkd workloads; this container runs neither.
+- **APT CACHER PROXY, HTTP/HTTPS PROXY, HOST CA INHERITANCE** — **No / blank**, all three; this LAN has no apt cache, no proxy, and no private CA.
+- **CONTAINER TIMEZONE** — leave it as offered; empty inherits the host's, which is right.
 - **CONTAINER PROTECTION** — **Yes**, against the dialog's default of No. It only blocks *deleting* the container — snapshots, backups, and reboots are untouched, and at the rebuild-style upgrade this page describes you untick it once, on purpose. What it buys: the hand-built `config.yml` below cannot be lost to a stray Destroy click.
-- Anything else (APT cache, proxies, timezone, **Verbose: No**) — accept the defaults, then confirm **Yes** to create.
+- **DEVICE NODE CREATION** — **No**, the default. Frigate creates no device nodes — the `/dev/nvidia*` nodes it needs are bound in from the host by the GPU passthrough above, a different mechanism — and the script itself flags mknod experimental.
+- **MOUNT FILESYSTEMS** — leave **empty**. The footage disk arrives on this page later as a **host-side mount point**, not as something the container mounts for itself.
+- **POST-INSTALL HOOK (HOST)** — leave **empty**.
+- **VERBOSE MODE** — **No**. Review the **CONFIRM SETTINGS** summary and answer **Yes** to create. If a **TELEMETRY & DIAGNOSTICS** question appears after, decline it — nothing in this build phones home.
 
 Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
 
