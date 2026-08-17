@@ -33,6 +33,8 @@ When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of
 - **SSH ACCESS** — "Enable root SSH access?" — **No**, the dialog's own default; the container's **Console** in Proxmox covers every shell this page needs.
 - **FUSE** — **No** (it exists for rclone/mergerfs-style mounts; nothing here uses them).
 - **TUN/TAP** — **No**; Tailscale runs on the Proxmox host, not in this container.
+- **NESTING SUPPORT** — **Yes**, the offered default. The script's own warning: Debian 13's systemd can start degraded without it, with services failing on error 243.
+- **GPU PASSTHROUGH** — **Yes**, the offered default for Frigate. This detects the 1080 Ti and writes the NVIDIA device lines into the container's config **itself** — it is why the *Lend the GPU* step below verifies rather than edits. The in-container driver install there still applies.
 - Anything else (APT cache, proxies, timezone, **Verbose: No**) — accept the defaults, then confirm **Yes** to create.
 
 Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
@@ -89,7 +91,13 @@ The static address was set in the script's Advanced walk, so there is nothing to
 ## Detect on the 1080 Ti
 
 ### Lend the GPU into the container
-The 1080 Ti is **shared** into this LXC from the host's NVIDIA driver — it is never VFIO (Virtual Function I/O)'d to a VM. The GPU Sharing & HBA Passthrough page set up the host driver and left a lending recipe to apply when each borrowing container exists; the Frigate container now does, so lend the card in. On the host (click the Proxmox node, then **Shell**), edit `/etc/pve/lxc/<frigate-ctid>.conf` (`<frigate-ctid>` is this container's ID, shown next to its name in the sidebar) and add the three NVIDIA device lines:
+The 1080 Ti is **shared** into this LXC from the host's NVIDIA driver — it is never VFIO (Virtual Function I/O)'d to a VM. Answering **Yes** at the install script's **GPU PASSTHROUGH** dialog already bound the card in: the script found every `/dev/nvidia*` node the host driver exposes and wrote a `devN:` line for each into the container's config. Verify rather than re-do it. On the host (click the Proxmox node, then **Shell**):
+
+```bash
+grep ^dev /etc/pve/lxc/<frigate-ctid>.conf
+```
+
+(`<frigate-ctid>` is this container's ID, shown next to its name in the sidebar.) Expect several `devN: /dev/nvidia…,gid=44` lines — the script binds every NVIDIA node it finds, a superset of the three the GPU Sharing & HBA Passthrough page's lending recipe names, which is fine. Only if the list comes back **empty** — the dialog answered No, or a container built before it existed — fall back to that recipe: edit the same file, add the three lines below, and restart the container.
 
 ```ini
 dev0: /dev/nvidia0,gid=44
@@ -97,7 +105,7 @@ dev1: /dev/nvidiactl,gid=44
 dev2: /dev/nvidia-uvm,gid=44
 ```
 
-Restart the container. Then, inside it, install the **in-container NVIDIA userspace driver at the same version** the host's `nvidia-smi` reports — recorded on the GPU/HBA page:
+Then, inside the container, install the **in-container NVIDIA userspace driver at the same version** the host's `nvidia-smi` reports — recorded on the GPU/HBA page:
 
 > [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01
 

@@ -115,6 +115,9 @@ dev2: /dev/nvidia-uvm,gid=44
 
 Restart that container after editing its config. Inside it, `nvidia-smi` should then show the same card the host sees.
 
+> [!NOTE]
+> The community-scripts installers can write these lines **for you**: their Advanced walk ends with a **GPU PASSTHROUGH** dialog that detects the card and adds a `devN:` line per NVIDIA node it finds — more than these three, which is fine. The Frigate page answers **Yes** to it, so there the recipe is a verification (`grep ^dev` on the config) and a fallback, not an edit. A container built any other way still gets the three lines by hand.
+
 > [!TIP]
 > The `gid=44` maps the device nodes to the `video` group inside the container so a non-root service can reach the card. If a container's user is in a different group, set the GID to match — but `44` is the common case on Debian-based containers.
 
