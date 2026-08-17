@@ -200,7 +200,17 @@ actions:
   - action: climate.set_temperature
     target: { entity_id: climate.downstairs }
     data: { temperature: 16 }
+  - if:
+      - condition: state
+        entity_id: binary_sensor.sliding_door
+        state: "on"
+    then:
+      - action: notify.mobile_app_chris_iphone
+        data:
+          message: "Sliding door is open and nobody is home."
 ```
+
+The last block is why the sliding glass door gets a **MYGGBETT** contact sensor. The three deadbolts lock themselves on the line above, but the slider has no smart hardware and cannot be closed remotely — so the only useful action is to tell you before you are too far away to turn around. Confirm the entity's real name under **Entities** after you pair it; the guide assumes you renamed it to `binary_sensor.sliding_door`.
 
 Coming home is the easy half — trigger on the first phone reaching `home`, no conditions needed. Mirror the above with `to: "home"`, then turn on `light.entryway` and set the ecobee back to 21.
 
@@ -210,13 +220,13 @@ Coming home is the easy half — trigger on the first phone reaching `home`, no 
 The presence pair above already nudges the **two ecobees** through `climate.set_temperature` on their `climate.*` entities — point them at the upstairs and downstairs entities the ecobee integration created when you added it before the presence rules. That setback alone is the comfort-and-savings win this build ships with.
 
 > [!NOTE]
-> **Optional, needs a sensor you do not have yet.** A money-saving extra is pausing a system when a window or door is open, so you are not heating the street — but this build includes **no window or door contact sensors**. If you want this rule, first add an Aqara door/window **contact sensor**, pair it into the Zigbee mesh the same way you joined the leak sensors, and rename it to something like `binary_sensor.living_room_window`. Then trigger on it holding open and turn the mode off:
+> **Optional.** A money-saving extra is pausing a system when a door is open, so you are not heating the street. The build's one contact sensor is the **MYGGBETT** on the sliding glass door, which is the opening most likely to be left ajar, so point the rule at that. For windows as well, add more contacts — an Aqara contact on the **Zigbee** mesh or another MYGGBETT on Thread, whichever mesh reaches that room — and rename each to something like `binary_sensor.living_room_window`. Trigger on it holding open and turn the mode off:
 >
 > ```yaml
 > alias: Pause HVAC on open window
 > triggers:
 >   - trigger: state
->     entity_id: binary_sensor.living_room_window
+>     entity_id: binary_sensor.sliding_door
 >     to: "on"             # contact sensors read "on" when open
 >     for: "00:02:00"
 > actions:
@@ -225,7 +235,7 @@ The presence pair above already nudges the **two ecobees** through `climate.set_
 >     data: { hvac_mode: "off" }
 > ```
 >
-> Pair it with the mirror automation — window closed, set the mode back to `heat` or `cool` — and the two-minute **For** keeps a quick airing-out from cycling the furnace.
+> Pair it with the mirror automation — door closed, set the mode back to `heat` or `cool` — and the two-minute **For** keeps a quick airing-out from cycling the furnace.
 
 ### Frigate person alerts
 The **Reolink doorbell**, the **RLC-510WA**, and the five **EmpireTech cameras** run through Frigate with detection on the 1080 Ti. The Frigate integration gives you a quick `binary_sensor.*_person_occupancy` per camera, which is fine for switching a porch light — but for a *notification* build the graduate version that triggers on the **`frigate/events`** MQTT (MQ Telemetry Transport) topic. It fires on Frigate's considered judgement rather than its fast first guess, and each event carries its own `id`, which Frigate turns into a permanent snapshot URL — so the push shows the exact frame that fired, not a live view of an empty driveway three seconds later. Frigate already shares Mosquitto with Zigbee2MQTT, so Home Assistant is listening on this topic.
