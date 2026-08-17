@@ -72,6 +72,8 @@ tailscale ip -4
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 
+> [!INPUT] proxmox-user | Proxmox web UI username | | root
+
 > [!SECRET] proxmox-root-password | Proxmox root password
 
 > [!DETAILS] What the host just received

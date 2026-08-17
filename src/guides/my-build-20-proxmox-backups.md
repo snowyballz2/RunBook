@@ -113,6 +113,8 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 >
 > Run it after any change to networking, storage, or passthrough — or drop it in a weekly `cron` job so it keeps pace on its own. It is small; keep a few generations. (`/etc/pve` is a live filesystem, so `tar` may warn that a file changed while reading — harmless for these config files.)
 
+> [!INPUT] proxmox-user | Proxmox web UI username | | root
+
 > [!SECRET] proxmox-root-password | Proxmox root password
 
 ### Walk the rebuild order

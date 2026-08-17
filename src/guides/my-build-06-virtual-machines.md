@@ -19,6 +19,9 @@ Log in to the Proxmox web UI and confirm the host is in the state the earlier pa
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The web UI answers at `https://`-this-IP-`:8006`. Log in as `root@pam`.
 
+> [!INPUT] proxmox-user | Proxmox web UI username | | root
+> Not a choice — `root` is Proxmox's built-in administrator; the `@pam` suffix on the login screen just names its realm.
+
 > [!SECRET] proxmox-root-password | Proxmox root password
 > The password set during the Proxmox install. Record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build).
 
