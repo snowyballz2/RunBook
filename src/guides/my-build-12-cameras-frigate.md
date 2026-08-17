@@ -43,6 +43,7 @@ When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of
 - **MOUNT FILESYSTEMS** — leave **empty**. The footage disk arrives on this page later as a **host-side mount point**, not as something the container mounts for itself.
 - **POST-INSTALL HOOK (HOST)** — leave **empty**.
 - **VERBOSE MODE** — **No**. Review the **CONFIRM SETTINGS** summary and answer **Yes** to create. If a **TELEMETRY & DIAGNOSTICS** question appears after, decline it — nothing in this build phones home.
+- **Save advanced settings as default?** — **Yes**. It writes tonight's answers to `/usr/local/community-scripts/defaults/frigate.vars` on the host — the root password is **not** among them — so the rebuild-style upgrade this page describes later replays them as presets instead of re-asking everything. If an answer ever changes, edit or delete that file.
 
 Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
 
