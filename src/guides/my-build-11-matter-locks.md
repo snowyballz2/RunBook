@@ -189,8 +189,11 @@ With the OTBR up and the companion app open on a Bluetooth phone:
 > [!WARNING]
 > Do this from the **companion app**, not the desktop browser — the Matter add flow needs the phone's Bluetooth radio to reach the lock, and the Home Assistant VM has none.
 
+> [!WARNING]
+> **Check Settings → Devices & services → Devices before retrying a failed add.** The phone can report **"Unable to Add Accessory"** *after* commissioning has already succeeded, and blindly retrying risks commissioning the same lock twice. If the lock is listed there under the **Matter** integration, it worked — close the dialog and move on.
+
 > [!TIP]
-> **"Unable to Add Accessory"** almost always means the lock is not advertising. Press **Set** once and rescan immediately. If that fails, pull a battery for ten seconds, reseat it, press **Set**, and try again. If it still refuses, a Matter fabric survived somewhere and the sticker code is dead — generate a fresh one from **Aqara Home → the lock → Matter → Matter Pairing Code**. A factory reset is the last resort, not the first.
+> **"Unable to Add Accessory"** usually means the lock is not advertising. Press **Set** once and rescan immediately. If that fails, pull a battery for ten seconds, reseat it, press **Set**, and try again. If it still refuses, a Matter fabric survived somewhere and the sticker code is dead — generate a fresh one from **Aqara Home → the lock → Matter → Matter Pairing Code**. A factory reset is the last resort, not the first.
 
 > [!TIP]
 > If the first join is slow, commission the lock **near the ZBT-2 Thread radio**, then move it to its door. Thread is a mesh, but the initial handshake is more reliable with a strong first hop.
@@ -202,6 +205,9 @@ Run the same Matter add flow for the **second and third U400**, each with its ow
 > The physical keypad and key on the U400 keep working regardless of software — Home Assistant control is an *addition*, never a replacement for the ways you already open the door. (Home Key, the Apple-Wallet tap, is the one convenience that waits for the HomePod; the last section adds it.)
 
 ## Verify and hand off
+
+### Confirm they landed on your Thread network
+A lock that commissioned onto a neighbouring mesh looks identical in the device list, so check rather than assume — this is the one thing the whole border-router exercise was for. Open **Matter Server** in the sidebar, select a node, and find the **Thread Network Diagnostics** cluster: its **NetworkName** attribute names the mesh the lock actually joined. It should read your **`ha-thread-…`** network. If it reads a neighbouring network instead, the phone's preferred network won during commissioning — fix the phone's credentials and re-commission that lock. Checking one node is enough; three locks added back to back go the same way.
 
 ### Test each lock
 For each of the three U400s:
