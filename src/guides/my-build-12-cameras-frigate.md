@@ -48,8 +48,11 @@ When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of
 
 Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
 
+> [!INPUT] frigate-console-user | Frigate console username | | root
+> Every Proxmox container console logs in as `root` — saved here so you never have to remember that.
+
 > [!SECRET] frigate-root | Frigate container root password
-> Set at the install script's **Set Root Password** prompt. Logs into the container's **Console** in Proxmox as `root`; SSH stays off.
+> Set at the install script's **Set Root Password** prompt. Pairs with the `root` username above at the container's **Console** in Proxmox; SSH stays off.
 
 > [!TIP]
 > This is the fussiest script in the build — it pulls large AI components and occasionally stumbles partway. If it errors, just re-run it; a second attempt is normal.
@@ -84,8 +87,11 @@ grep -i password /dev/shm/logs/frigate/current
 
 Log in at `https://192.168.1.52:8971` as **`admin`** with that password, open **Settings → Users**, and replace it with a password of your own. Record it below.
 
-> [!SECRET] frigate-admin | Frigate admin login (https://192.168.1.52:8971)
-> Username `admin`, with the password you set in **Settings → Users** — not the throwaway one from the log.
+> [!INPUT] frigate-admin-user | Frigate UI username | | admin
+> Frigate names its first user `admin`; it is not configurable at creation.
+
+> [!SECRET] frigate-admin | Frigate admin password (https://192.168.1.52:8971)
+> The password you set in **Settings → Users** — not the throwaway one from the log.
 
 > [!TIP]
 > No password line in the log? Have Frigate mint a fresh one: add `reset_admin_password: true` on its own line under `auth:`, restart, read the log again — then remove that line, or it resets the password on every boot.
