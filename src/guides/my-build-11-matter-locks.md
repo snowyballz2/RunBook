@@ -128,7 +128,7 @@ The exit, if you ever want one, is a factory reset of each U400 and a re-commiss
 ## Before you commission
 
 ### Confirm the prerequisites
-Three things need to be true before you touch a lock:
+Five things need to be true before you touch a lock:
 
 - The **Home Assistant OS VM** is up, with the **Matter** integration available (it ships with Home Assistant) and the **OTBR** running from the step above.
 - The **Matter Server** app is **up to date**. Check **Settings → Apps** for an *Update available* badge on it and clear it before you commission anything — the Matter integration refuses to add devices when the server is behind the version it expects, and the failure names the version rather than the cause. Updating is cheap while no devices are commissioned yet.
@@ -138,7 +138,6 @@ Three things need to be true before you touch a lock:
 
 > [!NOTE]
 > Nothing already in this house can stand in for those plugs, so do not go looking. The **Third Reality** plugs are Zigbee/BLE. The **PoE shades** are Matter-over-Ethernet and never join a Thread mesh. The **Nest Hub Max** and **Family Hub** will not join your network. And the **ecobee thermostats** are out too — ecobee's own connectivity spec for the Smart Thermostat Premium lists dual-band Wi-Fi, Bluetooth 5.0 and a 915 MHz radio (that one drives ecobee's SmartSensors), with no Thread and no Matter; any Thread support ecobee ever exposes is **HomeKit over Thread**, which lands on an Apple network rather than yours.
-
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 > The address the Home Assistant companion app points at.
