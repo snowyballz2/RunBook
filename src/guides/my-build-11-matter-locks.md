@@ -136,6 +136,10 @@ Three things need to be true before you touch a lock:
 - **Three or four mains-powered Matter-over-Thread plugs are commissioned and placed**, forming a mesh that reaches every door. This is a prerequisite, not an upgrade — see the warning under *Add the first U400*. The Thread Group's own guidance is one router-capable device per **300–400 sq ft**, or three to four for a typical 1,500 sq ft home; a basement door needs its own, since floor assemblies eat 2.4 GHz. Good choices are the **Nanoleaf Essentials Smart Outlet** (~$25, two outlets), the **Wemo Smart Plug Thread** (~$25) or **Eve Energy** (~$40, energy monitoring that surfaces in Home Assistant). Two rules: insist on **Thread** — most cheap "Matter" plugs are Wi-Fi and do nothing here — and prefer **plugs over bulbs**, because a bulb stops routing the moment someone flips the wall switch, which is a miserable intermittent fault to chase. Commission them **working outward from the ZBT-2**, so each new one is in range of the last.
 - Each lock is **physically installed and powered** — the U400's rechargeable lithium pack charged (it takes USB-C, not disposable cells) and seated, the door able to throw the bolt.
 
+> [!NOTE]
+> Nothing already in this house can stand in for those plugs, so do not go looking. The **Third Reality** plugs are Zigbee/BLE. The **PoE shades** are Matter-over-Ethernet and never join a Thread mesh. The **Nest Hub Max** and **Family Hub** will not join your network. And the **ecobee thermostats** are out too — ecobee's own connectivity spec for the Smart Thermostat Premium lists dual-band Wi-Fi, Bluetooth 5.0 and a 915 MHz radio (that one drives ecobee's SmartSensors), with no Thread and no Matter; any Thread support ecobee ever exposes is **HomeKit over Thread**, which lands on an Apple network rather than yours.
+
+
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 > The address the Home Assistant companion app points at.
 
