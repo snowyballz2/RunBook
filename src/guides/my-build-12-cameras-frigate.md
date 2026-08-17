@@ -94,7 +94,14 @@ Log in at `https://192.168.1.52:8971` as **`admin`** with that password, open **
 > The password you set in **Settings → Users** — not the throwaway one from the log.
 
 > [!TIP]
-> No password line in the log? Have Frigate mint a fresh one: add `reset_admin_password: true` on its own line under `auth:`, restart, read the log again — then remove that line, or it resets the password on every boot.
+> **No password line?** Frigate prints it once, at admin creation on the very first boot — the safe-mode escape's restarts can leave the current log without it. First widen the search to rotated files: `grep -ri password /dev/shm/logs/`. Still nothing? Have Frigate mint a fresh one — in the config editor on **port 5000** (the one that needs no login, which is the point while you are locked out of 8971), paste at the end:
+>
+> ```yaml
+> auth:
+>   reset_admin_password: true
+> ```
+>
+> **Save & Restart**, grep again, log in — then **delete those two lines and Save & Restart once more**, or the password resets on every boot.
 
 > [!WARNING]
 > Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and it stays open because the Home Assistant integration later on this page talks to it. Tolerable on the home LAN behind the router; never create a port-forward to it. Camera footage stays on the network — remote access comes through Tailscale instead.
