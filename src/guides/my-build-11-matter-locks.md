@@ -107,6 +107,10 @@ Credentials have to come from the phone, and the direction is fixed: the **Home 
 > **"You don't have any credentials to import"** means the phone's OS locker holds nothing, not that anything is broken. Open the other ecosystem's app once on that same phone — **SmartThings** or **Google Home** — so it publishes its network to the locker, then run the sync again. On Android, clearing Google Play Services' cache is the other fix that keeps working for people.
 
 ### What happens if you drop that ecosystem later
+Two very different situations get confused here, so be clear which one you are in. **If your border router joined their network**, nothing breaks — the case described below. **If instead your border router runs its own network but the locks commissioned onto theirs** — the state this build landed in on the first attempt — the dependency is real and per-lock: unplug the Nest Hub Max and the lock on NEST-PAN has no path home, whatever your own radio is doing. It is survivable rather than catastrophic (the keypad and key are unaffected, and re-commissioning is twenty minutes with the saved codes), but it is a single point of failure you do not own, sitting in someone else's product roadmap. The fix is the same either way: mains-powered Thread routers on your own network, then re-commission.
+
+For the case where your border router did join their network:
+
 Nothing breaks, and this is structural rather than a promise anyone made you. A Thread network is not owned by a border router — it **is** a dataset (network name, extended PAN ID, network key, channel), and once **Add to my network** runs, your OTBR holds a full copy. Unplug the Nest Hub Max or the Family Hub and your radio keeps operating the network, becomes leader, and every lock stays joined. Nothing is re-paired. The network keeps its original name forever, which is cosmetic and the entire cost.
 
 What you would actually lose is the **mains-powered relay** — back to a single anchor in the rack serving battery locks at three separate doors. That is the real dependency, not the credentials.
