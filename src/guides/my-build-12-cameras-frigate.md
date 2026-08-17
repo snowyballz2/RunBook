@@ -58,7 +58,7 @@ Then let it work — it compiles Frigate from source, so expect a long run. Read
 > The script builds a **privileged** container, which has weaker isolation from the host than an unprivileged one, and Frigate's own docs note that running in an LXC is community territory rather than officially supported. This path is popular and works well on this hardware, but the officially supported route is Docker Compose inside a VM (virtual machine). The LXC is chosen here so the container can share the host's GPU directly — the whole reason detection runs on the 1080 Ti instead of an Intel iGPU.
 
 ### Open the web UI
-The script prints the container's address when it finishes — browse to **`http://192.168.1.52:5000`**. Expect the **Config Editor (Safe Mode)**, not a dashboard: Frigate 0.17 requires the `mqtt` and `cameras` fields, the generated config has neither, and validation fails with *"mqtt - Field required… cameras - Field required."* That is the install working, not broken — 0.17 also ships no sample camera, so there is no test clip to look for. Escape safe mode with Frigate's own documented minimal blocks: paste this at the **end** of the config, then **Save & Restart**:
+The script prints the container's address when it finishes — browse to **`http://192.168.1.52:5000`**. Expect the **Config Editor (Safe Mode)**, not a dashboard: Frigate 0.17 requires the `mqtt` and `cameras` fields, the generated config has neither, and validation fails with *"mqtt - Field required… cameras - Field required."* That is the install working, not broken — 0.17 also ships no sample camera, so there is no test clip to look for. Escape safe mode with Frigate's own documented minimal blocks. The config is **YAML** — an indentation-based text format where the leading spaces are meaningful, so what you paste must keep its exact shape. In the editor, click at the end of the last line (`version: 0.17-0`), press **Enter** for a fresh line, paste this with `mqtt:` and `cameras:` flush against the left edge, then click **Save & Restart** (top right):
 
 ```yaml
 mqtt:
@@ -73,7 +73,7 @@ cameras:
             - detect
 ```
 
-The `placeholder` camera exists only to satisfy validation and stays disabled — the doorbell replaces it later on this page, and the MQTT section at the end swaps the `mqtt` block for the real broker. After the restart the actual UI appears on 5000. Day-to-day browsing happens at **`https://192.168.1.52:8971`** instead (expect a self-signed certificate warning — the container mints its own); the next step recovers the login that guards it.
+The `placeholder` camera exists only to satisfy validation and stays disabled — the doorbell replaces it later on this page, and the MQTT section at the end swaps the `mqtt` block for the real broker. The red *Field required* errors disappear and, after the restart, the actual UI appears on 5000. If the editor complains about what you pasted, the indentation got mangled — delete the pasted lines and paste again. Day-to-day browsing happens at **`https://192.168.1.52:8971`** instead (expect a self-signed certificate warning — the container mints its own); the next step recovers the login that guards it.
 
 ### Recover the admin password and make it yours
 With **no `auth:` block** in the config — which is what the script generated — Frigate's authentication defaults **on**, so `https://192.168.1.52:8971` is already demanding a login nobody typed. Frigate minted an **`admin`** user with a random password on startup and printed it **once** to its log. Read it in the container's **Console**:
