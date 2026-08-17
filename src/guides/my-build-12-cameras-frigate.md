@@ -44,6 +44,7 @@ When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of
 - **POST-INSTALL HOOK (HOST)** — leave **empty**.
 - **VERBOSE MODE** — **No**. Review the **CONFIRM SETTINGS** summary and answer **Yes** to create. If a **TELEMETRY & DIAGNOSTICS** question appears after, decline it — nothing in this build phones home.
 - **Save advanced settings as default?** — **Yes**. It writes tonight's answers to `/usr/local/community-scripts/defaults/frigate.vars` on the host — the root password is **not** among them — so the rebuild-style upgrade this page describes later replays them as presets instead of re-asking everything. If an answer ever changes, edit or delete that file.
+- **"An update for the Proxmox LXC stack is available" [1/2/3]** — **2, Ignore**. Option 1 runs a blanket `apt upgrade` on the **host** from inside an install script — and this host's pinned 6.14 kernel (the NVIDIA situation from the GPU/HBA page) makes host upgrades a deliberate, eyes-open job for the Maintenance page, never a script's side effect. What it is offering is a minor `pve-container` point release; nothing this install needs.
 
 Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
 
