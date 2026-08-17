@@ -29,7 +29,8 @@ When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of
 - **IPv6** — **Fully Disabled**; this LAN runs IPv4 and nothing in the container uses v6.
 - **MTU, DNS search domain, DNS server, MAC address, VLAN** — leave every one blank; blank inherits the host's settings, which are right.
 - **Tags** — keep the offered tag.
-- **SSH root access** — **No**; the container's **Console** in Proxmox covers every shell this page needs.
+- **SSH KEY SOURCE** — "Provision SSH keys for root:" — **none / No keys**. It may offer keys detected on the host or a paste box; skip them all, since root SSH stays off in the next dialog.
+- **SSH ACCESS** — "Enable root SSH access?" — **No**, the dialog's own default; the container's **Console** in Proxmox covers every shell this page needs.
 - **FUSE** — **No** (it exists for rclone/mergerfs-style mounts; nothing here uses them).
 - **TUN/TAP** — **No**; Tailscale runs on the Proxmox host, not in this container.
 - Anything else (APT cache, proxies, timezone, **Verbose: No**) — accept the defaults, then confirm **Yes** to create.
