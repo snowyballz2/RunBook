@@ -145,6 +145,10 @@ Three rules matter more than any product list, which will be stale within a year
 - Each lock is **physically installed and powered** — the U400's rechargeable lithium pack charged (it takes USB-C, not disposable cells) and seated, the door able to throw the bolt.
 
 > [!NOTE]
+> [!WARNING]
+> Battery-powered Thread devices are **end devices**, never routers — they consume mesh capacity and depend on routers without extending anything. That covers every sensor in IKEA's cheap Matter line (**MYGGBETT** door/window, **MYGGSPRAY** motion, **KLIPPBOK** leak, **TIMMERFLOTTE** climate) as well as the battery shades and the locks themselves. Buy the **GRILLPLATS plugs first**; add battery sensors to a mesh that already has routers, never before.
+
+> [!NOTE]
 > Nothing already in this house can stand in for those plugs, so do not go looking. The **Third Reality** plugs are Zigbee/BLE. The **PoE shades** are Matter-over-Ethernet and never join a Thread mesh. The **Nest Hub Max** and **Family Hub** will not join your network. And the **ecobee thermostats** are out too — ecobee's own connectivity spec for the Smart Thermostat Premium lists dual-band Wi-Fi, Bluetooth 5.0 and a 915 MHz radio (that one drives ecobee's SmartSensors), with no Thread and no Matter; any Thread support ecobee ever exposes is **HomeKit over Thread**, which lands on an Apple network rather than yours.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
