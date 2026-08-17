@@ -195,8 +195,8 @@ With the OTBR up and the companion app open on a Bluetooth phone:
 > [!TIP]
 > **"Unable to Add Accessory"** usually means the lock is not advertising. Press **Set** once and rescan immediately. If that fails, pull a battery for ten seconds, reseat it, press **Set**, and try again. If it still refuses, a Matter fabric survived somewhere and the sticker code is dead — generate a fresh one from **Aqara Home → the lock → Matter → Matter Pairing Code**. A factory reset is the last resort, not the first.
 
-> [!TIP]
-> If the first join is slow, commission the lock **near the ZBT-2 Thread radio**, then move it to its door. Thread is a mesh, but the initial handshake is more reliable with a strong first hop.
+> [!WARNING]
+> **Mesh coverage must exist at the door before you commission, or the lock joins a neighbour's network instead.** During commissioning the device scans and reports the Thread networks it can actually *hear*, and the commissioner picks from that list — so credentials are not enough. On this build the first attempt put the Carport lock on **NEST-PAN** and the Basement lock on **ST-TIZEN**, with the right credentials on the phone the whole time, purely because a single radio in the server rack was inaudible at both doors while the Nest Hub Max and the Family Hub were not. Published guidance puts the border router within roughly **30 feet** of the device for a reliable join. Do not try to force the issue either: a lock that cannot hear your border router goes *unavailable*, so you would trade a working lock on someone else's mesh for a dead one on yours. Commission the mains-powered Thread routers **first**, working outward from the radio, and only then the locks. Moving a lock after commissioning does not help — it keeps the network it joined.
 
 ### Repeat for all three
 Run the same Matter add flow for the **second and third U400**, each with its own QR code, Area, and name. Each lock is its own round trip; there is no batch path. Confirm all three toggle from Home Assistant before moving on — a lock that misbehaves here will misbehave in every automation.
@@ -205,6 +205,9 @@ Run the same Matter add flow for the **second and third U400**, each with its ow
 > The physical keypad and key on the U400 keep working regardless of software — Home Assistant control is an *addition*, never a replacement for the ways you already open the door. (Home Key, the Apple-Wallet tap, is the one convenience that waits for the HomePod; the last section adds it.)
 
 ## Verify and hand off
+
+### Re-commissioning a lock that joined the wrong network
+Once coverage reaches the door, moving a lock onto your own network is a re-commission — there is no migration path for an already-commissioned Matter device. It is short, though, provided the foreign ecosystems no longer hold fabrics: Home Assistant is then the only one. For each lock, open its **device page**, delete it, press the lock's **Set** button once, and add it again from the companion app. Check **Network name** before starting the next one.
 
 ### Confirm they landed on your Thread network
 A lock that commissioned onto a neighbouring mesh looks identical in the device list, so check rather than assume — this is the one thing the whole border-router exercise was for. Open **Matter Server** in the sidebar, select a node, and find the **Thread Network Diagnostics** cluster: its **NetworkName** attribute names the mesh the lock actually joined. It should read your **`ha-thread-…`** network. If it reads a neighbouring network instead, the phone's preferred network won during commissioning — fix the phone's credentials and re-commission that lock. Checking one node is enough; three locks added back to back go the same way.
