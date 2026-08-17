@@ -58,23 +58,25 @@ Then let it work — it compiles Frigate from source, so expect a long run. Read
 > The script builds a **privileged** container, which has weaker isolation from the host than an unprivileged one, and Frigate's own docs note that running in an LXC is community territory rather than officially supported. This path is popular and works well on this hardware, but the officially supported route is Docker Compose inside a VM (virtual machine). The LXC is chosen here so the container can share the host's GPU directly — the whole reason detection runs on the 1080 Ti instead of an Intel iGPU.
 
 ### Open the web UI
-The script prints the container's address when it finishes — browse to it on port **5000**. You should see Frigate running with a single `test` camera looping a sample clip, proof the install works before any real camera exists. Day-to-day browsing happens at **`https://192.168.1.52:8971`** instead (expect a self-signed certificate warning — the container mints its own) — but that port is only *authenticated* after the next step gives it a login.
-
-### Turn the login on and set the admin password
-The script's generated config ships with **`auth: enabled: false`**, which switches Frigate's login off entirely — until you flip it, **both** ports serve every camera to anyone on the LAN, 8971 included, and nothing ever asks you to create a password. Flip it now, before real cameras exist. Open `/config/config.yml` — easiest in the web UI's built-in config editor at `https://192.168.1.52:8971`, or `nano /config/config.yml` in the container's **Console** in Proxmox — find the `auth:` block and set:
+The script prints the container's address when it finishes — browse to **`http://192.168.1.52:5000`**. Expect the **Config Editor (Safe Mode)**, not a dashboard: Frigate 0.17 requires the `mqtt` and `cameras` fields, the generated config has neither, and validation fails with *"mqtt - Field required… cameras - Field required."* That is the install working, not broken — 0.17 also ships no sample camera, so there is no test clip to look for. Escape safe mode with Frigate's own documented minimal blocks: paste this at the **end** of the config, then **Save & Restart**:
 
 ```yaml
-auth:
-  enabled: true
+mqtt:
+  enabled: false
+cameras:
+  placeholder:
+    enabled: false
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:554/rtsp
+          roles:
+            - detect
 ```
 
-Save and restart Frigate — the config editor offers a restart on save, or run this in the container's **Console**:
+The `placeholder` camera exists only to satisfy validation and stays disabled — the doorbell replaces it later on this page, and the MQTT section at the end swaps the `mqtt` block for the real broker. After the restart the actual UI appears on 5000. Day-to-day browsing happens at **`https://192.168.1.52:8971`** instead (expect a self-signed certificate warning — the container mints its own); the next step recovers the login that guards it.
 
-```bash
-systemctl restart frigate
-```
-
-On that restart Frigate creates an **`admin`** user with a random password and prints it **once** to its log. Read it in the container's **Console**:
+### Recover the admin password and make it yours
+With **no `auth:` block** in the config — which is what the script generated — Frigate's authentication defaults **on**, so `https://192.168.1.52:8971` is already demanding a login nobody typed. Frigate minted an **`admin`** user with a random password on startup and printed it **once** to its log. Read it in the container's **Console**:
 
 ```bash
 grep -i password /dev/shm/logs/frigate/current
@@ -90,6 +92,9 @@ Log in at `https://192.168.1.52:8971` as **`admin`** with that password, open **
 
 > [!WARNING]
 > Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and it stays open because the Home Assistant integration later on this page talks to it. Tolerable on the home LAN behind the router; never create a port-forward to it. Camera footage stays on the network — remote access comes through Tailscale instead.
+
+> [!NOTE]
+> Script versions vary: some instead write an explicit `auth: enabled: false` into the generated config, which switches the login off entirely — 8971 included, every camera open to the LAN. If your config shows that line, flip it to `true` in the config editor, **Save & Restart** (`systemctl restart frigate` in the container's **Console** does the same), then read the log as above.
 
 ### Confirm its address and start at boot
 The static address was set in the script's Advanced walk, so there is nothing to reserve at the router. In Proxmox, select the container and open **Options**: enable **Start at boot** so a power cut does not silently end recordings, and set **Start/Shutdown order** to **3** while the panel is open — the MQTT broker this page connects to later lives in the Home Assistant VM (order=2), and Frigate must come up after it. If the install dialog's **CONTAINER PROTECTION** was answered No, fix it here while the panel is open: **Protection → Yes**.
@@ -242,7 +247,7 @@ In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a 
 > Take the exact stream details from the Reolink app — do not guess them. In particular confirm **HTTP is enabled**, or the http-flv video path will not connect at all.
 
 ### Add the doorbell to the config
-There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the cameras you add later — the RLC-510WA and the five EmpireTechs — get folded into these same two blocks rather than starting fresh ones. Add the doorbell first — back in Frigate's config editor: fold its streams into the generated file's existing `go2rtc: streams:`, and the `doorbell:` camera into the existing `cameras:` — and while you are there, delete the `test:` sample camera (and its sample stream) that the install shipped with, so the file holds only real cameras. The doorbell's static `.70` is already in place below — swap in only its username and password:
+There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the cameras you add later — the RLC-510WA and the five EmpireTechs — get folded into these same two blocks rather than starting fresh ones. Add the doorbell first — back in Frigate's config editor: create the `go2rtc:` block with its streams (the generated file ships none), fold the `doorbell:` camera into the existing `cameras:` — and while you are there, delete the `placeholder:` camera that escaped safe mode, so the file holds only real cameras. The doorbell's static `.70` is already in place below — swap in only its username and password:
 
 ```yaml
 go2rtc:
@@ -370,7 +375,7 @@ go2rtc:
 ```
 
 > [!TIP]
-> The finished `/config/config.yml` holds **one** `go2rtc: streams:` map — the doorbell pair, the `rlc510` pair, and a main+sub pair per EmpireTech camera, fourteen entries all told — and **one** `cameras:` map with seven entries (`doorbell:`, `rlc510:`, and the five turrets). The `auth:`, `detectors:`, `model:`, `ffmpeg:`, `record:`, and `mqtt:` blocks each appear once at the top level.
+> The finished `/config/config.yml` holds **one** `go2rtc: streams:` map — the doorbell pair, the `rlc510` pair, and a main+sub pair per EmpireTech camera, fourteen entries all told — and **one** `cameras:` map with seven entries (`doorbell:`, `rlc510:`, and the five turrets). The `detectors:`, `model:`, `ffmpeg:`, `record:`, and `mqtt:` blocks each appear once at the top level.
 
 > [!TIP]
 > In each turret's own web UI, set the **substream** to roughly 720p at **5 fps** for a clean detect frame, and at night set a **manual shutter** — cap it near 1/120 s and hold the gain down — so a moving person doesn't smear (the control Reolink never gave you). On the `T54PRO-AS`, leave the warm light **off / IR mode** for any angle where you want to read a licence plate; the colour mode washes plates out.
@@ -493,7 +498,7 @@ Restart Frigate to apply. A lighter middle ground is a `motion:` block with a `d
 ## Wire it into the build
 
 ### Connect to Home Assistant over MQTT
-Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — back in its config editor — and restart:
+Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — back in its config editor, **replacing** the `mqtt: enabled: false` placeholder from the safe-mode escape (YAML allows one `mqtt:` block) — and restart:
 
 ```yaml
 mqtt:
