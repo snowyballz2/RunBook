@@ -17,7 +17,27 @@ Frigate runs as a privileged **LXC (Linux Container)** here. The community-scrip
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/frigate.sh)"
 ```
 
-When it asks **Default or Advanced**, pick **Advanced**: keep the offered resources (**8 cores, 4 GB RAM, a 20 GB disk**, privileged) but set the **network to a static IP** — `192.168.1.52/24`, gateway `192.168.1.1` — instead of DHCP; the address lives in the protected static zone, where the router could not reserve it. Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
+When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of dialogs, and these are the build's answers, in the order they appear:
+
+- **Container type** — **Privileged**, as offered for Frigate; the GPU lend below depends on it.
+- **Set Root Password** — set one, and record it in the field below. Leaving it blank means automatic login with **no password at all**, which a privileged container holding every camera feed does not get on this build.
+- **Container ID** — accept the offered next-free number. This is the `<frigate-ctid>` the GPU step edits by ID.
+- **Hostname** — keep `frigate`.
+- **Disk / CPU / RAM** — keep the offers: **20 GB, 8 cores, 4096 MiB**.
+- **Network bridge** — `vmbr0`.
+- **IPv4** — **Static (manual entry)**: address `192.168.1.52/24`, gateway `192.168.1.1`. The address lives in the protected `.2–.99` static zone, where the router could not reserve it — never DHCP.
+- **IPv6** — **Fully Disabled**; this LAN runs IPv4 and nothing in the container uses v6.
+- **MTU, DNS search domain, DNS server, MAC address, VLAN** — leave every one blank; blank inherits the host's settings, which are right.
+- **Tags** — keep the offered tag.
+- **SSH root access** — **No**; the container's **Console** in Proxmox covers every shell this page needs.
+- **FUSE** — **No** (it exists for rclone/mergerfs-style mounts; nothing here uses them).
+- **TUN/TAP** — **No**; Tailscale runs on the Proxmox host, not in this container.
+- Anything else (APT cache, proxies, timezone, **Verbose: No**) — accept the defaults, then confirm **Yes** to create.
+
+Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
+
+> [!SECRET] frigate-root | Frigate container root password
+> Set at the install script's **Set Root Password** prompt. Logs into the container's **Console** in Proxmox as `root`; SSH stays off.
 
 > [!TIP]
 > This is the fussiest script in the build — it pulls large AI components and occasionally stumbles partway. If it errors, just re-run it; a second attempt is normal.
@@ -26,10 +46,38 @@ When it asks **Default or Advanced**, pick **Advanced**: keep the offered resour
 > The script builds a **privileged** container, which has weaker isolation from the host than an unprivileged one, and Frigate's own docs note that running in an LXC is community territory rather than officially supported. This path is popular and works well on this hardware, but the officially supported route is Docker Compose inside a VM (virtual machine). The LXC is chosen here so the container can share the host's GPU directly — the whole reason detection runs on the 1080 Ti instead of an Intel iGPU.
 
 ### Open the web UI
-The script prints the container's address when it finishes — browse to it on port **5000**. You should see Frigate running with a single `test` camera looping a sample clip, proof the install works before any real camera exists. Once that first look confirms the install, do your day-to-day browsing on Frigate's **authenticated UI at `https://<frigate-ip>:8971`** instead (expect a self-signed certificate warning) — port 5000 stays for the Home Assistant integration later on this page.
+The script prints the container's address when it finishes — browse to it on port **5000**. You should see Frigate running with a single `test` camera looping a sample clip, proof the install works before any real camera exists. Day-to-day browsing happens at **`https://192.168.1.52:8971`** instead (expect a self-signed certificate warning — the container mints its own) — but that port is only *authenticated* after the next step gives it a login.
+
+### Turn the login on and set the admin password
+The script's generated config ships with **`auth: enabled: false`**, which switches Frigate's login off entirely — until you flip it, **both** ports serve every camera to anyone on the LAN, 8971 included, and nothing ever asks you to create a password. Flip it now, before real cameras exist. Open `/config/config.yml` — easiest in the web UI's built-in config editor at `https://192.168.1.52:8971`, or `nano /config/config.yml` in the container's **Console** in Proxmox — find the `auth:` block and set:
+
+```yaml
+auth:
+  enabled: true
+```
+
+Save and restart Frigate — the config editor offers a restart on save, or run this in the container's **Console**:
+
+```bash
+systemctl restart frigate
+```
+
+On that restart Frigate creates an **`admin`** user with a random password and prints it **once** to its log. Read it in the container's **Console**:
+
+```bash
+grep -i password /dev/shm/logs/frigate/current
+```
+
+Log in at `https://192.168.1.52:8971` as **`admin`** with that password, open **Settings → Users**, and replace it with a password of your own. Record it below.
+
+> [!SECRET] frigate-admin | Frigate admin login (https://192.168.1.52:8971)
+> Username `admin`, with the password you set in **Settings → Users** — not the throwaway one from the log.
+
+> [!TIP]
+> No password line in the log? Have Frigate mint a fresh one: add `reset_admin_password: true` on its own line under `auth:`, restart, read the log again — then remove that line, or it resets the password on every boot.
 
 > [!WARNING]
-> Port 5000 serves the UI with **no login** — the generated config ships with authentication disabled, and in Frigate's port scheme 5000 is the internal unauthenticated port. That is tolerable on the home LAN behind the router, but never create a port-forward to it. Camera footage stays on the network; remote access comes through Tailscale instead.
+> Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and it stays open because the Home Assistant integration later on this page talks to it. Tolerable on the home LAN behind the router; never create a port-forward to it. Camera footage stays on the network — remote access comes through Tailscale instead.
 
 ### Confirm its address and start at boot
 The static address was set in the script's Advanced walk, so there is nothing to reserve at the router. In Proxmox, select the container and open **Options**: enable **Start at boot** so a power cut does not silently end recordings, and set **Start/Shutdown order** to **3** while the panel is open — the MQTT broker this page connects to later lives in the Home Assistant VM (order=2), and Frigate must come up after it.
@@ -292,7 +340,7 @@ go2rtc:
 ```
 
 > [!TIP]
-> The finished `/config/config.yml` holds **one** `go2rtc: streams:` map — the doorbell pair, the `rlc510` pair, and a main+sub pair per EmpireTech camera, fourteen entries all told — and **one** `cameras:` map with seven entries (`doorbell:`, `rlc510:`, and the five turrets). The `detectors:`, `model:`, `ffmpeg:`, `record:`, and `mqtt:` blocks each appear once at the top level.
+> The finished `/config/config.yml` holds **one** `go2rtc: streams:` map — the doorbell pair, the `rlc510` pair, and a main+sub pair per EmpireTech camera, fourteen entries all told — and **one** `cameras:` map with seven entries (`doorbell:`, `rlc510:`, and the five turrets). The `auth:`, `detectors:`, `model:`, `ffmpeg:`, `record:`, and `mqtt:` blocks each appear once at the top level.
 
 > [!TIP]
 > In each turret's own web UI, set the **substream** to roughly 720p at **5 fps** for a clean detect frame, and at night set a **manual shutter** — cap it near 1/120 s and hold the gain down — so a moving person doesn't smear (the control Reolink never gave you). On the `T54PRO-AS`, leave the warm light **off / IR mode** for any angle where you want to read a licence plate; the colour mode washes plates out.
