@@ -114,11 +114,23 @@ dev1: /dev/nvidiactl,gid=44
 dev2: /dev/nvidia-uvm,gid=44
 ```
 
-Then, inside the container, install the **in-container NVIDIA userspace driver at the same version** the host's `nvidia-smi` reports — recorded on the GPU/HBA page:
+The script also attempts the **in-container userspace driver** itself — its output shows `NVIDIA GPU passthrough detected`, and on this build a `Version-pinned install failed - trying unpinned` fallback, which lands whatever version its source offers rather than the host's. One command in the container's **Console** settles whether it matched:
+
+```bash
+nvidia-smi
+```
+
+If it prints the GTX 1080 Ti, the script's driver matches the host's kernel module and the driver step is **done** — skip ahead to fetching the model. If it errors instead — `Failed to initialize NVML: Driver/library version mismatch` is the signature — the fallback missed, and the fix is installing the **same version the host's `nvidia-smi` reports**, recorded on the GPU/HBA page:
 
 > [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01
 
-A version mismatch is the classic cause of "the GPU vanished," so trust the field, not memory. The container's Debian release ships a different driver version than the host's, so skip `apt` for this one: in the **container's console**, download NVIDIA's installer for the exact host version and run it userspace-only. With the host on `550.163.01`:
+Trust the field, not memory. First see whether the script's attempt arrived through `apt`:
+
+```bash
+apt list --installed 2>/dev/null | grep -i nvidia
+```
+
+Purge anything it lists, so the two installs do not fight. Then, in the **container's console**, download NVIDIA's installer for the exact host version and run it userspace-only. With the host on `550.163.01`:
 
 ```bash
 wget https://us.download.nvidia.com/XFree86/Linux-x86_64/550.163.01/NVIDIA-Linux-x86_64-550.163.01.run
