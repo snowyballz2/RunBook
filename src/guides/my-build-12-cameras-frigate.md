@@ -154,7 +154,7 @@ The script also attempts the **in-container userspace driver** itself — its ou
 nvidia-smi
 ```
 
-If it prints the GTX 1080 Ti, the script's driver matches the host's kernel module and the driver step is **done** — skip ahead to fetching the model. If it errors instead — `Failed to initialize NVML: Driver/library version mismatch` is the signature — the fallback missed, and the fix is installing the **same version the host's `nvidia-smi` reports**, recorded on the GPU/HBA page:
+If it prints the GTX 1080 Ti, the script's driver matches the host's kernel module and the driver step is **done** — skip ahead to fetching the model. Two failure shapes share one fix: **`-bash: nvidia-smi: command not found`** means the script's attempt installed nothing at all (the observed outcome on this build — the unpinned fallback failed too, quietly), and **`Failed to initialize NVML: Driver/library version mismatch`** means it landed the wrong version. Either way, install the **same version the host's `nvidia-smi` reports**, recorded on the GPU/HBA page:
 
 > [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01
 
@@ -164,12 +164,14 @@ Trust the field, not memory. First see whether the script's attempt arrived thro
 apt list --installed 2>/dev/null | grep -i nvidia
 ```
 
-Purge anything it lists, so the two installs do not fight. Then, in the **container's console**, download NVIDIA's installer for the exact host version and run it userspace-only. With the host on `550.163.01`:
+Purge anything it lists, so the two installs do not fight — after a `command not found` it is usually empty, which means nothing to purge. Then, in the **container's console**, download NVIDIA's installer for the exact host version and run it userspace-only (`apt install -y wget` first if wget is missing). With the host on `550.163.01`:
 
 ```bash
 wget https://us.download.nvidia.com/XFree86/Linux-x86_64/550.163.01/NVIDIA-Linux-x86_64-550.163.01.run
 sh NVIDIA-Linux-x86_64-550.163.01.run --no-kernel-module
 ```
+
+The installer walks a few text dialogs — accept the license, **No** to the 32-bit compatibility libraries, accept the rest as offered. `--no-kernel-module` is the point: the kernel half lives on the host, so only the libraries land here.
 
 If a host upgrade ever bumps the driver, swap the new version into both lines — the URL follows that pattern for any version. The kernel module lives on the host, so only the libraries install inside; the host-side "never a `.run`" rule is about kernel modules and does not apply in an LXC.
 
