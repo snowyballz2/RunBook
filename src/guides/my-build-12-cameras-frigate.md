@@ -167,7 +167,7 @@ Trust the field, not memory. First see whether the script's attempt arrived thro
 apt list --installed 2>/dev/null | grep -i nvidia
 ```
 
-Purge anything it lists, so the two installs do not fight — after a `command not found` it is usually empty, which means nothing to purge. Then, in the **container's console**, download NVIDIA's installer for the exact host version and run it userspace-only (`apt install -y wget` first if wget is missing). With the host on `550.163.01`:
+Purge anything it lists, so the two installs do not fight — after a `command not found` it is usually empty, which means nothing to purge. Then, in the **container's console**, download NVIDIA's installer for the exact host version and run it userspace-only. The first command uses `wget` — the standard command-line downloader ("web get"), which saves the file at that URL into the current folder (`apt install -y wget` first if the container lacks it); the second runs the ~300 MB installer it fetched. With the host on `550.163.01`:
 
 ```bash
 wget https://us.download.nvidia.com/XFree86/Linux-x86_64/550.163.01/NVIDIA-Linux-x86_64-550.163.01.run
