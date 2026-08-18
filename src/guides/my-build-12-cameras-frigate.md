@@ -156,10 +156,10 @@ The static address was set in the script's Advanced walk, so there is nothing to
 The 1080 Ti is **shared** into this LXC from the host's NVIDIA driver — it is never VFIO (Virtual Function I/O)'d to a VM. Answering **Yes** at the install script's **GPU PASSTHROUGH** dialog already bound the card in: the script found every `/dev/nvidia*` node the host driver exposes and wrote a `devN:` line for each into the container's config. Verify rather than re-do it. On the host (click the Proxmox node, then **Shell**):
 
 ```bash
-grep ^dev /etc/pve/lxc/<frigate-ctid>.conf
+grep ^dev /etc/pve/lxc/102.conf
 ```
 
-(`<frigate-ctid>` is this container's ID, shown next to its name in the sidebar.) Expect several `devN: /dev/nvidia…,gid=44` lines — the script binds every NVIDIA node it finds, a superset of the three the GPU Sharing & HBA Passthrough page's lending recipe names, which is fine. Only if the list comes back **empty** — the dialog answered No, or a container built before it existed — fall back to that recipe: edit the same file, add the three lines below, and restart the container.
+(`102` is this container's ID, shown next to its name in the sidebar.) Expect several `devN: /dev/nvidia…,gid=44` lines — the script binds every NVIDIA node it finds, a superset of the three the GPU Sharing & HBA Passthrough page's lending recipe names, which is fine. Only if the list comes back **empty** — the dialog answered No, or a container built before it existed — fall back to that recipe: edit the same file, add the three lines below, and restart the container.
 
 ```ini
 dev0: /dev/nvidia0,gid=44
@@ -242,11 +242,11 @@ It leaves **`yolov9-t-320.onnx`** in the folder you ran it from. Move it to the 
 scp yolov9-t-320.onnx root@192.168.1.50:/tmp/
 ```
 
-Then, in the **Proxmox host shell**, push it into the container under the name the config expects, swapping in the container's ID:
+Then, in the **Proxmox host shell**, push it into the container under the name the config expects:
 
 ```bash
-pct exec <frigate-ctid> -- mkdir -p /config/model_cache
-pct push <frigate-ctid> /tmp/yolov9-t-320.onnx /config/model_cache/yolov9-t.onnx
+pct exec 102 -- mkdir -p /config/model_cache
+pct push 102 /tmp/yolov9-t-320.onnx /config/model_cache/yolov9-t.onnx
 ```
 
 Without this file, detection fails to start with a missing-model error.
