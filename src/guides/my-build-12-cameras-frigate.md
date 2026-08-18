@@ -103,8 +103,24 @@ Log in at `https://192.168.1.52:8971` as **`admin`** with that password, open **
 >
 > **Save & Restart**, grep again, log in — then **delete those two lines and Save & Restart once more** (in the same 5000 editor, or 8971's now that you can log in; both edit the same file), or the password resets on every boot.
 
+### Fence the open port
+Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and the login on 8971 protects nothing while it stays LAN-open: the same config editor you just used to reset the admin password is sitting there for anyone on the network, cameras included, and disabling auth outright is one edit away. Frigate's official Docker deployment never exposes 5000 beyond the container's private network; this LXC does, so build the fence Docker would have provided. Proxmox's per-guest firewall is the tool, and the order below stages everything before the master switch flips, so nothing breaks partway.
+
+1. **CT 102 → Firewall → Add** — one rule per row, Direction `in`, Action `ACCEPT`:
+   - `tcp` dest port `8971`, source blank — the authenticated UI, for you.
+   - `tcp` dest port `5000`, source `192.168.1.51` — the Home Assistant integration below.
+   - `tcp` dest port `5000`, source `192.168.1.57` — Uptime Kuma's health checks, later in the build.
+   - `tcp` dest port `8554,8555`, source `192.168.1.51` — go2rtc's restream and WebRTC, which ride 8971's proxy for browsers and are needed raw only by HA.
+   - `udp` dest port `8555`, source `192.168.1.51` — WebRTC's UDP half.
+   - `icmp`, everything blank — the container keeps answering pings.
+2. **CT 102 → Firewall → Options** — confirm **Input Policy: DROP** (Output ACCEPT), then set **Firewall: Yes**.
+3. **CT 102 → Network → edit `net0`** — tick **Firewall**, OK.
+4. **Node `pve` → Firewall → Add** — `ACCEPT, icmp`, so the host keeps answering pings under the datacenter policy.
+5. **Datacenter → Firewall → Options → Firewall: Yes** — the master switch. Proxmox auto-allows the web UI (8006) and SSH from the local network even under DROP, so this cannot lock you out; TrueNAS and Home Assistant are untouched because their own guest firewalls stay off.
+6. Prove it: `https://192.168.1.52:8971` still loads; `http://192.168.1.52:5000` from your Mac now **times out**. That timeout is the fence working — the unauthenticated editor now answers only to Home Assistant, Kuma, and the console.
+
 > [!WARNING]
-> Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and it stays open because the Home Assistant integration later on this page talks to it. Tolerable on the home LAN behind the router; never create a port-forward to it. Camera footage stays on the network — remote access comes through Tailscale instead.
+> Never create a port-forward to any of this regardless — camera footage stays on the network, and remote access comes through Tailscale.
 
 > [!NOTE]
 > Script versions vary: some instead write an explicit `auth: enabled: false` into the generated config, which switches the login off entirely — 8971 included, every camera open to the LAN. If your config shows that line, flip it to `true` in the config editor, **Save & Restart** (`systemctl restart frigate` in the container's **Console** does the same), then read the log as above.

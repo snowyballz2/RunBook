@@ -76,6 +76,7 @@ Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
+> The Frigate container sits behind the Proxmox firewall fence built on the Cameras & Frigate page, which allows Kuma's address (`.57`) through to port `5000` and answers pings — so both monitor styles work. If a Frigate check ever times out from here, confirm Kuma still holds `.57` before blaming Frigate.
 
 > [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.58
 
