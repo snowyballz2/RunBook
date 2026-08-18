@@ -213,7 +213,7 @@ You should see the GTX 1080 Ti listed with a driver version. If the command is m
 > The card is shared across containers, not handed to one guest — Frigate detection now, the Ollama LLM (large language model) and faster-whisper STT (speech-to-text) voice stack later. Keep `nvidia-persistenced` enabled on the host and the host/in-container driver versions matched. VFIO is reserved for the HBA (host bus adapter) feeding the TrueNAS VM; the GPU stays shared. The moment the GPU is VFIO-bound, every container loses detection at once.
 
 ### Fetch the detection model
-Frigate does not bundle YOLO models — the file the config below points at has to be produced once, by you. This is the one step that runs on **your desk computer**, because it needs Docker and nothing in the server stack has it: install **Docker Desktop** (docker.com, free for this) on the Mac or the Windows PC. Its first-run flow: **Accept** the service agreement (the free tier covers personal use), choose **Use recommended settings** when asked (it wants your computer's login password for its helper — the OS asking, not Docker's account), **Skip** the Docker sign-in (no account needed), skip any survey, and if macOS asks whether Docker may *find devices on local networks*, **Don't Allow** — this job only reaches the internet. Then open a terminal — the Mac's Terminal, or on Windows the **WSL** shell Docker Desktop sets up, since the command below is bash syntax. Then run this, exactly as Frigate's own docs publish it — one command, ending at the `EOF` line:
+Frigate does not bundle YOLO models — the file the config below points at has to be produced once, by you. This is the one step that runs on **your desk computer**, because it needs Docker and nothing in the server stack has it: install **Docker Desktop** (docker.com, free for this) on the Mac or the Windows PC. Its first-run flow: **Accept** the service agreement (the free tier covers personal use), choose **Use recommended settings** when asked (it wants your computer's login password for its helper — the OS asking, not Docker's account), **Skip** the Docker sign-in (no account needed), skip any survey, and if macOS asks whether Docker may *find devices on local networks*, **Don't Allow** — this job only reaches the internet. Then open a terminal — the Mac's Terminal, or on Windows the **WSL** shell Docker Desktop sets up, since the command below is bash syntax. Then run this — one command, ending at the `EOF` line. It is Frigate's own published recipe with one word corrected: their command asks for `onnx-simplifier`, a package since renamed **`onnxsim`**, and on an Apple Silicon Mac (no prebuilt wheel, so the installer builds from source and checks the metadata) the old name fails with *"Package metadata name `onnxsim` does not match given name `onnx-simplifier`."* The corrected name works everywhere; expect step 7 to spend a few minutes compiling on Apple Silicon:
 
 ```bash
 docker build . --build-arg MODEL_SIZE=t --build-arg IMG_SIZE=320 --output . -f- <<'EOF'
@@ -223,7 +223,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /bin/
 WORKDIR /yolov9
 ADD https://github.com/WongKinYiu/yolov9.git .
 RUN uv pip install --system -r requirements.txt
-RUN uv pip install --system onnx==1.18.0 onnxruntime onnx-simplifier==0.4.* onnxscript
+RUN uv pip install --system onnx==1.18.0 onnxruntime onnxsim==0.4.* onnxscript
 ARG MODEL_SIZE
 ARG IMG_SIZE
 ADD https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-${MODEL_SIZE}-converted.pt yolov9-${MODEL_SIZE}.pt
