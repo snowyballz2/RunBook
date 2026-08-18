@@ -307,11 +307,15 @@ In the doorbell's advanced network settings, work through the **Port Settings** 
 - **RTMP — leave on for now.** The flv machinery references it internally and Frigate's docs make no promise it survives disabled — after everything streams, try switching it off, and turn it back if the feed dies.
 - **Basic Service (port 9000) — on.** Reolink's own client protocol: the phone app on the LAN, and the Home Assistant Reolink integration later in the build.
 
-Set a username and password. Set the bitrate to **"On, fluency first"** (constant bitrate, which Frigate prefers) and the **Interframe Space to 1×** (an I-frame interval matching the frame rate). While you are there, give it its **permanent static address** in the app's network settings — IP `192.168.1.70`, mask `255.255.255.0`, gateway `192.168.1.1` for now (the hardening section at the end of this page blanks that gateway) — so the config below never goes stale.
+Still in the network settings, give it its **permanent static address** — IP `192.168.1.70`, mask `255.255.255.0`, gateway `192.168.1.1` for now (the hardening section at the end of this page blanks that gateway) — so the config below never goes stale.
+
+The video tuning lives on a different page — Reolink files it under **Settings → Display → Stream**, not network — where the **Clear** and **Fluent** streams each get a tab. On **both**: set **Interframe Space** to **1×** (an I-frame interval matching the frame rate), and put the rate control in constant mode — newer firmware names it **Bitrate Mode → Constant**, older firmware phrases the same thing as **"On, fluency first"**. Either way the point is steady-rate video, which Frigate prefers.
+
+For the login fields below, use the doorbell's **admin** account: the User-level accounts Reolink lets you add cannot drive **two-way talk**, and the talk-back path in the config authenticates with these same credentials.
 
 > [!INPUT] doorbell-ip | Reolink doorbell IP | 192.168.1.70
 
-> [!INPUT] doorbell-user | Doorbell username
+> [!INPUT] doorbell-user | Doorbell username | | admin
 
 > [!SECRET] doorbell-password | Doorbell password
 > The login set in the Reolink app — it fills the `USER` / `PASS` slots of the config below.
