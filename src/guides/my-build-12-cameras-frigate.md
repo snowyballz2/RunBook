@@ -109,18 +109,34 @@ Log in at `https://192.168.1.52:8971` as **`admin`** with that password, open **
 ### Fence the open port
 Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and the login on 8971 protects nothing while it stays LAN-open: the same config editor you just used to reset the admin password is sitting there for anyone on the network, cameras included, and disabling auth outright is one edit away. Frigate's official Docker deployment never exposes 5000 beyond the container's private network; this LXC does, so build the fence Docker would have provided. Proxmox's per-guest firewall is the tool, and the order below stages everything before the master switch flips, so nothing breaks partway.
 
-1. **CT 102 → Firewall → Add** — one rule per row, Direction `in`, Action `ACCEPT`:
-   - `tcp` dest port `8971`, source blank — the authenticated UI, for you.
-   - `tcp` dest port `5000`, source `192.168.1.51` — the Home Assistant integration below.
-   - `tcp` dest port `5000`, source `192.168.1.57` — Uptime Kuma's health checks, later in the build.
-   - `tcp` dest port `8554,8555`, source `192.168.1.51` — go2rtc's restream and WebRTC, which ride 8971's proxy for browsers and are needed raw only by HA.
-   - `udp` dest port `8555`, source `192.168.1.51` — WebRTC's UDP half.
-   - `icmp`, everything blank — the container keeps answering pings.
-2. **CT 102 → Firewall → Options** — confirm **Input Policy: DROP** (Output ACCEPT), then set **Firewall: Yes**.
-3. **CT 102 → Network → edit `net0`** — tick **Firewall**, OK.
-4. **Node `pve` → Firewall → Add** — `ACCEPT, icmp`, so the host keeps answering pings under the datacenter policy.
-5. **Datacenter → Firewall → Options → Firewall: Yes** — the master switch. Proxmox auto-allows the web UI (8006) and SSH from the local network even under DROP, so this cannot lock you out; TrueNAS and Home Assistant are untouched because their own guest firewalls stay off.
-6. Prove it: `https://192.168.1.52:8971` still loads; `http://192.168.1.52:5000` from your Mac now **times out**. That timeout is the fence working — the unauthenticated editor now answers only to Home Assistant, Kuma, and the console.
+All the typing lands in one paste. In the **Proxmox host Shell** (node `pve` → **Shell** — not the container's console), write the container's entire ruleset, switches included (`102` is this container's ID, the number beside its name; safe to run even if you began clicking rules in — it replaces them with exactly these):
+
+```bash
+cat > /etc/pve/firewall/102.fw <<'EOF'
+[OPTIONS]
+enable: 1
+policy_in: DROP
+policy_out: ACCEPT
+
+[RULES]
+IN ACCEPT -p tcp -dport 8971
+IN ACCEPT -source 192.168.1.51 -p tcp -dport 5000
+IN ACCEPT -source 192.168.1.57 -p tcp -dport 5000
+IN ACCEPT -source 192.168.1.51 -p tcp -dport 8554,8555
+IN ACCEPT -source 192.168.1.51 -p udp -dport 8555
+IN ACCEPT -p icmp
+EOF
+```
+
+Line by line: `8971` stays open to the LAN — the authenticated UI, for you. `5000` opens only to Home Assistant (`.51`, the integration below) and Uptime Kuma (`.57`, health checks later in the build). go2rtc's restream and WebRTC (`8554`, `8555`, plus WebRTC's UDP half) go only to Home Assistant, since browsers ride 8971's proxy. `icmp` keeps the container answering pings. The `[OPTIONS]` block is the guest's own switches: firewall on, inbound drop-by-default, outbound open.
+
+The file sits inert until the master switch flips. The rest is clicks:
+
+1. **CT 102 → Firewall** — the six rules now show in the list. That is the file being read, and your check that the paste took.
+2. **CT 102 → Network → edit `net0`** — tick **Firewall**, OK.
+3. **Node `pve` → Firewall → Add** — Direction `in`, Action `ACCEPT`, Protocol `icmp`, so the host keeps answering pings under the datacenter policy.
+4. **Datacenter → Firewall → Options → Firewall: Yes** — the master switch. Proxmox auto-allows the web UI (8006) and SSH from the local network even under DROP, so this cannot lock you out; TrueNAS and Home Assistant are untouched because their own guest firewalls stay off.
+5. Prove it: `https://192.168.1.52:8971` still loads; `http://192.168.1.52:5000` from your Mac now **times out**. That timeout is the fence working — the unauthenticated editor now answers only to Home Assistant, Kuma, and the console.
 
 > [!WARNING]
 > Never create a port-forward to any of this regardless — camera footage stays on the network, and remote access comes through Tailscale.
