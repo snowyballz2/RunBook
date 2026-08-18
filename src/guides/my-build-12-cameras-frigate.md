@@ -133,7 +133,7 @@ Line by line: `8971` stays open to the LAN — the authenticated UI, for you. `5
 The file sits inert until the master switch flips. The rest is clicks:
 
 1. **CT 102 → Firewall** — the six rules now show in the list. That is the file being read, and your check that the paste took.
-2. **CT 102 → Network → edit `net0`** — tick **Firewall**, OK.
+2. Select container **102** in the left tree and open **Network** in its menu (between Resources and DNS). The panel lists one row, **`net0`** — the container's network card. Double-click it, tick **Firewall**, **OK**.
 3. **Node `pve` → Firewall → Add** — Direction `in`, Action `ACCEPT`, Protocol `icmp`, so the host keeps answering pings under the datacenter policy.
 4. **Datacenter → Firewall → Options → Firewall: Yes** — the master switch. Proxmox auto-allows the web UI (8006) and SSH from the local network even under DROP, so this cannot lock you out; TrueNAS and Home Assistant are untouched because their own guest firewalls stay off.
 5. Prove it: `https://192.168.1.52:8971` still loads; `http://192.168.1.52:5000` from your Mac now **times out**. That timeout is the fence working — the unauthenticated editor now answers only to Home Assistant, Kuma, and the console.
