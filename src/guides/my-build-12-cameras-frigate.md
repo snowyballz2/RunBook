@@ -196,7 +196,7 @@ wget https://us.download.nvidia.com/XFree86/Linux-x86_64/550.163.01/NVIDIA-Linux
 sh NVIDIA-Linux-x86_64-550.163.01.run --no-kernel-module
 ```
 
-The installer walks a few text dialogs — accept the license, **No** to the 32-bit compatibility libraries, accept the rest as offered. `--no-kernel-module` is the point: the kernel half lives on the host, so only the libraries land here.
+The installer walks a few text dialogs — accept the license, **No** to the 32-bit compatibility libraries, accept the rest as offered. One of them is a blue **WARNING** that it "will not install any kernel modules" and that matching modules must be "installed separately" — that is `--no-kernel-module` doing its job, not a problem: the kernel half lives on the host at exactly this version, from the GPU/HBA page. **OK** through it.
 
 If a host upgrade ever bumps the driver, swap the new version into both lines — the URL follows that pattern for any version. The kernel module lives on the host, so only the libraries install inside; the host-side "never a `.run`" rule is about kernel modules and does not apply in an LXC.
 
