@@ -420,6 +420,9 @@ cameras:
 > [!WARNING]
 > Reolink doorbells have limited streaming capacity and dislike many simultaneous connections. Detecting on the sub stream, as above, keeps the load light — but every extra consumer is another connection, and adding Reolink's own Home Assistant integration is a common one. Running everything at once can cause dropouts, so add one thing at a time and watch the logs.
 
+> [!NOTE]
+> **What working looks like for this camera:** the live tile plays the full 2560×1920 main stream over the doorbell's WiFi, so expect it a little juttery — that is the link, not the config. The log shows short bursts of `doorbell: Unable to read frames from ffmpeg process` every few minutes: the WiFi dropping and the watchdog reconnecting, normal for this device. Detection rides the light sub stream and recordings are written at full quality regardless of live-view stutter. Two more verifications while you are here: `nvidia-smi` in the container's Console now shows **~180 MiB used and real wattage** — the detector resident on the card — though its **Processes table stays empty in an LXC** (the container cannot enumerate PIDs across namespaces; trust the memory and power numbers). And the wired EmpireTechs below will not share any of this jitter.
+
 ## Add the RLC-510WA
 
 ### Add the second indoor camera
