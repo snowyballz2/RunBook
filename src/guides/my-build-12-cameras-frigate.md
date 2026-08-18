@@ -288,7 +288,7 @@ ffmpeg:
 nvidia-smi
 ```
 
-The Processes table that read *"No running processes found"* during setup should now list frigate/ffmpeg processes with real GPU memory — detection and decode both on the 1080 Ti. (With only the disabled `placeholder` camera, decode has nothing to chew yet; the processes fill in as real cameras land below.)
+The Processes table still reads *"No running processes found"* — correct at this point, not a failure: with only the disabled `placeholder` camera there is nothing to decode and nothing to detect on. The proof that the swap worked lives in **Frigate's UI** instead: the footer now names the **GTX 1080 Ti** (Frigate querying the card from inside the container) and reports **System is healthy** (the new config validated). The processes appear the moment the first real camera lands in the next section — run `nvidia-smi` again after the doorbell, and *that* is when ffmpeg and the detector show with real GPU memory.
 
 ## Add the Reolink doorbell
 
