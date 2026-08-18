@@ -298,7 +298,16 @@ The doorbell is the camera most people actually want, and the pick here is the *
 On Reolink doorbells, plain RTSP video is **less reliable** — it drops and stutters — while video carried over **http-flv (video over HTTP)** is steady. But the two-way talk audio only rides on RTSP. So the trick is to pull *video* over http-flv for stability and add a *secondary RTSP stream just for the audio*, then let Frigate's bundled **go2rtc** restreamer fuse them into one feed it can record, detect on, and talk back through.
 
 ### Prepare the doorbell in the Reolink app
-In the doorbell's advanced network settings, **enable HTTP and RTSP** and set a username and password. Set the bitrate to **"On, fluency first"** (constant bitrate, which Frigate prefers) and the **Interframe Space to 1×** (an I-frame interval matching the frame rate). While you are there, give it its **permanent static address** in the app's network settings — IP `192.168.1.70`, mask `255.255.255.0`, gateway `192.168.1.1` for now (the hardening section at the end of this page blanks that gateway) — so the config below never goes stale.
+In the doorbell's advanced network settings, work through the **Port Settings** — each toggle is a protocol the camera serves, and the build needs a specific set:
+
+- **HTTP — on, port 80.** Carries the http-flv video streams the config pulls; Frigate's docs name this the one hard requirement. It is also why the config's URLs say `http://` — http-flv over port 80 *is* the stable video transport on these doorbells, not an oversight to correct.
+- **RTSP — on, port 554.** The audio companion stream and the two-way talk path.
+- **HTTPS — optional, port 443.** Protects only the camera's own settings pages in your browser; no stream uses it.
+- **ONVIF — off.** Nothing in this build speaks it.
+- **RTMP — leave on for now.** The flv machinery references it internally and Frigate's docs make no promise it survives disabled — after everything streams, try switching it off, and turn it back if the feed dies.
+- **Basic Service (port 9000) — on.** Reolink's own client protocol: the phone app on the LAN, and the Home Assistant Reolink integration later in the build.
+
+Set a username and password. Set the bitrate to **"On, fluency first"** (constant bitrate, which Frigate prefers) and the **Interframe Space to 1×** (an I-frame interval matching the frame rate). While you are there, give it its **permanent static address** in the app's network settings — IP `192.168.1.70`, mask `255.255.255.0`, gateway `192.168.1.1` for now (the hardening section at the end of this page blanks that gateway) — so the config below never goes stale.
 
 > [!INPUT] doorbell-ip | Reolink doorbell IP | 192.168.1.70
 
