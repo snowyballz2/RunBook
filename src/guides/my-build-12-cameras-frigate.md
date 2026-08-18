@@ -273,14 +273,20 @@ model:
 > The 1080 Ti is Pascal — compute capability 6.1 — which clears every requirement: compute capability 5.0 or higher, NVIDIA driver 545 or newer, and CUDA 12.x. Use a **YOLOv9** model (the small `yolov9-t` is a good starting point); avoid RF-DETR, which runs very slowly on Pascal cards. One rule that never relaxes: **detector types cannot be mixed** — an `onnx` detector here means no `openvino` or `edgetpu` block alongside it. And keep the `labelmap_path` line: a YOLOv9 export emits the **80-class** COCO list, so without it Frigate falls back to its 90-class default and mislabels every class past the first few — your tracked `dog` comes through as `cat`.
 
 ### Set the decode preset
-Frigate also hardware-decodes every camera stream so the CPU is not burning cycles unpacking video. With the 1080 Ti shared in, decode the streams on the NVIDIA card too — same Frigate config editor:
+Frigate also hardware-decodes every camera stream so the CPU is not burning cycles unpacking video. With the 1080 Ti shared in, decode the streams on the NVIDIA card too. Same editor, same sitting as the detector swap — this changes the **existing** `ffmpeg:` block's `auto` to:
 
 ```yaml
 ffmpeg:
   hwaccel_args: preset-nvidia
 ```
 
-`preset-nvidia` selects NVDEC hardware decoding on the card. Restart Frigate after any config change (covered below) and watch the logs to confirm decode lands on the GPU rather than falling back to software.
+`preset-nvidia` selects NVDEC hardware decoding on the card. With both edits made, one **Save & Restart** applies the detector and the decode together. Then prove the card is actually working — in the container's **Console**:
+
+```bash
+nvidia-smi
+```
+
+The Processes table that read *"No running processes found"* during setup should now list frigate/ffmpeg processes with real GPU memory — detection and decode both on the 1080 Ti. (With only the disabled `placeholder` camera, decode has nothing to chew yet; the processes fill in as real cameras land below.)
 
 ## Add the Reolink doorbell
 
