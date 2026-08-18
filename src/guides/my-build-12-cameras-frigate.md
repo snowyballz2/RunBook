@@ -516,22 +516,7 @@ cameras:
 
 ## The PoE camera lineup
 
-The doorbell and the RLC-510WA got the build going; the five wired cameras are **EmpireTech (Dahua-family) PoE turrets**, settled on after weighing every alternative. Here is the locked lineup.
-
-### What to buy
-- **Four `IPC-T54PRO-AS` (WizColor dual-light) — the perimeter.** A Dahua-made 4MP turret on a large **1/1.8″** sensor with an **f/1.0** lens, **dual light** (IR to 60 m, *or* a warm LED for full-colour night), and **two-way talk**. **$199.99** each, direct from empiretech01.com. Get the **3.6mm** lens — the mounting section explains why it fits your corners. It supersedes the older IR-only `IPC-T54IR-AS-S3`: same price, but the PRO is the newer WizColor generation and adds the warm light and speaker for nothing extra.
-- **One `IPC-Color4K-T-S2` — indoor.** An **8MP 1/1.2″** full-colour turret, the biggest sensor in this class, so it holds clean colour in a dark room where an IR camera would glare off walls and glass. **$289.99** each with the **3.6mm** lens (the 2.8mm is $279.99) — it also sits in an inside 90° corner, so it takes the same wedge-fit lens as the outdoor turrets (3.6mm fills the 90° corner and reaches further for facial ID; 2.8mm would just waste width on the flanking walls). One camera recognises across a large room and identifies out to about 25 ft; the **RLC-510WA covers the opposite side** (added above), so the far corner isn't blind. The white finish sells out fast — back-order it rather than settle.
-- **The Reolink doorbell stays** — already wired and already in Frigate above.
-- **The RLC-510WA stays too** — WiFi with its 12 V adapter, redeployed as the second indoor camera (added above); no PoE run, no switch port.
-
-> [!NOTE]
-> **Why EmpireTech (Dahua), not Reolink or Hikvision.** Frigate lives on an RTSP stream, and Dahua-family cameras give the clean kind: a plain `/cam/realmonitor` URL, no http-flv wrappers, no connection-limit juggling, and **fully configurable substreams** so detection gets a right-sized frame. They also expose a **real manual shutter** and *honour* it — the one thing that keeps a moving person sharp at night — where Reolink fakes that control and auto-blurs. And they behave when firewalled off the internet (the hardening below), which Reolink actively fights. Hikvision's hardware is just as good, but the legitimate English-firmware version costs *more* than the EmpireTech, splits you across two config styles, and the cheap listings are grey-market with no security patches — so it was considered and dropped.
-
-> [!TIP]
-> **On a tight budget, the sanctioned swap is Amcrest, not Reolink.** The **`IP5M-T1179EW`** (**$79.99**, and the one camera Micro Center actually stocks) is a Dahua rebrand — it keeps the clean RTSP, the configurable substream, and the honoured manual shutter, just on a smaller **1/2.7″** sensor. Use it on a lit or secondary angle where you don't need the PRO's night reach. It drops into the same config and the same hardening as the EmpireTechs — one playbook — where a Reolink would fracture both.
-
-> [!WARNING]
-> Buy EmpireTech **direct from empiretech01.com** (or its own Amazon storefront). Newegg and marketplace resellers list the identical cameras at a steep markup. These prices are a mid-2026 snapshot — check the store for the day's number — and EmpireTech runs limited stock, so order the four together.
+The doorbell and the RLC-510WA got the build going; the wired five are the **four EmpireTech `IPC-T54PRO-AS` WizColor turrets** (dual-light, two-way talk, **3.6mm** lenses — the mounting section below is why) for the perimeter corners at `192.168.1.72`–`.75`, and the **`IPC-Color4K-T-S2`** (8MP full-colour, **3.6mm**) covering the big room indoors at `192.168.1.76`. All five ride PoE on the **GS308EPP**. Dahua-family hardware is why the config below is plain RTSP with configurable substreams and an honoured manual shutter — no http-flv gymnastics, no connection limits.
 
 ### Add each one to the config
 A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv work. Each camera's own web UI has you set an admin password on first login — use **one login for all five EmpireTechs** and record it once; it fills every `USER`/`PASS` slot below:
