@@ -128,6 +128,10 @@ The exit, if you ever want one, is a factory reset of each U400 and a re-commiss
 ## Before you commission
 
 ### Confirm the prerequisites
+
+> [!NOTE]
+> **This is the page it is fine to pause.** The border-router half above is done once and keeps; the lock half below waits on hardware — the five Thread plugs ship from IKEA. Nothing between here and the Automations page depends on the locks, so the intended path while the box is in transit is to continue straight into **Cameras, Doorbell & Frigate** and return here when the plugs arrive. Locks commissioned before the mesh has routers end up on the neighbours' networks — this build proved it so you do not have to.
+
 Five things need to be true before you touch a lock:
 
 - The **Home Assistant OS VM** is up, with the **Matter** integration available (it ships with Home Assistant) and the **OTBR** running from the step above.

@@ -94,9 +94,9 @@ Replace the sample content of `services.yaml` with the build itself — two grou
         siteMonitor: http://192.168.1.51:8123
     - Frigate:
         icon: frigate.png
-        href: http://192.168.1.52:8971
+        href: https://192.168.1.52:8971
         description: Cameras and recordings
-        siteMonitor: http://192.168.1.52:8971
+        siteMonitor: https://192.168.1.52:8971   # self-signed cert — if this monitor reads down while Frigate is up, that is the certificate check, not Frigate
     - Nextcloud:
         icon: nextcloud.png
         href: https://192.168.1.58
