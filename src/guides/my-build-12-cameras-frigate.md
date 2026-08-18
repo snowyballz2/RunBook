@@ -320,6 +320,8 @@ The doorbell is the camera most people actually want, and the pick here is the *
 ### Understand why a doorbell is different
 On Reolink doorbells, plain RTSP video is **less reliable** — it drops and stutters — while video carried over **http-flv (video over HTTP)** is steady. But the two-way talk audio only rides on RTSP. So the trick is to pull *video* over http-flv for stability and add a *secondary RTSP stream just for the audio*, then let Frigate's bundled **go2rtc** restreamer fuse them into one feed it can record, detect on, and talk back through.
 
+*Bundled* means you never install or configure go2rtc separately — the install script deployed it alongside Frigate as its own service, and the `go2rtc:` block in the config **is** its entire setup, read each time its service starts. It is the half that talks to cameras; Frigate consumes its local restreams at `127.0.0.1:8554` — which is why camera URLs live under `go2rtc:` while every `cameras:` entry points at localhost.
+
 ### Prepare the doorbell in the Reolink app
 In the doorbell's advanced network settings, work through the **Port Settings** — each toggle is a protocol the camera serves, and the build needs a specific set:
 
