@@ -64,9 +64,23 @@ Then let it work — it compiles Frigate from source, so expect a long run. Read
 > The script builds a **privileged** container, which has weaker isolation from the host than an unprivileged one, and Frigate's own docs note that running in an LXC is community territory rather than officially supported. This path is popular and works well on this hardware, but the officially supported route is Docker Compose inside a VM (virtual machine). The LXC is chosen here so the container can share the host's GPU directly — the whole reason detection runs on the 1080 Ti instead of an Intel iGPU.
 
 ### Open the web UI
-The script prints the container's address when it finishes — browse to **`http://192.168.1.52:5000`**. Expect the **Config Editor (Safe Mode)**, not a dashboard: Frigate 0.17 requires the `mqtt` and `cameras` fields, the generated config has neither, and validation fails with *"mqtt - Field required… cameras - Field required."* That is the install working, not broken — 0.17 also ships no sample camera, so there is no test clip to look for. Escape safe mode with Frigate's own documented minimal blocks. The config is **YAML** — an indentation-based text format where the leading spaces are meaningful, so what you paste must keep its exact shape. In the editor, click at the end of the last line (`version: 0.17-0`), press **Enter** for a fresh line, paste this with `mqtt:` and `cameras:` flush against the left edge, then click **Save & Restart** (top right):
+The script prints the container's address when it finishes — browse to **`http://192.168.1.52:5000`**. Expect the **Config Editor (Safe Mode)**, not a dashboard: Frigate 0.17 requires the `mqtt` and `cameras` fields, the generated config has neither, and validation fails with *"mqtt - Field required… cameras - Field required."* That is the install working, not broken — 0.17 also ships no sample camera, so there is no test clip to look for. Escape safe mode with Frigate's own documented minimal blocks. The config is **YAML** — an indentation-based text format where the leading spaces are meaningful — and this page treats it one way throughout: **every config step gives the complete file as it should exist at that moment.** Select everything in the editor, delete it, paste the block, swap any password tokens it names, **Save & Restart**. No merging, no hunting for changed lines. Here, the whole file becomes:
 
 ```yaml
+ffmpeg:
+  hwaccel_args: auto
+detectors:
+  detector01:
+    type: openvino
+    device: AUTO
+model:
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+version: 0.17-0
 mqtt:
   enabled: false
 cameras:
@@ -78,6 +92,8 @@ cameras:
           roles:
             - detect
 ```
+
+No tokens to swap in this one — the top half is the script's own generated config kept as-is, with the two missing required blocks added beneath.
 
 The `placeholder` camera exists only to satisfy validation and stays disabled — the doorbell replaces it later on this page, and the MQTT section at the end swaps the `mqtt` block for the real broker. The red *Field required* errors disappear and, after the restart, the actual UI appears on 5000. If the editor complains about what you pasted, the indentation got mangled — delete the pasted lines and paste again. Day-to-day browsing happens at **`https://192.168.1.52:8971`** instead (expect a self-signed certificate warning — the container mints its own); the next step recovers the login that guards it.
 
@@ -254,13 +270,20 @@ pct push 102 /tmp/yolov9-t-320.onnx /config/model_cache/yolov9-t.onnx
 Without this file, detection fails to start with a missing-model error.
 
 ### Point detection at ONNX on CUDA
-This build does **not** use the Intel iGPU + OpenVINO path that Frigate defaults to. Detection runs on the 1080 Ti via the **ONNX (Open Neural Network Exchange) detector on the CUDA (NVIDIA's GPU compute platform) execution provider** — this install's Frigate build ships the ONNX runtime, which picks up CUDA automatically once the card is visible, so pointing Frigate at ONNX is enough to find the card. Edit `/config/config.yml` — easiest in **Frigate's own web UI** at `https://192.168.1.52:8971`, whose built-in config editor validates as you type (`nano /config/config.yml` in the container's console works too). This **replaces** the script's OpenVINO versions of the same two blocks — delete the existing `detectors:` block (`detector01`, type `openvino`) and the existing `model:` block (the one pointing at `/openvino-model/…`), and paste these where they were. Everything else stays: `ffmpeg:` (the next step adjusts it), `version:`, `mqtt:`, and the `placeholder` camera. Two `detectors:` or two `model:` keys is the same invalid-YAML trap as two `cameras:` blocks.
+This build does **not** use the Intel iGPU + OpenVINO path that Frigate defaults to. Detection runs on the 1080 Ti via the **ONNX (Open Neural Network Exchange) detector on the CUDA (NVIDIA's GPU compute platform) execution provider** — this install's Frigate build ships the ONNX runtime, which picks up CUDA automatically once the card is visible, so pointing Frigate at ONNX is enough to find the card. The `detectors:` and `model:` blocks below replace the script's OpenVINO versions, and the decode preset in the next step touches the same file — so both land in **one complete-file paste there**, one Save & Restart for the pair.
+
+> [!NOTE]
+> The 1080 Ti is Pascal — compute capability 6.1 — which clears every requirement: compute capability 5.0 or higher, NVIDIA driver 545 or newer, and CUDA 12.x. Use a **YOLOv9** model (the small `yolov9-t` is a good starting point); avoid RF-DETR, which runs very slowly on Pascal cards. One rule that never relaxes: **detector types cannot be mixed** — an `onnx` detector here means no `openvino` or `edgetpu` block alongside it. And keep the `labelmap_path` line: a YOLOv9 export emits the **80-class** COCO list, so without it Frigate falls back to its 90-class default and mislabels every class past the first few — your tracked `dog` comes through as `cat`.
+
+### Set the decode preset
+Frigate also hardware-decodes every camera stream so the CPU is not burning cycles unpacking video — `hwaccel_args: preset-nvidia` selects NVDEC on the card, replacing the generated `auto`. In the config editor at `https://192.168.1.52:8971` (or `nano /config/config.yml` in the container's console), **select all, delete, paste the complete file** — the ONNX detector, the YOLOv9 model, and the decode preset together. No tokens to swap:
 
 ```yaml
+ffmpeg:
+  hwaccel_args: preset-nvidia
 detectors:
   onnx:
     type: onnx
-
 model:
   model_type: yolo-generic
   width: 320
@@ -269,20 +292,20 @@ model:
   input_dtype: float
   path: /config/model_cache/yolov9-t.onnx
   labelmap_path: /labelmap/coco-80.txt
+version: 0.17-0
+mqtt:
+  enabled: false
+cameras:
+  placeholder:
+    enabled: false
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:554/rtsp
+          roles:
+            - detect
 ```
 
-> [!NOTE]
-> The 1080 Ti is Pascal — compute capability 6.1 — which clears every requirement: compute capability 5.0 or higher, NVIDIA driver 545 or newer, and CUDA 12.x. Use a **YOLOv9** model (the small `yolov9-t` is a good starting point); avoid RF-DETR, which runs very slowly on Pascal cards. One rule that never relaxes: **detector types cannot be mixed** — an `onnx` detector here means no `openvino` or `edgetpu` block alongside it. And keep the `labelmap_path` line: a YOLOv9 export emits the **80-class** COCO list, so without it Frigate falls back to its 90-class default and mislabels every class past the first few — your tracked `dog` comes through as `cat`.
-
-### Set the decode preset
-Frigate also hardware-decodes every camera stream so the CPU is not burning cycles unpacking video. With the 1080 Ti shared in, decode the streams on the NVIDIA card too. Same editor, same sitting as the detector swap — this changes the **existing** `ffmpeg:` block's `auto` to:
-
-```yaml
-ffmpeg:
-  hwaccel_args: preset-nvidia
-```
-
-`preset-nvidia` selects NVDEC hardware decoding on the card. With both edits made, one **Save & Restart** applies the detector and the decode together. Then prove the card is actually working — in the container's **Console**:
+One **Save & Restart** applies the detector and the decode together. Then prove the card is actually working — in the container's **Console**:
 
 ```bash
 nvidia-smi
@@ -324,21 +347,36 @@ For the login fields below, use the doorbell's **admin** account: the User-level
 > Take the exact stream details from the Reolink app — do not guess them. In particular confirm **HTTP is enabled**, or the http-flv video path will not connect at all.
 
 ### Add the doorbell to the config
-There is exactly **one** `go2rtc:` block and **one** `cameras:` block in the whole `/config/config.yml` — every stream and every camera lives as a sibling entry under those two keys. YAML allows only one mapping per top-level key, so the cameras you add later — the RLC-510WA and the five EmpireTechs — get folded into these same two blocks rather than starting fresh ones. Add the doorbell first — back in Frigate's config editor: create the `go2rtc:` block with its streams (the generated file ships none), fold the `doorbell:` camera into the existing `cameras:` — and while you are there, delete the `placeholder:` camera that escaped safe mode, so the file holds only real cameras. The doorbell's static `.70` is already in place below — the only edits are the capital **`USER`** and **`PASS`** placeholders, which appear **six times across the three `go2rtc:` stream lines**: `user=USER&password=PASS` inside the two flv URLs, and `USER:PASS@` in the talk-back rtsp URL. Every `USER` becomes `admin`, every `PASS` becomes the doorbell password. Nothing in the `cameras:` half changes — the `127.0.0.1` addresses there are Frigate talking to its own restreamer, real and correct as written.
+Back in Frigate's config editor: **select all, delete, paste the complete file below.** It carries everything so far — detector, model, decode — plus the doorbell's `go2rtc:` streams and camera entry, and the `placeholder:` camera is gone, its job done. The username `admin` is baked in; the **only token to swap is `DOORBELL-PASS`, which appears three times**, all in the `go2rtc:` stream URLs. The `127.0.0.1` addresses in the `cameras:` half are Frigate talking to its own restreamer — real, not placeholders.
 
 > [!WARNING]
 > These are URLs, so a password containing `@ : / ? # & % +` or a space **breaks them** — `&` splits the query, `#` ends it early, `@` confuses the rtsp login. If the doorbell password has any of those, change it (Reolink UI, the admin account) to a long **letters-and-digits-only** one and update the field above before filling in the config.
 
 
 ```yaml
+ffmpeg:
+  hwaccel_args: preset-nvidia
+detectors:
+  onnx:
+    type: onnx
+model:
+  model_type: yolo-generic
+  width: 320
+  height: 320
+  input_tensor: nchw
+  input_dtype: float
+  path: /config/model_cache/yolov9-t.onnx
+  labelmap_path: /labelmap/coco-80.txt
+version: 0.17-0
+mqtt:
+  enabled: false
 go2rtc:
   streams:
     doorbell:
-      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=USER&password=PASS#video=copy#audio=copy#audio=opus"
-      - "rtsp://USER:PASS@192.168.1.70/Preview_01_sub"
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password=DOORBELL-PASS#video=copy#audio=copy#audio=opus"
+      - "rtsp://admin:DOORBELL-PASS@192.168.1.70/Preview_01_sub"
     doorbell_sub:
-      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=USER&password=PASS"
-
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password=DOORBELL-PASS"
 cameras:
   doorbell:
     ffmpeg:
@@ -378,7 +416,7 @@ cameras:
 ### Add the second indoor camera
 The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep instead: it becomes the **second indoor camera**, covering the big room from the opposite side so the far corner the Color4K-T can't identify into isn't blind. It stays on **WiFi with its 12 V adapter** — no PoE run, no switch port — and is added the same restream way as the doorbell, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Give it its permanent static in the app first — `192.168.1.71`, gateway `192.168.1.1` until the hardening step blanks it — then prep it in the Reolink app the same way the doorbell was: bitrate to **"On, fluency first"** and **Interframe Space 1×** (an I-frame interval matching the frame rate — what keeps Frigate's recording segments clean), and take the exact stream paths from the app while you are there.
 
-These entries join the blocks you already have — they do **not** start a second `go2rtc:` or a second `cameras:`. Add the two `rlc510` streams as siblings under your existing `go2rtc: streams:` (right alongside `doorbell` and `doorbell_sub`), and add the `rlc510:` camera as a sibling under your existing `cameras:` (right alongside `doorbell:`). A duplicate top-level `go2rtc:` or `cameras:` is invalid YAML — the later one wins and the doorbell silently disappears. The snippet below shows the new entries with their parent keys for placement only; merge them in, do not paste a fresh copy of `go2rtc:`/`cameras:`.
+Same pattern: **select all, delete, paste the complete file below** — everything from the doorbell step plus the `rlc510` pair. Two tokens this time: re-swap the three **`DOORBELL-PASS`** (the paste resets them) and fill the two **`RLC-PASS`**.
 
 > [!INPUT] camera-ip | Reolink RLC-510WA IP | 192.168.1.71
 
@@ -387,14 +425,53 @@ These entries join the blocks you already have — they do **not** start a secon
 > [!SECRET] camera-password | RLC-510WA password
 
 ```yaml
+ffmpeg:
+  hwaccel_args: preset-nvidia
+detectors:
+  onnx:
+    type: onnx
+model:
+  model_type: yolo-generic
+  width: 320
+  height: 320
+  input_tensor: nchw
+  input_dtype: float
+  path: /config/model_cache/yolov9-t.onnx
+  labelmap_path: /labelmap/coco-80.txt
+version: 0.17-0
+mqtt:
+  enabled: false
 go2rtc:
   streams:
+    doorbell:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password=DOORBELL-PASS#video=copy#audio=copy#audio=opus"
+      - "rtsp://admin:DOORBELL-PASS@192.168.1.70/Preview_01_sub"
+    doorbell_sub:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password=DOORBELL-PASS"
     rlc510:
-      - "rtsp://CAMERA-USER:CAMERA-PASS@192.168.1.71:554/h264Preview_01_main"
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
     rlc510_sub:
-      - "rtsp://CAMERA-USER:CAMERA-PASS@192.168.1.71:554/h264Preview_01_sub"
-
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
 cameras:
+  doorbell:
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: rtsp://127.0.0.1:8554/doorbell
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/doorbell_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    live:
+      streams:
+        Doorbell: doorbell
+    objects:
+      track:
+        - person
   rlc510:
     ffmpeg:
       inputs:
@@ -444,19 +521,165 @@ A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv w
 
 > [!SECRET] empiretech-password | EmpireTech cameras admin password (all five)
 
-Wire it to the **GS308EPP**, assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it — and fold its two streams into the same `go2rtc: streams:` and its camera into the same `cameras:` block you built above:
+Wire each to the **GS308EPP** and assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it. Then, once all five are addressed: **select all, delete, paste the complete file below.** The turret names assume front / carport / basement / side corners plus the indoor Color4K — **rename any camera key (and its matching `_sub` stream pair) before saving** if a turret watches a different corner; the name is yours, the shape is not. Tokens: re-swap **`DOORBELL-PASS`** ×3 and **`RLC-PASS`** ×2, and fill **`TURRET-PASS`** ×10 — the one shared EmpireTech admin password.
 
 ```yaml
+ffmpeg:
+  hwaccel_args: preset-nvidia
+detectors:
+  onnx:
+    type: onnx
+model:
+  model_type: yolo-generic
+  width: 320
+  height: 320
+  input_tensor: nchw
+  input_dtype: float
+  path: /config/model_cache/yolov9-t.onnx
+  labelmap_path: /labelmap/coco-80.txt
+version: 0.17-0
+mqtt:
+  enabled: false
 go2rtc:
   streams:
+    doorbell:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password=DOORBELL-PASS#video=copy#audio=copy#audio=opus"
+      - "rtsp://admin:DOORBELL-PASS@192.168.1.70/Preview_01_sub"
+    doorbell_sub:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password=DOORBELL-PASS"
+    rlc510:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
+    rlc510_sub:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
     front_turret:
-      - "rtsp://USER:PASS@CAM-IP:554/cam/realmonitor?channel=1&subtype=0"
+      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=0"
     front_turret_sub:
-      - "rtsp://USER:PASS@CAM-IP:554/cam/realmonitor?channel=1&subtype=1"
+      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=1"
+    carport_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=0"
+    carport_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=1"
+    basement_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=0"
+    basement_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=1"
+    side_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=0"
+    side_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=1"
+    indoor_color4k:
+      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=0"
+    indoor_color4k_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=1"
+cameras:
+  doorbell:
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: rtsp://127.0.0.1:8554/doorbell
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/doorbell_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    live:
+      streams:
+        Doorbell: doorbell
+    objects:
+      track:
+        - person
+  rlc510:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/rlc510
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/rlc510_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      enabled: true
+    record:
+      enabled: true
+  front_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/front_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/front_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  carport_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/carport_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/carport_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  basement_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/basement_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/basement_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  side_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/side_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/side_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  indoor_color4k:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/indoor_color4k
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/indoor_color4k_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
 ```
 
 > [!TIP]
-> The finished `/config/config.yml` holds **one** `go2rtc: streams:` map — the doorbell pair, the `rlc510` pair, and a main+sub pair per EmpireTech camera, fourteen entries all told — and **one** `cameras:` map with seven entries (`doorbell:`, `rlc510:`, and the five turrets). The `detectors:`, `model:`, `ffmpeg:`, `record:`, and `mqtt:` blocks each appear once at the top level.
+> That file holds **one** `go2rtc: streams:` map — the doorbell pair, the `rlc510` pair, and a main+sub pair per EmpireTech camera, fourteen entries all told — and **one** `cameras:` map with seven entries. That is the complete-file pattern doing its job: the structure cannot drift, because each paste replaces it whole.
 
 > [!TIP]
 > In each turret's own web UI, set the **substream** to roughly 720p at **5 fps** for a clean detect frame, and at night set a **manual shutter** — cap it near 1/120 s and hold the gain down — so a moving person doesn't smear (the control Reolink never gave you). On the `T54PRO-AS`, leave the warm light **off / IR mode** for any angle where you want to read a licence plate; the colour mode washes plates out.
@@ -559,16 +782,168 @@ mount -a
 pct set <frigate-ctid> -mp0 /mnt/frigate-footage,mp=/media/frigate
 ```
 
-Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time):
+Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time). Complete file, same routine — the only change from the last paste is the new `record:` block; swap the same password tokens as before:
 
 ```yaml
+ffmpeg:
+  hwaccel_args: preset-nvidia
+detectors:
+  onnx:
+    type: onnx
+model:
+  model_type: yolo-generic
+  width: 320
+  height: 320
+  input_tensor: nchw
+  input_dtype: float
+  path: /config/model_cache/yolov9-t.onnx
+  labelmap_path: /labelmap/coco-80.txt
+version: 0.17-0
+mqtt:
+  enabled: false
 record:
   enabled: true
   continuous:
     days: 7
+go2rtc:
+  streams:
+    doorbell:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password=DOORBELL-PASS#video=copy#audio=copy#audio=opus"
+      - "rtsp://admin:DOORBELL-PASS@192.168.1.70/Preview_01_sub"
+    doorbell_sub:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password=DOORBELL-PASS"
+    rlc510:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
+    rlc510_sub:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
+    front_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=0"
+    front_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=1"
+    carport_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=0"
+    carport_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=1"
+    basement_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=0"
+    basement_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=1"
+    side_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=0"
+    side_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=1"
+    indoor_color4k:
+      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=0"
+    indoor_color4k_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=1"
+cameras:
+  doorbell:
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: rtsp://127.0.0.1:8554/doorbell
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/doorbell_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    live:
+      streams:
+        Doorbell: doorbell
+    objects:
+      track:
+        - person
+  rlc510:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/rlc510
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/rlc510_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      enabled: true
+    record:
+      enabled: true
+  front_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/front_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/front_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  carport_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/carport_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/carport_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  basement_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/basement_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/basement_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  side_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/side_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/side_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  indoor_color4k:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/indoor_color4k
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/indoor_color4k_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
 ```
 
-Restart Frigate to apply. A lighter middle ground is a `motion:` block with a `days:` value instead of `continuous:`, keeping only the stretches where something moved.
+**Save & Restart** to apply. A lighter middle ground is a `motion:` block with a `days:` value instead of `continuous:`, keeping only the stretches where something moved.
 
 > [!WARNING]
 > The recordings tree under `/media/frigate` (`YYYY-MM-DD/HH/<camera>/MM.SS.mp4`, in UTC) is managed **entirely by Frigate** — retention is config-driven, so never browse in and delete clips by hand to reclaim space. Doing so corrupts Frigate's own bookkeeping. Change the `days:` values instead and let Frigate prune.
@@ -579,15 +954,171 @@ Restart Frigate to apply. A lighter middle ground is a `motion:` block with a `d
 ## Wire it into the build
 
 ### Connect to Home Assistant over MQTT
-Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — back in its config editor, **replacing** the `mqtt: enabled: false` placeholder from the safe-mode escape (YAML allows one `mqtt:` block) — and restart:
+Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — back in its config editor, one last complete file. The `mqtt:` block goes live (host `192.168.1.51`, the broker beside Home Assistant); everything else is unchanged from the retention paste. Swap the camera password tokens as before, plus **`MQTT-PASS`** — the `frigate-mqtt-password` field below:
 
 ```yaml
+ffmpeg:
+  hwaccel_args: preset-nvidia
+detectors:
+  onnx:
+    type: onnx
+model:
+  model_type: yolo-generic
+  width: 320
+  height: 320
+  input_tensor: nchw
+  input_dtype: float
+  path: /config/model_cache/yolov9-t.onnx
+  labelmap_path: /labelmap/coco-80.txt
+version: 0.17-0
 mqtt:
   enabled: true
   host: 192.168.1.51
   user: mqtt-user
-  password: your-mqtt-password
+  password: MQTT-PASS
+record:
+  enabled: true
+  continuous:
+    days: 7
+go2rtc:
+  streams:
+    doorbell:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password=DOORBELL-PASS#video=copy#audio=copy#audio=opus"
+      - "rtsp://admin:DOORBELL-PASS@192.168.1.70/Preview_01_sub"
+    doorbell_sub:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password=DOORBELL-PASS"
+    rlc510:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
+    rlc510_sub:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
+    front_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=0"
+    front_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=1"
+    carport_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=0"
+    carport_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=1"
+    basement_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=0"
+    basement_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=1"
+    side_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=0"
+    side_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=1"
+    indoor_color4k:
+      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=0"
+    indoor_color4k_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=1"
+cameras:
+  doorbell:
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: rtsp://127.0.0.1:8554/doorbell
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/doorbell_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    live:
+      streams:
+        Doorbell: doorbell
+    objects:
+      track:
+        - person
+  rlc510:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/rlc510
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/rlc510_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      enabled: true
+    record:
+      enabled: true
+  front_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/front_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/front_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  carport_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/carport_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/carport_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  basement_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/basement_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/basement_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  side_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/side_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/side_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  indoor_color4k:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/indoor_color4k
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/indoor_color4k_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
 ```
+
+**Save & Restart.** This is the finished config — the one the backup warning at the end of this page tells you to copy somewhere safe.
 
 Then install the Frigate integration in the Home Assistant OS VM through **HACS (the Home Assistant Community Store)**, which itself has to be installed once first. You get a live entity per camera, occupancy and motion binary sensors per camera and zone, object-count and performance sensors, and the recordings browsable in Home Assistant's media browser — the raw material for the automations later in this build.
 
