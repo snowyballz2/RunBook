@@ -101,7 +101,7 @@ Log in at `https://192.168.1.52:8971` as **`admin`** with that password, open **
 >   reset_admin_password: true
 > ```
 >
-> **Save & Restart**, grep again, log in — then **delete those two lines and Save & Restart once more**, or the password resets on every boot.
+> **Save & Restart**, grep again, log in — then **delete those two lines and Save & Restart once more** (in the same 5000 editor, or 8971's now that you can log in; both edit the same file), or the password resets on every boot.
 
 > [!WARNING]
 > Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and it stays open because the Home Assistant integration later on this page talks to it. Tolerable on the home LAN behind the router; never create a port-forward to it. Camera footage stays on the network — remote access comes through Tailscale instead.
