@@ -55,6 +55,9 @@ Then let it work — it compiles Frigate from source, so expect a long run. Read
 > Set at the install script's **Set Root Password** prompt. Pairs with the `root` username above at the container's **Console** in Proxmox; SSH stays off.
 
 > [!TIP]
+> The console's `login:` prompt **echoes what you type**; only the `Password:` prompt hides it. Type the password at the wrong prompt and it sits in cleartext in the scrollback — if that happens, rotate it on the spot: `passwd` at the root prompt, then update the field above.
+
+> [!TIP]
 > This is the fussiest script in the build — it pulls large AI components and occasionally stumbles partway. If it errors, just re-run it; a second attempt is normal.
 
 > [!WARNING]
