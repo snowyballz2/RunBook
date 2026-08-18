@@ -350,6 +350,13 @@ For the login fields below, use the doorbell's **admin** account: the User-level
 Back in Frigate's config editor: **select all, delete, paste the complete file below.** It carries everything so far — detector, model, decode — plus the doorbell's `go2rtc:` streams and camera entry, and the `placeholder:` camera is gone, its job done. The username `admin` is baked in; the **only token to swap is `DOORBELL-PASS`, which appears three times**, all in the `go2rtc:` stream URLs. The `127.0.0.1` addresses in the `cameras:` half are Frigate talking to its own restreamer — real, not placeholders.
 
 > [!WARNING]
+> **In this LXC install, go2rtc is its own service, and the editor's Save & Restart restarts only Frigate.** Docker restarts them together; this build does not. Leave go2rtc running an old config and Frigate's ffmpeg gets **404 Not Found** from `127.0.0.1:8554` — a crash loop against a restreamer that has never heard of the stream. So after **every paste that changes the `go2rtc:` block** (this one, the RLC, the turrets), follow Save & Restart with this in the container's **Console**:
+>
+> ```bash
+> systemctl restart go2rtc frigate
+> ```
+
+> [!WARNING]
 > These are URLs, so a password containing `@ : / ? # & % +` or a space **breaks them** — `&` splits the query, `#` ends it early, `@` confuses the rtsp login. If the doorbell password has any of those, change it (Reolink UI, the admin account) to a long **letters-and-digits-only** one and update the field above before filling in the config.
 
 
@@ -416,7 +423,11 @@ cameras:
 ### Add the second indoor camera
 The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep instead: it becomes the **second indoor camera**, covering the big room from the opposite side so the far corner the Color4K-T can't identify into isn't blind. It stays on **WiFi with its 12 V adapter** — no PoE run, no switch port — and is added the same restream way as the doorbell, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Give it its permanent static in the app first — `192.168.1.71`, gateway `192.168.1.1` until the hardening step blanks it — then prep it in the Reolink app the same way the doorbell was: bitrate to **"On, fluency first"** and **Interframe Space 1×** (an I-frame interval matching the frame rate — what keeps Frigate's recording segments clean), and take the exact stream paths from the app while you are there.
 
-Same pattern: **select all, delete, paste the complete file below** — everything from the doorbell step plus the `rlc510` pair. Two tokens this time: re-swap the three **`DOORBELL-PASS`** (the paste resets them) and fill the two **`RLC-PASS`**.
+Same pattern: **select all, delete, paste the complete file below** — everything from the doorbell step plus the `rlc510` pair. Two tokens this time: re-swap the three **`DOORBELL-PASS`** (the paste resets them) and fill the two **`RLC-PASS`**. This paste changes the `go2rtc:` block, so after **Save & Restart**, bounce the restreamer too — in the container's **Console**:
+
+```bash
+systemctl restart go2rtc frigate
+```
 
 > [!INPUT] camera-ip | Reolink RLC-510WA IP | 192.168.1.71
 
@@ -521,7 +532,11 @@ A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv w
 
 > [!SECRET] empiretech-password | EmpireTech cameras admin password (all five)
 
-Wire each to the **GS308EPP** and assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it. Then, once all five are addressed: **select all, delete, paste the complete file below.** The turret names assume front / carport / basement / side corners plus the indoor Color4K — **rename any camera key (and its matching `_sub` stream pair) before saving** if a turret watches a different corner; the name is yours, the shape is not. Tokens: re-swap **`DOORBELL-PASS`** ×3 and **`RLC-PASS`** ×2, and fill **`TURRET-PASS`** ×10 — the one shared EmpireTech admin password.
+Wire each to the **GS308EPP** and assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it. Then, once all five are addressed: **select all, delete, paste the complete file below.** The turret names assume front / carport / basement / side corners plus the indoor Color4K — **rename any camera key (and its matching `_sub` stream pair) before saving** if a turret watches a different corner; the name is yours, the shape is not. Tokens: re-swap **`DOORBELL-PASS`** ×3 and **`RLC-PASS`** ×2, and fill **`TURRET-PASS`** ×10 — the one shared EmpireTech admin password. This paste changes the `go2rtc:` block, so after **Save & Restart**, bounce the restreamer too — in the container's **Console**:
+
+```bash
+systemctl restart go2rtc frigate
+```
 
 ```yaml
 ffmpeg:
