@@ -242,6 +242,8 @@ It leaves **`yolov9-t-320.onnx`** in the folder you ran it from. Move it to the 
 scp yolov9-t-320.onnx root@192.168.1.50:/tmp/
 ```
 
+First run it asks about the host's authenticity — type `yes` — then wants the **Proxmox root password** from the field on the Install Proxmox page.
+
 Then, in the **Proxmox host shell**, push it into the container under the name the config expects:
 
 ```bash
