@@ -425,6 +425,9 @@ cameras:
 
 ## Add the RLC-510WA
 
+> [!NOTE]
+> **Camera not placed yet? Skip this whole section and keep going** — nothing after it depends on the RLC. Every later complete-file paste includes the `rlc510:` entries; if the camera is still unplaced when you reach one, add `enabled: false` under `rlc510:` (same indent as its `ffmpeg:`) and flip it to `true` when the camera is up. A defined-but-disabled camera costs nothing — Frigate starts no processes for it, and go2rtc only dials on demand. The same line works for any EmpireTech turret not yet on the wall when its paste arrives.
+
 ### Add the second indoor camera
 The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep instead: it becomes the **second indoor camera**, covering the big room from the opposite side so the far corner the Color4K-T can't identify into isn't blind. It stays on **WiFi with its 12 V adapter** — no PoE run, no switch port — and is added the same restream way as the doorbell, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Give it its permanent static in the app first — `192.168.1.71`, gateway `192.168.1.1` until the hardening step blanks it — then prep it in the Reolink app the same way the doorbell was: bitrate to **"On, fluency first"** and **Interframe Space 1×** (an I-frame interval matching the frame rate — what keeps Frigate's recording segments clean), and take the exact stream paths from the app while you are there.
 
