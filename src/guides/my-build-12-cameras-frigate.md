@@ -309,7 +309,7 @@ In the doorbell's advanced network settings, work through the **Port Settings** 
 
 Still in the network settings, give it its **permanent static address** — IP `192.168.1.70`, mask `255.255.255.0`, gateway `192.168.1.1` for now (the hardening section at the end of this page blanks that gateway) — so the config below never goes stale.
 
-The video tuning lives on a different page — Reolink files it under **Settings → Display → Stream**, not network — where the **Clear** and **Fluent** streams each get a tab. On **both**: set **Interframe Space** to **1×** (an I-frame interval matching the frame rate), and put the rate control in constant mode — newer firmware names it **Bitrate Mode → Constant**, older firmware phrases the same thing as **"On, fluency first"**. Either way the point is steady-rate video, which Frigate prefers.
+The video tuning lives on a different page — Reolink files it under **Settings → Display → Stream**, not network — where the **Clear** and **Fluent** streams each get a tab. On **both**, put the rate control in constant mode — newer firmware names it **Bitrate Mode → Constant**, older firmware phrases the same thing as **"On, fluency first"**. Either way the point is steady-rate video, which Frigate prefers. If the model offers **Interframe Space**, set it to **1×** (an I-frame interval matching the frame rate) — this WiFi doorbell does **not**, and that is fine: the interval is fixed in firmware, and the cost is a touch of live-view startup lag, not detection or recording quality.
 
 For the login fields below, use the doorbell's **admin** account: the User-level accounts Reolink lets you add cannot drive **two-way talk**, and the talk-back path in the config authenticates with these same credentials.
 
