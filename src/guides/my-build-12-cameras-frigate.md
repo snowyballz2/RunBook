@@ -686,8 +686,9 @@ cameras:
 Not optional polish — the substream **is** what the detector watches, and the manual shutter is half the reason this build runs Dahua-family hardware. Browse to each turret (`http://` + its IP, the `admin` login) and set three things:
 
 1. **Substream** — on the camera's video/encode page: roughly **720p at 5 fps**, H.264. This is the frame Frigate detects on; the default substream is a different shape than the detector wants, and five clean fps beat twenty muddy ones.
-2. **Night shutter** — on the image/exposure page: switch exposure to **Manual**, cap the shutter near **1/120 s**, and hold the gain down. Auto exposure trades motion blur for brightness at night, and a smeared person defeats detection *and* identification — this control is the one Reolink fakes and Dahua honours.
-3. **Illuminator** — leave the warm light **off / IR mode** on any angle meant to read a licence plate; colour mode washes plates out. (The `kitchen_turret` Color4K has no IR — it is full-colour by design and indoor light is its job.)
+2. **Night shutter — the four outdoor turrets only.** On the image/exposure page: switch exposure to **Manual**, cap the shutter near **1/120 s**, and hold the gain down. Auto exposure trades motion blur for brightness at night, and a smeared person defeats detection *and* identification — this control is the one Reolink fakes and Dahua honours. It works outdoors because **IR makes up the light** the fast shutter gives away.
+3. **Illuminator** — on the outdoor turrets, leave the warm light **off / IR mode** on any angle meant to read a licence plate; colour mode washes plates out.
+4. **The `kitchen_turret` breaks the pattern on exposure.** It has **no IR to backstop a fast shutter** — full-colour by design — so a forced 1/120 s in a dark kitchen yields black frames, not sharp ones. Leave its exposure on **Auto**: the oversized sensor is the tool doing that job. If its menu offers a warm-light illuminator, keep it **off** — a camera that floodlights the kitchen at 3 a.m. is a nuisance. Its substream gets the same 720p at 5 fps as the rest.
 
 Dahua's firmware files these under menus whose exact names vary by generation — find them on the **first** turret, and the same clicks repeat for the other three.
 
