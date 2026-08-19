@@ -525,7 +525,7 @@ A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv w
 
 > [!SECRET] empiretech-password | EmpireTech cameras admin password (all five)
 
-Wire each to the **GS308EPP** and assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it. Then, once all five are addressed: **select all, delete, paste the complete file below.** The camera names are the real corners — **`shed`** `.72`, **`carport`** `.73`, **`patio`** `.74`, **`chimney`** `.75`, and the indoor **`kitchen`** `.76`. The `chimney` turret ships **`enabled: false`** in this file and the two after it — it is not mounted yet; delete that line (or flip it to `true`) in whichever paste lands after it goes up. Tokens: re-swap **`DOORBELL-PASS`** ×3 and **`RLC-PASS`** ×2, and fill **`TURRET-PASS`** ×10 — the one shared EmpireTech admin password. This paste changes the `go2rtc:` block, so after **Save & Restart**, bounce the restreamer too — in **container 102's Console** (Proxmox → 102 → Console, the `root` login):
+Wire each to the **GS308EPP** and assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it. Then, once all five are addressed: **select all, delete, paste the complete file below.** The camera names are the real corners — **`shed_turret`** `.72`, **`carport_turret`** `.73`, **`patio_turret`** `.74`, **`chimney_turret`** `.75`, and the indoor **`kitchen_turret`** `.76`. The `chimney_turret` ships **`enabled: false`** in this file and the two after it — it is not mounted yet; delete that line (or flip it to `true`) in whichever paste lands after it goes up. Tokens: re-swap **`DOORBELL-PASS`** ×3 and **`RLC-PASS`** ×2, and fill **`TURRET-PASS`** ×10 — the one shared EmpireTech admin password. This paste changes the `go2rtc:` block, so after **Save & Restart**, bounce the restreamer too — in **container 102's Console** (Proxmox → 102 → Console, the `root` login):
 
 ```bash
 systemctl restart go2rtc frigate
@@ -559,25 +559,25 @@ go2rtc:
       - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
     rlc510_sub:
       - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
-    shed:
+    shed_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=0"
-    shed_sub:
+    shed_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=1"
-    carport:
+    carport_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=0"
-    carport_sub:
+    carport_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=1"
-    patio:
+    patio_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=0"
-    patio_sub:
+    patio_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=1"
-    chimney:
+    chimney_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=0"
-    chimney_sub:
+    chimney_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=1"
-    kitchen:
+    kitchen_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=0"
-    kitchen_sub:
+    kitchen_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=1"
 cameras:
   doorbell:
@@ -614,71 +614,71 @@ cameras:
       enabled: true
     record:
       enabled: true
-  shed:
+  shed_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/shed
+        - path: rtsp://127.0.0.1:8554/shed_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/shed_sub
+        - path: rtsp://127.0.0.1:8554/shed_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  carport:
+  carport_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/carport
+        - path: rtsp://127.0.0.1:8554/carport_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/carport_sub
+        - path: rtsp://127.0.0.1:8554/carport_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  patio:
+  patio_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/patio
+        - path: rtsp://127.0.0.1:8554/patio_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/patio_sub
+        - path: rtsp://127.0.0.1:8554/patio_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  chimney:
+  chimney_turret:
     enabled: false
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/chimney
+        - path: rtsp://127.0.0.1:8554/chimney_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/chimney_sub
+        - path: rtsp://127.0.0.1:8554/chimney_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  kitchen:
+  kitchen_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/kitchen
+        - path: rtsp://127.0.0.1:8554/kitchen_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/kitchen_sub
+        - path: rtsp://127.0.0.1:8554/kitchen_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
@@ -825,25 +825,25 @@ go2rtc:
       - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
     rlc510_sub:
       - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
-    shed:
+    shed_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=0"
-    shed_sub:
+    shed_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=1"
-    carport:
+    carport_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=0"
-    carport_sub:
+    carport_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=1"
-    patio:
+    patio_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=0"
-    patio_sub:
+    patio_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=1"
-    chimney:
+    chimney_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=0"
-    chimney_sub:
+    chimney_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=1"
-    kitchen:
+    kitchen_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=0"
-    kitchen_sub:
+    kitchen_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=1"
 cameras:
   doorbell:
@@ -880,71 +880,71 @@ cameras:
       enabled: true
     record:
       enabled: true
-  shed:
+  shed_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/shed
+        - path: rtsp://127.0.0.1:8554/shed_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/shed_sub
+        - path: rtsp://127.0.0.1:8554/shed_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  carport:
+  carport_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/carport
+        - path: rtsp://127.0.0.1:8554/carport_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/carport_sub
+        - path: rtsp://127.0.0.1:8554/carport_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  patio:
+  patio_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/patio
+        - path: rtsp://127.0.0.1:8554/patio_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/patio_sub
+        - path: rtsp://127.0.0.1:8554/patio_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  chimney:
+  chimney_turret:
     enabled: false
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/chimney
+        - path: rtsp://127.0.0.1:8554/chimney_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/chimney_sub
+        - path: rtsp://127.0.0.1:8554/chimney_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  kitchen:
+  kitchen_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/kitchen
+        - path: rtsp://127.0.0.1:8554/kitchen_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/kitchen_sub
+        - path: rtsp://127.0.0.1:8554/kitchen_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
@@ -1001,25 +1001,25 @@ go2rtc:
       - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
     rlc510_sub:
       - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
-    shed:
+    shed_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=0"
-    shed_sub:
+    shed_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=1"
-    carport:
+    carport_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=0"
-    carport_sub:
+    carport_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=1"
-    patio:
+    patio_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=0"
-    patio_sub:
+    patio_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=1"
-    chimney:
+    chimney_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=0"
-    chimney_sub:
+    chimney_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=1"
-    kitchen:
+    kitchen_turret:
       - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=0"
-    kitchen_sub:
+    kitchen_turret_sub:
       - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=1"
 cameras:
   doorbell:
@@ -1056,71 +1056,71 @@ cameras:
       enabled: true
     record:
       enabled: true
-  shed:
+  shed_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/shed
+        - path: rtsp://127.0.0.1:8554/shed_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/shed_sub
+        - path: rtsp://127.0.0.1:8554/shed_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  carport:
+  carport_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/carport
+        - path: rtsp://127.0.0.1:8554/carport_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/carport_sub
+        - path: rtsp://127.0.0.1:8554/carport_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  patio:
+  patio_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/patio
+        - path: rtsp://127.0.0.1:8554/patio_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/patio_sub
+        - path: rtsp://127.0.0.1:8554/patio_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  chimney:
+  chimney_turret:
     enabled: false
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/chimney
+        - path: rtsp://127.0.0.1:8554/chimney_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/chimney_sub
+        - path: rtsp://127.0.0.1:8554/chimney_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
     objects:
       track:
         - person
-  kitchen:
+  kitchen_turret:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/kitchen
+        - path: rtsp://127.0.0.1:8554/kitchen_turret
           input_args: preset-rtsp-restream
           roles:
             - record
-        - path: rtsp://127.0.0.1:8554/kitchen_sub
+        - path: rtsp://127.0.0.1:8554/kitchen_turret_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
