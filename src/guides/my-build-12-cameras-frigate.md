@@ -685,15 +685,12 @@ cameras:
 ### Tune each turret in its own web UI
 Not optional polish — the substream **is** what the detector watches, and the manual shutter is half the reason this build runs Dahua-family hardware. Browse to each turret (`http://` + its IP, the `admin` login) and set three things:
 
-1. **Substream** — on the camera's video/encode page: roughly **720p at 5 fps**, H.264. This is the frame Frigate detects on; the default substream is a different shape than the detector wants, and five clean fps beat twenty muddy ones.
-2. **Night shutter — the four outdoor turrets only.** On the image/exposure page: switch exposure to **Manual**, cap the shutter near **1/120 s**, and hold the gain down. Auto exposure trades motion blur for brightness at night, and a smeared person defeats detection *and* identification — this control is the one Reolink fakes and Dahua honours. It works outdoors because **IR makes up the light** the fast shutter gives away.
-3. **Illuminator** — on the outdoor turrets, leave the warm light **off / IR mode** on any angle meant to read a licence plate; colour mode washes plates out.
+1. **Substream** — **Camera → Encode**, the **Sub Stream** column: roughly **720p at 5 fps**, H.264, then **Apply**. This is the frame Frigate detects on; the default substream is a different shape than the detector wants, and five clean fps beat twenty muddy ones.
+2. **Night shutter — the four outdoor turrets only.** **Camera → Image**, set Working Mode to **Customized Scene**, pick **Profile: Night**, open **Exposure**: switch it to **Manual**, cap the shutter near **1/120 s**, hold the gain down, **Apply**. The settings here are **per-profile** — that is the point of doing it under *Night*: daylight keeps auto exposure, where fast shutters happen on their own. Auto exposure trades motion blur for brightness at night, and a smeared person defeats detection *and* identification — this control is the one Reolink fakes and Dahua honours. It works outdoors because **IR makes up the light** the fast shutter gives away.
+3. **Illuminator** — **Camera → Image → Illuminator → Mode**: on the outdoor turrets, leave the warm light **off / IR mode** on any angle meant to read a licence plate; colour mode washes plates out.
 4. **The `kitchen_turret` breaks the pattern on exposure.** It has **no IR to backstop a fast shutter** — full-colour by design — so a forced 1/120 s in a dark kitchen yields black frames, not sharp ones. Leave its exposure on **Auto**: the oversized sensor is the tool doing that job. If its menu offers a warm-light illuminator, keep it **off** — a camera that floodlights the kitchen at 3 a.m. is a nuisance. Its substream gets the same 720p at 5 fps as the rest.
 
-Dahua's firmware files these under menus whose exact names vary by generation — find them on the **first** turret, and the same clicks repeat for the other three.
-
-> [!NOTE]
-> When you do the first one, note the exact menu path your firmware shows for the encode page and the exposure page — this page should name them precisely once they are known.
+The same clicks repeat on all five cameras — **Apply** saves each pane, and **Time Plan Settings** at the bottom of the Image page is where the Day/Night profile handoff is scheduled if the default switching ever needs adjusting.
 
 ## Mount the cameras
 
