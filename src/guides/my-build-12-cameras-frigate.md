@@ -502,10 +502,6 @@ cameras:
           input_args: preset-rtsp-restream
           roles:
             - detect
-    detect:
-      enabled: true
-    record:
-      enabled: true
 ```
 
 > [!NOTE]
@@ -610,10 +606,6 @@ cameras:
           input_args: preset-rtsp-restream
           roles:
             - detect
-    detect:
-      enabled: true
-    record:
-      enabled: true
   shed_turret:
     ffmpeg:
       inputs:
@@ -876,10 +868,6 @@ cameras:
           input_args: preset-rtsp-restream
           roles:
             - detect
-    detect:
-      enabled: true
-    record:
-      enabled: true
   shed_turret:
     ffmpeg:
       inputs:
@@ -1052,10 +1040,6 @@ cameras:
           input_args: preset-rtsp-restream
           roles:
             - detect
-    detect:
-      enabled: true
-    record:
-      enabled: true
   shed_turret:
     ffmpeg:
       inputs:
