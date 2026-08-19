@@ -516,7 +516,7 @@ cameras:
 
 ## The PoE camera lineup
 
-The doorbell and the RLC-510WA got the build going; the wired five are the **four EmpireTech `IPC-T54PRO-AS` WizColor turrets** (dual-light, two-way talk, **3.6mm** lenses — the mounting section below is why) at the perimeter corners — **shed** `.72`, **carport** `.73`, **patio** `.74`, **chimney** `.75` — and the **`IPC-Color4K-T-S2`** (8MP full-colour, **3.6mm**) as **kitchen** at `192.168.1.76`. All five ride PoE on the **GS308EPP**. Dahua-family hardware is why the config below is plain RTSP with configurable substreams and an honoured manual shutter — no http-flv gymnastics, no connection limits.
+The doorbell and the RLC-510WA got the build going; the wired five are the **four EmpireTech `IPC-T54PRO-AS` WizColor turrets** (dual-light, two-way talk, **3.6mm** lenses — the mounting section below is why) at the perimeter corners — **`shed_turret`** `.72`, **`carport_turret`** `.73`, **`patio_turret`** `.74`, **`chimney_turret`** `.75` — and the **`IPC-Color4K-T-S2`** (8MP full-colour, **3.6mm**) as **`kitchen_turret`** at `192.168.1.76`. All five ride PoE on the **GS308EPP**. Dahua-family hardware is why the config below is plain RTSP with configurable substreams and an honoured manual shutter — no http-flv gymnastics, no connection limits.
 
 ### Add each one to the config
 A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv work. Each camera's own web UI has you set an admin password on first login — use **one login for all five EmpireTechs** and record it once; it fills every `USER`/`PASS` slot below:
