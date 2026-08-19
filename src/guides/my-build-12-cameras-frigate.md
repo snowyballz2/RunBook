@@ -682,8 +682,17 @@ cameras:
 > [!TIP]
 > That file holds **one** `go2rtc: streams:` map — the doorbell pair, the `rlc510` pair, and a main+sub pair per EmpireTech camera, fourteen entries all told — and **one** `cameras:` map with seven entries. That is the complete-file pattern doing its job: the structure cannot drift, because each paste replaces it whole.
 
-> [!TIP]
-> In each turret's own web UI, set the **substream** to roughly 720p at **5 fps** for a clean detect frame, and at night set a **manual shutter** — cap it near 1/120 s and hold the gain down — so a moving person doesn't smear (the control Reolink never gave you). On the `T54PRO-AS`, leave the warm light **off / IR mode** for any angle where you want to read a licence plate; the colour mode washes plates out.
+### Tune each turret in its own web UI
+Not optional polish — the substream **is** what the detector watches, and the manual shutter is half the reason this build runs Dahua-family hardware. Browse to each turret (`http://` + its IP, the `admin` login) and set three things:
+
+1. **Substream** — on the camera's video/encode page: roughly **720p at 5 fps**, H.264. This is the frame Frigate detects on; the default substream is a different shape than the detector wants, and five clean fps beat twenty muddy ones.
+2. **Night shutter** — on the image/exposure page: switch exposure to **Manual**, cap the shutter near **1/120 s**, and hold the gain down. Auto exposure trades motion blur for brightness at night, and a smeared person defeats detection *and* identification — this control is the one Reolink fakes and Dahua honours.
+3. **Illuminator** — leave the warm light **off / IR mode** on any angle meant to read a licence plate; colour mode washes plates out. (The `kitchen_turret` Color4K has no IR — it is full-colour by design and indoor light is its job.)
+
+Dahua's firmware files these under menus whose exact names vary by generation — find them on the **first** turret, and the same clicks repeat for the other three.
+
+> [!NOTE]
+> When you do the first one, note the exact menu path your firmware shows for the encode page and the exposure page — this page should name them precisely once they are known.
 
 ## Mount the cameras
 
