@@ -57,7 +57,14 @@ It takes a few minutes to flash and configure.
 > [!WARNING]
 > **Confirm the serial before you start.** This writes Thread-only firmware, and that adapter can never run Zigbee again. Two identical ZBT-2s are plugged in and **both discovery cards carry the same name with nothing to tell them apart** — flashing the Zigbee one destroys your coordinator, and every plug, leak sensor, and the valve drops off and needs re-pairing from scratch. Open the dialog and stop at the first screen: nothing is flashed until you pick Thread and confirm, so reading it is safe. Compare what it identifies against the `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_…` path already in **Settings → Apps → Zigbee2MQTT → Configuration** — that serial is the Zigbee radio and is the one you must **not** touch. If the dialog does not name the device clearly, back out and map the ports from the **Proxmox host shell** with the loop earlier on this page, which is unambiguous. Zigbee2MQTT holding its serial port open may block a wrong choice, but that is luck, not a safeguard.
 
-Once it finishes, **Settings → Devices & services** shows both the **OpenThread Border Router** and **Thread** integrations. The app's options are already correct, but know why: **Baudrate `460800`** and **Hardware flow control on** for the same reason Z2M needs them — same hardware. **OTBR firewall on** (blocks traffic with no business crossing between Thread and the LAN). **NAT64 off** — it exists to give Thread devices a route to the IPv4 internet, and nothing here wants one: the locks and battery shades are commissioned into Home Assistant, not into Aqara's or SmartWings' clouds. **Beta off** — this radio carries the door locks. Leave the log level at `notice`; raise it to `debug` only while chasing a lock that will not commission.
+Once it finishes, **Settings → Devices & services** shows both the **OpenThread Border Router** and **Thread** integrations. The app's options are already correct — one per line, with the why:
+
+- **Baudrate** → **460800** — same hardware as Z2M's radio, same rate
+- **Hardware flow control** → **on** — same reason
+- **OTBR firewall** → **on** — blocks traffic with no business crossing between Thread and the LAN
+- **NAT64** → **off** — it exists to give Thread devices a route to the IPv4 internet, and nothing here wants one: the locks and battery shades are commissioned into Home Assistant, not into Aqara's or SmartWings' clouds
+- **OpenThread Border Router agent log level** → **notice** — raise to `debug` only while chasing a lock that will not commission
+- **Beta** → **off** — this radio carries the door locks
 
 Then open **Settings → Devices & services → Thread**. What you see there depends on what else is already broadcasting Thread in the house, and this house has plenty.
 
