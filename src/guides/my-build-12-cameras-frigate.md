@@ -917,6 +917,8 @@ ffmpeg:
             - audio
 ```
 
+4. Housekeeping, if your file predates the cleanup: `rlc510` may still carry its own `detect:` and `record:` stanzas (four lines, `enabled: true` under each) from an earlier paste — delete them; the global `record:` block you just added makes them redundant.
+
 **Save & Restart** — go2rtc is untouched this time, so no restreamer bounce. Either path assumes each camera's mic **Enable** from the tuning step; a mic still off just nags the logs until toggled.
 
 **Or paste the complete file** — the right move on a rebuild, or when drift is suspected; swap the same password tokens as before:
