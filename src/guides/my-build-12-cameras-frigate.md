@@ -885,19 +885,47 @@ mount -a
 pct set <frigate-ctid> -mp0 /mnt/frigate-footage,mp=/media/frigate
 ```
 
-Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time). Complete file, same routine. What changed since the last paste:
+Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time). Recording and audio turn on together here, on purpose — and from this step forward every config change offers **two ways in**, because re-entering fifteen passwords per paste stops scaling once the running file holds real values.
 
-- **`record:` block** → continuous recording arrives
-- **`audio:` block** → detection on: bark, scream, speak and yell become events
-- **`audio` role** → added to every camera's record input
-- **Record preset** → audio-capable on every camera that lacked one; the doorbell keeps its copy variant
-- **Tokens** → the same password swaps as before
+**Edit in place** — the running config keeps every password already filled:
 
-Recording and audio turn on in the same paste, on purpose. It assumes each camera's mic **Enable** from the tuning step — a camera with its mic still off just nags the logs until toggled.
+1. Paste these two blocks at the **end** of the file — recording, and audio detection (bark, scream, speak and yell become events):
+
+```yaml
+record:
+  enabled: true
+  continuous:
+    days: 7
+audio:
+  enabled: true
+```
+
+2. In the `ffmpeg:` block at the very top, add the output lines so it reads exactly — global output args apply to every camera that does not declare its own, and the doorbell's copy variant deliberately overrides this:
 
 ```yaml
 ffmpeg:
   hwaccel_args: preset-nvidia
+  output_args:
+    record: preset-record-generic-audio-aac
+```
+
+3. In **every camera's** first input — the one whose roles say `- record` — add `- audio` beneath it, seven places, doorbell included:
+
+```yaml
+          roles:
+            - record
+            - audio
+```
+
+**Save & Restart** — go2rtc is untouched this time, so no restreamer bounce. Either path assumes each camera's mic **Enable** from the tuning step; a mic still off just nags the logs until toggled.
+
+**Or paste the complete file** — the right move on a rebuild, or when drift is suspected; swap the same password tokens as before:
+
+```yaml
+ffmpeg:
+  hwaccel_args: preset-nvidia
+  output_args:
+    record: preset-record-generic-audio-aac
 detectors:
   onnx:
     type: onnx
@@ -972,8 +1000,6 @@ cameras:
         - person
   rlc510:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/rlc510
           input_args: preset-rtsp-restream
@@ -986,8 +1012,6 @@ cameras:
             - detect
   shed_turret:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/shed_turret
           input_args: preset-rtsp-restream
@@ -1003,8 +1027,6 @@ cameras:
         - person
   carport_turret:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/carport_turret
           input_args: preset-rtsp-restream
@@ -1020,8 +1042,6 @@ cameras:
         - person
   patio_turret:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/patio_turret
           input_args: preset-rtsp-restream
@@ -1038,8 +1058,6 @@ cameras:
   chimney_turret:
     enabled: false
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/chimney_turret
           input_args: preset-rtsp-restream
@@ -1055,8 +1073,6 @@ cameras:
         - person
   kitchen_turret:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/kitchen_turret
           input_args: preset-rtsp-restream
@@ -1083,14 +1099,25 @@ cameras:
 ## Wire it into the build
 
 ### Connect to Home Assistant over MQTT
-Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — back in its config editor, one last complete file.
+Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — the last config change, two ways in.
 
-- **What changed** → the `mqtt:` block goes live: host `192.168.1.51`, the broker beside Home Assistant; everything else is as the retention paste left it
-- **Tokens** → the camera password swaps as before, plus **`MQTT-PASS`** — the `frigate-mqtt-password` field below
+**Edit in place** — find the `mqtt:` block and replace its two lines with the five below; one token to fill, **`MQTT-PASS`**, the `frigate-mqtt-password` field further down. **Save & Restart**, no restreamer bounce:
+
+```yaml
+mqtt:
+  enabled: true
+  host: 192.168.1.51
+  user: mqtt-user
+  password: MQTT-PASS
+```
+
+**Or paste the complete file** — rebuilds and drift; the camera password tokens as before, plus **`MQTT-PASS`**:
 
 ```yaml
 ffmpeg:
   hwaccel_args: preset-nvidia
+  output_args:
+    record: preset-record-generic-audio-aac
 detectors:
   onnx:
     type: onnx
@@ -1168,8 +1195,6 @@ cameras:
         - person
   rlc510:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/rlc510
           input_args: preset-rtsp-restream
@@ -1182,8 +1207,6 @@ cameras:
             - detect
   shed_turret:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/shed_turret
           input_args: preset-rtsp-restream
@@ -1199,8 +1222,6 @@ cameras:
         - person
   carport_turret:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/carport_turret
           input_args: preset-rtsp-restream
@@ -1216,8 +1237,6 @@ cameras:
         - person
   patio_turret:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/patio_turret
           input_args: preset-rtsp-restream
@@ -1234,8 +1253,6 @@ cameras:
   chimney_turret:
     enabled: false
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/chimney_turret
           input_args: preset-rtsp-restream
@@ -1251,8 +1268,6 @@ cameras:
         - person
   kitchen_turret:
     ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/kitchen_turret
           input_args: preset-rtsp-restream
