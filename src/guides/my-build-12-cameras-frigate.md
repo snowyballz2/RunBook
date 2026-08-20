@@ -746,6 +746,13 @@ Not optional polish — the substream **is** what the detector watches, and the 
 - **Bit Rate** → **256** (CBR)
 - **I Frame Interval** → **10** — same 2×-fps rule; the valid ranges rescale when you change fps
 
+The **kitchen_turret differs on two fields only**, both scaling with its 8MP sensor:
+
+- **Resolution** → its native **3840×2160**, as shipped — that resolution is why this camera exists
+- **Bit Rate** → **~5120** — twice the pixels want twice the bits (2560 is a 4MP number); its own **Reference Bit Rate** line brackets the sane range, so sit near the middle of what it shows
+
+Everything else on its Encode pane, main and sub, takes the identical values.
+
 > [!NOTE]
 > The **Reference Bit Rate** line is the camera telling you the sane range for the current shape — information, not a setting. Two dials for later, neither a reason to touch codecs: a rainy IR night that turns mushy wants that camera's main bit rate nudged **2560 → 4096**, and any future non-Apple browser that refuses a live view wants that camera's main **Compression → H.264** — one dropdown; Frigate copies whatever arrives.
 
