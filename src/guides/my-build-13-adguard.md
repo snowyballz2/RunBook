@@ -43,7 +43,13 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Done this way you have already covered the static-IP step too — continue at **Set it to start at boot**.
 
 ### Choose Advanced and pin a static IP
-This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced**. Every prompt is pre-filled sensibly — 1 CPU core, 512 MB RAM, 2 GB disk is more than enough — so press Enter through them. The one value to change is the network: instead of DHCP (Dynamic Host Configuration Protocol), set the static **`192.168.1.53/24`** with gateway **`192.168.1.1`**. Let the script finish — it prints the setup URL when done.
+This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced** — the same dialog sequence the Cameras & Frigate page documents answer-by-answer. Here:
+
+- **Resources** → keep the prefills: **1 CPU core, 512 MB RAM, 2 GB disk** — more than enough
+- **IPv4** → **Static (manual entry)**: **`192.168.1.53/24`**, gateway **`192.168.1.1`** — never DHCP (Dynamic Host Configuration Protocol)
+- **Every other dialog** → its default, Container Protection's **No** included — AdGuard rebuilds in minutes, the page-5 rule for skipping it
+
+Let the script finish — it prints the setup URL when done.
 
 > [!INPUT] adguard-ip | AdGuard container IP | 192.168.1.53
 

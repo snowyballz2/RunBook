@@ -30,7 +30,13 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Read any script before piping it into a root shell — the same download-read-run habit used for the rest of this build.
 
 ### Choose Advanced and pin a static IP
-When the script asks **Default or Advanced**, pick **Advanced**, and accept the generous defaults — 4 cores, 6 GB RAM, a 20 GB disk on unprivileged Debian. The one value to change is the network: set the static **`192.168.1.56/24`** with gateway **`192.168.1.1`** instead of DHCP. Then walk away. This script *compiles* Vaultwarden from source — it is a Rust program — announces "Building Vaultwarden (Patience)", and takes the better part of half an hour. It finishes by printing `https://192.168.1.56:8000`.
+When the script asks **Default or Advanced**, pick **Advanced** — the same dialog sequence the Cameras & Frigate page documents answer-by-answer. Here:
+
+- **Resources** → keep the generous prefills: **4 cores, 6 GB RAM, 20 GB disk**, unprivileged Debian
+- **IPv4** → **Static (manual entry)**: **`192.168.1.56/24`**, gateway **`192.168.1.1`** — never DHCP
+- **Every other dialog** → its default (this page sets **Protection** itself, right after the install)
+
+Then walk away. This script *compiles* Vaultwarden from source — it is a Rust program — announces "Building Vaultwarden (Patience)", and takes the better part of half an hour. It finishes by printing `https://192.168.1.56:8000`.
 
 > [!INPUT] vaultwarden-ip | Vaultwarden container IP | 192.168.1.56
 

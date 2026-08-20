@@ -20,7 +20,13 @@ Open the Proxmox web interface at the host (log in as **root@pam**), click the n
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nextcloudpi.sh)"
 ```
 
-When it asks **Default or Advanced**, pick **Advanced**: keep the offered resources — an **unprivileged** container with **2 cores, 2 GB RAM, and an 8 GB disk** — and set the network to the static **`192.168.1.58/24`** with gateway **`192.168.1.1`** instead of DHCP. (At the time of writing NCP ships Nextcloud 33 on PHP 8.3 — a handy way to confirm the install landed on a current stack.) Nextcloud has no reason to touch host hardware the way the TrueNAS VM (virtual machine) does, so it stays unprivileged — the secure default on this build.
+When it asks **Default or Advanced**, pick **Advanced** — the same dialog sequence the Cameras & Frigate page documents answer-by-answer. Here:
+
+- **Resources** → keep the prefills: **unprivileged**, **2 cores, 2 GB RAM, 8 GB disk** — Nextcloud has no reason to touch host hardware the way the TrueNAS VM (virtual machine) does, so it keeps the secure default
+- **IPv4** → **Static (manual entry)**: **`192.168.1.58/24`**, gateway **`192.168.1.1`** — never DHCP
+- **Every other dialog** → its default (this page sets **Protection** itself, right after the install)
+
+(At the time of writing NCP ships Nextcloud 33 on PHP 8.3 — a handy way to confirm the install landed on a current stack.)
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The node these containers live on. Reach the web UI at `https://`-this-ip-`:8006`.

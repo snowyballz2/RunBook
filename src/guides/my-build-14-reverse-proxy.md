@@ -22,7 +22,14 @@ Same move as the other service containers: in the Proxmox web interface, click y
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nginxproxymanager.sh)"
 ```
 
-When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 2 GB RAM, an 8 GB disk, an unprivileged Debian 13 container — except networking: set the static **`192.168.1.54/24`** with gateway **`192.168.1.1`** on `vmbr0`. The script finishes by printing `http://<IP>:81`. Before you open it, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
+When it asks **Default or Advanced**, pick **Advanced** — the same dialog sequence the Cameras & Frigate page documents answer-by-answer. Here:
+
+- **Resources** → keep the prefills: **2 cores, 2 GB RAM, 8 GB disk**, unprivileged Debian 13
+- **Network bridge** → **`vmbr0`**
+- **IPv4** → **Static (manual entry)**: **`192.168.1.54/24`**, gateway **`192.168.1.1`**
+- **Every other dialog** → its default, Container Protection's **No** included — a proxy rebuilds in minutes
+
+The script finishes by printing `http://<IP>:81`. Before you open it, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
 
 > [!INPUT] proxy-ip | Proxy container IP | 192.168.1.54
 > Set statically during the install — in the `.2–.99` static zone, so the router can never hand it out; every name below points here.
@@ -37,7 +44,12 @@ When it asks **Default or Advanced**, pick **Advanced** and press Enter through 
 > Not Docker, despite most NPM tutorials. The script builds everything from source inside the Debian container: OpenResty (the nginx flavor that does the proxying), the NPM app on Node.js, and Certbot — the Let's Encrypt client with DNS plugins — running as the `openresty` and `npm` systemd services. Settings live in a SQLite file at `/data/database.sqlite`. Two consequences: Docker advice from the wider internet does not apply, and updating has its own command — open the container's **Console** and run `update`. Snapshot the container first.
 
 ### Create your admin account
-Browse to the proxy at `http://192.168.1.54:81` and log in with NPM's default credentials — **`admin@example.com`** / **`changeme`**. It immediately forces a first-run step: set your real **Full Name** and **Email address**, then a strong **New Password**. This login controls where every name in your house points, so make the password strong and record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
+Browse to the proxy at `http://192.168.1.54:81` and log in with NPM's default credentials — **`admin@example.com`** / **`changeme`**. It immediately forces a first-run step:
+
+- **Full Name** → yours
+- **Email address** → your real one; it becomes the login
+- **New Password** → strong
+ This login controls where every name in your house points, so make the password strong and record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
 
 > [!INPUT] npm-email | NPM admin email
 

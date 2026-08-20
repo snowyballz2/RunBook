@@ -35,7 +35,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > You can build a plain unprivileged Debian container and install by hand from the project README, but on this build the native LXC above is the default — no Docker layer to manage, and updates are one command. The app is identical either way; this collection runs services as LXCs, not as containers-inside-a-VM.
 
 ### Pin a static IP and start it at boot
-Two habits from earlier in the build. First, the **static IP**: set **`192.168.1.57/24`** with gateway **`192.168.1.1`** during the script's Advanced prompts — a monitor that wanders to a new address after a power cut is worse than none. Second, in the left tree select the container, open **Options**, and set **Start at boot** to Yes — or from the node Shell, swapping `109` for the ID shown next to the container's name:
+Two habits from earlier in the build:
+
+- **IPv4, during the script's Advanced walk** → **Static (manual entry)**: **`192.168.1.57/24`**, gateway **`192.168.1.1`** — a monitor that wanders to a new address after a power cut is worse than none
+- **Options → Start at boot** → **Yes** — select the container in the left tree; or from the node Shell, swapping `109` for the ID shown next to the container's name:
 
 ```bash
 pct set 109 -onboot 1

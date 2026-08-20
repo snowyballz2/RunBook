@@ -26,7 +26,13 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Read any script before piping it into a root shell — the same download-read-run habit used throughout this build. These are the well-regarded successor to the tteck scripts, but the habit stands regardless of source.
 
 ### Choose Advanced and pin a static IP
-This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced** and press Enter through the prefilled defaults — 2 cores, 4 GB RAM, an unprivileged Debian container — with one exception: the network. Set the static **`192.168.1.55/24`** with gateway **`192.168.1.1`** instead of DHCP — the installer bakes this exact address into Homepage's safety allow-list, and it recurs everywhere below. Then settle in — the script announces "Installing Homepage (Patience)" and means it. It downloads the latest release's source and compiles the page on the container's own CPU, which can take a quarter of an hour. It finishes by printing the address: `http://192.168.1.55:3000`.
+This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced** — the same dialog sequence the Cameras & Frigate page documents answer-by-answer. Here:
+
+- **Resources** → keep the prefills: **2 cores, 4 GB RAM**, unprivileged Debian
+- **IPv4** → **Static (manual entry)**: **`192.168.1.55/24`**, gateway **`192.168.1.1`** — the installer bakes this exact address into Homepage's safety allow-list, and it recurs everywhere below
+- **Every other dialog** → its default, Container Protection's **No** included — a dashboard rebuilds in minutes
+
+Then settle in — the script announces "Installing Homepage (Patience)" and means it. It downloads the latest release's source and compiles the page on the container's own CPU, which can take a quarter of an hour. It finishes by printing the address: `http://192.168.1.55:3000`.
 
 > [!INPUT] homepage-ip | Homepage container IP | 192.168.1.55
 
