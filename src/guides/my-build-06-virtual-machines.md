@@ -97,7 +97,10 @@ The second VM — **Home Assistant OS**, the brain of the house — is built on 
 > The **Qemu Agent** is built into both these appliance OSes — Home Assistant OS and TrueNAS — so unlike a plain Debian guest you never `apt-get` it. You only flip the VM-side half on: tick the VM's **Qemu Agent** option (in the Create VM wizard, or later under **Hardware / Options**). With it on, Proxmox can read the VM's IP, freeze the filesystem during backups, and — important later — shut the VM down cleanly when the battery backup orders the host down.
 
 ### Start at boot
-An appliance should come back on its own after a power cut or host reboot. Two ways, same result. In the web UI: select the **truenas** VM in the left tree, open its **Options** tab, double-click **Start at boot**, tick it, **OK**; while the tab is open, double-click **Protection** and tick that too — this VM carries the storage pool, and the flag blocks deleting it until deliberately unticked. Or from the **host shell** — **Datacenter → the `pve` node → Shell**, the same shell the post-install script ran in:
+An appliance should come back on its own after a power cut or host reboot. Two ways, same result. In the web UI: select the **truenas** VM in the left tree and open its **Options** tab:
+
+- **Start at boot** → double-click, tick, **OK**
+- **Protection** → double-click, tick, **OK** — this VM carries the storage pool, and the flag blocks deleting it until deliberately unticked Or from the **host shell** — **Datacenter → the `pve` node → Shell**, the same shell the post-install script ran in:
 
 ```bash
 qm set 100 -onboot 1

@@ -66,10 +66,21 @@ Home Assistant OS ships as a ready-made disk image, **not** an installer ISO —
 > ```
 
 > [!NOTE]
-> In the VM's **Options** panel, enable **Start at boot**, set **Start/Shutdown order** to **order=2**, and set **Protection** to **Yes** — this VM *is* the smart home, and the flag blocks accidental deletion. The order is load-bearing: Frigate points at the Mosquitto MQTT (MQ Telemetry Transport) broker that lives alongside this VM, so Home Assistant must be up first — TrueNAS is `order=1` from the Virtual Machines page and the Frigate container becomes `order=3`, so the storage boots first, then this VM, then Frigate.
+> In the VM's **Options** panel:
+>
+> - **Start at boot** → enabled
+> - **Start/Shutdown order** → **order=2** — load-bearing: Frigate points at the Mosquitto MQTT (MQ Telemetry Transport) broker that lives alongside this VM, so Home Assistant must be up first; TrueNAS is `order=1` from the Virtual Machines page and the Frigate container becomes `order=3` — storage, then this VM, then Frigate
+> - **Protection** → **Yes** — this VM *is* the smart home, and the flag blocks accidental deletion
 
 ### Pin its address
-The brain of the house gets a device-set static in the protected zone, like the host and TrueNAS before it — not a router reservation, which the Fios router can only make for in-pool `.100+` addresses. The screen only exists after onboarding, so do this **right after the onboarding below finishes**: in the Home Assistant UI, go to **Settings → System → Network**, expand the interface, set **IPv4 → Static**, address **`192.168.1.51/24`**, gateway **`192.168.1.1`**, DNS **`192.168.1.1`**, and save. Phone apps, dashboards, and the MQTT links all use this address — `homeassistant.local` does not resolve reliably on every network, and every later page assumes `.51`.
+The brain of the house gets a device-set static in the protected zone, like the host and TrueNAS before it — not a router reservation, which the Fios router can only make for in-pool `.100+` addresses. The screen only exists after onboarding, so do this **right after the onboarding below finishes**: in the Home Assistant UI, go to **Settings → System → Network** and expand the interface:
+
+- **IPv4** → **Static**
+- **IP address** → **`192.168.1.51/24`**
+- **Gateway** → **`192.168.1.1`**
+- **DNS** → **`192.168.1.1`**
+
+Save. Phone apps, dashboards, and the MQTT links all use this address — `homeassistant.local` does not resolve reliably on every network, and every later page assumes `.51`.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
@@ -109,7 +120,12 @@ This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broa
 > Once the stick is passed through, Home Assistant discovers it and offers a **Home Assistant Connect ZBT-2** card under **Settings → Devices & services**. **Ignore that card — never click Add.** It starts HA's built-in **ZHA** (or Thread) setup, which seizes the coordinator this build needs for Zigbee2MQTT; Z2M reaches the radio through its own add-on config, not through an HA integration. One click there costs you the whole Zigbee setup. The same page also lists the **Lutron Smart Bridge Pro 2 as a "HomeKit Device"** — ignore that too, and add the bridge through its **native Lutron Caséta** card instead: the HomeKit route exposes only a subset (no Pico remotes as triggers) and consumes the bridge's HomeKit pairing.
 
 ### Stand up the Mosquitto broker and its logins
-The whole build talks over one **Mosquitto** broker, and it lives here on the Home Assistant VM. In the Home Assistant UI (`192.168.1.51:8123`), install the official **Mosquitto broker** app (**Settings → Apps → Install app** — Home Assistant renamed *Add-ons* to *Apps* in 2026.2, so older write-ups say "add-on store") if it is not already running, and do not stand up a second broker anywhere else. On the app's page, set its toggles deliberately: **Start on boot — on** (the broker is the spine; without it, Zigbee entities and Frigate's events are dead after any reboot) and **Watchdog — on** (it restarts the app if it stops, which matters because a dead broker fails *silently* — nothing errors, entities just quietly stop updating). Leave **Auto update off**: this is a single point of failure for both the Zigbee mesh and Frigate, so it gets updated deliberately during the monthly maintenance pass, after a snapshot. **Show in sidebar** is cosmetic — Mosquitto has no real UI.
+The whole build talks over one **Mosquitto** broker, and it lives here on the Home Assistant VM. In the Home Assistant UI (`192.168.1.51:8123`), install the official **Mosquitto broker** app (**Settings → Apps → Install app** — Home Assistant renamed *Add-ons* to *Apps* in 2026.2, so older write-ups say "add-on store") if it is not already running, and do not stand up a second broker anywhere else. On the app's page, set its toggles deliberately:
+
+- **Start on boot** → **on** — the broker is the spine; without it, Zigbee entities and Frigate's events are dead after any reboot
+- **Watchdog** → **on** — restarts the app if it stops; a dead broker fails *silently*, nothing errors, entities just quietly stop updating
+- **Auto update** → **off** — a single point of failure for both the Zigbee mesh and Frigate gets updated deliberately, in the monthly maintenance pass, after a snapshot
+- **Show in sidebar** → cosmetic either way — Mosquitto has no real UI
 
 > [!WARNING]
 > **Restart the Mosquitto app after adding logins.** It writes its password file at startup, so credentials added to the Logins list do not exist to the broker until it restarts — and every client that tries meanwhile is refused with a bare **"Connection refused: Not authorized"**, which reads like a wrong password rather than a not-yet-loaded one. Restart Mosquitto, then whatever was rejected. If it persists, Mosquitto's own **Log** names the username it turned away, which tells you whether the client is sending the wrong name or the wrong password. Then create the build's two broker logins — the broker rejects unknown credentials by default, so a username nobody created just gets "not authorised". Add both under the app's **Configuration → Logins** list (or create dedicated non-admin Home Assistant users with these names): **`zigbee2mqtt`** for Z2M, used below, and **`mqtt-user`** for Frigate, used on the Cameras, Doorbell & Frigate page. Same broker, distinct logins — the broker's logs make it obvious who is talking.
@@ -183,7 +199,12 @@ Plug in the **Third Reality 3RSP019BZ smart plugs** and pair them **before** any
 > A few routers spread through the house turn a flaky single-hop mesh into a solid one. Pairing them first also means the sensors join *through* a nearby router rather than straining to reach the coordinator directly.
 
 > [!NOTE]
-> Two settings on each plug's page in Z2M once it joins. Set **State** to **ON** — that is the outlet's relay, so ON means the socket actually passes power to whatever gets plugged in; leave one OFF and a lamp plugged in there months later looks broken for no visible reason. Then set **Power-on behavior** to **`previous`** (it defaults to `off`), so that ON state is what the plug returns to after an outage, matching how the rest of this build recovers. Neither affects the plug's routing — the radio is live whenever the plug is in the wall, relay open or closed, which is also why toggling State is a safe way to identify which physical plug a name belongs to (flip it, listen for the click). And glance at **Linkquality**: it is a reading, not a setting, but a plug well below its siblings (say 88 against 140+) is the weakest router in the mesh, and the first thing to suspect if sensors near it later go unavailable — try another outlet in that room, away from appliances and metal. Renaming a device also makes Z2M log a "Device left / Device joined" pair for it; that is the re-registration under the new name, not a fault.
+> Two settings on each plug's page in Z2M once it joins:
+>
+> - **State** → **ON** — the outlet's relay; ON means the socket actually passes power, and one left OFF makes a lamp plugged in months later look broken for no visible reason
+> - **Power-on behavior** → **`previous`** (defaults to `off`) — so that ON state is what the plug returns to after an outage, matching how the rest of this build recovers
+>
+> Neither affects the plug's routing — the radio is live whenever the plug is in the wall, relay open or closed, which is also why toggling State is a safe way to identify which physical plug a name belongs to (flip it, listen for the click). And glance at **Linkquality**: it is a reading, not a setting, but a plug well below its siblings (say 88 against 140+) is the weakest router in the mesh, and the first thing to suspect if sensors near it later go unavailable — try another outlet in that room, away from appliances and metal. Renaming a device also makes Z2M log a "Device left / Device joined" pair for it; that is the re-registration under the new name, not a fault.
 
 ### Join the leak sensors
 With routers in place, pair the **12× Third Reality 3RWS18BZ** siren leak sensors — one at every water risk: water heater, washer, dishwasher, each sink, the sump, and the fridge water line. Repeat this loop per sensor:

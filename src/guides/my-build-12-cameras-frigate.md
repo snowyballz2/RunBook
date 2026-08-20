@@ -161,7 +161,11 @@ The file sits inert until the master switch flips. The rest is clicks:
 > Script versions vary: some instead write an explicit `auth: enabled: false` into the generated config, which switches the login off entirely — 8971 included, every camera open to the LAN. If your config shows that line, flip it to `true` in the config editor, **Save & Restart** (`systemctl restart frigate` in the container's **Console** does the same), then read the log as above.
 
 ### Confirm its address and start at boot
-The static address was set in the script's Advanced walk, so there is nothing to reserve at the router. In Proxmox, select the container and open **Options**: enable **Start at boot** so a power cut does not silently end recordings, and set **Start/Shutdown order** to **3** while the panel is open — the MQTT broker this page connects to later lives in the Home Assistant VM (order=2), and Frigate must come up after it. If the install dialog's **CONTAINER PROTECTION** was answered No, fix it here while the panel is open: **Protection → Yes**.
+The static address was set in the script's Advanced walk, so there is nothing to reserve at the router. In Proxmox, select the container and open **Options**:
+
+- **Start at boot** → **Yes** — a power cut must not silently end recordings
+- **Start/Shutdown order** → **3** — the MQTT broker this page connects to later lives in the Home Assistant VM (order=2), and Frigate must come up after it
+- **Protection** → **Yes**, if the install dialog's **CONTAINER PROTECTION** was answered No
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
 > Device-set static from the script's Advanced mode — in the `.2–.99` static zone, so it never moves.

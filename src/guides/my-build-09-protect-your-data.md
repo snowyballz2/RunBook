@@ -93,13 +93,28 @@ The scheduling has two deliberate offsets. The longs are **staggered two weeks a
 ## Make alerts reach you
 
 ### Teach TrueNAS to send email
-A NAS (network-attached storage) that notices a dying IronWolf but has no way to tell you is just a quieter failure. First a prerequisite the Email dialog enforces: the admin account needs an address on file, or the dialog refuses with *"No e-mail address is set for root user or any other local administrator."* In the TrueNAS UI, go to **Credentials → Users**, edit **`truenas_admin`**, fill in its **Email** field with the inbox you actually read, and save. Then go to **System → General Settings** and click **Settings** on the **Email** widget. Pick a **Send Mail Method** — for this mostly-iCloud household, **SMTP** (Simple Mail Transfer Protocol) to iCloud or any provider is the general path, while **GMail OAuth** / **Outlook OAuth** spare you app-password wrangling if you have one of those accounts. Add your address to **Email Recipients**, click **Send Test Mail**, and only **Save** once the test actually lands in the inbox you read. With email working, TrueNAS also sends a nightly status email that includes disk health.
+A NAS (network-attached storage) that notices a dying IronWolf but has no way to tell you is just a quieter failure. First a prerequisite the Email dialog enforces: the admin account needs an address on file, or the dialog refuses with *"No e-mail address is set for root user or any other local administrator."* In the TrueNAS UI, go to **Credentials → Users**, edit **`truenas_admin`**, fill in its **Email** field with the inbox you actually read, and save. Then go to **System → General Settings** and click **Settings** on the **Email** widget:
+
+- **Send Mail Method** → **SMTP** (Simple Mail Transfer Protocol) — the general path for this mostly-iCloud household; **GMail OAuth** / **Outlook OAuth** spare app-password wrangling if you have one of those accounts
+- **Email Recipients** → the inbox you actually read
+- **Send Test Mail** → click it, and only **Save** once the test actually lands With email working, TrueNAS also sends a nightly status email that includes disk health.
 
 > [!DETAILS] Filling in the SMTP fields
-> **From Email** is the sending address, **Outgoing Mail Server** your provider's SMTP host, **Mail Server Port** typically 587 (or 465 for implicit TLS), **Security** set to **TLS (STARTTLS)** for port 587 or **SSL (Implicit TLS)** for 465. Enable **SMTP Authentication** and enter the **Username** (usually the full email address) and **Password**. For an iCloud sender you must generate an app-specific password at appleid.apple.com — the account password will not authenticate.
+> - **From Email** → the sending address
+> - **Outgoing Mail Server** → your provider's SMTP host
+> - **Mail Server Port** → **587** (or **465** for implicit TLS)
+> - **Security** → **TLS (STARTTLS)** for 587; **SSL (Implicit TLS)** for 465
+> - **SMTP Authentication** → enabled
+> - **Username** → usually the full email address
+> - **Password** → for an iCloud sender, an app-specific password generated at appleid.apple.com — the account password will not authenticate
 
 ### Aim the alerts at your inbox — and test them
-In the TrueNAS UI, go to **System → Alert Settings**. Two rows ship by default under **Alert Services**: ignore **SNMP Trap** (it reports to enterprise monitoring servers — Zabbix and kin — that this build does not run, and with no destination configured it sends nothing; leave it untouched). The **E-Mail** entry is the one that matters — open it with the pencil/**Edit**, enter the recipient in **Email Address**, keep **Level** at the default **Warning** (alerts at that level and above are sent), and click **Send Test Alert**. Once the test arrives, save. The built-in categories already cover what matters here: an unhealthy pool, a pool filling up, an IronWolf running hot or failing a self-test, and any failed snapshot, scrub, replication, or cloud sync task.
+In the TrueNAS UI, go to **System → Alert Settings**. Two rows ship by default under **Alert Services**: ignore **SNMP Trap** (it reports to enterprise monitoring servers — Zabbix and kin — that this build does not run, and with no destination configured it sends nothing; leave it untouched). The **E-Mail** entry is the one that matters — open it with the pencil/**Edit**:
+
+- **Email Address** → the recipient
+- **Level** → keep the default **Warning** — alerts at that level and above are sent
+- **Send Test Alert** → click; save once the test arrives
+ The built-in categories already cover what matters here: an unhealthy pool, a pool filling up, an IronWolf running hot or failing a self-test, and any failed snapshot, scrub, replication, or cloud sync task.
 
 > [!WARNING]
 > The two test buttons in this phase are the whole point — one per screen: **Send Test Mail** in the Email settings dialog (proves TrueNAS can send mail at all) and **Send Test Alert** in the Alert Services entry (proves the alert engine routes through that mail setup to your recipient — a different failure point, which is why both exist). An alert chain you have never tested is the exact silent failure you set it up to prevent — press both, confirm both land. Do it now, while you are looking at the screen, not in two years when a drive is already dying.
@@ -166,9 +181,20 @@ The scorecard is **3-2-1**: three copies of anything that matters, on at least t
 > [!DETAILS] Optional, future: automate the offsite leg with Backblaze B2
 > **Backblaze B2** is a cloud-storage service — roughly $7 per terabyte per month, so a few hundred gigabytes of files costs a few dollars — and TrueNAS drives it natively. It turns the offsite copy from a chore you remember into a nightly job that never forgets, encrypted with your own password before a byte leaves the house so Backblaze only ever stores ciphertext. If the USB rhythm ever lapses in practice, this is the upgrade; it needs an account (with payment details) created at backblaze.com first.
 >
-> **The push:** go to **Data Protection → Add** on the **Cloud Sync Task** widget. Pick a **Credential** for Backblaze B2 or **Add New** (credentials live under **Credentials → Backup Credentials → Cloud Credentials**; B2 needs an Application Key ID and its key). **Direction → PUSH**, source `tank/files`, click the folder icon on the remote **Folder** field to pick the bucket, and schedule it nightly. **Transfer Mode: COPY** beats SYNC for this job — SYNC propagates a deletion at home into the offsite copy on the next run; COPY only ever adds and updates, so deleted files linger offsite as a safety net.
+> **The push:** go to **Data Protection → Add** on the **Cloud Sync Task** widget:
 >
-> **The encryption:** under the task's **Advanced Options**, turn on **Remote Encryption** and set an **Encryption Password** and **Encryption Salt** — TrueNAS encrypts with rclone before upload. Record both in the fields below *before the first run* and in your password manager: lose them and the offsite copy is unreadable by anyone, including you. Leave **Filename Encryption** off (current docs advise against it).
+> - **Credential** → the Backblaze B2 one, or **Add New** (credentials live under **Credentials → Backup Credentials → Cloud Credentials**; B2 needs an Application Key ID and its key)
+> - **Direction** → **PUSH**
+> - **Source** → `tank/files`
+> - **Folder** (remote) → click the folder icon and pick the bucket
+> - **Schedule** → nightly
+> - **Transfer Mode** → **COPY** — SYNC propagates a deletion at home into the offsite copy on the next run; COPY only ever adds and updates, so deleted files linger offsite as a safety net
+>
+> **The encryption:** under the task's **Advanced Options**:
+>
+> - **Remote Encryption** → on — TrueNAS encrypts with rclone before a byte leaves
+> - **Encryption Password / Encryption Salt** → set both, and record them in the fields below *before the first run* and in your password manager — lose them and the offsite copy is unreadable by anyone, including you
+> - **Filename Encryption** → off — current docs advise against it
 >
 > **The drill:** an encrypted backup fails silently — a wrong password looks identical to a good backup until the day you reach for it. So once at setup and once a year, run a one-off **PULL** task: same credential and remote folder, local folder pointed at an empty scratch dataset (`restore-test`, deleted afterward), the password and salt re-entered under Advanced Options — that re-entry is the part being tested. Open a recovered photo and confirm it is the file, not scrambled bytes.
 >
