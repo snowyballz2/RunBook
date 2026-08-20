@@ -768,7 +768,7 @@ Not optional polish — the substream **is** what the detector watches, and the 
 - **Enable (Main Stream)** → **ON** — the mic feeding recordings and detection
 - **Enable (Sub Stream)** → **off**
 - **Audio Encoding** → **AAC** if the dropdown offers it, else keep **G.711A**
-- **Sampling Rate** → **16000** if offered — 8000 is telephone-band, and both recordings and Frigate's audio detection (natively 16 kHz models) benefit; 8000 still works if it is the only choice
+- **Sampling Rate** → **16000** — the dropdown runs to 64000, but 16 kHz is the ceiling anything here consumes: Frigate's detection models are 16 kHz native (higher input just gets downsampled), and human speech fits entirely inside it; 8000 is telephone-band, higher rates only fatten files
 - **Noise Filter / volumes** → as found
 - The turret **speakers** need nothing here — a talk-down automation rides go2rtc's talk-back path and is built on the Automations page
 
