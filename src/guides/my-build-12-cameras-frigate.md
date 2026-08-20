@@ -767,7 +767,7 @@ Everything else on its Encode pane, main and sub, takes the identical values.
 
 **Camera → Image → Illuminator:**
 
-- **Outdoor turrets**, under the **Night** profile: **Fill Light** → **IR Mode** — infrared, not warm white, on any angle meant to read a licence plate; colour mode washes plates out. **Mode** stays **Auto** (it governs IR intensity) and the remaining field stays default
+- **Outdoor turrets**, under the **Night** profile: **Fill Light** → **IR Mode** — infrared, not warm white, on any angle meant to read a licence plate; colour mode washes plates out. **Mode** stays **Auto** (it governs IR intensity) and the remaining field stays default. Know the consequence: these sensors hold **colour on ambient light alone** (porch and street spill), and only go mono when IR actually kicks in — that mono moment is the plate trade working. A backyard angle with no plates may run the warm light or **Smart** mode instead for colour nights, at the cost of a visible glow — preference, not correctness. (The doorbell is mono at night regardless — small sensor, IR-only hardware)
 - **kitchen_turret** → **Mode: Off** — a camera that floodlights the kitchen at 3 a.m. is a nuisance
 
 **Camera → Audio** — recorded and detected **by deliberate choice** on this build (bark, scream, speak and yell become events the automations page acts on; ambient outdoor audio is captured around the clock, a privacy and legal line crossed knowingly on this property):
