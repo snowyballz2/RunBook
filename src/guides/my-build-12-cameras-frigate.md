@@ -729,7 +729,7 @@ Not optional polish — the substream **is** what the detector watches, and the 
 - **Compression** → **H.265** — same picture from roughly a third fewer bits, halving what continuous recording eats; this household is HEVC-native end to end (the kitchen proved it live in Safari)
 - **Encoding Strategy** → **General** — the smart modes emit variable keyframes NVRs hate
 - **Resolution** → **2688×1520** (as shipped)
-- **Frame Rate (FPS)** → **15**
+- **Frame Rate (FPS)** → **15** — at a fixed bitrate, fps trades per-frame sharpness for smoothness: 15 gives every frame twice the bits of 30, and a security camera's product is the frame you zoom, not smooth motion. (Prefer 30 someday? Raise the bitrate in step, or each frame goes soft)
 - **Bit Rate Type** → **CBR**
 - **Bit Rate** → **2560**
 - **I Frame Interval** → **30** — one keyframe per two seconds; the rule is 2× fps
