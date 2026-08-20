@@ -252,7 +252,12 @@ Append to `/etc/nut/upsd.users` — a watch-only account for Home Assistant:
     password = a-different-long-password
 ```
 
-Then `systemctl restart nut-server nut-monitor`. In Home Assistant, go to **Settings → Devices & services**; the integration may already be waiting under discovered devices, otherwise add **Network UPS Tools (NUT)** and enter the host's IP, port `3493`, and the `hauser` credentials. The CyberPower appears as a device with **Battery charge** and **Status** sensors enabled out of the box — the latter reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime** and the rest arrive disabled; enable them per entity if you want them.
+Then `systemctl restart nut-server nut-monitor`. In Home Assistant, go to **Settings → Devices & services** — the integration may already be waiting under discovered devices; otherwise add **Network UPS Tools (NUT)**:
+
+- **Host** → `192.168.1.50`
+- **Port** → `3493`
+- **Username / Password** → the `hauser` login from the fields below
+ The CyberPower appears as a device with **Battery charge** and **Status** sensors enabled out of the box — the latter reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime** and the rest arrive disabled; enable them per entity if you want them.
 
 > [!INPUT] nut-ha-user | NUT read-only username | | hauser
 > The `[hauser]` section name in `upsd.users` — the account Home Assistant signs in with.

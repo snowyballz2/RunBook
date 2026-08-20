@@ -114,7 +114,14 @@ Your dashboard sits behind your login; a status page is the version everyone els
 ## Keep it honest
 
 ### Make alerts find your phone
-A red bar on a dashboard nobody has open is not an alert. Go to **Settings → Notifications**, click **Set Up Notification**, and pick a **Notification Type**. An easy first one is **ntfy**: install the ntfy app on your iPhone, subscribe to a topic, give Kuma that same **ntfy Topic**, and alerts push straight to your pocket. Tick **Default enabled** and **Apply on all existing monitors** so every monitor — including ones you add later — uses it.
+A red bar on a dashboard nobody has open is not an alert. Go to **Settings → Notifications**, click **Set Up Notification**:
+
+- **Notification Type** → **ntfy** — the easy first one; install the ntfy app on your iPhone and subscribe to a topic
+- **ntfy Topic** → that same topic
+- **Default enabled** → ticked
+- **Apply on all existing monitors** → ticked
+
+Every monitor — including ones you add later — now pushes straight to your pocket.
 
 > [!DETAILS] Reaching you other ways
 > The **Notification Type** list is long. The other well-worn options: **Telegram** (a bot you create that messages you directly), **Email (SMTP)** (sends through any mail account's SMTP (Simple Mail Transfer Protocol) server, with an **SMTP Security** option for TLS (Transport Layer Security)), and **Webhook** (an HTTP POST of the alert to any **Webhook URL** — the glue option for anything not on the list).

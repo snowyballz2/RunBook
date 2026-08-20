@@ -19,7 +19,15 @@ The 500GB NVMe (Non-Volatile Memory Express) boot drive holds the Proxmox OS and
 Before you point Proxmox at it, confirm the `backups` share actually exists. In the TrueNAS web interface, go to **Shares → Windows (SMB) Shares** and check that a share whose path is `tank/backups` is listed and enabled. If only `files` is there, add it now: click **Add** on that widget, set the path to the `tank/backups` dataset, save, and accept the prompt to restart the **SMB service** so the share goes live. Without this share, the `backups` entry will not appear in Proxmox's **Share** dropdown in the next step.
 
 ### Add the TrueNAS share as backup storage
-In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacenter → Storage → Add → SMB/CIFS**. Give it an ID like `nas-backups`, enter the TrueNAS address as the **Server**, pick the `backups` **Share**, fill in the SMB **Username** and **Password**, and under **Content** tick **Backup** — older Proxmox versions label it **VZDump backup file** — (and **Disk image** only if you want it as general storage too). Proxmox mounts it under `/mnt/pve/nas-backups`.
+In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacenter → Storage → Add → SMB/CIFS**:
+
+- **ID** → `nas-backups`
+- **Server** → `192.168.1.20`
+- **Username / Password** → the SMB login from the fields below
+- **Share** → `backups`
+- **Content** → tick **Backup** (older Proxmox versions label it **VZDump backup file**); **Disk image** only if you also want it as general storage
+
+Proxmox mounts it under `/mnt/pve/nas-backups`.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 
@@ -35,7 +43,11 @@ In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacent
 ## Schedule the guest backups
 
 ### Schedule automatic vzdump of every guest
-Still in the Proxmox web UI, go to **Datacenter → Backup** and click **Add**. Set **Storage** to `nas-backups`, choose a schedule from the dropdown — a quiet hour like `02:30` daily works on this build — and set **Selection mode** to **All** so any guest you create later is covered without touching the job again.
+Still in the Proxmox web UI, go to **Datacenter → Backup** and click **Add**:
+
+- **Storage** → `nas-backups` — never `local` (the warning below)
+- **Schedule** → a quiet daily hour; `02:30` works on this build
+- **Selection mode** → **All** — any guest you create later is covered without touching the job again
 
 > [!WARNING]
 > Proxmox offers `local` as a storage choice out of the box — but `local` is a directory on the **NVMe boot disk**, the exact disk holding the Proxmox OS and Frigate's cache that everything on this page is meant to survive. A backup job pointed at `local` dies with the disk it is supposed to protect. Make sure **Storage** reads `nas-backups`, never `local`.

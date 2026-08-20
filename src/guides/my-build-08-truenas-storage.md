@@ -71,9 +71,14 @@ While the serials are on screen, record them — with **which physical tray each
 ## Build the pool
 
 ### Mirror two of the IronWolf disks
-A pool is ZFS's big bucket: physical disks fused into one storage unit. In the TrueNAS web interface go to **Storage** and click **Create Pool** to open the wizard. Name the pool `tank` (lowercase), set **Layout → Mirror**, and select both IronWolf drives — see the next paragraph for how. End on the **Review** screen and click **Create Pool**.
+A pool is ZFS's big bucket: physical disks fused into one storage unit. In the TrueNAS web interface go to **Storage** and click **Create Pool** to open the wizard:
 
-The wizard can only offer the two IronWolfs on the HBA — the footage disk is invisible to this VM by design, so it can never be grabbed by mistake. Use **Manual Disk Selection** to point at the two disks by their serials, OR under **Automated Disk Selection** set **Disk Size** to **4 TB** and **Width** to **2** so the vdev takes both.
+- **Name** → `tank` (lowercase)
+- **Layout** → **Mirror**
+- **Disks** → both IronWolfs — via **Manual Disk Selection**, picking the two by their serials; or under **Automated Disk Selection**: **Disk Size** → **4 TB**, **Width** → **2**
+- **Review** → confirm the screen lists exactly two disks, then **Create Pool**
+
+The wizard can only offer the two IronWolfs on the HBA — the footage disk is invisible to this VM by design, so it can never be grabbed by mistake.
 
 > [!WARNING]
 > Confirm the **Review** screen lists exactly **two** disks before you click **Create Pool**. If a third ST4000VN006 is ever offered here, stop — that means Frigate's footage drive ended up on the HBA instead of a motherboard SATA port, and it must stay out of `tank`. Power down and recable it before building the pool.
