@@ -336,7 +336,11 @@ In the doorbell's advanced network settings, work through the **Port Settings** 
 - **RTMP — leave on for now.** The flv machinery references it internally and Frigate's docs make no promise it survives disabled — after everything streams, try switching it off, and turn it back if the feed dies.
 - **Basic Service (port 9000) — on.** Reolink's own client protocol: the phone app on the LAN, and the Home Assistant Reolink integration later in the build.
 
-Still in the network settings, give it its **permanent static address** — IP `192.168.1.70`, mask `255.255.255.0`, gateway `192.168.1.1` for now (the hardening section at the end of this page blanks that gateway) — so the config below never goes stale.
+Still in the network settings, give it its **permanent static address**, so the config below never goes stale:
+
+- **IP** → `192.168.1.70`
+- **Mask** → `255.255.255.0`
+- **Gateway** → `192.168.1.1` — for now; the hardening section at the end of this page blanks it
 
 The video tuning lives on a different page — Reolink files it under **Settings → Display → Stream**, not network — where the **Clear** and **Fluent** streams each get a tab. On **both** tabs:
 
@@ -357,7 +361,11 @@ For the login fields below, use the doorbell's **admin** account: the User-level
 > Take the exact stream details from the Reolink app — do not guess them. In particular confirm **HTTP is enabled**, or the http-flv video path will not connect at all.
 
 ### Add the doorbell to the config
-Back in Frigate's config editor: **select all, delete, paste the complete file below.** It carries everything so far — detector, model, decode — plus the doorbell's `go2rtc:` streams and camera entry, and the `placeholder:` camera is gone, its job done. The username `admin` is baked in; the **only token to swap is `DOORBELL-PASS`, which appears three times**, all in the `go2rtc:` stream URLs. The `127.0.0.1` addresses in the `cameras:` half are Frigate talking to its own restreamer — real, not placeholders.
+Back in Frigate's config editor: **select all, delete, paste the complete file below.**
+
+- **What it carries** → everything so far (detector, model, decode) plus the doorbell's `go2rtc:` streams and camera entry — and the `placeholder:` camera is gone, its job done
+- **Tokens** → **`DOORBELL-PASS`** ×3, all in the `go2rtc:` stream URLs; the username `admin` is baked in
+- **Leave alone** → the `127.0.0.1` addresses in the `cameras:` half — Frigate talking to its own restreamer, real, not placeholders
 
 > [!WARNING]
 > **In this LXC install, go2rtc is its own service, and the editor's Save & Restart restarts only Frigate.** Docker restarts them together; this build does not. Leave go2rtc running an old config and Frigate's ffmpeg gets **404 Not Found** from `127.0.0.1:8554` — a crash loop against a restreamer that has never heard of the stream. So after **every paste that changes the `go2rtc:` block** (this one, the RLC, the turrets), follow Save & Restart with this in **container 102's Console** — Proxmox → **102 (frigate)** → **Console**, the `root` login — not the host's Shell, which has no `frigate` service. The retention and MQTT pastes later skip this; they leave `go2rtc:` untouched:
@@ -437,9 +445,18 @@ cameras:
 > **Camera not placed yet? Skip this whole section and keep going** — nothing after it depends on the RLC. Every later complete-file paste includes the `rlc510:` entries; if the camera is still unplaced when you reach one, add `enabled: false` under `rlc510:` (same indent as its `ffmpeg:`) and flip it to `true` when the camera is up. A defined-but-disabled camera costs nothing — Frigate starts no processes for it, and go2rtc only dials on demand. The same line works for any EmpireTech turret not yet on the wall when its paste arrives.
 
 ### Add the second indoor camera
-The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep instead: it becomes the **second indoor camera**, covering the big room from the opposite side so the far corner the Color4K-T can't identify into isn't blind. It stays on **WiFi with its 12 V adapter** — no PoE run, no switch port — and is added the same restream way as the doorbell, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Give it its permanent static in the app first — `192.168.1.71`, gateway `192.168.1.1` until the hardening step blanks it — then prep it in the Reolink app the same way the doorbell was: bitrate to **"On, fluency first"** and **Interframe Space 1×** (an I-frame interval matching the frame rate — what keeps Frigate's recording segments clean), and take the exact stream paths from the app while you are there.
+The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep instead: it becomes the **second indoor camera**, covering the big room from the opposite side so the far corner the Color4K-T can't identify into isn't blind. It stays on **WiFi with its 12 V adapter** — no PoE run, no switch port — and is added the same restream way as the doorbell, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Prep it in the Reolink app first, the same way the doorbell was:
 
-Same pattern: **select all, delete, paste the complete file below** — everything from the doorbell step plus the `rlc510` pair. Two tokens this time: re-swap the three **`DOORBELL-PASS`** (the paste resets them) and fill the two **`RLC-PASS`**. This paste changes the `go2rtc:` block, so after **Save & Restart**, bounce the restreamer too — in **container 102's Console** (Proxmox → 102 → Console, the `root` login):
+- **Static IP** → `192.168.1.71`, gateway `192.168.1.1` — until the hardening step blanks it
+- **Rate control** → **"On, fluency first"** (constant)
+- **Interframe Space** → **1×** — an I-frame interval matching the frame rate, what keeps Frigate's recording segments clean
+- **Stream paths** → take the exact ones from the app while you are there
+
+Same pattern: **select all, delete, paste the complete file below** — everything from the doorbell step plus the `rlc510` pair.
+
+- **Tokens** → re-swap **`DOORBELL-PASS`** ×3 (the paste resets them); fill **`RLC-PASS`** ×2
+
+This paste changes the `go2rtc:` block, so after **Save & Restart**, bounce the restreamer too — in **container 102's Console** (Proxmox → 102 → Console, the `root` login):
 
 ```bash
 systemctl restart go2rtc frigate
@@ -529,7 +546,21 @@ A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv w
 
 > [!SECRET] empiretech-password | EmpireTech cameras admin password (all five)
 
-Wire each to the **GS308EPP** and assign its permanent static in the camera's own web UI — the four turrets take `192.168.1.72`–`.75` and the indoor Color4K `.76`, each with gateway `192.168.1.1` until the hardening step blanks it. Then, once all five are addressed: **select all, delete, paste the complete file below.** The camera names are the real corners — **`shed_turret`** `.72`, **`carport_turret`** `.73`, **`patio_turret`** `.74`, **`chimney_turret`** `.75`, and the indoor **`kitchen_turret`** `.76`. The `chimney_turret` ships **`enabled: false`** in this file and the two after it — it is not mounted yet; delete that line (or flip it to `true`) in whichever paste lands after it goes up. Tokens: re-swap **`DOORBELL-PASS`** ×3 and **`RLC-PASS`** ×2, and fill **`TURRET-PASS`** ×10 — the one shared EmpireTech admin password. This paste changes the `go2rtc:` block, so after **Save & Restart**, bounce the restreamer too — in **container 102's Console** (Proxmox → 102 → Console, the `root` login):
+Wire each camera to the **GS308EPP**, then assign its permanent static in its own web UI — the names are the real corners:
+
+- **`shed_turret`** → `192.168.1.72`
+- **`carport_turret`** → `192.168.1.73`
+- **`patio_turret`** → `192.168.1.74`
+- **`chimney_turret`** → `192.168.1.75`
+- **`kitchen_turret`** (the indoor Color4K) → `192.168.1.76`
+- **Gateway, all five** → `192.168.1.1` — until the hardening step blanks it
+
+Once all five are addressed: **select all, delete, paste the complete file below.**
+
+- **Tokens** → re-swap **`DOORBELL-PASS`** ×3 and **`RLC-PASS`** ×2; fill **`TURRET-PASS`** ×10 — the one shared EmpireTech admin password
+- **`chimney_turret`** → ships **`enabled: false`** in this file and the two after it (not mounted yet); delete that line or flip it to `true` in whichever paste lands after it goes up
+
+This paste changes the `go2rtc:` block, so after **Save & Restart**, bounce the restreamer too — in **container 102's Console** (Proxmox → 102 → Console, the `root` login):
 
 ```bash
 systemctl restart go2rtc frigate
@@ -846,7 +877,15 @@ mount -a
 pct set <frigate-ctid> -mp0 /mnt/frigate-footage,mp=/media/frigate
 ```
 
-Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time). Complete file, same routine — the changes from the last paste: the new `record:` block, the **`audio:` detection block** (bark, scream, speak and yell become events), an **`audio` role** on every camera's record input, and an **audio-capable record preset** on every camera that lacked one (the doorbell keeps its copy variant). Recording and audio turn on in the same paste, on purpose. It assumes each camera's mic **Enable** from the tuning step — a camera with its mic still off just nags the logs until toggled. Swap the same password tokens as before:
+Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time). Complete file, same routine. What changed since the last paste:
+
+- **`record:` block** → continuous recording arrives
+- **`audio:` block** → detection on: bark, scream, speak and yell become events
+- **`audio` role** → added to every camera's record input
+- **Record preset** → audio-capable on every camera that lacked one; the doorbell keeps its copy variant
+- **Tokens** → the same password swaps as before
+
+Recording and audio turn on in the same paste, on purpose. It assumes each camera's mic **Enable** from the tuning step — a camera with its mic still off just nags the logs until toggled.
 
 ```yaml
 ffmpeg:
@@ -1036,7 +1075,10 @@ cameras:
 ## Wire it into the build
 
 ### Connect to Home Assistant over MQTT
-Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — back in its config editor, one last complete file. The `mqtt:` block goes live (host `192.168.1.51`, the broker beside Home Assistant); everything else is unchanged from the retention paste. Swap the camera password tokens as before, plus **`MQTT-PASS`** — the `frigate-mqtt-password` field below:
+Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — back in its config editor, one last complete file.
+
+- **What changed** → the `mqtt:` block goes live: host `192.168.1.51`, the broker beside Home Assistant; everything else is as the retention paste left it
+- **Tokens** → the camera password swaps as before, plus **`MQTT-PASS`** — the `frigate-mqtt-password` field below
 
 ```yaml
 ffmpeg:
