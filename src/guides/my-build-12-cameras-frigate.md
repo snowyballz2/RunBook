@@ -753,8 +753,8 @@ Not optional polish — the substream **is** what the detector watches, and the 
 
 - **Mode** → **Manual** — auto trades motion blur for brightness at night; a smeared person defeats detection and identification, and this is the control Reolink fakes and Dahua honours
 - **Shutter** → cap near **1/120 s** — if the field speaks milliseconds, that is **≈ 8.3 ms**
-- **Gain** → hold it low
-- **Anti-flicker** → **60Hz**, in **every profile, Day included** — kills the banding 60Hz-mains lighting causes (the indoor camera's scrolling bands earlier in this build were exactly this); the **Outdoor** option bets no artificial light ever enters the frame, and porch lights lose that bet — skip it
+- **Gain** → keep the default **0–50** range — the scale runs to 100, so that ceiling *is* "held down": amplification to half scale, IR carries the rest. A grainy night image later → lower that camera's max toward 30; too dark → the fix is IR reach, never gain 100
+- **Anti-flicker** → **60Hz**, actively set in **both profiles** — the **Day profile defaults to Outdoor on these turrets**, so it is a real edit there too, not a verify. 60Hz kills the banding 60Hz-mains lighting causes (the indoor camera's scrolling bands earlier in this build were exactly this) and costs nothing in sunlight; **Outdoor** bets no artificial light ever enters the frame, and porch lights lose that bet
 - **Only the Night profile gets edited** — the Day/Night handoff runs just Day and Night; the rest of the dropdown (General, Front Light, Strong Backlight, Low Illuminance, Custom…) are dormant presets, and Day stays auto because daylight makes fast shutters on its own
 - The **kitchen_turret keeps Auto exposure** — no IR to backstop a fast shutter (full-colour by design), so a forced 1/120 s in a dark kitchen yields black frames; its oversized sensor is the tool doing that job
 
