@@ -760,7 +760,7 @@ Not optional polish — the substream **is** what the detector watches, and the 
 
 **Camera → Image → Illuminator:**
 
-- **Outdoor turrets** → **off / IR mode** on any angle meant to read a licence plate — colour mode washes plates out
+- **Outdoor turrets**, under the **Night** profile: **Fill Light** → **IR Mode** — infrared, not warm white, on any angle meant to read a licence plate; colour mode washes plates out. **Mode** stays **Auto** (it governs IR intensity) and the remaining field stays default
 - **kitchen_turret** → **Mode: Off** — a camera that floodlights the kitchen at 3 a.m. is a nuisance
 
 **Camera → Audio** — recorded and detected **by deliberate choice** on this build (bark, scream, speak and yell become events the automations page acts on; ambient outdoor audio is captured around the clock, a privacy and legal line crossed knowingly on this property):
