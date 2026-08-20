@@ -685,12 +685,12 @@ cameras:
 ### Tune each turret in its own web UI
 Not optional polish — the substream **is** what the detector watches, and the manual shutter is half the reason this build runs Dahua-family hardware. Browse to each turret (`http://` + its IP, the `admin` login) and set three things:
 
-1. **Both streams** — **Camera → Encode**. These turrets ship both streams as **H.265 at 30 fps**; the build wants **H.264** (recordings and live views that play on anything, not just Safari) at security-camera rates. **Main Stream:** Compression **H.264**, Encoding Strategy **General** (the smart modes emit variable keyframes that NVRs hate), Resolution **2688×1520** as shipped, Frame Rate **15**, **CBR** at Bit Rate **4096** (H.264 needs more than H.265 for the same picture — 2560 was an H.265 number, and at 4096 the image comes out comparable: the codec switch costs disk, not quality. The one stress case is a rainy night under IR, where noise devours bitrate — the fix there is nudging that camera toward 6144, not changing codecs), I Frame Interval **30** (one keyframe per two seconds), Watermark harmless. **Sub Stream:** keep **Sub Stream 1** enabled (`subtype=1` in the config's URLs is this stream), Compression **H.264**, Resolution **704×480 (D1)** — the biggest this dropdown offers, and plenty, since the detector resizes to 320×320 — Frame Rate **5**, Bit Rate **256**, I Frame Interval **10**. The valid ranges **rescale when you change the frame rate** — the rule is an I-frame interval of **2× fps** (a keyframe every two seconds; the main stream's 30 at 15 fps is the same cadence), and the Reference Bit Rate line is the camera telling you the sane range, not a setting. **SVC stays 1 (off)** on both streams (a layered-streaming feature ffmpeg does not want), **Smooth Stream stays 50** (a smoothness↔clarity bias inside the CBR budget), and **Watermark** is Dahua's invisible tamper stamp — harmless either way. **Apply.** Five clean detect fps beat thirty muddy ones, and the honest trade on H.264 is disk: H.265 would halve recording storage, and the retention section's `days:` knob is where that pressure gets managed instead.
+1. **Both streams** — **Camera → Encode**. These turrets ship both streams at **30 fps**; the build wants security-camera rates, and it splits the codec question deliberately. **Main Stream:** Compression **H.265** — it buys the same picture from roughly a third fewer bits, which halves what continuous recording eats, and this household is HEVC-native end to end (Apple devices play it everywhere; the kitchen proved it live in Safari before it was ever touched). The costs are small and named: an exported clip for someone on an old Windows machine may need a one-off re-encode, and if a future non-Apple browser refuses a live view, that camera's main flips back to H.264 with this one dropdown — Frigate copies whatever arrives, so nothing else changes. Then: Encoding Strategy **General** (the smart modes emit variable keyframes that NVRs hate), Resolution **2688×1520** as shipped, Frame Rate **15**, **CBR** at Bit Rate **2560**, I Frame Interval **30** (one keyframe per two seconds), Watermark harmless. The rainy-night stress case — IR noise devouring bitrate — is solved by nudging that camera toward 4096, not by codec. **Sub Stream:** keep **Sub Stream 1** enabled (`subtype=1` in the config's URLs is this stream), Compression **H.264** — this is the stream decoded around the clock and shown to every client, its bitrate is too small for H.265 to save anything real, so it stays the universal codec — Resolution **704×480 (D1)** — the biggest this dropdown offers, and plenty, since the detector resizes to 320×320 — Frame Rate **5**, Bit Rate **256**, I Frame Interval **10**. The valid ranges **rescale when you change the frame rate** — the rule is an I-frame interval of **2× fps** (a keyframe every two seconds; the main stream's 30 at 15 fps is the same cadence), and the Reference Bit Rate line is the camera telling you the sane range, not a setting. **SVC stays 1 (off)** on both streams (a layered-streaming feature ffmpeg does not want), **Smooth Stream stays 50** (a smoothness↔clarity bias inside the CBR budget), and **Watermark** is Dahua's invisible tamper stamp — harmless either way. **Apply.** Five clean detect fps beat thirty muddy ones, and the honest trade on H.264 is disk: H.265 would halve recording storage, and the retention section's `days:` knob is where that pressure gets managed instead.
 2. **Night shutter — the four outdoor turrets only.** **Camera → Image**, set Working Mode to **Customized Scene**, pick **Profile: Night**, open **Exposure**: switch **Mode** to **Manual**, cap the shutter near **1/120 s** (if the field speaks milliseconds, that is **≈ 8.3 ms** — top the range out there), hold the gain down, **Apply**. The settings here are **per-profile**, and only **Night** gets edited: the Day/Night handoff runs just the Day and Night profiles, so Day stays untouched on auto — daylight makes fast shutters on its own — and the rest of the dropdown (General, Front Light, Strong Backlight, Low Illuminance, Custom…) are dormant presets to ignore. **Anti-flicker stays 60Hz in every profile, Day included** — it kills the banding that 60Hz-mains lighting causes (the scrolling bands the indoor camera showed earlier in this build were this exact failure), matters whenever a porch light or lamp is in frame, and costs nothing in sunlight. The dropdown's **Outdoor** option is a bet that no artificial light ever enters the frame — porch lights and dusk spill lose that bet on these corners, so skip it even on the outdoor turrets. Auto exposure trades motion blur for brightness at night, and a smeared person defeats detection *and* identification — this control is the one Reolink fakes and Dahua honours. It works outdoors because **IR makes up the light** the fast shutter gives away.
 3. **Illuminator** — **Camera → Image → Illuminator → Mode**: on the outdoor turrets, leave the warm light **off / IR mode** on any angle meant to read a licence plate; colour mode washes plates out.
 4. **The `kitchen_turret` breaks the pattern on exposure.** It has **no IR to backstop a fast shutter** — full-colour by design — so a forced 1/120 s in a dark kitchen yields black frames, not sharp ones. Leave its exposure on **Auto**: the oversized sensor is the tool doing that job. If its menu offers a warm-light illuminator, keep it **off** — a camera that floodlights the kitchen at 3 a.m. is a nuisance. Its substream gets the same 720p at 5 fps as the rest.
 
-5. **Everything else holds its default.** **Camera → Audio: leave disabled on both streams.** Be precise about what this decides: only whether **ambient audio gets captured and recorded by default** — off for the privacy and legal line outdoor voice capture crosses, not because audio is useless. The turret **speakers stay fully available to future automations** regardless (a talk-down through the nearest turret rides go2rtc's talk-back path, not this toggle), and **Frigate's audio detection** (bark/scream/speak triggers) is the legitimate future use of the mic side — both are config additions later, no camera re-setup. The kitchen is the plausible first candidate for deliberate audio, as a household decision. **Encode → Overlay** is the one optional nicety: set the **Channel Title** to the camera's key and keep the **time overlay**, so exported clips self-identify in the pixels themselves. **Encode → ROI stays off** — that is region-of-interest *encoding* (bitrate favoritism inside the frame), not detection zones, which are Frigate's job later; uneven encoding just makes the unfavored part of an incident look worst. The **Alarm Tone** tab configures the camera's own siren sounds for camera-side analytics this build keeps off — Frigate is the brain — and a future siren automation would trigger the speaker by API, not through this tab.
+5. **Camera → Audio: Enable ON for the Main Stream** (the sub stays off). This build records audio and runs **Frigate audio detection** on it **by deliberate choice** — bark, scream, speak and yell become events the automations page can act on, and recordings carry sound. Know what is being chosen: ambient outdoor audio is captured around the clock, a privacy and legal line this build crosses knowingly on its own property. If the **Audio Encoding** dropdown offers **AAC**, pick it over G.711A — cleaner sound and friendlier to every player; leave the noise filter and volumes as found. The turret **speakers** need nothing here — a talk-down automation rides go2rtc's talk-back path and is built on the Automations page. **Encode → Overlay** is the one optional nicety: set the **Channel Title** to the camera's key and keep the **time overlay**, so exported clips self-identify in the pixels themselves. **Encode → ROI stays off** — that is region-of-interest *encoding* (bitrate favoritism inside the frame), not detection zones, which are Frigate's job later; uneven encoding just makes the unfavored part of an incident look worst. The **Alarm Tone** tab configures the camera's own siren sounds for camera-side analytics this build keeps off — Frigate is the brain — and a future siren automation would trigger the speaker by API, not through this tab.
 
 The same clicks repeat on all five cameras — **Apply** saves each pane, and **Time Plan Settings** at the bottom of the Image page is where the Day/Night profile handoff is scheduled if the default switching ever needs adjusting.
 
@@ -792,7 +792,7 @@ mount -a
 pct set <frigate-ctid> -mp0 /mnt/frigate-footage,mp=/media/frigate
 ```
 
-Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time). Complete file, same routine — the only change from the last paste is the new `record:` block; swap the same password tokens as before:
+Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time). Complete file, same routine — the changes from the last paste: the new `record:` block, the **`audio:` detection block** (bark, scream, speak and yell become events), an **`audio` role** on every camera's record input, and an **audio-capable record preset** on every camera that lacked one (the doorbell keeps its copy variant). Recording and audio turn on in the same paste, on purpose. It assumes each camera's mic **Enable** from the tuning step — a camera with its mic still off just nags the logs until toggled. Swap the same password tokens as before:
 
 ```yaml
 ffmpeg:
@@ -815,6 +815,8 @@ record:
   enabled: true
   continuous:
     days: 7
+audio:
+  enabled: true
 go2rtc:
   streams:
     doorbell:
@@ -856,6 +858,7 @@ cameras:
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/doorbell_sub
           input_args: preset-rtsp-restream
           roles:
@@ -868,22 +871,28 @@ cameras:
         - person
   rlc510:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/rlc510
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/rlc510_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
   shed_turret:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/shed_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/shed_turret_sub
           input_args: preset-rtsp-restream
           roles:
@@ -893,11 +902,14 @@ cameras:
         - person
   carport_turret:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/carport_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/carport_turret_sub
           input_args: preset-rtsp-restream
           roles:
@@ -907,11 +919,14 @@ cameras:
         - person
   patio_turret:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/patio_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/patio_turret_sub
           input_args: preset-rtsp-restream
           roles:
@@ -922,11 +937,14 @@ cameras:
   chimney_turret:
     enabled: false
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/chimney_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/chimney_turret_sub
           input_args: preset-rtsp-restream
           roles:
@@ -936,11 +954,14 @@ cameras:
         - person
   kitchen_turret:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/kitchen_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/kitchen_turret_sub
           input_args: preset-rtsp-restream
           roles:
@@ -987,6 +1008,8 @@ record:
   enabled: true
   continuous:
     days: 7
+audio:
+  enabled: true
 go2rtc:
   streams:
     doorbell:
@@ -1028,6 +1051,7 @@ cameras:
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/doorbell_sub
           input_args: preset-rtsp-restream
           roles:
@@ -1040,22 +1064,28 @@ cameras:
         - person
   rlc510:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/rlc510
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/rlc510_sub
           input_args: preset-rtsp-restream
           roles:
             - detect
   shed_turret:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/shed_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/shed_turret_sub
           input_args: preset-rtsp-restream
           roles:
@@ -1065,11 +1095,14 @@ cameras:
         - person
   carport_turret:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/carport_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/carport_turret_sub
           input_args: preset-rtsp-restream
           roles:
@@ -1079,11 +1112,14 @@ cameras:
         - person
   patio_turret:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/patio_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/patio_turret_sub
           input_args: preset-rtsp-restream
           roles:
@@ -1094,11 +1130,14 @@ cameras:
   chimney_turret:
     enabled: false
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/chimney_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/chimney_turret_sub
           input_args: preset-rtsp-restream
           roles:
@@ -1108,11 +1147,14 @@ cameras:
         - person
   kitchen_turret:
     ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/kitchen_turret
           input_args: preset-rtsp-restream
           roles:
             - record
+            - audio
         - path: rtsp://127.0.0.1:8554/kitchen_turret_sub
           input_args: preset-rtsp-restream
           roles:
