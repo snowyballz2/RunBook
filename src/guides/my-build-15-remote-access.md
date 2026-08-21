@@ -31,6 +31,18 @@ Tailscale calls your private network a *tailnet*; it is created the moment you f
 > [!TIP]
 > Pick the account you are most certain you will still control in five years; it *is* your Tailscale identity, and the same account goes on every device here. Signing in with one account everywhere is the whole trick — that is what puts the host, your iPhone, and your MacBook on the same network.
 
+### Add a break-glass passkey admin
+Fair question to ask here: why should a third party's identity sit between you and your own network? Answer: Tailscale's **initial signup requires an identity provider** — passkey-only account creation does not exist yet — so the Apple ID bootstraps. But it does not have to stay a single point of failure, and Tailscale's own docs recommend the fix: a second **admin user that signs in with a passkey**, whose login *"has no dependency on an SSO identity provider."* If Apple ever locks the Apple ID, the tailnet still answers to you.
+
+Do it now, while the console is open — Tailscale's *Admin account with passkey login* doc is the canonical walk:
+
+- In the **admin console → Users**, invite a new user via the **passkey** signup path, and grant it the **Admin** role
+- Store its passkey with the same discipline as the Home Assistant backup key — the device keychain now, Vaultwarden when it exists later in the build
+- Sign in with it **once** to prove it works — an untested break-glass login is a decoration
+
+> [!NOTE]
+> Scope honesty: this removes the identity-provider dependency, not Tailscale itself — their coordination server still introduces your devices to each other (self-hosting that means Headscale, which this build deliberately skips). Your WireGuard keys are end-to-end regardless; the coordination plane never holds them. One quirk worth knowing: a deleted tailnet is unrecoverable, and a passkey username can never be reused — even by you.
+
 ### Install Tailscale on the Proxmox host
 Tailscale's documented path for Proxmox is to install directly on the host — Proxmox VE 9 is Debian 13 "Trixie" underneath, so the standard Debian packages are correct. Open the host shell in the web UI (select the **pve** node, then **Shell**) and run the block below — Tailscale's official Debian Trixie instructions with `sudo` removed, because this shell is already root. The first command adds Tailscale's signing key, the second its package repository, and then apt installs the signed package:
 
