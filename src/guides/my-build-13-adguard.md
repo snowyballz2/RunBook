@@ -117,6 +117,23 @@ Leave the **Admin Web Interface** on its default port, and leave the **DNS serve
 > [!WARNING]
 > Never create a router port-forward to this container. A DNS server exposed to the internet — an "open resolver" — gets found and abused for amplification attacks within hours. AdGuard serves the LAN only. For remote access, reach it over Tailscale instead of opening a port.
 
+### Choose the upstream resolvers
+The wizard's next screen is the one that decides your DNS speed and privacy, and it arrives prefilled — replace the contents of **Upstream DNS servers** with these two lines, one per line:
+
+```text
+9.9.9.9
+149.112.112.112
+```
+
+That is **Quad9**, primary and secondary: it blocks known-malicious domains at the resolver level (a second net under AdGuard's blocklists) and does not monetize query data. Cloudflare's `1.1.1.1` is a fine alternative and marginally faster; the one to avoid is your ISP's resolver, which sees every lookup and has commercial reasons to care.
+
+- **Bootstrap DNS servers** → leave as offered — they only resolve the upstreams' own names at startup
+- **DNSSEC** (Settings → DNS settings, after the wizard) → **enable** — it validates that answers were not forged, and costs no extra round-trip in the common case
+- **DNS-over-HTTPS / DNS-over-TLS upstreams** (`https://` or `tls://` prefixes) → **do not use them here.** They encrypt the AdGuard→upstream leg, which sounds strictly better but buys little on this build: your ISP already sees every destination IP you connect to, so hiding the lookup does not hide the visit, and each uncached query pays a TLS session — 5–15 ms. Encrypted DNS earns its cost on *untrusted* networks, which is exactly the case Tailscale already covers by routing your phone's DNS back through this house.
+
+> [!NOTE]
+> Upstream choice only affects **uncached** lookups. AdGuard answers repeats from cache in about a millisecond, and blocked domains never leave the LAN at all — which is why adding a DNS hop makes browsing feel *faster*, not slower.
+
 ### Create the admin login
 Set a username and a strong password for the dashboard, then finish the wizard. The dashboard now lives at the container's IP with no `:3000` suffix. Record both in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build), and capture them in the fields below so this page stands on its own.
 
