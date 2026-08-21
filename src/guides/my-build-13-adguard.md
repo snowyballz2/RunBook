@@ -161,7 +161,7 @@ The secondary DNS field is a genuine choice on this build, not a formality, and 
 ## Tune and verify
 
 ### Add a couple of blocklists
-In the dashboard, open **Filters → DNS blocklists**. AdGuard ships with a default list enabled; add one or two well-regarded lists from the built-in catalog. More lists block more but can occasionally break a site, so add conservatively at first.
+In the dashboard, open **Filters → DNS blocklists**. AdGuard ships with its own **AdGuard DNS filter** enabled; click **Add blocklist → Choose from the list** and add **OISD Blocklist (Big)** — the standard low-breakage pick, comprehensive without being trigger-happy. Stop there for now: more lists block more but break more, and the Query Log below is where you would diagnose it.
 
 ### Confirm it is actually blocking
 From any computer on the network, check that a known tracker domain gets blocked — a blocked domain returns `0.0.0.0` or no address:
@@ -176,7 +176,7 @@ Then open the **Query Log** in the dashboard. You should see live queries from t
 > If a site you trust breaks, open the Query Log, find the blocked domain, and click to allow it. That is the normal way to fix the occasional false block — far better than disabling a whole list.
 
 ### Make a local name for it
-Once the reverse proxy is up and giving services tidy hostnames, AdGuard is also where you point those names at the right container. In **Filters → DNS rewrites**, map a wildcard like `*.example.com` to the proxy's IP so internal hostnames resolve on the LAN. You do not do this yet — the proxy does not exist at this point in the build, and the Reverse Proxy page walks through adding the rewrite when it stands up. For now, just note that this dashboard is the place that work happens.
+Once the reverse proxy is up and giving services tidy hostnames, AdGuard is also where you point those names at the right container. In **Filters → DNS rewrites**, map a wildcard like `*.example.com` to the proxy's IP so internal hostnames resolve on the LAN — noting a `*.` wildcard matches **subdomains only**, never the bare domain itself; the Reverse Proxy page handles that detail when it creates the real rewrite. You do not do this yet — the proxy does not exist at this point in the build, and the Reverse Proxy page walks through adding the rewrite when it stands up. For now, just note that this dashboard is the place that work happens.
 
 > [!NOTE]
 > That is the whole lifecycle for this container: unprivileged, pinned static IP, start-at-boot, run the wizard, point the router at it, verify in the Query Log. Snapshot it before any blocklist experiment or upgrade — rollback is instant if a new list breaks something.
