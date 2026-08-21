@@ -6,6 +6,10 @@ order: 15
 accent: azure
 ---
 
+> [!NOTE]
+> **This page is jumpable — early is allowed, and sometimes required.** Nothing here depends on the AdGuard or Reverse Proxy pages; it needs only the host shell and a Tailscale account. Once its routes are approved, every remaining *software* step of the build works from anywhere — config editors, Proxmox consoles, the router UI, all of it — exactly as from the couch. The one rule that cannot bend: **it must be done from the LAN**, because you cannot grant yourself remote access remotely. If time away is coming, do this page before leaving.
+
+
 Everything you have built so far answers only at home: the Proxmox web UI, Home Assistant, TrueNAS, Frigate, the AdGuard LXC (Linux container), and the hostnames the Nginx Proxy Manager LXC serves — all of it lives on the `192.168.1.x` LAN (local area network) and stops at the front door. This guide fixes that for the entire build at once by putting **Tailscale on the Proxmox host** and turning that host into a *subnet router* for the whole home network. Every service you build on later pages — Nextcloud, Vaultwarden, Homepage, Uptime Kuma — becomes reachable the same way the moment it gets a LAN IP, with no extra remote-access setup per service.
 
 The payoff fits this local-first household exactly: one mesh VPN (virtual private network), built from outbound connections only, with **no router port-forwards, ever.** Your network stays as closed to the internet as it is right now. Every guest stays on its normal LAN IP, and every one of them becomes reachable from your iPhone, MacBook, or HomePod-adjacent travels — through the single subnet route this host advertises.
