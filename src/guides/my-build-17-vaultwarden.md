@@ -148,6 +148,14 @@ Install the official Bitwarden app from the App Store and the browser extension 
 >
 > The honest trade: notification events now route through Bitwarden's servers (the vault contents stay end-to-end encrypted). The one documented downside — F-Droid app builds do not support it — is moot here, since the household's phones run the official App Store Bitwarden apps. Skipping the relay costs nothing but immediacy.
 
+### Demote the tailnet's Apple login
+The Remote Access page left a plan half-finished on purpose: the tailnet's break-glass **passkey admin** exists, but its passkey lives in iCloud Keychain — Apple custodies the secret even though it no longer owns the identity. Now that the vault exists, finish the move:
+
+- Store the tailnet passkey in **Vaultwarden** (the Bitwarden apps hold passkeys), alongside a note of the passkey username
+- Sign in to the Tailscale admin console **from that stored passkey once** — untested custody is no custody
+- In the console's **Users** page, raise the passkey admin as far as the roles allow — **Owner** if offered, **Admin** otherwise; Admin covers every operation this build performs
+- Leave the Apple-ID user in place but treat it as the spare key, not the daily door — with the passkey holding equal or higher rank, an Apple lockout no longer reaches the tailnet
+
 ## Run it like a vault
 
 ### Make sure the backups already cover it

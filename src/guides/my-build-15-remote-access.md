@@ -23,7 +23,7 @@ The payoff fits this local-first household exactly: one mesh VPN (virtual privat
 ## Put the host on a tailnet
 
 > [!NOTE]
-> Before you start, have the household Apple ID ready — the same one your iPhones, iPads, and Watches already use. The same identity signs in the host (in a browser on the MacBook, which may ask you to re-authenticate) and later the iPhone, so keep its password and a two-factor device within reach. Make sure the iPhone is already signed in to that Apple ID and the App Store before the phone step at the end.
+> Before you start, know which identity this is: **your own Apple ID** — the build administrator's, the one already on your iPhone and MacBook. This house runs two personal Apple IDs, and the tailnet belongs to **yours**; do not create a new shared ID for it (a rarely-used Apple ID is a neglected account, the exact weakness being avoided here). The same identity signs in the host (in a browser on the MacBook, which may ask you to re-authenticate) and later your iPhone, so keep its password and a two-factor device within reach. The second phone in the house never signs in with your ID — if it needs the tailnet later (remote Home Assistant when away), invite it in the admin console's **Users** page as **its own user with its own Apple ID**; the free Personal plan covers three users.
 
 ### Create your Tailscale account
 Tailscale calls your private network a *tailnet*; it is created the moment you first sign in. Go to [tailscale.com](https://tailscale.com/) and sign up — the Personal plan is $0, free forever. There is no Tailscale password to invent: you sign in with an identity you already own. For this household, **Apple** is the natural choice — it is the Apple ID your iPhones already use — but Google, Microsoft, GitHub, or a passkey work too.
@@ -39,6 +39,8 @@ Do it now, while the console is open — Tailscale's *Admin account with passkey
 - In the **admin console → Users**, invite a new user via the **passkey** signup path, and grant it the **Admin** role
 - Store its passkey with the same discipline as the Home Assistant backup key — the device keychain now, Vaultwarden when it exists later in the build
 - Sign in with it **once** to prove it works — an untested break-glass login is a decoration
+
+This is stage one of a two-stage plan. Today the Apple ID does daily duty and the passkey is the backstop; **the Vaultwarden page later demotes the Apple login** once the passkey lives in self-hosted custody — sovereignty on a schedule, not a leap.
 
 > [!NOTE]
 > Scope honesty: this removes the identity-provider dependency, not Tailscale itself — their coordination server still introduces your devices to each other (self-hosting that means Headscale, which this build deliberately skips). Your WireGuard keys are end-to-end regardless; the coordination plane never holds them. One quirk worth knowing: a deleted tailnet is unrecoverable, and a passkey username can never be reused — even by you.
