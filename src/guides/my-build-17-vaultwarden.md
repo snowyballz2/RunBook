@@ -30,11 +30,39 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Read any script before piping it into a root shell — the same download-read-run habit used for the rest of this build.
 
 ### Choose Advanced and pin a static IP
-When the script asks **Default or Advanced**, pick **Advanced** — the same dialog sequence the Cameras & Frigate page documents answer-by-answer. Here:
+When the script asks **Default or Advanced**, pick **Advanced**. Every dialog it can show, in order, with this build's answer:
 
-- **Resources** → keep the generous prefills: **4 cores, 6 GB RAM, 20 GB disk**, unprivileged Debian
+- **Container type** → **Unprivileged**, as offered — the secure default; nothing here needs host hardware
+- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login
+- **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
+- **Hostname** → keep the offered name
+- **Disk / CPU / RAM** → keep the generous prefills: **4 cores, 6 GB RAM, 20 GB disk** — they serve the compiler, not the vault
+- **Network bridge** → **`vmbr0`**
 - **IPv4** → **Static (manual entry)**: **`192.168.1.56/24`**, gateway **`192.168.1.1`** — never DHCP
-- **Every other dialog** → its default (this page sets **Protection** itself, right after the install)
+- **IPv6** → **Fully Disabled** — this LAN runs IPv4
+- **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
+- **Tags** → keep the offered tag
+- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **FUSE SUPPORT** → **No**
+- **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
+- **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
+- **GPU PASSTHROUGH** → **No**, the default — nothing here touches the card
+- **KEYCTL** → not shown for unprivileged containers; the wizard forces it on internally
+- **APT CACHER PROXY, HTTP/HTTPS PROXY, HOST CA INHERITANCE** → **No / blank**, all three
+- **CONTAINER TIMEZONE** → leave as offered; empty inherits the host's
+- **CONTAINER PROTECTION** → **Yes** — the vault of every password in the house; the Options step after install becomes a verify
+- **DEVICE NODE CREATION** → **No**, the default
+- **MOUNT FILESYSTEMS** → leave **empty**
+- **POST-INSTALL HOOK (HOST)** → leave **empty**
+- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
+- **TELEMETRY & DIAGNOSTICS** (appears once, if at all) → decline — nothing in this build phones home
+- **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
+- **"An update for the Proxmox LXC stack is available" [1/2/3]** (if it appears) → **2, Ignore** — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
+
+> [!INPUT] vaultwarden-console-user | Vaultwarden console username | | root
+
+> [!SECRET] vaultwarden-root | Vaultwarden container root password
+> Set at the wizard's **Set Root Password** prompt; logs into the container's **Console** in Proxmox as `root`.
 
 Then walk away. This script *compiles* Vaultwarden from source — it is a Rust program — announces "Building Vaultwarden (Patience)", and takes the better part of half an hour. It finishes by printing `https://192.168.1.56:8000`.
 
@@ -61,7 +89,7 @@ Once you have seen the login, make it permanent. A password manager that does no
 pct set 106 -onboot 1        # swap in the container's actual ID
 ```
 
-In the same **Options** panel, set **Protection** to **Yes** — the vault holding every password in the house should not be deletable by a stray click.
+In the same **Options** panel, confirm **Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
 
 > [!NOTE]
 > This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief blips never reach the container. Start-at-boot covers the longer outages that drain the battery and force a clean shutdown.

@@ -20,11 +20,39 @@ Open the Proxmox web interface at the host (log in as **root@pam**), click the n
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nextcloudpi.sh)"
 ```
 
-When it asks **Default or Advanced**, pick **Advanced** — the same dialog sequence the Cameras & Frigate page documents answer-by-answer. Here:
+When it asks **Default or Advanced**, pick **Advanced**. Every dialog it can show, in order, with this build's answer:
 
-- **Resources** → keep the prefills: **unprivileged**, **2 cores, 2 GB RAM, 8 GB disk** — Nextcloud has no reason to touch host hardware the way the TrueNAS VM (virtual machine) does, so it keeps the secure default
+- **Container type** → **Unprivileged**, as offered — the secure default; nothing here needs host hardware
+- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login
+- **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
+- **Hostname** → keep the offered name
+- **Disk / CPU / RAM** → keep the prefills: **2 cores, 2 GB RAM, 8 GB disk**
+- **Network bridge** → **`vmbr0`**
 - **IPv4** → **Static (manual entry)**: **`192.168.1.58/24`**, gateway **`192.168.1.1`** — never DHCP
-- **Every other dialog** → its default (this page sets **Protection** itself, right after the install)
+- **IPv6** → **Fully Disabled** — this LAN runs IPv4
+- **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
+- **Tags** → keep the offered tag
+- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **FUSE SUPPORT** → **No**
+- **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
+- **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
+- **GPU PASSTHROUGH** → **No**, the default — nothing here touches the card
+- **KEYCTL** → not shown for unprivileged containers; the wizard forces it on internally
+- **APT CACHER PROXY, HTTP/HTTPS PROXY, HOST CA INHERITANCE** → **No / blank**, all three
+- **CONTAINER TIMEZONE** → leave as offered; empty inherits the host's
+- **CONTAINER PROTECTION** → **Yes** — family data should not be deletable by a stray click; the Options step after install becomes a verify
+- **DEVICE NODE CREATION** → **No**, the default
+- **MOUNT FILESYSTEMS** → leave **empty**
+- **POST-INSTALL HOOK (HOST)** → leave **empty**
+- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
+- **TELEMETRY & DIAGNOSTICS** (appears once, if at all) → decline — nothing in this build phones home
+- **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
+- **"An update for the Proxmox LXC stack is available" [1/2/3]** (if it appears) → **2, Ignore** — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
+
+> [!INPUT] nextcloud-console-user | Nextcloud console username | | root
+
+> [!SECRET] nextcloud-root | Nextcloud container root password
+> Set at the wizard's **Set Root Password** prompt; logs into the container's **Console** in Proxmox as `root`.
 
 (At the time of writing NCP ships Nextcloud 33 on PHP 8.3 — a handy way to confirm the install landed on a current stack.)
 
@@ -38,7 +66,7 @@ When it asks **Default or Advanced**, pick **Advanced** — the same dialog sequ
 > The plain **Nextcloud** entry in the catalog is a TurnKey **VM**, not a container — the repo's two LXC options are this NextCloudPi one and a lighter Alpine variant. NCP is the relaxed household choice; take it.
 
 ### Start it at boot
-The script finishes by printing the container's address as `http://192.168.1.58` — no port, no passwords yet; those come in the browser. The address was set statically in the Advanced walk (it is about to be baked into every device's sync client, so it must never move — nothing to reserve at the router). Before opening it, enable **Options → Start at boot** in Proxmox so the family cloud survives a power cut, and set **Options → Protection** to **Yes** while you are there — family data should not be deletable by a stray click.
+The script finishes by printing the container's address as `http://192.168.1.58` — no port, no passwords yet; those come in the browser. The address was set statically in the Advanced walk (it is about to be baked into every device's sync client, so it must never move — nothing to reserve at the router). Before opening it, enable **Options → Start at boot** in Proxmox so the family cloud survives a power cut, and confirm **Options → Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
 
 > [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.58
 

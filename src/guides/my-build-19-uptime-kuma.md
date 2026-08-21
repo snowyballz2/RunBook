@@ -34,10 +34,45 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > [!DETAILS] Prefer no scripts? Or Docker?
 > You can build a plain unprivileged Debian container and install by hand from the project README, but on this build the native LXC above is the default — no Docker layer to manage, and updates are one command. The app is identical either way; this collection runs services as LXCs, not as containers-inside-a-VM.
 
-### Pin a static IP and start it at boot
-Two habits from earlier in the build:
+### Choose Advanced — every dialog answered
+When the script asks **Default or Advanced**, pick **Advanced**. Every dialog it can show, in order, with this build's answer:
 
-- **IPv4, during the script's Advanced walk** → **Static (manual entry)**: **`192.168.1.57/24`**, gateway **`192.168.1.1`** — a monitor that wanders to a new address after a power cut is worse than none
+- **Container type** → **Unprivileged**, as offered — the secure default; nothing here needs host hardware
+- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login
+- **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
+- **Hostname** → keep the offered name
+- **Disk / CPU / RAM** → keep the prefills the script offers
+- **Network bridge** → **`vmbr0`**
+- **IPv4** → **Static (manual entry)**: **`192.168.1.57/24`**, gateway **`192.168.1.1`** — never DHCP
+- **IPv6** → **Fully Disabled** — this LAN runs IPv4
+- **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
+- **Tags** → keep the offered tag
+- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **FUSE SUPPORT** → **No**
+- **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
+- **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
+- **GPU PASSTHROUGH** → **No**, the default — nothing here touches the card
+- **KEYCTL** → not shown for unprivileged containers; the wizard forces it on internally
+- **APT CACHER PROXY, HTTP/HTTPS PROXY, HOST CA INHERITANCE** → **No / blank**, all three
+- **CONTAINER TIMEZONE** → leave as offered; empty inherits the host's
+- **CONTAINER PROTECTION** → **No** — a monitor rebuilds in minutes, the page-5 rule for skipping it
+- **DEVICE NODE CREATION** → **No**, the default
+- **MOUNT FILESYSTEMS** → leave **empty**
+- **POST-INSTALL HOOK (HOST)** → leave **empty**
+- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
+- **TELEMETRY & DIAGNOSTICS** (appears once, if at all) → decline — nothing in this build phones home
+- **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
+- **"An update for the Proxmox LXC stack is available" [1/2/3]** (if it appears) → **2, Ignore** — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
+
+> [!INPUT] kuma-console-user | Uptime Kuma console username | | root
+
+> [!SECRET] kuma-root | Uptime Kuma container root password
+> Set at the wizard's **Set Root Password** prompt; logs into the container's **Console** in Proxmox as `root`.
+
+A monitor that wanders to a new address after a power cut is worse than none — the static is the point.
+
+### Start it at boot
+
 - **Options → Start at boot** → **Yes** — select the container in the left tree; or from the node Shell, swapping `109` for the ID shown next to the container's name:
 
 ```bash

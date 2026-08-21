@@ -43,11 +43,39 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Done this way you have already covered the static-IP step too — continue at **Set it to start at boot**.
 
 ### Choose Advanced and pin a static IP
-This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced** — the same dialog sequence the Cameras & Frigate page documents answer-by-answer. Here:
+This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced**. Every dialog it can show, in order, with this build's answer:
 
-- **Resources** → keep the prefills: **1 CPU core, 512 MB RAM, 2 GB disk** — more than enough
-- **IPv4** → **Static (manual entry)**: **`192.168.1.53/24`**, gateway **`192.168.1.1`** — never DHCP (Dynamic Host Configuration Protocol)
-- **Every other dialog** → its default, Container Protection's **No** included — AdGuard rebuilds in minutes, the page-5 rule for skipping it
+- **Container type** → **Unprivileged**, as offered — the secure default; nothing here needs host hardware
+- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login
+- **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
+- **Hostname** → keep the offered name
+- **Disk / CPU / RAM** → keep the prefills: **1 CPU core, 512 MB RAM, 2 GB disk** — more than enough
+- **Network bridge** → **`vmbr0`**
+- **IPv4** → **Static (manual entry)**: **`192.168.1.53/24`**, gateway **`192.168.1.1`** — never DHCP
+- **IPv6** → **Fully Disabled** — this LAN runs IPv4
+- **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
+- **Tags** → keep the offered tag
+- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **FUSE SUPPORT** → **No**
+- **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
+- **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
+- **GPU PASSTHROUGH** → **No**, the default — nothing here touches the card
+- **KEYCTL** → not shown for unprivileged containers; the wizard forces it on internally
+- **APT CACHER PROXY, HTTP/HTTPS PROXY, HOST CA INHERITANCE** → **No / blank**, all three
+- **CONTAINER TIMEZONE** → leave as offered; empty inherits the host's
+- **CONTAINER PROTECTION** → **No** — AdGuard rebuilds in minutes, the page-5 rule for skipping it
+- **DEVICE NODE CREATION** → **No**, the default
+- **MOUNT FILESYSTEMS** → leave **empty**
+- **POST-INSTALL HOOK (HOST)** → leave **empty**
+- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
+- **TELEMETRY & DIAGNOSTICS** (appears once, if at all) → decline — nothing in this build phones home
+- **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
+- **"An update for the Proxmox LXC stack is available" [1/2/3]** (if it appears) → **2, Ignore** — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
+
+> [!INPUT] adguard-console-user | AdGuard console username | | root
+
+> [!SECRET] adguard-root | AdGuard container root password
+> Set at the wizard's **Set Root Password** prompt; logs into the container's **Console** in Proxmox as `root`.
 
 Let the script finish — it prints the setup URL when done.
 

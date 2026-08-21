@@ -26,13 +26,41 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Read any script before piping it into a root shell — the same download-read-run habit used throughout this build. These are the well-regarded successor to the tteck scripts, but the habit stands regardless of source.
 
 ### Choose Advanced and pin a static IP
-This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced** — the same dialog sequence the Cameras & Frigate page documents answer-by-answer. Here:
+This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced**. Every dialog it can show, in order, with this build's answer:
 
-- **Resources** → keep the prefills: **2 cores, 4 GB RAM**, unprivileged Debian
-- **IPv4** → **Static (manual entry)**: **`192.168.1.55/24`**, gateway **`192.168.1.1`** — the installer bakes this exact address into Homepage's safety allow-list, and it recurs everywhere below
-- **Every other dialog** → its default, Container Protection's **No** included — a dashboard rebuilds in minutes
+- **Container type** → **Unprivileged**, as offered — the secure default; nothing here needs host hardware
+- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login
+- **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
+- **Hostname** → keep the offered name
+- **Disk / CPU / RAM** → keep the prefills: **2 cores, 4 GB RAM**
+- **Network bridge** → **`vmbr0`**
+- **IPv4** → **Static (manual entry)**: **`192.168.1.55/24`**, gateway **`192.168.1.1`** — never DHCP
+- **IPv6** → **Fully Disabled** — this LAN runs IPv4
+- **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
+- **Tags** → keep the offered tag
+- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **FUSE SUPPORT** → **No**
+- **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
+- **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
+- **GPU PASSTHROUGH** → **No**, the default — nothing here touches the card
+- **KEYCTL** → not shown for unprivileged containers; the wizard forces it on internally
+- **APT CACHER PROXY, HTTP/HTTPS PROXY, HOST CA INHERITANCE** → **No / blank**, all three
+- **CONTAINER TIMEZONE** → leave as offered; empty inherits the host's
+- **CONTAINER PROTECTION** → **No** — a dashboard rebuilds in minutes, the page-5 rule for skipping it
+- **DEVICE NODE CREATION** → **No**, the default
+- **MOUNT FILESYSTEMS** → leave **empty**
+- **POST-INSTALL HOOK (HOST)** → leave **empty**
+- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
+- **TELEMETRY & DIAGNOSTICS** (appears once, if at all) → decline — nothing in this build phones home
+- **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
+- **"An update for the Proxmox LXC stack is available" [1/2/3]** (if it appears) → **2, Ignore** — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
 
-Then settle in — the script announces "Installing Homepage (Patience)" and means it. It downloads the latest release's source and compiles the page on the container's own CPU, which can take a quarter of an hour. It finishes by printing the address: `http://192.168.1.55:3000`.
+> [!INPUT] homepage-console-user | Homepage console username | | root
+
+> [!SECRET] homepage-root | Homepage container root password
+> Set at the wizard's **Set Root Password** prompt; logs into the container's **Console** in Proxmox as `root`.
+
+The static address matters doubly here: the installer bakes it into Homepage's safety allow-list, and it recurs everywhere below. Then settle in — the script announces "Installing Homepage (Patience)" and means it. It downloads the latest release's source and compiles the page on the container's own CPU, which can take a quarter of an hour. It finishes by printing the address: `http://192.168.1.55:3000`.
 
 > [!INPUT] homepage-ip | Homepage container IP | 192.168.1.55
 
