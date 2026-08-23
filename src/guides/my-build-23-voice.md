@@ -42,7 +42,7 @@ That is the whole trick: **"Hey Siri, Movie night."** The Shortcut fires, Perfor
 Everything above uses your *phone* as the microphone and needs no Apple hub. The moment you want to talk to the *room* — "Hey Siri, movie night" said to a **HomePod** on the shelf — you need that speaker, which this build treats as a **later addition**. When you have one, it needs your scripts and scenes to exist as native **Apple Home** accessories, and that is the one job of Home Assistant's **HomeKit Bridge**: a free, fully-local integration that publishes chosen entities into Apple Home. (Set the bridge up whenever; it only earns its keep once a HomePod is listening.)
 
 ### Add and pair the bridge
-In Home Assistant go to **Settings → Devices & services → Add Integration → HomeKit Bridge**, and in setup include the **scripts and scenes** you want Siri to reach (the filter lets you pick domains or individual entities). Home Assistant shows a **pairing card with a QR code and PIN**; open Apple's **Home** app, choose **Add Accessory**, and scan it. Your scripts and scenes now appear as switches you can tap or speak to.
+In Home Assistant go to **Settings → Devices & services → Add Integration → HomeKit Bridge**. Setup asks one thing: **domains to include** — pick **script** and **scene**. Entity-level pruning is a *second* screen that only exists after setup, under the integration's **Configure**: set the **inclusion mode**, then pick the individual entities to include or exclude. Home Assistant shows a **pairing card with a QR code and PIN**; open Apple's **Home** app, choose **Add Accessory**, and scan it. Your scripts and scenes now appear as switches you can tap or speak to.
 
 > [!NOTE]
 > Expose **scripts and scenes**, not raw automations. An automation *can* be published, but it lands in Apple Home as a switch that only enables or disables it — it will not *run* it. Scripts and scenes, flipped "on" by Siri, do the thing. Same watch-versus-run distinction as the top of the page.
@@ -72,7 +72,18 @@ A voice command takes four hops, and the reason Assist is so flexible is that **
 ### Get the hardware: Voice Preview Edition
 The local path needs a dedicated **microphone-and-speaker satellite** in each room you want to talk to — and that has to be its own device. **Neither the HomePods nor the Google/Nest speakers can be the Assist microphone:** the HomePod's mic is locked to Siri and the Nest's to Google Assistant, and neither will hand its microphone to Home Assistant. (The Nest can still *play* announcements as a Cast target — that step comes later on this page — it just cannot *listen* for Assist.) So the local voice path is not something the speakers already in the house can do; it needs a puck of its own.
 
-The clean answer is Home Assistant's own **Voice Preview Edition** — a small **$60–70** puck (a $69 MSRP that streets around $60) with a **dual far-field microphone array** and an XMOS audio chip that cuts through room noise, a speaker, a physical **mute switch**, a volume dial, and a 3.5 mm output to wire into a louder speaker. Crucially it runs **wake-word detection on the device itself**, so the server is only invoked once it hears its name rather than streaming audio constantly. Out of the box it answers to **"Okay Nabu," "Hey Jarvis,"** and **"Hey Mycroft."** Plug it in, point it at the Home Assistant instance, and pin its address with a DHCP (Dynamic Host Configuration Protocol) reservation like every other guest. Get one per room you want hands-free voice in.
+The clean answer is Home Assistant's own **Voice Preview Edition** — a small **$60–70** puck (a $69 MSRP that streets around $60) with a **dual far-field microphone array** and an XMOS audio chip that cuts through room noise, a speaker, a physical **mute switch**, a volume dial, and a 3.5 mm output to wire into a louder speaker. Crucially it runs **wake-word detection on the device itself**, so the server is only invoked once it hears its name rather than streaming audio constantly. Out of the box it answers to **"Okay Nabu," "Hey Jarvis,"** and **"Hey Mycroft."** Get one per room you want hands-free voice in.
+
+Its first run is a real onboarding flow, not just plugging in — and on this build it has a dependency worth knowing up front: the first step runs over **Bluetooth**, which the Home Assistant OS VM does not have, so **onboard from the iPhone companion app**, whose Bluetooth stands in:
+
+1. Power it over **USB-C**; it appears in the companion app under **Settings → Devices & services** as a discovered **home-assistant-voice** device (**Improv via BLE**)
+2. Hand it the **Wi-Fi name and password** — 2.4 GHz only
+3. **Press the puck's center button** when asked, to prove physical possession
+4. Let it take the **firmware update** it will almost certainly offer
+5. Pick its **wake word**
+6. At assistant selection, choose the local pipeline (built below) — not the cloud option
+
+Then pin its address with a DHCP (Dynamic Host Configuration Protocol) reservation like every other wireless guest.
 
 > [!DETAILS] Pairing a bigger speaker (optional)
 > The built-in speaker is fine for replies and timers — add an external one only if you want louder replies in a big room or music from the puck itself. Because that 3.5 mm jack is a true line-out with its own DAC, a decent speaker sounds genuinely good through it; the one rule is it must be a **powered (active)** speaker with a **3.5 mm or RCA aux input** — the jack has no amplifier, so a bare *passive* bookshelf speaker will not work. Use the **wired aux, not Bluetooth** (no pairing or latency), and pick one that stays on rather than auto-sleeping, or the first word of a reply gets clipped while it wakes. Good picks: a **Creative Pebble V3** (about $40) on a counter or desk; an **Edifier R1280T** powered bookshelf pair (about $120, ships with an RCA-to-3.5 mm cable) for a living room. If you add the optional HomePod mini later, music can ride it while announcements ride the Nest speakers, so this is a per-room nicety, not a requirement.
@@ -86,7 +97,10 @@ The clean answer is Home Assistant's own **Voice Preview Edition** — a small *
 ### Run faster-whisper and Ollama on the 1080 Ti
 This is where the shared GPU earns its keep. The official Home Assistant **Whisper app is CPU-only**, and Whisper on a CPU takes 3–8 seconds per command — long enough to feel broken. To get natural phrasing at a usable speed, run **faster-whisper** in its own **LXC (Linux Container)** that borrows the 1080 Ti, exactly the way Frigate borrows it. The full conversational prize — plain-English questions, the model reasoning about what you meant — comes from a **local LLM (large language model)** behind the intent engine: run **Ollama** in a second LXC on the same GPU host. The Home Assistant VM reaches both over the LAN — **Wyoming** for STT and TTS, the plain **Ollama HTTP API (application programming interface)** for the conversation model. With both on the 1080 Ti the conversational round-trip lands in roughly **2–3 seconds** — versus the 3–8 the CPU takes — and still never leaves the house.
 
-These are the two containers the GPU/HBA Passthrough page deferred to this page — neither exists yet, so build them now.
+These are the two containers the GPU/HBA Passthrough page deferred to this page — neither exists yet. But before building either, a gate this build walks into:
+
+> [!WARNING]
+> **Current Ollama refuses to use the GPU on drivers older than 570** — its docs require driver ≥570 for compute-capability 5.0–6.2 cards, and the 1080 Ti is 6.1. This build pinned the host at `550.163.01` back on the GPU/HBA page (the newest branch at the time that built against the pinned 6.14 kernel). So this page starts with a **host driver move to the 580 branch** — the last branch supporting Pascal — using the same install procedure as the GPU/HBA page, and it is a coupled operation: **every container borrowing the card must have its userspace reinstalled at the new version in the same sitting** — Frigate's, then the two built below. Update the recorded `nvidia-driver-version` field when you do it; a mismatched container shows `Driver/library version mismatch` until its userspace is redone. Verify with `nvidia-smi` on the host and in the Frigate container before continuing.
 
 **Build the Ollama LXC.** The community-scripts helper is the cleanest path, the same download-read-run habit used for the Frigate container. In the Proxmox web interface, click the node, then **Shell**, and run:
 
@@ -94,7 +108,15 @@ These are the two containers the GPU/HBA Passthrough page deferred to this page 
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/ollama.sh)"
 ```
 
-Read the script before piping it into a root shell. Accept its defaults; it installs Ollama and exposes its HTTP API on port `11434`.
+Read the script before piping it into a root shell. Its Advanced walk is the same dialog sequence as every container in this build, with these answers:
+
+- **Base** → it builds **Ubuntu 24.04** (not Debian — its packaging targets Ubuntu; nothing downstream cares)
+- **Resources** → keep the prefills: **4 cores, 4 GB RAM, 40 GB disk** — the disk holds the models, which are gigabytes each
+- **IPv4** → **Static (manual entry)**: **`192.168.1.59/24`**, gateway **`192.168.1.1`**
+- **GPU PASSTHROUGH** → **Yes** — the script's own default for Ollama; it writes the NVIDIA `devN:` lines into the container config itself, making the lend step below a verify for this container
+- **Every other dialog** → the same answers as the standard walk: SSH none/No, nesting Yes, protection No (models re-download; nothing hand-built lives here), mknod No, mounts and hook empty, verbose No, telemetry declined, save-defaults Yes
+
+It installs Ollama and exposes its HTTP API on port `11434`.
 
 **Build the faster-whisper LXC.** If a community helper exists for it, use it the same way; otherwise create a plain **Debian 13** container through the Proxmox wizard (a few cores, 2–4 GB RAM, a small disk) and install faster-whisper's Wyoming server inside it by hand — `wyoming-faster-whisper` is a **pip** package, not an apt one. Either way you end with a Debian-based LXC that will run STT against the card, listening on port `10300`.
 
@@ -104,9 +126,11 @@ Read the script before piping it into a root shell. Accept its defaults; it inst
 > ```bash
 > apt install -y python3-venv
 > python3 -m venv /opt/wyoming
-> /opt/wyoming/bin/pip install wyoming-faster-whisper
+> /opt/wyoming/bin/pip install wyoming-faster-whisper nvidia-cublas-cu12 "nvidia-cudnn-cu12==9.*"
 > mkdir -p /opt/wyoming/data
 > ```
+>
+> The two `nvidia-` packages are not optional: faster-whisper's GPU path needs **cuBLAS and cuDNN 9** at runtime, and the driver install below provides neither — without them, `--device cuda` dies the moment the model loads. The unit's `Environment=` line below is what lets the service find them.
 >
 > Then give it a small systemd unit so it listens on `10300` and survives reboots. Create `/etc/systemd/system/wyoming-faster-whisper.service`:
 >
@@ -116,6 +140,7 @@ Read the script before piping it into a root shell. Accept its defaults; it inst
 > After=network-online.target
 >
 > [Service]
+> Environment=LD_LIBRARY_PATH=/opt/wyoming/lib/python3.13/site-packages/nvidia/cublas/lib:/opt/wyoming/lib/python3.13/site-packages/nvidia/cudnn/lib
 > ExecStart=/opt/wyoming/bin/wyoming-faster-whisper --uri tcp://0.0.0.0:10300 --data-dir /opt/wyoming/data --model small-int8 --device cuda
 > Restart=on-failure
 >
@@ -131,7 +156,7 @@ Read the script before piping it into a root shell. Accept its defaults; it inst
 >
 > The `--device cuda` flag needs the card, so the service only starts cleanly once the lend-the-card step below is done.
 
-**Lend each container the card.** Both LXCs borrow the 1080 Ti exactly as Frigate does — the host owns the driver, each container adds the three NVIDIA device lines to **its own** config file. On the host, edit `/etc/pve/lxc/<ctid>.conf` for each container (`<ctid>` is that container's ID) and add:
+**Lend each container the card.** Both LXCs borrow the 1080 Ti exactly as Frigate does — the host owns the driver; each container carries the NVIDIA device lines in **its own** config file. The **Ollama** container already has them — the wizard's GPU answer wrote every `devN:` line, so for it just verify: `grep ^dev /etc/pve/lxc/<ctid>.conf` on the host shows several `devN: /dev/nvidia…` lines. The hand-built **whisper** container gets them manually — edit its `/etc/pve/lxc/<ctid>.conf` (`<ctid>` is its ID) and add:
 
 ```ini
 dev0: /dev/nvidia0,gid=44
@@ -139,18 +164,18 @@ dev1: /dev/nvidiactl,gid=44
 dev2: /dev/nvidia-uvm,gid=44
 ```
 
-Restart each container after editing its config. Then, inside each one, install the **in-container NVIDIA userspace driver at the same version** recorded on the GPU/HBA Passthrough page — a version mismatch is the classic cause of "the GPU vanished":
+Restart the whisper container after editing its config. Then, inside **each** container, install the **in-container NVIDIA userspace driver at the exact version the host now runs** — the 580-branch version recorded in this field after the driver move at the top of this section (a mismatch is the classic cause of "the GPU vanished"):
 
 > [!INPUT] nvidia-driver-version | Host NVIDIA driver version | 550.163.01
 
-The container's Debian release ships a *different* driver version than the host's, so do not use `apt` for this one: in each container's console, download NVIDIA's installer for the **exact host version** and run it userspace-only. With the host on `550.163.01`:
+Do not use each container's own package manager for this: in each console, download NVIDIA's installer for the **exact recorded version** and run it userspace-only — the URL pattern holds for any version; substitute the recorded one in both lines:
 
 ```bash
-wget https://us.download.nvidia.com/XFree86/Linux-x86_64/550.163.01/NVIDIA-Linux-x86_64-550.163.01.run
-sh NVIDIA-Linux-x86_64-550.163.01.run --no-kernel-module
+wget https://us.download.nvidia.com/XFree86/Linux-x86_64/<version>/NVIDIA-Linux-x86_64-<version>.run
+sh NVIDIA-Linux-x86_64-<version>.run --no-kernel-module
 ```
 
-If a host upgrade ever bumps the driver, swap the new version into both lines — the URL follows that pattern for any version.
+(The version placeholder is deliberate — the exact 580-branch build is chosen at the driver move, and this field then holds it. The same installer dialogs as the Frigate page appear: OK through the kernel-modules and X warnings, **No** to 32-bit libraries and `nvidia-xconfig`.)
 
 The `--no-kernel-module` flag is what makes this safe: containers share the host's kernel (and its DKMS-managed module), so only the userspace libraries install here — the host-side "never a `.run`" rule is about kernel modules and does not apply inside an LXC. Give each container its static — **`192.168.1.59/24`** for Ollama, **`192.168.1.60/24`** for faster-whisper, gateway `192.168.1.1`, set at creation like every other container in the static zone — and enable **Start at boot**.
 
@@ -169,7 +194,7 @@ You should see the GTX 1080 Ti listed with a driver version. If it is missing, t
 > The 1080 Ti is **shared**, not handed to one guest — Frigate detection, faster-whisper STT, and the Ollama LLM all borrow it at once. Keep `nvidia-persistenced` running on the host and the host and in-container driver versions matched. **VFIO (Virtual Function I/O)** is reserved for the **HBA (host bus adapter)** feeding the TrueNAS VM and nothing else; the moment the GPU is VFIO-bound, Frigate *and* voice lose the card together.
 
 ### Install Piper for the spoken voice
-**Piper** is the text-to-speech engine — it turns Home Assistant's replies (and the leak-alert announcement the Automations page writes) into spoken words, surfacing as the **`tts.piper`** entity. On the Home Assistant OS VM it installs as an app, not as a container: go to **Settings → Apps → Install app**, find **Piper**, install it, and **start** it. The Piper app **auto-registers itself** as a Wyoming TTS service, so `tts.piper` appears on its own — you do **not** point a Wyoming Protocol integration at it.
+**Piper** is the text-to-speech engine — it turns Home Assistant's replies (and the leak-alert announcement the Automations page writes) into spoken words, surfacing as the **`tts.piper`** entity. On the Home Assistant OS VM it installs as an app, not as a container: go to **Settings → Apps → Install app**, find **Piper**, install it, and **start** it. Then one click remains: under **Settings → Devices & services**, the **Wyoming** integration shows Piper as a **Discovered** card — press **Add** and confirm. No host or port is typed (that is what discovery saved you), but the card does need the click; `tts.piper` appears once it is confirmed.
 
 > [!NOTE]
 > This is the `tts.piper` entity the leak-alert spoken announcement on the Automations page points at. That rule cannot speak until Piper exists — so before you rely on it, confirm `tts.piper` shows up under **Settings → Devices & services → Entities** (or that it autocompletes in a `tts.speak` action). The Automations page deferred this step here; this is where it is delivered.
@@ -181,7 +206,37 @@ Piper makes the *words*; a speaker has to *play* them. The leak-alert announceme
 > A **HomePod mini is not a `tts.speak` target on this build** — core Home Assistant cannot push audio to it, so it never appears as a usable `media_player.*` for spoken announcements. (The one path that can — Music Assistant's AirPlay provider — is an extra stack this build does not run.) That is why the Cast speaker exists in this stack: it is what the Automations page's leak announcement speaks through. The HomePod stays the Apple-path microphone and Siri target; the Cast speaker is the local path's mouth.
 
 ### Pick the STT and wire in the model
-Speech-to-text is the one real decision, and on this build the GPU settles it: run **Whisper** (via the faster-whisper container) for open-ended, natural phrasing at GPU speed. **Speech-to-Phrase** is the CPU-only fallback if the GPU is ever busy — command-style only, but instant; it recognizes a set of phrases auto-generated from your own devices and **Areas** ("turn on the living room lamp," "what's the temperature in the office"), which is one more reason the Area habit from the Home Assistant page pays off. In Home Assistant add **one** **Wyoming Protocol** integration, pointed at the faster-whisper container's address and Wyoming port (default `10300`), for STT — Piper's TTS is already covered by the app above, so there is no second Wyoming integration to add. Then add the **Ollama** integration pointed at the Ollama container's HTTP API and pick a **tool-capable** model (one that can call Home Assistant's functions — otherwise it can chat but cannot turn anything on). Build a pipeline under **Settings → Voice assistants** that stitches them together, and assign it to the puck. While building it, tick **Prefer handling commands locally** — that setting lives on the *pipeline* and is set here in the UI; it is **not** a `configuration.yaml` key (putting `prefer_local_intents` under `conversation:` fails config validation).
+Speech-to-text is the one real decision, and on this build the GPU settles it: run **Whisper** (via the faster-whisper container) for open-ended, natural phrasing at GPU speed. (**Speech-to-Phrase** is the instant, CPU-only *alternative*, not an automatic fallback — a pipeline has exactly one STT engine, so choosing it means choosing command-style phrases auto-generated from your devices and **Areas** over free speech. It exists as the option if the GPU path ever proves unreliable.)
+
+Three integration steps, each its own dialog:
+
+**1. Wyoming Protocol** (STT) — **Settings → Devices & services → Add integration → Wyoming Protocol**:
+
+- **Host** → `192.168.1.60`
+- **Port** → `10300`
+
+Piper's TTS is already covered by the discovered card above — there is no second Wyoming entry to add by hand.
+
+**2. Ollama** — **Add integration → Ollama**:
+
+- **URL** → `http://192.168.1.59:11434`
+- **API key** → blank — local server, no auth
+- **Model** → a **tool-capable** one; **Llama 3.1 8B** is the documented recommendation for controlling Home Assistant. Expect a **"Downloading model"** wait — gigabytes, once
+- **Control Home Assistant** → **enable it** — this is the switch that grants control; without it the model chats but turns nothing on, and only tool-capable models offer it
+- **Context window size** → default 8k; **Max history / Keep alive / Think before responding** → defaults
+
+Keep the model's reach sane: the docs advise exposing **fewer than ~25 entities** to the LLM (the Assist expose list), or accuracy of tool calls degrades.
+
+**3. The pipeline** — **Settings → Voice assistants → Add assistant**:
+
+- **Name** → something sayable in the UI ("House")
+- **Language** → English
+- **Conversation agent** → the **Ollama** agent from step 2
+- **Speech-to-text** → the **faster-whisper** entry from step 1
+- **Text-to-speech** → **Piper**
+- **Prefer handling commands locally** → **tick it** — this lives on the *pipeline*, set here in the UI; it is **not** a `configuration.yaml` key (putting `prefer_local_intents` under `conversation:` fails config validation)
+
+Assign the pipeline to the puck, and the local path is complete.
 
 > [!TIP]
 > With **Prefer handling commands locally** enabled, Home Assistant tries its built-in intents *first*: "turn off the kitchen" matches instantly and never bothers the model, while only genuinely open-ended questions reach the LLM. Instant response on the 90% of commands that are simple, conversational smarts on the rest, and lighter load on the shared GPU.

@@ -115,6 +115,9 @@ dev2: /dev/nvidia-uvm,gid=44
 
 Restart that container after editing its config. Inside it, `nvidia-smi` should then show the same card the host sees.
 
+> [!WARNING]
+> A known appointment with this driver: **current Ollama refuses the GPU on drivers older than 570**, and the Voice page runs Ollama. When that page arrives, the host moves to the **580 branch** (Pascal's last) via this same procedure — and every borrowing container's userspace gets reinstalled at the new version in the same sitting, or they all show `Driver/library version mismatch`. Until then, the pinned version here stays right for Frigate.
+
 > [!NOTE]
 > The community-scripts installers can write these lines **for you**: their Advanced walk ends with a **GPU PASSTHROUGH** dialog that detects the card and adds a `devN:` line per NVIDIA node it finds — more than these three, which is fine. The Frigate page answers **Yes** to it, so there the recipe is a verification (`grep ^dev` on the config) and a fallback, not an edit. A container built any other way still gets the three lines by hand.
 
