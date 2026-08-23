@@ -146,20 +146,15 @@ Leave the other toggles at their defaults. Then the **SSL** tab: under **SSL Cer
 ### Tell Home Assistant to trust the proxy
 Add the next host the same way — `ha.example.com`, Scheme `http`, Forward Hostname / IP `192.168.1.51`, Forward Port `8123`, **Websockets Support** on, then the same SSL tab (wildcard certificate, **Force SSL**). Browse to `https://ha.example.com` and meet this guide's one deliberate roadblock: a bare **400: Bad Request**. Home Assistant refuses proxied requests until you name your proxy; its docs are explicit that requests from reverse proxies are blocked when these options are not set.
 
-The fix is a few lines in `configuration.yaml`. On Home Assistant OS the way in is the **File editor** app: go to **Settings → Apps**, choose **Install app** (apps are what Home Assistant now calls add-ons), install **File editor**, toggle **Show in sidebar**, and start it. Open `configuration.yaml` from the sidebar and add:
+The fix is a settings screen as of Home Assistant 2026.8 — no YAML involved. Go to **Settings → System → Network**, scroll to the **HTTP server** section, and set two things:
 
-```yaml
-# configuration.yaml — Home Assistant
-http:
-  use_x_forwarded_for: true
-  trusted_proxies:
-    - 192.168.1.54    # the proxy container's IP — use yours
-```
+- **Trust X-Forwarded-For** → **on** — lets HA read the real client address the proxy passes along
+- **Trusted proxies** → add the proxy container's IP (`192.168.1.54` in this guide's numbering)
 
-Save, restart Home Assistant, and reload `https://ha.example.com` — the normal dashboard, behind a real lock.
+Saving restarts Home Assistant by itself — and then comes the step people miss: after the restart, an administrator must **confirm the new network settings within five minutes**, or they revert (a guard against locking yourself out with a bad proxy config). Confirm, then reload `https://ha.example.com` — the normal dashboard, behind a real lock.
 
 > [!DETAILS] Reading the 400 if it persists
-> The browser only ever shows the bare 400; the explanation lives in Home Assistant's log. "A request from a reverse proxy was received … but your HTTP integration is not set-up for reverse proxies" means the `http:` block is missing or not loaded yet — restart again. "Received X-Forwarded-For header from an untrusted proxy" means the IP in `trusted_proxies` does not match the proxy's actual address. Two trip wires: YAML indentation is two spaces exactly, and if you ever list a whole subnet instead of one IP, the docs require the network address — `192.168.1.0/24`, not `192.168.1.50/24`. These settings only apply on restart; there is no hot reload.
+> The browser only ever shows the bare 400; the explanation lives in Home Assistant's log (**Settings → System → Logs**). "A request from a reverse proxy was received … but your HTTP integration is not set-up for reverse proxies" means the settings have not applied — check they survived the five-minute confirmation. "Received X-Forwarded-For header from an untrusted proxy" means the address under Trusted proxies does not match the proxy's actual IP. If you list a whole subnet instead of one IP, the docs require the network address — `192.168.1.0/24`, not `192.168.1.50/24`. A history note, because most write-ups still show it: this used to be an `http:` block in `configuration.yaml`. On 2026.8 and later that YAML is imported once at migration and **ignored afterwards** (adding it fresh only raises a Repairs issue); on older installs the YAML block plus a restart is still the way.
 >
 > The pattern generalizes beyond Home Assistant, and is worth keeping for any service you ever proxy: if something errors through its new name but works fine by IP, go hunting in its settings for a "trusted proxy" or "allowed hosts" option — that's almost always the whole story.
 
@@ -169,13 +164,13 @@ Four more proxy hosts, same dialog. Every one gets the wildcard certificate and 
 - **TrueNAS** — `nas.example.com`, forwarding to whatever you type in the browser today: a bare-IP `http://` address means Scheme `http`, port `80`; if yours serves HTTPS with a self-signed certificate, `https` and `443`. The proxy accepts either without complaint.
 - **Nextcloud** — `cloud.example.com`, Scheme `https`, your Nextcloud IP, port `443`. The first visit stops at **Access through untrusted domain** — the exact page the *Nextcloud* guide's expandable prepared you for. The fix is in the expandable below.
 - **Uptime Kuma** — `status.example.com`, Scheme `http`, your Kuma IP, port `3001`. Its wiki is direct about why the websocket toggle matters: "Unlike other web apps, Uptime Kuma is based on WebSocket." With the toggle off, the dashboard never loads.
-- **Frigate** — `frigate.example.com`, Scheme `http`, your Frigate IP, port **`8971`** — deliberately *not* the `5000` you have browsed since the *Frigate* guide. The warning below is the why.
+- **Frigate** — `frigate.example.com`, Scheme **`https`** — current Frigate ships TLS enabled on 8971 with a self-signed certificate, and the proxy forwards to it without verifying, exactly as it does for Proxmox — your Frigate IP, port **`8971`** — deliberately *not* the `5000` you have browsed since the *Frigate* guide. The warning below is the why.
 
 > [!WARNING]
 > Frigate's docs split its two ports plainly: 8971 is the authenticated UI and API — "Reverse proxies should use this port" — while 5000 is internal, unauthenticated access whose reach "should be limited"; requests there are treated as admin regardless of any login. Proxying 5000 would hand that to anything that can resolve the name. Use 8971, and let 5000 stay what it was: an internal address for the Home Assistant integration from the *Frigate* guide.
 
 > [!DETAILS] Fixing Frigate's "plain HTTP request was sent to HTTPS port"
-> If `frigate.example.com` answers with a 400 carrying that phrase, Frigate's own TLS is enabled on port 8971 while the proxy speaks plain HTTP to it. The documented fix is to turn Frigate's TLS off and let the proxy own encryption — in Frigate's config editor:
+> If `frigate.example.com` answers with a 400 carrying that phrase, the proxy host's **Scheme** is set to `http` while Frigate's own TLS sits enabled on 8971 — its default. The one-click fix is in NPM: edit the proxy host, flip Scheme to `https`, save. The alternative — if you would rather the proxy own all encryption — is turning Frigate's TLS off in its config editor:
 >
 > ```yaml
 > # config.yml — Frigate
