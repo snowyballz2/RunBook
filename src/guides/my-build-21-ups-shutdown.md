@@ -126,7 +126,7 @@ upsc cyberpower@localhost ups.status
 ```
 
 > [!DETAILS] What the three knobs do
-> `pollinterval` is how often the `usbhid-ups` driver polls the UPS for critical status changes — it watches the `OB` (on-battery) and `LB` (low-battery) bits on this cadence; `pollfreq` is how often the driver re-reads the full variable set from the hardware. `maxretry = 3` tells the driver to attempt the USB handshake three times before giving up at startup, which clears most cold-boot races where the UPS enumerates slightly after the driver launches. These tame the common case; the watchdog below covers the case where the link drops anyway.
+> `pollinterval` is how often the `usbhid-ups` driver polls the UPS for critical status changes — it watches the `OB` (on-battery) and `LB` (low-battery) bits on this cadence; `pollfreq` is how often the driver re-reads the full variable set from the hardware. `maxretry = 3` tells **upsdrvctl**, the launcher, to attempt starting the driver three times before giving up — which clears most cold-boot races where the UPS enumerates slightly after the driver launches. (One nuance: NUT's default `pollfreq` for CyberPower units is already 12 seconds, so the explicit `30` here *relaxes* the full re-read, trading freshness for fewer USB round-trips on a link this model likes to drop.) These tame the common case; the watchdog below covers the case where the link drops anyway.
 
 ### Add a watchdog timer
 A small systemd timer restarts the driver if `upsc` ever reports it as not connected. Write the check script and make it executable:
@@ -177,7 +177,7 @@ systemctl daemon-reload && systemctl enable --now nut-watchdog.timer
 ## Make the shutdown automatic
 
 ### Understand the shutdown chain
-From here the sequence is already wired, and it is deliberately patient. When the wall goes dead, the UPS reports on battery (`upsc` shows `OB`) and `upsmon` does nothing but wait — power usually comes back. Only when the CyberPower declares low battery (`OB LB`) does `upsmon` raise the forced-shutdown flag (`FSD`) and call `shutdown`. The host's shutdown stops the Proxmox guest service, interrupting any running backup job — a shutdown that lands mid-backup can take noticeably longer to complete, so the battery headroom matters — and asks every guest to shut down cleanly — in reverse startup order, up to 180 seconds per VM and 60 per container before a stuck guest is stopped hard. Then the host powers off, and last of all NUT tells the UPS to cut its output, so the load stops draining the battery and everything gets a clean power-cycle when mains returns.
+From here the sequence is already wired, and it is deliberately patient. When the wall goes dead, the UPS reports on battery (`upsc` shows `OB`) and `upsmon` does nothing but wait — power usually comes back. Only when the CyberPower declares low battery (`OB LB`) does `upsmon` raise the forced-shutdown flag (`FSD`) and call `shutdown`. The host's shutdown stops the Proxmox guest service, interrupting any running backup job — a shutdown that lands mid-backup can take noticeably longer to complete, so the battery headroom matters — and asks every guest to shut down cleanly — in reverse startup order, up to 180 seconds per guest — VM or container alike — before a stuck one is stopped hard (a guest's own **Shutdown timeout** in its Options overrides that default). Then the host powers off, and last of all NUT tells the UPS to cut its output, so the load stops draining the battery and everything gets a clean power-cycle when mains returns. (Two shipped defaults make that last act work, both already active in Debian's `upsmon.conf`: `MINSUPPLIES 1` and the `POWERDOWNFLAG` file — nothing to add, just do not delete them.)
 
 > [!NOTE]
 > Who decides "low"? The CyberPower does — the threshold is set in the device by its vendor, and `usbhid-ups` falls back to 30% only if the UPS reports nothing. The patience is by design: every extra minute on battery is another minute in which the power might return without anything having to stop.
@@ -257,7 +257,7 @@ Then `systemctl restart nut-server nut-monitor`. In Home Assistant, go to **Sett
 - **Host** → `192.168.1.50`
 - **Port** → `3493`
 - **Username / Password** → the `hauser` login from the fields below
- The CyberPower appears as a device with **Battery charge** and **Status** sensors enabled out of the box — the latter reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime** and the rest arrive disabled; enable them per entity if you want them.
+ The CyberPower appears as a device with **Battery charge**, **Status**, **Load**, and **Input voltage** enabled out of the box — Status reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime**, **Battery voltage**, and the diagnostic sensors arrive disabled; enable them per entity if you want them.
 
 > [!INPUT] nut-ha-user | NUT read-only username | | hauser
 > The `[hauser]` section name in `upsd.users` — the account Home Assistant signs in with.
