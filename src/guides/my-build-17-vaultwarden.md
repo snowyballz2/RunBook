@@ -32,6 +32,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 ### Choose Advanced and pin a static IP
 When the script asks **Default or Advanced**, pick **Advanced**. Every dialog it can show, in order, with this build's answer:
 
+- **Choose the container OS** (a menu the script shows before anything else) → **debian** — the **alpine** entry is the fast prebuilt variant in the expandable below; every path and prefill on this page assumes Debian
+- **DIAGNOSTICS** (this newer script engine's name for the telemetry consent; asked once per host, so normally already answered) → decline
 - **Container type** → **Unprivileged**, as offered — the secure default; nothing here needs host hardware
 - **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login
 - **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
@@ -55,9 +57,8 @@ When the script asks **Default or Advanced**, pick **Advanced**. Every dialog it
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
 - **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
-- **TELEMETRY & DIAGNOSTICS** (appears once, if at all) → decline — nothing in this build phones home
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
-- **"An update for the Proxmox LXC stack is available" [1/2/3]** (if it appears) → **2, Ignore** — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
+- **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
 
 > [!INPUT] vaultwarden-console-user | Vaultwarden console username | | root
 

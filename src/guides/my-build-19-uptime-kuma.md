@@ -16,7 +16,7 @@ It is the lightest guest on the i7-8700K — a single Node.js application with a
 ## Create the container
 
 ### Run the install script
-In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the ASUS ROG Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Read the script first, then paste and press Return. When it asks **Default or Advanced**, pick **Advanced** — the static IP in the next step is set there; every other prompt keeps its prefilled default:
+In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the ASUS ROG Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Read the script first, then paste and press Return. On the **Community-Scripts Options** menu pick **Advanced Install** — the static IP in the next step is set there; every other prompt keeps its prefilled default:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/uptimekuma.sh)"
@@ -35,10 +35,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > You can build a plain unprivileged Debian container and install by hand from the project README, but on this build the native LXC above is the default — no Docker layer to manage, and updates are one command. The app is identical either way; this collection runs services as LXCs, not as containers-inside-a-VM.
 
 ### Choose Advanced — every dialog answered
-When the script asks **Default or Advanced**, pick **Advanced**. Every dialog it can show, in order, with this build's answer:
+On the **Community-Scripts Options** menu (**Default Install**, **Advanced Install**, **User Defaults** — an **App Defaults** entry joins once any of these pages saves defaults), pick **Advanced Install**. Every dialog it can show, in order, with this build's answer:
 
+- **TELEMETRY & DIAGNOSTICS** (first community-script run only, and it appears **before** the menu) → decline — nothing in this build phones home
 - **Container type** → **Unprivileged**, as offered — the secure default; nothing here needs host hardware
-- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login
+- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login; a **Verify Root Password** box repeats a non-blank entry
 - **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
 - **Hostname** → keep the offered name
 - **Disk / CPU / RAM** → keep the prefills the script offers
@@ -59,10 +60,10 @@ When the script asks **Default or Advanced**, pick **Advanced**. Every dialog it
 - **DEVICE NODE CREATION** → **No**, the default
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
-- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
-- **TELEMETRY & DIAGNOSTICS** (appears once, if at all) → decline — nothing in this build phones home
+- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and press **Create LXC**
+- **Which storage pool?** (two radiolists — container, then template — shown only when more than one pool qualifies; this host's stock local/local-lvm split auto-selects silently) → **local-lvm** for the container, **local** for the template
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
-- **"An update for the Proxmox LXC stack is available" [1/2/3]** (if it appears) → **2, Ignore** — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
+- **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
 
 > [!INPUT] kuma-console-user | Uptime Kuma console username | | root
 

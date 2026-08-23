@@ -14,7 +14,7 @@ accent: violet
 ## Create the container
 
 ### Run the install script
-The quickest path is the Proxmox community helper script, which builds a ready-to-go AdGuard container in about two minutes. In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). One heads-up before you paste: the script asks **Default or Advanced** almost as soon as it starts, so read the **Choose Advanced and pin a static IP** section below first — the same Advanced-and-static-IP move every container in this build makes. Then paste this and press Return:
+The quickest path is the Proxmox community helper script, which builds a ready-to-go AdGuard container in about two minutes. In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). One heads-up before you paste: the script shows its **Community-Scripts Options** menu almost as soon as it starts, so read the **Choose Advanced and pin a static IP** section below first — the same Advanced-and-static-IP move every container in this build makes. Then paste this and press Return:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"
@@ -43,10 +43,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Done this way you have already covered the static-IP step too — continue at **Set it to start at boot**.
 
 ### Choose Advanced and pin a static IP
-This happens *while the script runs*. When it asks **Default or Advanced**, pick **Advanced**. Every dialog it can show, in order, with this build's answer:
+This happens *while the script runs*. On the **Community-Scripts Options** menu (**Default Install**, **Advanced Install**, **User Defaults** — an **App Defaults** entry joins once any of these pages saves defaults), pick **Advanced Install**. Every dialog it can show, in order, with this build's answer:
 
+- **TELEMETRY & DIAGNOSTICS** (first community-script run only, and it appears **before** the menu) → decline — nothing in this build phones home
 - **Container type** → **Unprivileged**, as offered — the secure default; nothing here needs host hardware
-- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login
+- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login; a **Verify Root Password** box repeats a non-blank entry
 - **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
 - **Hostname** → keep the offered name
 - **Disk / CPU / RAM** → keep the prefills: **1 CPU core, 512 MB RAM, 2 GB disk** — more than enough
@@ -67,10 +68,10 @@ This happens *while the script runs*. When it asks **Default or Advanced**, pick
 - **DEVICE NODE CREATION** → **No**, the default
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
-- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
-- **TELEMETRY & DIAGNOSTICS** (appears once, if at all) → decline — nothing in this build phones home
+- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and press **Create LXC**
+- **Which storage pool?** (two radiolists — container, then template — shown only when more than one pool qualifies; this host's stock local/local-lvm split auto-selects silently) → **local-lvm** for the container, **local** for the template
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
-- **"An update for the Proxmox LXC stack is available" [1/2/3]** (if it appears) → **2, Ignore** — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
+- **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
 
 > [!INPUT] adguard-console-user | AdGuard console username | | root
 

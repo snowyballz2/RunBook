@@ -20,10 +20,11 @@ Open the Proxmox web interface at the host (log in as **root@pam**), click the n
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nextcloudpi.sh)"
 ```
 
-When it asks **Default or Advanced**, pick **Advanced**. Every dialog it can show, in order, with this build's answer:
+On the **Community-Scripts Options** menu (**Default Install**, **Advanced Install**, **User Defaults** — an **App Defaults** entry joins once any of these pages saves defaults), pick **Advanced Install**. Every dialog it can show, in order, with this build's answer:
 
+- **TELEMETRY & DIAGNOSTICS** (first community-script run only, and it appears **before** the menu) → decline — nothing in this build phones home
 - **Container type** → **Unprivileged**, as offered — the secure default; nothing here needs host hardware
-- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login
+- **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login; a **Verify Root Password** box repeats a non-blank entry
 - **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
 - **Hostname** → keep the offered name
 - **Disk / CPU / RAM** → keep the prefills: **2 cores, 2 GB RAM, 8 GB disk**
@@ -44,10 +45,10 @@ When it asks **Default or Advanced**, pick **Advanced**. Every dialog it can sho
 - **DEVICE NODE CREATION** → **No**, the default
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
-- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
-- **TELEMETRY & DIAGNOSTICS** (appears once, if at all) → decline — nothing in this build phones home
+- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and press **Create LXC**
+- **Which storage pool?** (two radiolists — container, then template — shown only when more than one pool qualifies; this host's stock local/local-lvm split auto-selects silently) → **local-lvm** for the container, **local** for the template
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
-- **"An update for the Proxmox LXC stack is available" [1/2/3]** (if it appears) → **2, Ignore** — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
+- **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
 
 > [!INPUT] nextcloud-console-user | Nextcloud console username | | root
 

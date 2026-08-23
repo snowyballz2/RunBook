@@ -17,10 +17,11 @@ Frigate runs as a privileged **LXC (Linux Container)** here. The community-scrip
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/frigate.sh)"
 ```
 
-When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of dialogs, and these are the build's answers, in the order they appear:
+On the **Community-Scripts Options** menu (**Default Install**, **Advanced Install**, **User Defaults** — an **App Defaults** entry joins once these pages start saving defaults) pick **Advanced Install** — it is a long walk of dialogs, and these are the build's answers, in the order they appear:
 
+- **TELEMETRY & DIAGNOSTICS** — appears **before** the menu, and only on the host's first community-script run; **decline** — nothing in this build phones home.
 - **Container type** — **Privileged**, as offered for Frigate; the GPU lend below depends on it.
-- **Set Root Password** — set one, and record it in the field below. Leaving it blank means automatic login with **no password at all**, which a privileged container holding every camera feed does not get on this build.
+- **Set Root Password** — set one, and record it in the field below (a **Verify Root Password** box repeats it). Leaving it blank means automatic login with **no password at all**, which a privileged container holding every camera feed does not get on this build.
 - **Container ID** — accept the offered next-free number. This is the `<frigate-ctid>` the GPU step edits by ID.
 - **Hostname** — keep `frigate`.
 - **Disk / CPU / RAM** — keep the offers: **20 GB, 8 cores, 4096 MiB**.
@@ -42,9 +43,10 @@ When it asks **Default or Advanced**, pick **Advanced** — it is a long walk of
 - **DEVICE NODE CREATION** — **No**, the default. Frigate creates no device nodes — the `/dev/nvidia*` nodes it needs are bound in from the host by the GPU passthrough above, a different mechanism — and the script itself flags mknod experimental.
 - **MOUNT FILESYSTEMS** — leave **empty**. The footage disk arrives on this page later as a **host-side mount point**, not as something the container mounts for itself.
 - **POST-INSTALL HOOK (HOST)** — leave **empty**.
-- **VERBOSE MODE** — **No**. Review the **CONFIRM SETTINGS** summary and answer **Yes** to create. If a **TELEMETRY & DIAGNOSTICS** question appears after, decline it — nothing in this build phones home.
+- **VERBOSE MODE** — **No**. Review the **CONFIRM SETTINGS** summary and press **Create LXC**.
+- **Which storage pool?** — two radiolists (container, then template), shown only when more than one pool qualifies; this host's stock local/local-lvm split auto-selects silently. If asked: **local-lvm** for the container, **local** for the template.
 - **Save advanced settings as default?** — **Yes**. It writes tonight's answers to `/usr/local/community-scripts/defaults/frigate.vars` on the host — the root password is **not** among them — so the rebuild-style upgrade this page describes later replays them as presets instead of re-asking everything. If an answer ever changes, edit or delete that file.
-- **"An update for the Proxmox LXC stack is available" [1/2/3]** — **2, Ignore**. Option 1 runs a blanket `apt upgrade` on the **host** from inside an install script — and this host's pinned 6.14 kernel (the NVIDIA situation from the GPU/HBA page) makes host upgrades a deliberate, eyes-open job for the Maintenance page, never a script's side effect. What it is offering is a minor `pve-container` point release; nothing this install needs.
+- **"An update for the Proxmox LXC stack is available"** — **Ignore** (numbered **2**, or **3** in the four-option variant). Option 1 runs a blanket `apt upgrade` on the **host** from inside an install script — and this host's pinned 6.14 kernel (the NVIDIA situation from the GPU/HBA page) makes host upgrades a deliberate, eyes-open job for the Maintenance page, never a script's side effect. What it is offering is a minor `pve-container` point release; nothing this install needs.
 
 Then let it work — it compiles Frigate from source, so expect a long run. Read the script before piping it into a root shell, the same download-read-run habit used for every helper in this build.
 
