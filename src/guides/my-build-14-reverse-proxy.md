@@ -72,19 +72,20 @@ The script finishes by printing `http://<IP>:81`. Before you open it, set **Opti
 > Not Docker, despite most NPM tutorials. The script builds everything from source inside the Debian container: OpenResty (the nginx flavor that does the proxying), the NPM app on Node.js, and Certbot — the Let's Encrypt client with DNS plugins — running as the `openresty` and `npm` systemd services. Settings live in a SQLite file at `/data/database.sqlite`. Two consequences: Docker advice from the wider internet does not apply, and updating has its own command — open the container's **Console** and run `update`. Snapshot the container first.
 
 ### Create your admin account
-Browse to the proxy at `http://192.168.1.54:81` and log in with NPM's default credentials — **`admin@example.com`** / **`changeme`**. It immediately forces a first-run step:
+Browse to the proxy at `http://192.168.1.54:81`. There is nothing to log in *with* yet — a fresh install opens on a **"Welcome!"** screen that says **"Get started by creating your admin account."**, with exactly three fields and a **Save** button:
 
 - **Full Name** → yours
 - **Email address** → your real one; it becomes the login
-- **New Password** → strong
- This login controls where every name in your house points, so make the password strong and record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
+- **New Password** → strong, at least 8 characters
+
+**Save** logs you straight in. This login controls where every name in your house points, so record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
 
 > [!INPUT] npm-email | NPM admin email
 
 > [!SECRET] npm-password | NPM admin password
 
 > [!NOTE]
-> The default `admin@example.com` / `changeme` login is deliberately useless: NPM forces you to replace both the moment you first log in, so the account you actually keep is the one you just set. Do not skip recording the new password — there is no reset button, only a database edit.
+> Older write-ups (and older NPM) start from a default **`admin@example.com`** / **`changeme`** login — v2.13 removed it, so a current install goes straight to the create-account screen above. Do not skip recording the password — the login page has no forgot-password button; recovery is a database edit.
 
 ## Get a domain and a wildcard certificate
 
@@ -110,15 +111,15 @@ Create no other records. No A record with your home IP — nothing about this do
 > DuckDNS hands out free subdomains of `duckdns.org`. Claim one, copy the token from its dashboard, and your services become `proxmox.yourname.duckdns.org` and friends — NPM's provider list includes **DuckDNS**, credentials a single line: `dns_duckdns_token=your-token`. The trade: longer, visibly borrowed names, and DuckDNS allows only one TXT record at a time, so request exactly one certificate — the wildcard `*.yourname.duckdns.org`, which covers every service anyway. Everywhere below you see `*.example.com`, read your DuckDNS name instead.
 
 ### Request the wildcard certificate
-In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Encrypt via DNS** from the dropdown — a wildcard can only be issued over DNS, and in the current interface you pick that route here, up front, rather than with a toggle inside the dialog. Then:
+In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Encrypt via DNS** from the dropdown (its siblings are **Let's Encrypt via HTTP** and **Custom Certificate** — neither is for this build) — a wildcard can only be issued over DNS, and in the current interface you pick that route here, up front, rather than with a toggle inside the dialog. Then:
 
 - **Domain Names** — `*.example.com`, your own domain swapped in.
 - **Key Type** — leave the default.
-- **DNS Provider** — pick yours from the list.
+- **DNS Provider** — pick yours from the searchable list; the two fields below only appear once a provider is chosen.
 - **Credentials File Content** — the box pre-fills a template for the chosen provider; replace the placeholder with your real `dns-api-token`.
 - **Propagation Seconds** — leave empty for the plugin's default.
 
-There is no email field or terms-of-service box — Let's Encrypt stopped sending expiry emails in 2025, and current NPM handles the terms agreement itself. (If your NPM instead shows an **SSL Certificates** menu with an email field and an *I Agree* checkbox, it predates the v2.15 interface rewrite — run `update` from the container's Console to come current.)
+There is no email field or terms-of-service box — Let's Encrypt stopped sending expiry emails in 2025, and current NPM handles the terms agreement itself. (If your NPM instead shows an **SSL Certificates** menu with an email field and an *I Agree* checkbox, it predates the v2.13 interface rewrite — run `update` from the container's Console to come current.)
 
 Save, and after a short wait the certificate appears, valid for every name under your domain. If it fails on timing, set **Propagation Seconds** to something patient like `120` and try again.
 
@@ -148,15 +149,25 @@ Expect the proxy's IP. The names resolve; nothing answers on them yet — that i
 ## Put every service behind it
 
 ### Give Proxmox the first name
-The pattern you repeat for everything: in NPM, open **Hosts → Proxy Hosts** and click **Add Proxy Host**. On the **Details** tab:
+The pattern you repeat for everything: in NPM, open **Hosts → Proxy Hosts** and click **Add Proxy Host**. The dialog has four tabs — **Details**, **Custom Locations**, **SSL**, and an **Advanced** gear at the right end of the tab bar; only Details and SSL get touched, for every host on this page. On the **Details** tab:
 
 - **Domain Names**: `proxmox.example.com`
 - **Scheme**: `https` — Proxmox speaks HTTPS on its own port
 - **Forward Hostname / IP**: your `proxmox-ip`
 - **Forward Port**: `8006`
 - **Websockets Support**: on — the noVNC console you use as the server's screen rides on a websocket and dies without it
+- **Access List**: leave **Publicly Accessible** — no basic-auth gate in front; each service keeps its own login
+- **Cache Assets**: off, the default — caching admin UIs trades staleness for nothing here
+- **Block Common Exploits**: off, the default — a blunt pattern filter that can break legitimate app traffic
 
-Then the **SSL** tab: under **SSL Certificate** choose the `*.example.com` certificate, and turn on **Force SSL** so any plain-HTTP request redirects to HTTPS. Save, then browse to `https://proxmox.example.com`: the familiar login, a real padlock, nothing to click through.
+Then the **SSL** tab, every field:
+
+- **SSL Certificate** → the `*.example.com` certificate — not the dropdown's tempting **Request a new Certificate** entry (the wildcard already exists; **None** is the do-nothing default you are replacing)
+- **Force SSL** → **on** — any plain-HTTP request redirects to HTTPS; it unlocks once a certificate is selected
+- **HTTP/2 Support**, **HSTS Enabled**, **HSTS Sub-domains** → off, the defaults — none earns its keep on a LAN
+- the tab's **Advanced** collapsible (Trust Upstream Forwarded Proto Headers) → leave collapsed
+
+Save, then browse to `https://proxmox.example.com`: the familiar login, a real padlock, nothing to click through.
 
 > [!NOTE]
 > The proxy now talks to Proxmox's self-signed certificate and does not verify upstream certificates by default, so this just works. The warning you have clicked past since install was not fixed so much as moved to an encrypted-but-unverified hop inside your own LAN — a fair trade at home, and the browsers in your house never see it again.
@@ -164,25 +175,21 @@ Then the **SSL** tab: under **SSL Certificate** choose the `*.example.com` certi
 ### Tell Home Assistant to trust the proxy
 Add the next host the same way — `ha.example.com`, Scheme `http`, Forward to your `ha-ip`, port `8123`, **Websockets Support** on, then the same SSL tab (wildcard certificate, **Force SSL**). Browse to `https://ha.example.com` and meet a deliberate roadblock: a bare **400: Bad Request**. Home Assistant OS refuses proxied requests until you name your proxy.
 
-The fix is a few lines in `configuration.yaml` — this happens in the **Home Assistant UI** (`192.168.1.51:8123`), not NPM. The way in is the **File editor** app: **Settings → Apps → Install app**, install **File editor**, toggle **Show in sidebar**, start it, open `configuration.yaml`, and add:
+The fix lives in the **Home Assistant UI** (`192.168.1.51:8123`), not NPM — as of Home Assistant 2026.8 it is a settings screen, not a YAML edit. Go to **Settings → System → Network**, scroll to the **HTTP server** section, and set two things:
 
-```yaml
-http:
-  use_x_forwarded_for: true
-  trusted_proxies:
-    - 192.168.1.54
-```
+- **Trust X-Forwarded-For** → **on** — lets HA read the real client address the proxy passes along
+- **Trusted proxies** → add **`192.168.1.54`** — the only machine allowed to speak for clients
 
-Save, restart Home Assistant, and reload `https://ha.example.com` — the normal dashboard, behind a real lock.
+Saving **restarts Home Assistant by itself** — and then comes the step people miss: after the restart, HA asks an administrator to **confirm the new network settings within five minutes**, or it reverts them (a guard against locking yourself out with a bad proxy config). Confirm, then reload `https://ha.example.com` — the normal dashboard, behind a real lock.
 
 > [!DETAILS] Reading the 400 if it persists
-> The browser only shows the bare 400; the explanation is in Home Assistant's log. "Not set-up for reverse proxies" means the `http:` block is missing or not loaded — restart again. "Received X-Forwarded-For header from an untrusted proxy" means the IP in `trusted_proxies` does not match the proxy's address. Two trip wires: YAML indentation is two spaces exactly, and a whole subnet must be written as the network address (`192.168.1.0/24`). These settings only apply on a full Home Assistant restart — there is no hot reload, so reloading the page or reloading YAML alone will not pick them up. The pattern generalizes — if a service errors through its new name but works by IP, hunt its settings for a "trusted proxy" or "allowed hosts" option.
+> The browser only shows the bare 400; the explanation is in Home Assistant's log (**Settings → System → Logs**). "Not set-up for reverse proxies" means the settings have not applied — check they survived the five-minute confirmation. "Received X-Forwarded-For header from an untrusted proxy" means the address under Trusted proxies does not match the proxy's. A history note, because old write-ups still show it: this used to be an `http:` block in `configuration.yaml`. On 2026.8 and later that YAML was imported once, at migration, and is **ignored afterwards** — adding it fresh does nothing but raise a Repairs issue — so make the change in the UI. And one forward-looking quirk: a *fresh* HAOS install now serves port **80** by default; existing installs like this one keep `8123`, but if HA is ever rebuilt, this proxy host's Forward Port follows it. The pattern generalizes — if a service errors through its new name but works by IP, hunt its settings for a "trusted proxy" or "allowed hosts" option.
 
 ### Work down the rack
 More proxy hosts, same dialog. Every one gets the wildcard certificate and **Force SSL** on the SSL tab, and **Websockets Support** on — some need it outright and it is harmless elsewhere. The two services up at this point:
 
 - **TrueNAS** — `nas.example.com`, Scheme `http`, forwarding to `192.168.1.20`, port `80` — the address you browse to today, just named.
-- **Frigate** — `frigate.example.com`, Scheme `http`, the Frigate LXC's IP, port **`8971`** — deliberately *not* `5000`. The warning below is why.
+- **Frigate** — `frigate.example.com`, Scheme **`https`** — Frigate ships TLS (Transport Layer Security) on at 8971 with its own self-signed certificate, and the proxy forwards to it without verifying, exactly as it does for Proxmox — the Frigate LXC's IP, port **`8971`** — deliberately *not* `5000`. The warning below is why.
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
 > The container running detection on the 1080 Ti — proxy its authenticated port, not the internal one.
@@ -196,14 +203,7 @@ More proxy hosts get added later, once their containers exist — come back and 
 - **Uptime Kuma** (built later in this build) — `status.example.com`, Scheme `http`, the Kuma IP, port `3001`. It is built on WebSocket, so with the toggle off the dashboard never loads — leave **Websockets Support** on.
 
 > [!DETAILS] Frigate's "plain HTTP request was sent to HTTPS port"
-> If `frigate.example.com` answers with a 400 carrying that phrase, Frigate's own TLS (Transport Layer Security) is on at port 8971 while the proxy speaks plain HTTP to it. Turn Frigate's TLS off and let the proxy own encryption — in Frigate's config editor:
->
-> ```yaml
-> tls:
->   enabled: false
-> ```
->
-> Restart Frigate and try the name again.
+> If `frigate.example.com` answers with a 400 carrying that phrase, the proxy host's **Scheme** got set to `http` while Frigate's own TLS sits on at 8971 — its default. Fix it in NPM: edit the proxy host, flip Scheme to `https`, save; Frigate itself needs no change. (Old write-ups instead disable Frigate's TLS with a `tls: enabled: false` config block. That works, but this build keeps Frigate's TLS on — the admin login then never crosses the LAN in the clear, and every page here points at `https://192.168.1.52:8971` consistently.)
 
 > [!DETAILS] Telling Nextcloud about its new name (for when you build it)
 > Nextcloud comes later in this build; keep this for then. Two settings, both from the Nextcloud container's console at `/var/www/nextcloud` via the `occ` tool. First, the untrusted-domain page — add the new name at the next free index:

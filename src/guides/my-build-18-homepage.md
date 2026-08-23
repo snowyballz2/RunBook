@@ -131,7 +131,7 @@ Replace the sample content of `services.yaml` with the build itself — two grou
         icon: frigate.png
         href: https://192.168.1.52:8971
         description: Cameras and recordings
-        siteMonitor: https://192.168.1.52:8971   # self-signed cert — if this monitor reads down while Frigate is up, that is the certificate check, not Frigate
+        siteMonitor: https://192.168.1.52:8971   # self-signed cert is fine — these checks skip certificate validation
     - Nextcloud:
         icon: nextcloud.png
         href: https://192.168.1.58
@@ -183,7 +183,7 @@ Save, click the refresh icon, and the page is suddenly worth bookmarking. One ex
 >           password: paste-the-token-secret
 > ```
 >
-> The others, one line each: `homeassistant` wants a long-lived access token from your Home Assistant profile page; `adguard` reuses the dashboard login (`type: adguard`, `url`, plus `username` and `password`); `truenas` an API key (add `version: 2` on TrueNAS Scale 25.04 or newer, which this build runs); `uptimekuma` the slug of a status page; `frigate` needs nothing at all and gains a list of latest detections if you add `enableRecentEvents: true`; `npm` the admin email and password; `nextcloud` the NC-Token from its **Settings → System** page. Exact recipes live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
+> The others, one line each: `homeassistant` wants a long-lived access token from your Home Assistant profile page; `adguard` reuses the dashboard login (`type: adguard`, `url`, plus `username` and `password`); `truenas` an API key (add `version: 2` on TrueNAS Scale 25.04 or newer, which this build runs); `uptimekuma` the slug of a status page; `frigate` the admin login (`username` and `password` — this build's 8971 requires auth, and the credential-free internal port 5000 is fenced to Home Assistant and Kuma only), plus `enableRecentEvents: true` for a list of latest detections; `npm` the admin email and password; `nextcloud` the NC-Token from its **Settings → System** page. Exact recipes live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
 
 > [!SECRET] homepage-proxmox-token | Proxmox API token secret (api@pam!homepage)
 
@@ -230,7 +230,7 @@ Then `https://home.example.com` greets you with a padlock and your tiles.
 Uptime Kuma is built on the next page. Once it exists, give it an HTTP monitor pointed at the direct address `http://192.168.1.55:3000` — the install's allow-list already admits that address, so the monitor works untouched, and the page that watches everything is itself watched. The next page's monitor list includes exactly this entry, so working in order covers it.
 
 ### Update on purpose
-When you choose to take a new release, type `update` in the container's console. It fetches the newest source, rebuilds (patience again), and preserves your config files and `.env`. Take a Proxmox snapshot first — the same habit used for the rest of these containers — so rollback is instant if a release misbehaves.
+When you choose to take a new release, type `update` in the container's console. It fetches the newest source, rebuilds (patience again), and preserves your config files and `.env` — with one artifact to expect: if `.env` carries no auth lines, the updater appends a few **commented-out `HOMEPAGE_AUTH_*` template lines** to it. Leave them commented. They belong to Homepage v2's optional login gate, which stays off unless deliberately filled in — the no-accounts design of this page holds. Take a Proxmox snapshot first — the same habit used for the rest of these containers — so rollback is instant if a release misbehaves.
 
 ### Make it the start page
 The actual point: on the family's devices, set `https://home.example.com` — or the plain `http://192.168.1.55:3000` — as the browser's start page, or at least the first bookmark on the bar. The build now opens like an appliance.

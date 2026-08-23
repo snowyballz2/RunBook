@@ -86,14 +86,14 @@ pct set 109 -onboot 1
 > This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief power blips never reach the container. Start-at-boot covers the longer outages that drain the battery and force a clean shutdown — exactly when you most want the monitor back.
 
 ### Create your admin account
-The script prints the address when it finishes — `http://192.168.1.57:3001`. There are no default credentials. The first visit asks which database to use; pick **SQLite**, the simple single-file choice that suits a home install. Then the **Create your admin account** form appears with **Username**, **Password**, and **Repeat Password**. This login will know about everything you run and send alerts on your behalf, so give it a strong password and store both in Vaultwarden.
+The script prints the address when it finishes — `http://192.168.1.57:3001`. There are no default credentials. The first visit asks **"Which database would you like to use?"** — pick **SQLite**, described on the screen itself as "A simple database file, recommended for small-scale deployments" (the MariaDB alternative targets Docker installs). Then the **Create your admin account** form appears: a **Language** dropdown (prefilled — keep it) above **Username**, **Password**, and **Repeat Password**. This login will know about everything you run and send alerts on your behalf, so give it a strong password and store both in Vaultwarden.
 
 > [!INPUT] kuma-user | Uptime Kuma admin username
 
 > [!SECRET] kuma-password | Uptime Kuma admin password
 
 > [!NOTE]
-> For a second factor, the **Security** section of Settings has an **Enable 2FA** option using codes from an authenticator app.
+> For a second factor: **Settings → Security**, press the **2FA Settings** button, and **Enable 2FA** sits inside the dialog it opens — codes from an authenticator app.
 
 ## Watch everything you built
 
@@ -101,10 +101,10 @@ The script prints the address when it finishes — `http://192.168.1.57:3001`. T
 Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name it, give it an address, save, repeat. Work down the rack — these are the guests this collection built:
 
 - **Proxmox itself** — type **HTTP(s)**, URL `https://`-the-host-IP-`:8006`. The web UI's certificate is self-signed, so tick **Ignore TLS/SSL errors for HTTPS websites** — otherwise this monitor reports down from day one.
-- **AdGuard** — what the house actually depends on is port 53, not the dashboard. Add a **DNS** monitor: put a real public name (say `apple.com`) in **Hostname**, and the AdGuard container's IP in **Resolver Server** (port 53) — that second field is the one that matters, since it defaults to a public resolver and would happily pass with AdGuard dead. Add an **HTTP(s)** monitor for the dashboard at `http://`-the-AdGuard-IP as well.
+- **AdGuard** — what the house actually depends on is port 53, not the dashboard. Add a **DNS** monitor: put a real public name (say `apple.com`) in **Hostname**, and the AdGuard container's IP in **Resolver Server(s)** — that field is the one that matters, since it prefills a public resolver (`1.1.1.1`) and would happily pass with AdGuard dead. Its neighbors keep their prefills: **Port** `53`, **Resource Record Type** `A` — right for a plain name like apple.com. Add an **HTTP(s)** monitor for the dashboard at `http://`-the-AdGuard-IP as well.
 - **Home Assistant** — type **HTTP(s)**, URL `http://`-the-HA-IP-`:8123`.
 - **TrueNAS** — type **HTTP(s)**, at the address you use to reach its web UI; tick **Ignore TLS/SSL errors** if it serves HTTPS with a self-signed certificate.
-- **Frigate** — type **HTTP(s)**, URL `http://`-the-Frigate-IP-`:8971` (the authenticated UI port — 5000 is the internal one reserved for the Home Assistant integration).
+- **Frigate** — type **HTTP(s)**, URL `https://`-the-Frigate-IP-`:8971` — its self-signed TLS is on, the build-wide choice, so tick **Ignore TLS/SSL errors for HTTPS websites** (8971 is the authenticated UI port; 5000 is the internal one reserved for the Home Assistant integration).
 - **Nextcloud** — type **HTTP(s)**, at the Nextcloud LXC address; tick the toggle for its self-signed certificate.
 - **Vaultwarden, Homepage, Nginx Proxy Manager** — one **HTTP(s)** monitor each: Vaultwarden at `http://`-the-Vaultwarden-IP-`:8000` (it serves plain HTTP on 8000), Homepage at `http://`-the-Homepage-IP-`:3000`, and Nginx Proxy Manager at `http://`-the-proxy-IP-`:81` — the admin port, because port 80 hits the proxy's public side, not its admin UI.
 
@@ -126,13 +126,18 @@ Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name
 > [!INPUT] proxy-ip | Nginx Proxy Manager container IP | 192.168.1.54
 
 > [!NOTE]
-> Each new monitor checks every 60 seconds, and **Retries** defaults to 0 — the first failed check marks the service down and alerts immediately. Setting Retries to 1 or 2 rides out a momentary blip before alerting; the monitor shows a pending state while it retries. On a home network with one Wi-Fi doorbell and a 5 MP Wi-Fi camera, a small retry value cuts down on noise from brief radio hiccups.
+> The rest of the Add-monitor form is prefills — keep them all, except the one:
+> - **Heartbeat Interval** → keep `60` seconds — every monitor here checks once a minute
+> - **Retries** → defaults to `0`, meaning the first failed check marks the service down and alerts immediately — set **1 or 2**, so a momentary blip rides out in a pending state first; on a home network with one Wi-Fi doorbell and a 5 MP Wi-Fi camera, that small value cuts real noise
+> - **Retry Interval** → appears once Retries is above 0 — keep `60`
+> - **Request Timeout** → keep `48` seconds
+> - **Resend Notification if Down X times consecutively** → keep `0` — alert once, not on repeat
 
 > [!DETAILS] Choosing between Ping, TCP Port, and HTTP(s)
 > The types form a ladder. **Ping** proves the machine answers on the network; **TCP Port** proves something is listening on a port; **HTTP(s)** proves the actual service responds properly — by default it accepts status codes 200–299 and follows up to 10 redirects. Prefer the highest rung a service offers: a frozen app can still answer pings. The type list goes well beyond these — keyword, JSON, push, and Docker checks — but these three plus the DNS type cover everything this collection built.
 
 ### Watch the cameras too
-The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — the likeliest to drop unnoticed, and a doorbell that stopped recording is exactly the kind of silent failure this dashboard exists to catch. Add a **Ping** monitor for each, and one per EmpireTech turret at its static IP — wired cameras drop far less, but a per-camera ping is what tells you *which* one died if footage goes missing. Ping is right here because the cameras speak RTSP (Real-Time Streaming Protocol) and http-flv into Frigate rather than serving a plain web page, so a successful ping is the cleanest "it is still on the network" signal.
+The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — the likeliest to drop unnoticed, and a doorbell that stopped recording is exactly the kind of silent failure this dashboard exists to catch. Add a **Ping** monitor for each, and one per EmpireTech turret at its static IP — wired cameras drop far less, but a per-camera ping is what tells you *which* one died if footage goes missing. Ping is right here because the cameras speak RTSP (Real-Time Streaming Protocol) and http-flv into Frigate rather than serving a plain web page, so a successful ping is the cleanest "it is still on the network" signal. The Ping form's advanced prefills — packet size `56`, a 2-second per-ping timeout, `3` pings per check — all stand.
 
 > [!INPUT] doorbell-ip | Reolink doorbell IP | 192.168.1.70
 
@@ -142,10 +147,10 @@ The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — th
 > A separate **HTTP(s)** monitor on Frigate (above) tells you the NVR (Network Video Recorder) software is alive; the per-camera Ping monitors tell you which *camera* dropped if footage goes missing. Together they point straight at the culprit instead of leaving you guessing.
 
 ### Give the family a status page
-Your dashboard sits behind your login; a status page is the version everyone else in the household can check. Open **Status Pages → New Status Page**, give it a **Name** and a **Slug**, add your monitors, and share the address: `http://`-the-Kuma-IP-`:3001/status/`-your-slug. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
+Your dashboard sits behind your login; a status page is the version everyone else in the household can check. Open **Status Pages → New Status Page**, give it a **Name** and a **Slug** (the form shows the `/status/` prefix live; a taken slug errors with "The slug is already taken."). Creating drops you straight into the page's **editor**: attach each monitor with the **Add a monitor** selector, leave the editor's **Refresh Interval** at `300` seconds, and press **Save**. Then share the address: `http://`-the-Kuma-IP-`:3001/status/`-your-slug. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
 
 > [!NOTE]
-> Slugs accept lowercase letters, digits, and dashes. The slug `default` is special — `/status` with no slug points to it. Status pages refresh on a roughly five-minute cache, so they lag the live dashboard slightly; for "is it down, or is it just me", that is plenty.
+> Slugs accept lowercase letters, digits, and dashes — starting and ending alphanumeric, no doubled dashes. The slug `default` is special — `/status` with no slug points to it. Status pages lag the live dashboard slightly: the server caches them for five minutes, and each viewer's page re-fetches on the editor's Refresh Interval (the 300-second default). For "is it down, or is it just me", that is plenty.
 
 ## Keep it honest
 
@@ -153,7 +158,12 @@ Your dashboard sits behind your login; a status page is the version everyone els
 A red bar on a dashboard nobody has open is not an alert. Go to **Settings → Notifications**, click **Set Up Notification**:
 
 - **Notification Type** → **ntfy** — the easy first one; install the ntfy app on your iPhone and subscribe to a topic
-- **ntfy Topic** → that same topic
+- **Friendly Name** → the auto-filled "My ntfy Alert (1)" is fine — it names the notifier in Kuma, not the message
+- **ntfy Topic** → that same topic — make it long and random; on the default server, knowing the topic name *is* the access
+- **Server URL** → keep the prefilled **`https://ntfy.sh`** — the phone app must subscribe to the topic on this same server
+- **Priority** (and **Priority when down**) → keep the defaults
+- **Authentication Method** → **None** — the random topic name is the access control here
+- **Test** → sends one to the phone; prove it lands, then **Save**
 - **Default enabled** → ticked
 - **Apply on all existing monitors** → ticked
 
@@ -169,7 +179,7 @@ Every monitor — including ones you add later — now pushes straight to your p
 > All of Kuma's notifiers push *outward* from the container — to an ntfy topic, the Telegram API (application programming interface), a mail server, a webhook, or Home Assistant. None of them needs an inbound port-forward into your network. Keep it that way; this build opens no ports, and remote access runs over Tailscale.
 
 ### Know the one thing it cannot see
-One honest limit, baked into the architecture: Kuma runs on the very server it watches. If the whole i7-8700K dies — PSU (power supply unit) failure, kernel panic, someone trips over the cable — the monitor dies with everything it monitors, and no alert fires. There is no in-app cure; the maintainer's own words are that it is "not a distributed system."
+One honest limit, baked into the architecture: Kuma runs on the very server it watches. If the whole i7-8700K dies — PSU (power supply unit) failure, kernel panic, someone trips over the cable — the monitor dies with everything it monitors, and no alert fires. There is no in-app cure — distributed monitoring is a long-standing feature request the maintainer has left deliberately unimplemented; one instance is the design.
 
 For this LAN-only build with no port-forwards, the workaround that fits is a second Uptime Kuma on separate always-on hardware — a Raspberry Pi, say — running a single monitor pointed at this one at `http://`-the-Kuma-IP-`:3001`. The UPS and the NUT (Network UPS Tools) shutdown handling set up on the UPS & Safe Shutdown page cover the *power-blip* case, but only a second box catches a hard crash of the main server.
 

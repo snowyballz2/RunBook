@@ -80,7 +80,15 @@ Browse to the printed address. Plain `http://` redirects to HTTPS, and the brows
 > NCP's docs mention `https://nextcloudpi.local`, an mDNS name that may not resolve to this unprivileged container from another Mac. The IP always works, and lives on the container's **Network** tab if you lose it (Proxmox does not show an LXC's address on the Summary tab — only VMs with the guest agent get that).
 
 ### Save both passwords, then Activate
-The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (the **Print** button captures them too), recording them in your password manager for now — you will consolidate these into Vaultwarden when you set it up later in this build. Then click **Activate**: the page opens `https://192.168.1.58:4443` (the second certificate warning), landing you in the NCP panel.
+The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (the **Print** button captures them too), recording them in your password manager for now — you will consolidate these into Vaultwarden when you set it up later in this build. Then click **Activate**: the page flashes **ACTIVATION SUCCESSFUL** and opens `https://192.168.1.58:4443` **in a new tab** a few seconds later — if a pop-up blocker eats it, type the address yourself. Two prompts stand between you and the panel:
+
+- the second self-signed **certificate warning** — proceed, as before
+- a **browser login popup** titled **"ncp-web login"** — the browser's own gray Basic-auth dialog, not a web page. User **`ncp`**, password the **panel** password just saved
+
+On the panel's first load, an overlay offers its own wizard — **"Click to start the configuration wizard"**, with **run** and **skip**:
+
+- **skip** — its two working tabs solve problems this build does not have: **USB Configuration** wants to format a USB drive as the data disk (this is an LXC on the NVMe, and the archive rides External storage below), and **External access** wants router port-forwards and DDNS (Dynamic DNS), which this build forbids
+- it shows only once; the wand icon in the panel's header reopens it if ever wanted
 
 > [!INPUT] nextcloud-user | Nextcloud / NCP username | | ncp
 > The same `ncp` user signs in to both — only the passwords differ.
@@ -90,13 +98,13 @@ The activation page generates two random passwords for a user named **ncp** — 
 > [!SECRET] nextcloud-password | Nextcloud password
 
 > [!NOTE]
-> Older write-ups call the Nextcloud user `admin`; current NCP uses **ncp** for both logins. Lose one and you can review or reset both via `sudo ncp-config` in the container's console (the `nc-admin` and `nc-passwd` tools).
+> Older write-ups call the Nextcloud user `admin`; current NCP uses **ncp** for both logins. Lose one and you can **reset** it via `sudo ncp-config` in the container's console — `nc-admin` sets a new password for the Nextcloud login, `nc-passwd` for the panel's. Neither shows a current password; nothing does.
 
 > [!DETAILS] Getting to know the 4443 panel
 > `https://192.168.1.58:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. It can run Let's Encrypt to get a real certificate if you ever give this box a public name — but this is a local-first household, so living with the self-signed warning is a legitimate choice. The router blocks unsolicited inbound traffic and nothing here needs a port-forward; don't create one. Remote access rides the Tailscale tunnel set up on the previous page.
 
 ### Sign in to Nextcloud itself
-Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. There is no first-run wizard — NCP already created the account and the stack behind it — so you land straight in your files.
+Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. NCP already created the account and the stack behind it, so there is no setup to do — but two small first-login moments remain: you land on the **Dashboard**, not Files (**Files** sits one click away in the top bar), and a **welcome pop-up** offers the desktop and mobile client downloads — close it; the clients get installed properly later on this page. Every new account created below meets the same pop-up on its own first login.
 
 > [!DETAILS] Fixing "Access through untrusted domain"
 > Reach Nextcloud by any name or address it doesn't already know and it stops with that heading. It's a security check, not breakage: the `trusted_domains` setting in `config/config.php` lists the names and addresses this instance will answer to, and specifying them prevents host-header poisoning. From the container's console, list what it trusts, then add the new name at the next free index:
@@ -110,7 +118,7 @@ Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. 
 ## Point the storage at the ZFS pool
 
 ### Add accounts for the household
-Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account**, enter a name and password, and click **Add new account** — one per person, so everyone gets their own files, photos, and password. NCP pre-enables the household set — Files, Activity, Photos, **and** Calendar, Contacts, Notes, and Tasks are all ready on first login. Anything further comes from the **Apps** page: clicking **Enable** on an unbundled app downloads it from the Nextcloud app store, installs, and enables it in one step — so a brief install pause is expected, not a fault.
+Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account** — fill **Username** and **Password**, leave the dialog's other fields (Display name, Email, Groups, Quota, Language, Manager) blank or default, and click **Add new account** — one per person, so everyone gets their own files, photos, and password. NCP pre-enables the household set — Files, Activity, Photos, **and** Calendar, Contacts, Notes, and Tasks are all ready on first login. Anything further comes from the **Apps** page: for a store app the button reads **Download and enable** — one click fetches, installs, and enables it, so a brief pause is expected, not a fault. (Plain **Enable** appears only on apps that ship with the server, like the one in the next section.)
 
 ### Decide where the bytes live
 Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root disk — fine to start, tiny against a camera roll across the whole household. There are two ways to give it room, and this build uses both:
@@ -131,10 +139,18 @@ Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root dis
 ### Mount the TrueNAS share as External Storage
 The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated SMB user. Hang it inside Nextcloud:
 
-1. Under **Apps**, find **External Storage Support** and click **Enable** (it ships disabled).
-2. Go to **Administration settings → External Storage**.
-3. Add a folder, choose backend **SMB/CIFS**, and point **Host** at the TrueNAS IP with the `files` share name.
-4. Authenticate with the existing SMB credentials — username and password — saved per the share.
+1. Under **Apps**, find **External storage support** and click **Enable** (it ships with the server, disabled).
+2. Go to **Administration settings → External storage**.
+3. Fill the new row, every field:
+   - **Folder name** → `Pool` — the folder name everyone sees in their Files
+   - **External storage** (the backend dropdown) → **SMB/CIFS**
+   - **Authentication** → **Username and password**
+   - **Host** → **`192.168.1.20`** — the TrueNAS VM
+   - **Share** → **`files`** — its own field, separate from Host
+   - **Remote subfolder** and **Domain** → blank
+   - **Username / Password** → the existing SMB credentials, per the share
+   - **Available for** → leave empty — empty means everyone
+4. Save the row (the checkmark at its right). A **green dot** at the row's left edge means the mount works; red or yellow means Nextcloud could not connect — recheck host, share, and credentials.
 
 The share appears as a folder in everyone's files. Photo archives and media sit on the ZFS pool with all its space and its snapshots, while the documents and photos people want everywhere keep syncing from the local disk.
 

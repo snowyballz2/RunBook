@@ -23,7 +23,7 @@ The payoff fits this local-first household exactly: one mesh VPN (virtual privat
 ## Put the host on a tailnet
 
 > [!NOTE]
-> Before you start, know which identity this is: **your own Apple ID** — the build administrator's, the one already on your iPhone and MacBook. This house runs two personal Apple IDs, and the tailnet belongs to **yours**; do not create a new shared ID for it (a rarely-used Apple ID is a neglected account, the exact weakness being avoided here). The same identity signs in the host (in a browser on the MacBook, which may ask you to re-authenticate) and later your iPhone, so keep its password and a two-factor device within reach. The second phone in the house never signs in with your ID — invite it in the admin console's **Users** page as **its own user with its own Apple ID** (the free Personal plan covers three users), and do it **while you are in the console anyway**: the Automations page's presence rules depend on it. A phone with no route to Home Assistant cannot report leaving, so its tracker freezes on "home" and *everybody-left* never fires — her membership is what makes her presence real when she is away.
+> Before you start, know which identity this is: **your own Apple ID** — the build administrator's, the one already on your iPhone and MacBook. This house runs two personal Apple IDs, and the tailnet belongs to **yours**; do not create a new shared ID for it (a rarely-used Apple ID is a neglected account, the exact weakness being avoided here). The same identity signs in the host (in a browser on the MacBook, which may ask you to re-authenticate) and later your iPhone, so keep its password and a two-factor device within reach. The second phone in the house never signs in with your ID — invite it in the admin console's **Users** page as **its own user with its own Apple ID** — the button is **Invite external users**, the role is picked inside the invite (Member), and an unaccepted invite expires after 30 days (the free Personal plan covers six users), and do it **while you are in the console anyway**: the Automations page's presence rules depend on it. A phone with no route to Home Assistant cannot report leaving, so its tracker freezes on "home" and *everybody-left* never fires — her membership is what makes her presence real when she is away.
 
 ### Create your Tailscale account
 Tailscale calls your private network a *tailnet*; it is created the moment you first sign in. Go to [tailscale.com](https://tailscale.com/) and sign up — the Personal plan is $0, free forever. There is no Tailscale password to invent: you sign in with an identity you already own. For this household, **Apple** is the natural choice — it is the Apple ID your iPhones already use — but Google, Microsoft, GitHub, or a passkey work too.
@@ -36,7 +36,9 @@ Fair question to ask here: why should a third party's identity sit between you a
 
 Do it now, while the console is open — Tailscale's *Admin account with passkey login* doc is the canonical walk:
 
-- In the **admin console → Users**, invite a new user via the **passkey** signup path, and grant it the **Admin** role
+- In the **admin console → Users**, click **Invite external users**, set the role to **Admin** inside the invite, and use the **Copy invite link** tab — **Generate & copy invite link** — rather than emailing it
+- Open that link in a **private/incognito window** (Tailscale's docs say so explicitly — a normal window binds the invite to whatever account is already signed in) and choose to **sign up with a passkey**
+- Pick the username deliberately: it becomes permanent as `<name>@passkey` and can never be reused, and the invite itself expires after 30 days unused
 - Store its passkey with the same discipline as the Home Assistant backup key — the device keychain now, Vaultwarden when it exists later in the build
 - Sign in with it **once** to prove it works — an untested break-glass login is a decoration
 
@@ -97,6 +99,15 @@ tailscale ip -4
 > [!DETAILS] What the host just received
 > Every tailnet device gets a stable address in the `100.x.y.z` range that stays the same no matter where the device physically moves. So the host now has two addresses: the `192.168.1.x` LAN IP you set during install, and a `100.x` address other tailnet devices reach from anywhere. The next phase extends that reach to every guest in the rack.
 
+### Keep the host's own DNS out of the tailnet
+One command now prevents a boot-order trap later. On the Reverse Proxy page, this tailnet's DNS page gets AdGuard entered as a forced global nameserver — and that override applies to every tailnet device, **including this host**. But AdGuard is a container *this host boots*: left on, the host's own lookups would route into a guest that does not exist yet during startup, or is down during any AdGuard outage — and `apt`, install scripts, and `update` commands on the host all go deaf exactly when you need them. Opt the host out; it is the one machine here that must keep resolving independently of its own guests:
+
+```bash
+tailscale set --accept-dns=false
+```
+
+Every phone and laptop keeps the override — that is what carries the `*.example.com` names off-LAN — but the machine underneath them all keeps its boring, self-sufficient DNS.
+
 ### Stop the host's key from expiring
 By default a tailnet device must re-authenticate every 180 days, and a server that silently drops off the network while you are travelling defeats the entire point. On the [Machines page](https://login.tailscale.com/admin/machines) of the admin console, find the **pve** row, open the **…** menu at the far right, and select **Disable Key Expiry**.
 
@@ -127,6 +138,9 @@ tailscale set --advertise-routes=192.168.1.0/24
 > [!DETAILS] Why `set`, not `up`
 > Prefer `tailscale set` over passing `--advertise-routes` to `tailscale up`: `tailscale up` expects you to re-specify *every* setting each time, an easy way to accidentally undo something, while `set` changes the one route.
 
+> [!DETAILS] The "UDP GRO forwarding" warning that may appear
+> On a kernel this new, Tailscale may print **"UDP GRO forwarding is suboptimally configured"** in `tailscale status` or its logs once routes are advertised. It is a throughput hint for the subnet-router path, not an error — phones and laptops reaching this build remotely will never notice. Tailscale's performance best-practices doc carries the fix (an `ethtool` setting on the interface that holds the default route, plus a small unit to persist it) — worth doing only if the tunnel ever moves serious data, like a large restore. Safe to ignore today.
+
 ### Approve the route in the admin console
 Advertised routes do nothing until an admin — you — approves them, so a stray device can never quietly announce itself as a gateway. Open the [Machines page](https://login.tailscale.com/admin/machines), select **pve** (its row now shows a **Subnets** badge), go to the **Subnets** section and select **Edit**; in the panel, tick `192.168.1.0/24` under **Subnet routes** and select **Save**.
 
@@ -136,7 +150,7 @@ Advertised routes do nothing until an admin — you — approves them, so a stra
 ## Prove it from your iPhone
 
 ### Put Tailscale on your phone
-A phone on cellular data is the cleanest test: a device that is definitely not on your network, reaching addresses that should only exist on your network. Install Tailscale from the App Store (iOS 15 or later), open it, choose **Get Started**, and **Log in** with the same account you used for the host. iOS will ask permission to add a VPN configuration — accepting that prompt is what switches the connection on.
+A phone on cellular data is the cleanest test: a device that is definitely not on your network, reaching addresses that should only exist on your network. Install Tailscale from the App Store (iOS 15 or later), open it, and take its first-run prompts in order: **Get Started**; then iOS asks permission to add a **VPN configuration** — accepting that is what switches the connection on; then allow **notifications**, which is how a future re-authentication asks for you instead of silently dropping; and finally **Log in** with the same account you used for the host.
 
 ### Reach every service from anywhere
 Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app shows connected, then browse to each service on its normal LAN address — no Tailscale install needed on any of them, because the subnet route carries them all:
