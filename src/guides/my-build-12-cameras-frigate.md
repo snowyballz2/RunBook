@@ -857,7 +857,7 @@ The dead-end gateway already stops the traffic; this step turns off the services
   - the one labeled **"Enable"** → **off** — that is the port-mapping half; off means the camera can never punch its own hole in a router
   - the one labeled **"Enable Device Discovery"** → **off** — SSDP presence broadcasting, which ships on
 - **Bonjour** → **off** — on by default; LAN mDNS advertising that nothing in this build uses
-- **Multicast** → **off** — Frigate pulls plain unicast RTSP
+- **Multicast** → **off in both columns** — the pane has a **Main Stream** and a **Sub Stream** column, each with its own **Enable** toggle, and on this build's firmware both ship **on**. Flip both off (and if the **Sub Stream** dropdown offers a second entry, select it and check its Enable too). This pane offers the streams to a `224.x` multicast *group* for many-viewers setups; nothing here subscribes — Frigate pulls its own direct unicast RTSP connection
 - **Register** → **off** — "auto register" announces the camera to a central management server; nothing here runs one
 - **DDNS / PPPoE / Email / SNMP** → verify all four panes **off / unconfigured**, their shipped state
 - **Basic Service** → the pane of seven switches: **Mobile Push Notification → off** (ships on — the P2P app path's other half) · **SSH → off** · **Genetec → off** · **CGI → off** (nothing in this build speaks it) · **ONVIF → leave ON** (the actual ONVIF service — LAN-only, login-gated by the verification toggle above, and cheap to keep for the talk-down work planned on the Automations page) · **Multicast/Broadcast Search → off** (only costs vendor tools' LAN auto-discovery; everything here goes by IP) · **Private Protocol Authentication Mode → Security Mode (Recommended)**, the shipped choice — verify
