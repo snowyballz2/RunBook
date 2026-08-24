@@ -824,18 +824,76 @@ A cheap IP camera is the least-trusted device on your network — closed firmwar
 ### Cut the camera's route to the internet
 Do this **after** the camera is configured and streaming to Frigate — initial setup in the vendor app often needs internet to activate the device, so lock it down last.
 
-Every camera already runs the static address you assigned during setup; the hardening move is **blanking its gateway**. A device only needs its gateway to reach addresses *outside* its own subnet — i.e. the internet. Blank it and the camera can still talk to anything on `192.168.1.x` (so Frigate keeps pulling its stream, unchanged), but it physically **cannot route a packet to the internet**: it can't phone home, leak footage to a cloud, or be reached by anyone outside. In each camera's network settings:
+Every camera already runs the static address you assigned during setup; the hardening move is a **dead-end gateway**. A device only needs its gateway to reach addresses *outside* its own subnet — i.e. the internet. Point it somewhere nothing lives and the camera can still talk to anything on `192.168.1.x` (so Frigate keeps pulling its stream, unchanged), but it **cannot route a packet to the internet**: it can't phone home, leak footage to a cloud, or be reached by anyone outside. This build's designated dead end is **`192.168.1.98`** — inside the protected static zone, assigned to nothing, and it stays that way. Do not use a blank field or `0.0.0.0` instead: Dahua's manual requires a same-segment gateway and its firmware is known to misbehave with both — the dead-end address is the reliable spelling of "no gateway."
 
-- **IP** — already set (`.70`–`.76`, per camera); leave it
-- **Subnet mask** — `255.255.255.0`
-- **Gateway** — leave **blank**; if the firmware insists on a value, enter an unused address on the subnet (even the camera's own IP) so packets route nowhere
-- **DNS** — blank or your router; it can't reach an external resolver anyway, which is the point
+**The five turrets** — in each camera's web UI (`http://192.168.1.72` through `.76`), **gear icon → Setting → Network → TCP/IP**. Every field on the pane, in order:
+
+- **Host Name** → leave it
+- **ARP/Ping** → leave the default — a LAN-only address-setting aid
+- **NIC** → **Wired(Default)**, as shipped
+- **Mode** → **Static** — already set at setup
+- **MAC Address** → display-only
+- **IP Version** → **IPv4**
+- **IP Address / Subnet Mask** → already `.72`–`.76` and `255.255.255.0`; leave them
+- **Default Gateway** → **`192.168.1.98`**
+- **Preferred DNS / Alternate DNS** → **`192.168.1.98`** / blank — with a dead gateway it could never reach a resolver anyway
+- **Apply**
+
+**The Reolink pair** — in each camera's web UI (`http://192.168.1.70` and `.71`, the admin login), **Device Settings → Network → General**. The iOS app cannot do this part — its static form (Device Settings → Device Info → Network Information) hides DNS entirely — so use the web UI:
+
+- **Connection Type** → **Static**
+- **IP Address / Subnet Mask** → keep `.70` / `.71` and `255.255.255.0`
+- **Gateway** → **`192.168.1.98`**
+- **DNS** → if DNS rows appear in Static mode on your firmware, **`192.168.1.98`** as well
 
 ### Shut the vendor cloud off at the source
-In the camera's own app, turn **off** everything that reaches out: **cloud / P2P / remote access**, **UPnP** (so it can't punch its own hole in the router), and any "push to phone" service. You're replacing all of it with Frigate and Home Assistant notifications — local, and far smarter.
+The dead-end gateway already stops the traffic; this step turns off the services that would keep *trying* — and the two vendors keep them in different places. The turrets have no app at all: their cloud path is a service in the web UI, shipped **on**.
+
+**The five turrets** — same web UI, everything under **Setting → Network** unless noted:
+
+- **Platform Access → P2P** → **untick Enable** — it ships enabled, behind Dahua's own consent text admitting it sends the device's IP, MAC, and serial number out. Off kills the DMSS-app/cloud path; the web UI, RTSP, and LAN access carry on. The pane's **Status** reads **Offline** from now on — that is the setting working, not a fault
+- **Platform Access → ONVIF** → **leave ON** — this toggle is ONVIF *login verification*, not ONVIF itself; it just requires credentials, which Frigate supplies
+- **UPnP** → **both toggles off** — **Enable** (the port-mapping half, so it can never punch its own hole in a router) and **Enable Device Discovery** (SSDP presence, which ships on)
+- **Bonjour** → **off** — on by default; LAN mDNS advertising that nothing in this build uses
+- **Multicast** → **off** — Frigate pulls plain unicast RTSP
+- **Register** → **off** — "auto register" announces the camera to a central management server; nothing here runs one
+- **DDNS / PPPoE / Email / SNMP** → verify all four panes **off / unconfigured**, their shipped state
+- **Basic Service** → the pane of seven switches: **Mobile Push Notification → off** (ships on — the P2P app path's other half) · **SSH → off** · **Genetec → off** · **CGI → off** (nothing in this build speaks it) · **ONVIF → leave ON** (the actual ONVIF service — LAN-only, login-gated by the verification toggle above, and cheap to keep for the talk-down work planned on the Automations page) · **Multicast/Broadcast Search → off** (only costs vendor tools' LAN auto-discovery; everything here goes by IP) · **Private Protocol Authentication Mode → Security Mode (Recommended)**, the shipped choice — verify
+- **Setting → System → Upgrade** → holds only a manual file-update on current firmware; if yours shows an **Online Upgrade / Auto Check for Update** toggle, switch it **off** — firmware moves on this build are deliberate, from EmpireTech's own download page
+
+**The Reolink pair** — one preparation first: in the **iOS app**, if a camera was added by QR/UID scan, re-add it **by IP** (**⊕ → Manual Input → the camera's IP**) so the app keeps working on the LAN after the next toggle kills the relay path. Then:
+
+- **UID** (Reolink's P2P relay) → **off — web UI only**: **Device Settings → Network → Advanced → UID**, untick. It ships enabled on every Reolink camera, and the iOS app has no switch for it on cameras. Off means no Reolink-relay access from anywhere outside — remote viewing on this build is Frigate over Tailscale once the Remote Access page is done — while LAN app, web UI, and streams carry on
+- **UPnP** → **off**: **Device Settings → Network → Advanced**, the UPnP switch — web UI again; the app has no such toggle
+- **Push Notifications** → **off**: app → **Device Settings → Push Notifications** — Reolink's push routes device → Reolink's servers → Apple → phone; Frigate and Home Assistant notifications replace it, local and far smarter
+- **Auto Update** → **off**: app → **Device Settings → Device Info → Update Device → Auto Update** — firmware stays pinned until you choose otherwise (manual `.pak` files from reolink.com, applied via the web UI)
+- **Email Alerts / FTP upload** → leave **unconfigured**, their shipped state
+- **Reolink Cloud** → nothing to switch: it only exists once a camera is bound to a Reolink account, and this build never signs one in — LAN add-by-IP, the web UI, RTSP, and NTP are all account-free
+- **Server Settings** → already answered at the doorbell's setup step (HTTP on, RTSP on, ONVIF on, RTMP left on for the flv machinery) — just **verify nothing regressed**: web UI **Device Settings → Network → Advanced → Server Settings**; a firmware update is the usual culprit when a stream that worked goes dark
+
+> [!NOTE]
+> The pane names above are verified against Dahua's current Web 5.0 operation manual and Reolink's current support articles — but camera firmware drifts, and a given build may shuffle a pane (the newest Dahua builds, for instance, move updating into a left-rail "Maintenance Center"). Where your camera's screen disagrees with a path here, trust the screen — and flag it so this page gets corrected against the real firmware.
 
 ### Give it a local clock
-The one thing a camera legitimately wants from outside is the time. With no gateway it can't reach an internet **NTP (Network Time Protocol)** server, so point its **NTP** setting at your **router** or **Home Assistant** — either serves time on the LAN — so recording timestamps stay correct.
+The one thing a camera legitimately wants from outside is the time. With a dead-end gateway it can never reach an internet **NTP (Network Time Protocol)** server, so serve time on the LAN — and the right machine already keeps a disciplined clock: the **Proxmox host** runs **chrony** as its own time-keeper. One appended line turns it into a LAN time server. In the host **Shell**:
+
+```bash
+echo 'allow 192.168.1.0/24' >> /etc/chrony/chrony.conf
+systemctl restart chrony
+```
+
+The datacenter firewall from the fence step is live, so the host also needs the port opened — in the Proxmox UI, select the **node → Firewall → Add**:
+
+- **Direction** → **in**, **Action** → **ACCEPT**
+- **Protocol** → **udp**, **Dest. port** → **123**
+- **Source** → `192.168.1.0/24`
+- **Enable** → **ticked** — GUI-added rules ship disabled
+- **Comment** → `NTP for cameras`
+
+Then point every camera at the host:
+
+- **Turrets** → **Setting → System → General → Date & Time**: switch the radio from **Manual Settings** to **NTP**, **Server** → **`192.168.1.50`**, **Port** → `123`, keep the sync interval, confirm the **Time Zone**, and set the **DST** rows to match the house — Dahua's manual documents a LAN time source as first-class
+- **Reolink pair** → web UI **Device Settings → Network → Advanced → NTP Settings → Set Up**: **Server** → **`192.168.1.50`** (replacing the prefilled vendor default), **Port** → `123`, keep **Auto-Synchronize** on, then press **Synchronize** — which doubles as the test that the chrony change took
 
 > [!TIP]
 > If a camera's firmware flat-out refuses to work without a real gateway (a few do), give it the gateway back and **block it at the router instead**: the Fios router's **Access Control** can deny that one device internet access. Same outcome, enforced upstream.
