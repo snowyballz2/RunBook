@@ -26,6 +26,11 @@ In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacent
 - **Username / Password** → the SMB login from the fields below
 - **Share** → `backups`
 - **Content** → tick **Backup** (older Proxmox versions label it **VZDump backup file**); **Disk image** only if you also want it as general storage
+- **Nodes** → leave **All (No restrictions)** — there is one node anyway
+- **Enable** → ticked, the default
+- **Domain** and **Subdirectory** → blank
+- the **Advanced** checkbox's extras (**Preallocation** → Default; **Allow Snapshots as Volume-Chain** → unticked — it is a technology preview) → leave them
+- the dialog's second tab, **Backup Retention** → leave **"Keep all backups"** ticked — the backup *job* below carries the real retention, and job-level settings override this tab
 
 Proxmox mounts it under `/mnt/pve/nas-backups`.
 
@@ -43,26 +48,37 @@ Proxmox mounts it under `/mnt/pve/nas-backups`.
 ## Schedule the guest backups
 
 ### Schedule automatic vzdump of every guest
-Still in the Proxmox web UI, go to **Datacenter → Backup** and click **Add**:
+Still in the Proxmox web UI, go to **Datacenter → Backup** and click **Add**. The window is five tabs — **General**, **Notifications**, **Retention**, **Note Template**, **Advanced** — and only General and Retention need your hands. On **General**:
 
+- **Node** → leave **-- All --**
 - **Storage** → `nas-backups` — never `local` (the warning below)
 - **Schedule** → a quiet daily hour; `02:30` works on this build
-- **Selection mode** → **All** — any guest you create later is covered without touching the job again
+- **Selection mode** → **All** — any guest you create later is covered without touching the job again; the guest grid beneath it becomes a review list (the other modes — Include selected, Exclude selected, Pool based — are the hand-picked variants the Maintenance page warns can silently drop a guest)
+- **Compression** → keep **ZSTD (fast and good)**
+- **Mode** → keep **Snapshot**
+- **Enable** → ticked
+- **Job Comment** → optional; `nightly guests` reads well in the job list
+
+The other three tabs, so nothing on them surprises you:
+
+- **Notifications** → keep **"Use global notification settings"** — the legacy sendmail radio reveals Recipients and When fields this build does not use
+- **Note Template** → keep the default `{{guestname}}`
+- **Advanced** → every default stands: Job ID autogenerates, Bandwidth Limit empty, Zstd Threads `1`, IO-Workers `16`, **Fleecing** off (a write buffer for slow backup targets; the NAS over gigabit is not one), and **Repeat missed** off — deliberately, so a 02:30 run missed while the box was powered off does not fire the moment it next boots; the nightly cadence self-heals the following night
 
 > [!WARNING]
 > Proxmox offers `local` as a storage choice out of the box — but `local` is a directory on the **NVMe boot disk**, the exact disk holding the Proxmox OS and Frigate's cache that everything on this page is meant to survive. A backup job pointed at `local` dies with the disk it is supposed to protect. Make sure **Storage** reads `nas-backups`, never `local`.
 
 > [!NOTE]
-> The defaults are right here: **ZSTD** compression is fast and effective, and **Snapshot** mode backs up running guests with the least downtime. For the Home Assistant and TrueNAS VMs, the QEMU guest agent briefly freezes the filesystem during backup for a cleaner, more consistent archive.
+> Snapshot mode backs up running guests with the least downtime — and for the Home Assistant and TrueNAS VMs, the QEMU guest agent briefly freezes the filesystem during backup for a cleaner, more consistent archive.
 
 > [!DETAILS] Mind the start order and the Frigate footage disk
-> Two build-specific notes. First, the household start/shutdown order is **Home Assistant VM before the Frigate LXC** because Frigate depends on HA's Mosquitto MQTT (MQ Telemetry Transport) broker — but vzdump backs each guest up independently, so the backup job does not disturb that ordering. Second, the Frigate LXC's *footage* lives on the third IronWolf on a motherboard SATA (Serial ATA) port, which is replaceable camera video. That disk is handed into the container as a bind mount of a host path, and vzdump skips bind mounts by default — so the job archives the container, not terabytes of recordings, with nothing to configure. After the first run, glance at the Frigate job's log and confirm the footage mount is listed as excluded.
+> Two build-specific notes. First, the household start/shutdown order is **Home Assistant VM before the Frigate LXC** because Frigate depends on HA's Mosquitto MQTT (MQ Telemetry Transport) broker — but vzdump backs each guest up independently, so the backup job does not disturb that ordering. Second, the Frigate LXC's *footage* lives on the third IronWolf on a motherboard SATA (Serial ATA) port, which is replaceable camera video. That disk is handed into the container as a bind mount of a host path, and vzdump skips bind mounts by default — so the job archives the container, not terabytes of recordings, with nothing to configure. Kick the first run off yourself with the **Run now** button on the Datacenter → Backup screen, then read the log in the task viewer that opens (or the node's **Task History** later): the Frigate entry should print the footage mount as **excluded**, and the task should end **TASK OK**.
 
 > [!DETAILS] Choosing what to keep — retention
-> By default every backup is kept forever and slowly fills the share. On the job's **Retention** tab, a sane home setup is **Keep Daily** 7 and **Keep Weekly** 4 — a week of daily restore points plus a month of weekly ones, pruned automatically. Job-level retention overrides whatever the storage is configured to keep.
+> By default every backup is kept forever and slowly fills the share. The job's **Retention** tab shows a **Keep all backups** box above six keep fields (**Keep Last / Hourly / Daily / Weekly / Monthly / Yearly**). Clear **Keep all backups**, set **Keep Daily** `7` and **Keep Weekly** `4`, and leave the other four empty — a week of daily restore points plus a month of weekly ones, pruned automatically. Job-level retention overrides whatever the storage is configured to keep.
 
 ### Know how to restore — and prove it
-Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's own **Backup** tab), select an archive, and click **Restore**. Restoring over an existing guest returns it to the archived state — everything since is discarded. From the storage's Backups view the dialog also accepts a different, unused **CT/VM ID**, restoring a *copy* alongside the original — the gentlest way to do a practice run.
+Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's own **Backup** tab), select an archive, and click **Restore**. The dialog's fields: **Storage** (where the restored disks land — leave the default), **CT/VM ID** (editable only when you came in from the *storage's* Backups view, where it pre-fills the next free ID — from a guest's own tab it restores over that guest), **Bandwidth Limit** (empty), **Unique** (off), **Start after restore** (off for a practice run), a container-only **Privilege Level** (keep **From Backup**), and a collapsible **Override Settings** section (Hostname, Cores, Memory) to ignore. Restoring over an existing guest returns it to the archived state — everything since is discarded, behind the warning "This will permanently erase current VM data." Restoring into a different, unused ID makes a *copy* alongside the original — the gentlest way to do a practice run.
 
 > [!TIP]
 > A backup you have never restored is a hope, not a plan. Do one practice restore of a small service container — Uptime Kuma is a good victim — into a spare guest ID while nothing is on fire, just to watch the process work.
