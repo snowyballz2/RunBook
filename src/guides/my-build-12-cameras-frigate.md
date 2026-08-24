@@ -853,7 +853,9 @@ The dead-end gateway already stops the traffic; this step turns off the services
 
 - **Platform Access → P2P** → **untick Enable** — it ships enabled, behind Dahua's own consent text admitting it sends the device's IP, MAC, and serial number out. Off kills the DMSS-app/cloud path; the web UI, RTSP, and LAN access carry on. The pane's **Status** reads **Offline** from now on — that is the setting working, not a fault
 - **Platform Access → ONVIF** → **leave ON** — this toggle is ONVIF *login verification*, not ONVIF itself; it just requires credentials, which Frigate supplies
-- **UPnP** → **both toggles off** — **Enable** (the port-mapping half, so it can never punch its own hole in a router) and **Enable Device Discovery** (SSDP presence, which ships on)
+- **UPnP** → the pane has two switches, and both get switched **off**:
+  - the one labeled **"Enable"** → **off** — that is the port-mapping half; off means the camera can never punch its own hole in a router
+  - the one labeled **"Enable Device Discovery"** → **off** — SSDP presence broadcasting, which ships on
 - **Bonjour** → **off** — on by default; LAN mDNS advertising that nothing in this build uses
 - **Multicast** → **off** — Frigate pulls plain unicast RTSP
 - **Register** → **off** — "auto register" announces the camera to a central management server; nothing here runs one
