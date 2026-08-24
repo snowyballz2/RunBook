@@ -860,7 +860,14 @@ The dead-end gateway already stops the traffic; this step turns off the services
 - **Multicast** → **off in both columns** — the pane has a **Main Stream** and a **Sub Stream** column, each with its own **Enable** toggle, and on this build's firmware both ship **on**. Flip both off (and if the **Sub Stream** dropdown offers a second entry, select it and check its Enable too). This pane offers the streams to a `224.x` multicast *group* for many-viewers setups; nothing here subscribes — Frigate pulls its own direct unicast RTSP connection
 - **Register** → **off** — "auto register" announces the camera to a central management server; nothing here runs one
 - **DDNS / PPPoE / Email / SNMP** → verify all four panes **off / unconfigured**, their shipped state
-- **Basic Service** → the pane of seven switches: **Mobile Push Notification → off** (ships on — the P2P app path's other half) · **SSH → off** · **Genetec → off** · **CGI → off** (nothing in this build speaks it) · **ONVIF → leave ON** (the actual ONVIF service — LAN-only, login-gated by the verification toggle above, and cheap to keep for the talk-down work planned on the Automations page) · **Multicast/Broadcast Search → off** (only costs vendor tools' LAN auto-discovery; everything here goes by IP) · **Private Protocol Authentication Mode → Security Mode (Recommended)**, the shipped choice — verify
+- **Basic Service** → the pane of seven switches, one answer each:
+  - **Mobile Push Notification** → **off** — ships on; the P2P app path's other half
+  - **SSH** → **off**
+  - **Genetec** → **off**
+  - **CGI** → **off** — nothing in this build speaks it
+  - **ONVIF** → **leave ON** — the actual ONVIF service; LAN-only, login-gated by the verification toggle above, and cheap to keep for the talk-down work planned on the Automations page
+  - **Multicast/Broadcast Search** → **off** — only costs vendor tools' LAN auto-discovery; everything here goes by IP
+  - **Private Protocol Authentication Mode** → **Security Mode (Recommended)** — the shipped choice; verify it
 - **Setting → System → Upgrade** → holds only a manual file-update on current firmware; if yours shows an **Online Upgrade / Auto Check for Update** toggle, switch it **off** — firmware moves on this build are deliberate, from EmpireTech's own download page
 
 **The Reolink pair** — one preparation first: in the **iOS app**, if a camera was added by QR/UID scan, re-add it **by IP** (**⊕ → Manual Input → the camera's IP**) so the app keeps working on the LAN after the next toggle kills the relay path. Then:
