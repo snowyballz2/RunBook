@@ -854,9 +854,10 @@ The dead-end gateway already stops the traffic; this step turns off the services
 - **Platform Access → P2P** → **untick Enable** — it ships enabled, behind Dahua's own consent text admitting it sends the device's IP, MAC, and serial number out. Off kills the DMSS-app/cloud path; the web UI, RTSP, and LAN access carry on. The pane's **Status** reads **Offline** from now on — that is the setting working, not a fault
 - **Platform Access → ONVIF** → **leave ON** — this toggle is ONVIF *login verification*, not ONVIF itself; it just requires credentials, which Frigate supplies
 - **Platform Access → RTMP** → **verify off**, its shipped state — a push feature that sends an H.264 stream *out* to a streaming server (Enable, address, port 1935); nothing here receives one. Not to be confused with the doorbell's RTMP toggle, which stays **on** for its flv video path — different vendor, different job
-- **UPnP** → the pane has two switches, and both get switched **off**:
+- **UPnP** → the pane has two switches at the top, and both get switched **off**:
   - the one labeled **"Enable"** → **off** — that is the port-mapping half; off means the camera can never punch its own hole in a router
   - the one labeled **"Enable Device Discovery"** → **off** — SSDP presence broadcasting, which ships on
+  - the five-row **mapping table** below them (HTTP/TCP/UDP/RTSP/HTTPS, each with its own Enable) → **ignore it** — it is the list of ports the camera *would* request, and it goes inert once the master "Enable" above is off. A **"Mapping Failed"** status on the rows just means the router has been refusing the requests — which is what you want, now made permanent at the camera
 - **Bonjour** → **off** — on by default; LAN mDNS advertising that nothing in this build uses
 - **Multicast** → **off in both columns** — the pane has a **Main Stream** and a **Sub Stream** column, each with its own **Enable** toggle, and on this build's firmware both ship **on**. Flip both off (and if the **Sub Stream** dropdown offers a second entry, select it and check its Enable too). This pane offers the streams to a `224.x` multicast *group* for many-viewers setups; nothing here subscribes — Frigate pulls its own direct unicast RTSP connection
 - **Register** → **off** — "auto register" announces the camera to a central management server; nothing here runs one
