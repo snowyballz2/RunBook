@@ -1025,7 +1025,16 @@ ffmpeg:
 
 4. Housekeeping, if your file predates the cleanup: `rlc510` may still carry its own `detect:` and `record:` stanzas (four lines, `enabled: true` under each) from an earlier paste — delete them; the global `record:` block you just added makes them redundant.
 
-**Save & Restart** — go2rtc is untouched this time, so no restreamer bounce. Either path assumes each camera's mic **Enable** from the tuning step; a mic still off just nags the logs until toggled.
+**Save & Restart** — go2rtc is untouched this time, so no restreamer bounce.
+
+> [!DETAILS] Widening `track:` beyond person
+> Each camera's `objects: track:` list is a filter, not the detector's limits — the model already sees all 80 COCO classes on every frame, and the list only chooses which become events, clips, and automation triggers. Adding classes costs no extra GPU work, just noise and storage when they appear. The additions that earn their place here, added at the same indent as `- person`:
+>
+> - `- dog` and `- cat` on the yard turrets (`shed_turret`, `patio_turret`) — animal events that pair with the `bark` audio event
+> - `- car` on `carport_turret` — arrival and departure become events the Automations page can trigger on (the household's own parked car shows as a permanently-tracked stationary object — expected; events fire on movement, not continuously)
+> - `kitchen_turret` and the doorbell stay `person`-only — indoors and street-facing, extra classes mostly manufacture noise
+>
+> Any COCO-80 label works (`bird`, `bicycle`, `truck`…); `package` is still not one of them — that needs the Frigate+ model, per the doorbell section. Every new class is a new false-positive surface: add what you would act on, and prune with per-object thresholds later if one gets chatty. Either path assumes each camera's mic **Enable** from the tuning step; a mic still off just nags the logs until toggled.
 
 **Or paste the complete file** — the right move on a rebuild, or when drift is suspected; swap the same password tokens as before:
 
