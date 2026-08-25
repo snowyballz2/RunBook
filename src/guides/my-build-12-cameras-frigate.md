@@ -971,32 +971,27 @@ Note its device name (for example `/dev/sda`) and double-check the serial before
 mkfs.ext4 -L frigate-footage /dev/sdX
 ```
 
-**Mount it by UUID via `/etc/fstab`** so it comes back on every boot. Make the mount point and read the disk's UUID (universally unique identifier):
+**Mount it at boot — by the label just stamped.** The `mkfs` command above wrote the `frigate-footage` label onto the disk, and a label mounts as reliably as a UUID (both resolve through `/dev/disk/by-*`) — but the label makes the `/etc/fstab` entry the same fixed text on any machine: nothing to read off the screen, nothing to edit by hand. One chained command creates the mount point, appends the entry, mounts it, and proves it:
 
 ```bash
-mkdir -p /mnt/frigate-footage
-blkid /dev/sdX
+mkdir -p /mnt/frigate-footage && echo 'LABEL=frigate-footage /mnt/frigate-footage ext4 defaults 0 2' >> /etc/fstab && mount -a && df -h /mnt/frigate-footage
 ```
 
-Add this line to `/etc/fstab` (`nano /etc/fstab`, the usual Ctrl+O / Enter / Ctrl+X to save), swapping in the UUID `blkid` printed:
+The final `df` line should show the 4 TB disk (about 3.6T usable) on `/mnt/frigate-footage` — that is the fstab entry parsing and mounting in one pass.
 
-```ini
-UUID=<uuid-from-blkid> /mnt/frigate-footage ext4 defaults 0 2
-```
-
-Mount it now, which also proves the entry parses:
+**Hand it to the container** as a mount point at `/media/frigate`, and restart it — `102` is this build's Frigate container ID:
 
 ```bash
-mount -a
+pct set 102 -mp0 /mnt/frigate-footage,mp=/media/frigate && pct reboot 102
 ```
 
-**Hand it to the container** as a mount point at `/media/frigate`:
+Prove the container sees it:
 
 ```bash
-pct set <frigate-ctid> -mp0 /mnt/frigate-footage,mp=/media/frigate
+pct exec 102 -- df -h /media/frigate
 ```
 
-Restart the container — recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time). Recording and audio turn on together here, on purpose — and from this step forward every config change offers **two ways in**, because re-entering fifteen passwords per paste stops scaling once the running file holds real values.
+Recordings now land on the dedicated disk, and the container's own 20 GB disk stays flat. With the disk in place, switch back to **Frigate's config editor** and set retention explicitly — out of the box continuous recording is off (the default keeps clips of tracked objects for 10 days, but records nothing the rest of the time). Recording and audio turn on together here, on purpose — and from this step forward every config change offers **two ways in**, because re-entering fifteen passwords per paste stops scaling once the running file holds real values.
 
 **Edit in place** — the running config keeps every password already filled:
 
