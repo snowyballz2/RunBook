@@ -943,7 +943,7 @@ The datacenter firewall from the fence step is live, so the host also needs the 
 
 Then point every camera at the host:
 
-- **Turrets** → **System → General → Date & Time** tab: switch the radio from **Manual Settings** to **NTP**, **Server** → **`192.168.1.50`**, **Port** → `123`, keep the sync interval, confirm the **Time Zone**, and set the **DST** rows to match the house — Dahua's manual documents a LAN time source as first-class
+- **Turrets** → **System → General → Date & Time** tab: switch the radio from **Manual Settings** to **NTP**, **Server** → **`192.168.1.50`**, **Port** → `123`, keep the sync interval, confirm the **Time Zone** (UTC-05:00 Eastern), and set **DST**: **Enable → on**, **Type → Week** (US DST floats — never the Date type), **Start → Mar / 2nd week / Sun / 02:00**, **End → Nov / 1st week / Sun / 02:00**. DST off is the classic exactly-one-hour-slow clock: NTP is working, the camera is just rendering hard standard time — Dahua's manual documents a LAN time source as first-class
 - **Reolink pair** → web UI **Network → Advanced → NTP Settings → Set Up** — the dialog is two fields: **NTP Server** → **`192.168.1.50`**, typed over the prefilled `pool.ntp.org`; **NTP Port** → `123`; then **Save**. The proof is at **System → Date & Time**: the clock holding correct means the camera is syncing off the host
 
 > [!TIP]
