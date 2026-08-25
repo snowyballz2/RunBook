@@ -995,9 +995,13 @@ Recordings now land on the dedicated disk, and the container's own 20 GB disk st
 
 **Edit in place** — the running config keeps every password already filled:
 
-1. Paste these two blocks at the **end** of the file — recording, and audio detection (bark, scream, speak and yell become events). One paste gotcha: the editor auto-indents the first pasted line to wherever the cursor sat, which quietly swallows `record:` into the last camera and draws squiggles — both `record:` and `audio:` must sit at **column 0**, flush against the left margin:
+1. Paste these four blocks at the **end** of the file — object detection, event snapshots, recording, and audio detection (bark, scream, speak and yell become events). Detect and snapshots must be declared explicitly: undeclared, every camera's live view shows their icons gray, no person is ever tracked, and the notification images the Automations page depends on have nothing to embed. One paste gotcha: the editor auto-indents the first pasted line to wherever the cursor sat, which quietly swallows `record:` into the last camera and draws squiggles — both `record:` and `audio:` must sit at **column 0**, flush against the left margin:
 
 ```yaml
+detect:
+  enabled: true
+snapshots:
+  enabled: true
 record:
   enabled: true
   continuous:
@@ -1093,6 +1097,10 @@ model:
 version: 0.17-0
 mqtt:
   enabled: false
+detect:
+  enabled: true
+snapshots:
+  enabled: true
 record:
   enabled: true
   continuous:
@@ -1288,6 +1296,10 @@ mqtt:
   host: 192.168.1.51
   user: mqtt-user
   password: MQTT-PASS
+detect:
+  enabled: true
+snapshots:
+  enabled: true
 record:
   enabled: true
   continuous:
