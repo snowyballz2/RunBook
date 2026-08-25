@@ -815,7 +815,7 @@ Routing into the wall cavity means the cable and its waterproof connector tuck *
 > The one exception is a corner that turns out to be **solid brick or stucco with no cavity** behind it — there you would want EmpireTech's **`PFA130-E`** junction box (about $20) to hold the connector, since you cannot fish into the wall. For framed walls with a cavity, buy no boxes.
 
 > [!WARNING]
-> Keep each camera's view clear of the **flanking walls, gutters, and fascia**. A turret's lens sits flush, so a bright surface right in front bounces IR — and the T54PRO-AS's warm light — back into the lens and washes the image out. Aiming into the open wedge (the reason for the 3.6mm lens) is exactly what avoids it.
+> Keep each camera's view clear of the **flanking walls, gutters, and fascia**. A turret's lens sits flush, so a bright surface right in front bounces IR — and the T54PRO-AS's warm light — back into the lens and washes the image out. Aiming into the open wedge (the reason for the 3.6mm lens) is exactly what avoids it. The night-time signature of getting this wrong is a **milky wash with a rainbow flare streak**: the prism colors come from a film on the front glass (installation fingerprints, pollen, dew) catching the camera's own illuminator, and the haze from a flanking surface bounced alight. Wipe the glass with a dry microfiber first; if it persists, lower the Night profile's **Fill Light** brightness from auto to a modest manual level, and tilt a few degrees away from the offending surface. Not cosmetic — the haze eats the contrast the detector feeds on.
 
 ## Harden each camera
 
