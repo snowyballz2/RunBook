@@ -1470,7 +1470,11 @@ Apply any config change by restarting Frigate in the container's console:
 systemctl restart frigate
 ```
 
-Reload the web UI — the doorbell, RLC-510WA, and EmpireTech live views should appear, and walking through a frame should produce a tracked person within a few seconds.
+Reload the web UI — the enabled cameras' live views should appear, and walking through a frame should produce a tracked person within a few seconds. Three ways to *see* the tracking, from most direct:
+
+- **Debug view** — on a camera's own view, the **gear icon → Debug**, tick **Bounding boxes**: a live box labeled `person` with a confidence score follows you around the frame — the detector's raw output
+- **History** — the walk becomes a review item with a thumbnail; every tracked object does
+- **The occupancy entity** — once the HA integration below is in: **Developer tools → States**, filter the camera; `binary_sensor.<camera>_person_occupancy` reads **on** while you stand in frame and drops to **off** when you leave — the whole camera → detector → MQTT → integration chain proven in one toggle
 
 > [!TIP]
 > If a camera stays black, watch the logs while it starts: `journalctl -u frigate -f` in the console. A wrong RTSP path or password shows up there immediately. If detection feels sluggish or the CPU is pinned, the 1080 Ti probably is not doing the work — re-check that `nvidia-smi` sees the card inside the container and that the logs name the ONNX/CUDA detector, not a CPU fallback.
