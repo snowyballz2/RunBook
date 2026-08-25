@@ -430,7 +430,15 @@ cameras:
 > Reading the odd parts: `channel0_main.bcs` is the full-resolution stream (recorded) and `channel0_ext.bcs` is the low-res sub stream (analyzed) — splitting them spares both the doorbell and the detector. The trailing `#video=copy#audio=copy#audio=opus` is deliberate: it passes the video through untouched, keeps the original audio for recording, *and* adds a second Opus audio track the browser live view needs. On the camera, `output_args: record: preset-record-generic-audio-copy` is what actually copies that original audio into the saved files — without it the recordings drop sound. The bare `rtsp://…/Preview_01_sub` line is the talk-back path, and it must **not** carry an `ffmpeg:` prefix — go2rtc has to handle that stream directly for two-way audio to work. The `live: streams:` block binds the live view (and its talk button) to that full `doorbell` stream rather than the detect substream.
 
 > [!TIP]
-> Talk-back needs the page served over **HTTPS** — browsers only allow microphone access on a secure connection (use Frigate's authenticated port `8971`). The live view's gear panel reports the capability **per stream**: the doorbell's stream should read two-way *available* (its RTSP leg is the talk path), while the turrets read *unavailable* until their backchannel entries are added during the talk-down work on the Automations page — expected, not broken; their speakers wait on config, not hardware. The reverse proxy set up later in this build provides the real certificate for that, and the doorbell will drive the speaker announcements set up later in the automations work.
+> Talk-back needs the page served over **HTTPS** — browsers only allow microphone access on a secure connection (use Frigate's authenticated port `8971`). The live view's gear panel reports the capability **per stream**: the doorbell's stream should read two-way *available* (its RTSP leg is the talk path), while the turrets read *unavailable* until their backchannel entries are added during the talk-down work on the Automations page — expected, not broken; their speakers wait on config, not hardware. That future work has one declared prerequisite worth pinning here: talk-down is WebRTC-only, and go2rtc's `webrtc:` block names the address candidates —
+>
+> ```yaml
+>   webrtc:
+>     candidates:
+>       - 192.168.1.52:8555
+> ```
+>
+> — added under `go2rtc:` (beside `streams:`) when the Automations page wires it; in this LXC's flat networking it may already work without, but declaring it pins port 8555 to the fence rule that already exists. The reverse proxy set up later in this build provides the real certificate for that, and the doorbell will drive the speaker announcements set up later in the automations work.
 
 > [!TIP]
 > Not interested in talking back? Drop the secondary `rtsp://…/Preview_01_sub` line entirely and keep just the http-flv video. That is the simplest, most reliable doorbell setup — you still get full recording and person detection, without the most fragile part of the config. (One honest limit: `package` is not a class in this build's COCO-80 labelmap, so package *detection* needs a Frigate+ custom model — the recording still shows the box on the step, but no automation can fire on it.)
@@ -772,7 +780,7 @@ Everything else on its Encode pane, main and sub, takes the identical values.
 - **Outdoor turrets**, under the **Night** profile: **Fill Light** → **IR Mode** — infrared, not warm white, on any angle meant to read a licence plate; colour mode washes plates out. **Mode** stays **Auto** (it governs IR intensity) and the remaining field stays default. Know the consequence: these sensors hold **colour on ambient light alone** (porch and street spill), and only go mono when IR actually kicks in — that mono moment is the plate trade working. A backyard angle with no plates may run the warm light or **Smart** mode instead for colour nights, at the cost of a visible glow — preference, not correctness. (The doorbell is mono at night regardless — small sensor, IR-only hardware)
 - **kitchen_turret** → **Mode: Off** — a camera that floodlights the kitchen at 3 a.m. is a nuisance
 
-**Camera → Audio** — recorded and detected **by deliberate choice** on this build (bark, scream, speak and yell become events the automations page acts on; ambient outdoor audio is captured around the clock, a privacy and legal line crossed knowingly on this property):
+**Camera → Audio** — recorded and detected **by deliberate choice** on this build (bark, scream, speech and yell become events the automations page acts on; ambient outdoor audio is captured around the clock, a privacy and legal line crossed knowingly on this property):
 
 - **Enable (Main Stream)** → **ON** — the mic feeding recordings and detection
 - **Enable (Sub Stream)** → **off**
@@ -995,7 +1003,7 @@ Recordings now land on the dedicated disk, and the container's own 20 GB disk st
 
 **Edit in place** — the running config keeps every password already filled:
 
-1. Paste these four blocks at the **end** of the file — object detection, event snapshots, recording, and audio detection (bark, scream, speak and yell become events). Detect and snapshots must be declared explicitly: undeclared, every camera's live view shows their icons gray, no person is ever tracked, and the notification images the Automations page depends on have nothing to embed. One paste gotcha: the editor auto-indents the first pasted line to wherever the cursor sat, which quietly swallows `record:` into the last camera and draws squiggles — both `record:` and `audio:` must sit at **column 0**, flush against the left margin:
+1. Paste these four blocks at the **end** of the file — object detection, event snapshots, recording, and audio detection (bark, scream, speech and yell become events). Detect and snapshots must be declared explicitly: undeclared, every camera's live view shows their icons gray, no person is ever tracked, and the notification images the Automations page depends on have nothing to embed. One paste gotcha: the editor auto-indents the first pasted line to wherever the cursor sat, which quietly swallows `record:` into the last camera and draws squiggles — both `record:` and `audio:` must sit at **column 0**, flush against the left margin:
 
 ```yaml
 detect:
@@ -1073,6 +1081,16 @@ Expect **one directory per enabled camera** — five today; `chimney_turret` and
 > - `- dog` and `- cat` on the yard turrets (`shed_turret`, `patio_turret`) — animal events that pair with the `bark` audio event
 > - `- car` on `carport_turret` — arrival and departure become events the Automations page can trigger on (the household's own parked car shows as a permanently-tracked stationary object — expected; events fire on movement, not continuously)
 > - `kitchen_turret` and the doorbell stay `person`-only — indoors and street-facing, extra classes mostly manufacture noise
+>
+> [!DETAILS] The defaults now in force — what an absence audit found
+> With detect, snapshots, record, and audio all declared, the rest of Frigate's silent defaults were audited against the current reference. Nothing else needs declaring; these are the numbers and behaviors in force:
+>
+> - **Alert and detection recordings keep 10 days** (motion-around-events segments), outliving the 7-day continuous window by three — per segment, the largest matching retention wins. **Snapshots keep 10 days.** Frigate's safety valve deletes oldest-first if the disk nears full
+> - **A tracked `car` auto-promotes to alert-class** in review — the household's own car's arrivals become top-tier events the moment `- car` lands on the carport; the Automations page gates that with zones before phone alerts go live
+> - **Birdseye is on by silent default** — the UI's combined view exists because of it; `birdseye: enabled: false` if ever unwanted
+> - **`/config/frigate.db`** holds review and tracked-object history — inside `/config`, so the nightly vzdump and the rebuild path's `/config` copy both already carry it
+> - **8971's login has no failed-attempt rate limit** — the firewall fence is the guard there, by design
+> - The audio labels Frigate listens for are **`bark, fire_alarm, scream, speech, yell`** — the label is `speech`, and automations must spell it that way
 >
 > Any COCO-80 label works (`bird`, `bicycle`, `truck`…) — but only those 80: the model was trained on the COCO dataset, and a label it never learned (`package` is the one people want) can be written under `track:` yet will never fire, because the network cannot emit it. Package detection is what **Frigate+** sells — paid models fine-tuned on real surveillance footage that add `package`, `face`, and `license_plate`; until then, the doorbell's `person` event and Visitor press are the delivery signals. Every new class is a new false-positive surface: add what you would act on, and prune with per-object thresholds later if one gets chatty. Either path assumes each camera's mic **Enable** from the tuning step; a mic still off just nags the logs until toggled.
 
