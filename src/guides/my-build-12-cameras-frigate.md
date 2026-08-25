@@ -1438,7 +1438,7 @@ cameras:
 
 **Save & Restart.** This is the finished config — the one the backup warning at the end of this page tells you to copy somewhere safe.
 
-Then install the Frigate integration in the Home Assistant OS VM through **HACS (the Home Assistant Community Store)**, which itself has to be installed once first. You get a live entity per camera, occupancy and motion binary sensors per camera and zone, object-count and performance sensors, and the recordings browsable in Home Assistant's media browser — the raw material for the automations later in this build.
+Then install the Frigate integration in the Home Assistant OS VM through **HACS (the Home Assistant Community Store)**, which itself has to be installed once first. You get a live entity per camera, occupancy and motion binary sensors per camera and zone, object-count and performance sensors, the notification image endpoints the phone alerts depend on, and the recordings browsable in Home Assistant's media browser — the raw material for the automations later in this build. Division of labor worth stating: Frigate's own UI at `https://192.168.1.52:8971` remains where you *watch* — live grid, review timeline, exports. The integration is not a viewer; it is how the cameras join the house — triggers for automations, snapshots in pushes, and camera tiles reachable in the companion app over Tailscale without a separate Frigate login.
 
 > [!DETAILS] Install HACS first, then the Frigate integration
 > The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog installed once. And the App store cannot even *find* the installer until its repository is added — the store only searches repositories it already knows, which is the step everyone hits:
