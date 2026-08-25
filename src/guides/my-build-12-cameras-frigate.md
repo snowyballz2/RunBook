@@ -877,6 +877,14 @@ The dead-end gateway already stops the traffic; this step turns off the services
   - **Restart System → Auto Restart → off** — a scheduled weekly reboot is a weekly gap in the recordings for nothing while a camera is healthy; it is the tool to come back for if one ever turns flaky
   - **Delete Old Files → Auto Delete → off** — it prunes camera-side SD storage, which these turrets do not use; retention is Frigate's job on the footage disk
   - **Emergency Maintenance → Enable → off** — the least trustworthy switch on the device: Dahua's after-sales access channel, whose own description says **the system re-enables it by itself** if the device "has any trouble performing functions, such as updating." Switch it off — and this self-flipping habit is exactly why the dead-end gateway, not any toggle, is the wall
+- The **Security** menu, tab by tab — mostly leave-as-is, with one trap:
+  - **Security Status** → a read-only posture dashboard; glance, nothing to set
+  - **System Service** → on this firmware generation, likely where the **seven service switches** live (the pane Dahua's manual files under Network as "Basic Service") — the answers are the same as that bullet above, wherever the pane appears. If it also lists **802.1x** → **off** (no port auth on this switch) and **HTTPS** → **off** is fine — LAN plus login, and the build's URLs are `http://`
+  - **Attack Defense** → leave the defaults: **Account Lockout** already guards logins, **Anti-DoS** and **Firewall** off. (The Firewall's allowlist mode — camera-side "only these IPs may connect" — is real extra hardening, but it is belt-on-suspenders after the fence and the dead gateway, and it is also how you lock yourself out when an IP changes. Skip.)
+  - **CA Certificate** → the cert store for HTTPS/802.1x, both unused — nothing to do
+  - **A/V Encryption** → **both toggles stay off, deliberately** — enabling **RTSP over TLS** breaks every plain `rtsp://` line in Frigate's config. A stay-off pane, not a hardening opportunity
+  - **Security Warning** → **Enable → off**, as shipped — its detections feed only the local log and an alarm-out port nothing is wired to; Kuma and Frigate are this build's alerting
+  - **Security Authentication** → if it holds the **Security Mode (Recommended) / Compatible Mode** choice, keep **Security Mode**; it is the auth-mode setting from the service-switch list
 - The rest of Maintenance Center (diagnosis, system info, local logs, Import/Export, Default, Font Pack, the advanced pane) and the **Storage** menu are local-only — out of this walk's scope
 - And the **System** menu deserves one pass while you are in the UI — three sections:
   - **General → Basic** → **Video Standard → NTSC** (right for this 60 Hz house — it pairs with the anti-flicker work); **Device Name** → optionally rename the serial string to the camera's key (`shed_turret`, and so on) so panes identify themselves in screenshots
