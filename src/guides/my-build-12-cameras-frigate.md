@@ -884,7 +884,7 @@ The dead-end gateway already stops the traffic; this step turns off the services
   - **CA Certificate** → the cert store for HTTPS/802.1x, both unused — nothing to do
   - **A/V Encryption** → **both toggles stay off, deliberately** — enabling **RTSP over TLS** breaks every plain `rtsp://` line in Frigate's config. A stay-off pane, not a hardening opportunity
   - **Security Warning** → **Enable → off**, as shipped — its detections feed only the local log and an alarm-out port nothing is wired to; Kuma and Frigate are this build's alerting
-  - **Security Authentication** → if it holds the **Security Mode (Recommended) / Compatible Mode** choice, keep **Security Mode**; it is the auth-mode setting from the service-switch list
+  - **Security Authentication** → one tab, **Digest Algorithm for Authentication**, two rows — **User** and **ONVIF User**: keep both on **MD5**, as shipped. SHA256 looks like the upgrade, but this digest must be spoken by both sides of every login challenge, and Frigate's stream pullers (ffmpeg, go2rtc) are built for MD5 digest — flipping it is how every RTSP stream dies silently while the web UI keeps working. Another stay-put pane
 - The rest of Maintenance Center (diagnosis, system info, local logs, Import/Export, Default, Font Pack, the advanced pane) and the **Storage** menu are local-only — out of this walk's scope
 - And the **System** menu deserves one pass while you are in the UI — three sections:
   - **General → Basic** → **Video Standard → NTSC** (right for this 60 Hz house — it pairs with the anti-flicker work); **Device Name** → optionally rename the serial string to the camera's key (`shed_turret`, and so on) so panes identify themselves in screenshots
