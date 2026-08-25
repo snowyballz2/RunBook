@@ -1023,7 +1023,7 @@ ffmpeg:
             - audio
 ```
 
-4. Housekeeping, if your file predates the cleanup: `rlc510` may still carry its own `detect:` and `record:` stanzas (four lines, `enabled: true` under each) from an earlier paste — delete them; the global `record:` block you just added makes them redundant.
+4. Housekeeping, if your file predates the cleanup: `rlc510` may still carry its own `detect:` and `record:` stanzas (four lines, `enabled: true` under each) from an earlier paste — delete them; the global `record:` block you just added makes them redundant. Two more matching touches while you are there: its stanza has no `objects:` block — harmless, since a camera without one tracks Frigate's default list, which is exactly `person` — but add the explicit `objects:` / `track:` / `- person` lines so it reads like its siblings; and confirm it carries **`enabled: false`** until the camera is physically mounted, like `chimney_turret` — an enabled camera with no hardware behind it just spams the logs.
 
 **Save & Restart** — go2rtc is untouched this time, so no restreamer bounce.
 
@@ -1034,7 +1034,7 @@ ffmpeg:
 > - `- car` on `carport_turret` — arrival and departure become events the Automations page can trigger on (the household's own parked car shows as a permanently-tracked stationary object — expected; events fire on movement, not continuously)
 > - `kitchen_turret` and the doorbell stay `person`-only — indoors and street-facing, extra classes mostly manufacture noise
 >
-> Any COCO-80 label works (`bird`, `bicycle`, `truck`…); `package` is still not one of them — that needs the Frigate+ model, per the doorbell section. Every new class is a new false-positive surface: add what you would act on, and prune with per-object thresholds later if one gets chatty. Either path assumes each camera's mic **Enable** from the tuning step; a mic still off just nags the logs until toggled.
+> Any COCO-80 label works (`bird`, `bicycle`, `truck`…) — but only those 80: the model was trained on the COCO dataset, and a label it never learned (`package` is the one people want) can be written under `track:` yet will never fire, because the network cannot emit it. Package detection is what **Frigate+** sells — paid models fine-tuned on real surveillance footage that add `package`, `face`, and `license_plate`; until then, the doorbell's `person` event and Visitor press are the delivery signals. Every new class is a new false-positive surface: add what you would act on, and prune with per-object thresholds later if one gets chatty. Either path assumes each camera's mic **Enable** from the tuning step; a mic still off just nags the logs until toggled.
 
 **Or paste the complete file** — the right move on a rebuild, or when drift is suspected; swap the same password tokens as before:
 
