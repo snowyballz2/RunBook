@@ -944,7 +944,7 @@ The datacenter firewall from the fence step is live, so the host also needs the 
 Then point every camera at the host:
 
 - **Turrets** → **System → General → Date & Time** tab: switch the radio from **Manual Settings** to **NTP**, **Server** → **`192.168.1.50`**, **Port** → `123`, keep the sync interval, confirm the **Time Zone**, and set the **DST** rows to match the house — Dahua's manual documents a LAN time source as first-class
-- **Reolink pair** → web UI **Device Settings → Network → Advanced → NTP Settings → Set Up**: **Server** → **`192.168.1.50`** (replacing the prefilled vendor default), **Port** → `123`, keep **Auto-Synchronize** on, then press **Synchronize** — which doubles as the test that the chrony change took
+- **Reolink pair** → web UI **Network → Advanced → NTP Settings → Set Up** — the dialog is two fields: **NTP Server** → **`192.168.1.50`**, typed over the prefilled `pool.ntp.org`; **NTP Port** → `123`; then **Save**. The proof is at **System → Date & Time**: the clock holding correct means the camera is syncing off the host
 
 > [!TIP]
 > If a camera's firmware flat-out refuses to work without a real gateway (a few do), give it the gateway back and **block it at the router instead**: the Fios router's **Access Control** can deny that one device internet access. Same outcome, enforced upstream.
