@@ -826,7 +826,7 @@ Do this **after** the camera is configured and streaming to Frigate — initial 
 
 Every camera already runs the static address you assigned during setup; the hardening move is a **dead-end gateway**. A device only needs its gateway to reach addresses *outside* its own subnet — i.e. the internet. Point it somewhere nothing lives and the camera can still talk to anything on `192.168.1.x` (so Frigate keeps pulling its stream, unchanged), but it **cannot route a packet to the internet**: it can't phone home, leak footage to a cloud, or be reached by anyone outside. This build's designated dead end is **`192.168.1.98`** — inside the protected static zone, assigned to nothing, and it stays that way. Do not use a blank field or `0.0.0.0` instead: Dahua's manual requires a same-segment gateway and its firmware is known to misbehave with both — the dead-end address is the reliable spelling of "no gateway."
 
-**The five turrets** — in each camera's web UI (`http://192.168.1.72` through `.76`), **gear icon → Setting → Network → TCP/IP**. Every field on the pane, in order:
+**The five turrets** — in each camera's web UI (`http://192.168.1.72` through `.76`), the **Network Settings** menu → **TCP/IP** (this fleet's firmware puts the menus in the top bar — Live, Network Settings, System — not behind a "Setting" tree). Every field on the pane, in order:
 
 - **Host Name** → leave it
 - **ARP/Ping** → leave the default — a LAN-only address-setting aid
@@ -849,7 +849,7 @@ Every camera already runs the static address you assigned during setup; the hard
 ### Shut the vendor cloud off at the source
 The dead-end gateway already stops the traffic; this step turns off the services that would keep *trying* — and the two vendors keep them in different places. The turrets have no app at all: their cloud path is a service in the web UI, shipped **on**.
 
-**The five turrets** — same web UI, everything under **Setting → Network** unless noted:
+**The five turrets** — same web UI, everything under the **Network Settings** menu unless noted:
 
 - **Platform Access → P2P** → **untick Enable** — it ships enabled, behind Dahua's own consent text admitting it sends the device's IP, MAC, and serial number out. Off kills the DMSS-app/cloud path; the web UI, RTSP, and LAN access carry on. The pane's **Status** reads **Offline** from now on — that is the setting working, not a fault
 - **Platform Access → ONVIF** → **leave ON** — this toggle is ONVIF *login verification*, not ONVIF itself; it just requires credentials, which Frigate supplies
@@ -871,7 +871,14 @@ The dead-end gateway already stops the traffic; this step turns off the services
   - **ONVIF** → **leave ON** — the actual ONVIF service; LAN-only, login-gated by the verification toggle above, and cheap to keep for the talk-down work planned on the Automations page
   - **Multicast/Broadcast Search** → **off** — only costs vendor tools' LAN auto-discovery; everything here goes by IP
   - **Private Protocol Authentication Mode** → **Security Mode (Recommended)** — the shipped choice; verify it
-- **Setting → System → Upgrade** → holds only a manual file-update on current firmware; if yours shows an **Online Upgrade / Auto Check for Update** toggle, switch it **off** — firmware moves on this build are deliberate, from EmpireTech's own download page
+- **Updating** → confirmed on this fleet's firmware: there is **no auto-check or online-upgrade toggle anywhere** — updating is a manual file-upload (it lives behind the gear icon, not under the System menu), with `.bin` files from EmpireTech's own download page, on your schedule. Nothing to switch off
+- And the **System** menu deserves one pass while you are in the UI — three sections:
+  - **General → Basic** → **Video Standard → NTSC** (right for this 60 Hz house — it pairs with the anti-flicker work); **Device Name** → optionally rename the serial string to the camera's key (`shed_turret`, and so on) so panes identify themselves in screenshots
+  - **General → Time Sync Allowlist** → **Enable → off**, its shipped state — it gates which IPs may *push* time to the camera, and this build's cameras *pull* NTP instead
+  - **Account → Password Reset → Enable → off**, blanking the **Email Address** field with it — the reset flow routes a security code through Dahua's cloud to that address, the exact dependency this section severs, and it parks your personal email inside the least-trusted device on the network. Recovery on this build is Vaultwarden; worst case, the hardware reset button
+  - **Account → Anonymous Login** → **off**, its shipped state — verify
+  - **Account → Password Expires in** → **Never**, its shipped state — forced rotation on cameras breeds sticky-note passwords
+  - **Peripheral** (Serial Port / External Light / Wiper) → leave untouched — RS-485 and accessory config for hardware these turrets do not have
 
 **The Reolink pair** — one preparation first: in the **iOS app**, if a camera was added by QR/UID scan, re-add it **by IP** (**⊕ → Manual Input → the camera's IP**) so the app keeps working on the LAN after the next toggle kills the relay path. Then:
 
@@ -904,7 +911,7 @@ The datacenter firewall from the fence step is live, so the host also needs the 
 
 Then point every camera at the host:
 
-- **Turrets** → **Setting → System → General → Date & Time**: switch the radio from **Manual Settings** to **NTP**, **Server** → **`192.168.1.50`**, **Port** → `123`, keep the sync interval, confirm the **Time Zone**, and set the **DST** rows to match the house — Dahua's manual documents a LAN time source as first-class
+- **Turrets** → **System → General → Date & Time** tab: switch the radio from **Manual Settings** to **NTP**, **Server** → **`192.168.1.50`**, **Port** → `123`, keep the sync interval, confirm the **Time Zone**, and set the **DST** rows to match the house — Dahua's manual documents a LAN time source as first-class
 - **Reolink pair** → web UI **Device Settings → Network → Advanced → NTP Settings → Set Up**: **Server** → **`192.168.1.50`** (replacing the prefilled vendor default), **Port** → `123`, keep **Auto-Synchronize** on, then press **Synchronize** — which doubles as the test that the chrony change took
 
 > [!TIP]
