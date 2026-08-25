@@ -1055,6 +1055,14 @@ ffmpeg:
 
 **Save & Restart** — and mind the restreamer rule: if step 4 added the `rlc510` pair to the `go2rtc:` block, that block changed, so restart both from the container's **Console** (`systemctl restart go2rtc frigate`); if your file already had the pair, plain Save & Restart is enough — go2rtc untouched, no bounce.
 
+A few minutes later, prove recording is real — from the **host** Shell:
+
+```bash
+ls /mnt/frigate-footage/recordings/*/*/
+```
+
+Expect **one directory per enabled camera** — five today; `chimney_turret` and `rlc510` are absent by design until their hardware is mounted. Do not be alarmed by the folder names: Frigate names its date and hour folders in **UTC**, so a late evening lands under tomorrow's date and a small hour number — the disk speaks UTC, and the Frigate UI translates back to local time when you browse.
+
 > [!DETAILS] Widening `track:` beyond person
 > Each camera's `objects: track:` list is a filter, not the detector's limits — the model already sees all 80 COCO classes on every frame, and the list only chooses which become events, clips, and automation triggers. Adding classes costs no extra GPU work, just noise and storage when they appear. The additions that earn their place here, added at the same indent as `- person`:
 >
