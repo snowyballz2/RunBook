@@ -860,17 +860,20 @@ The dead-end gateway already stops the traffic; this step turns off the services
   - the five-row **mapping table** below them (HTTP/TCP/UDP/RTSP/HTTPS, each with its own Enable) → **ignore it** — it is the list of ports the camera *would* request, and it goes inert once the master "Enable" above is off. A **"Mapping Failed"** status on the rows just means the router has been refusing the requests — which is what you want, now made permanent at the camera
 - **Bonjour** → **off** — on by default; LAN mDNS advertising that nothing in this build uses
 - **Multicast** → **off in both columns** — the pane has a **Main Stream** and a **Sub Stream** column, each with its own **Enable** toggle, and on this build's firmware both ship **on**. Flip both off (and if the **Sub Stream** dropdown offers a second entry, select it and check its Enable too). This pane offers the streams to a `224.x` multicast *group* for many-viewers setups; nothing here subscribes — Frigate pulls its own direct unicast RTSP connection
-- **Register** → **off** — "auto register" announces the camera to a central management server; nothing here runs one
+- **Auto Registration** → **off** — it announces the camera to a central management server; nothing here runs one
 - **DDNS / PPPoE / Email** → verify all three panes **off / unconfigured**, their shipped state
 - **SNMP** → no single on/off exists — the **Version** row's three checkboxes (**V1 / V2 / V3(Recommended)**) are the switch: all three **unticked** means SNMP is off, which is how it ships; leave them, and the communities and trap fields below them stay blank
-- **Basic Service** → the pane of seven switches, one answer each:
-  - **Mobile Push Notification** → **off** — ships on; the P2P app path's other half
-  - **SSH** → **off**
-  - **Genetec** → **off**
-  - **CGI** → **off** — nothing in this build speaks it
-  - **ONVIF** → **leave ON** — the actual ONVIF service; LAN-only, login-gated by the verification toggle above, and cheap to keep for the talk-down work planned on the Automations page
+- **Basic Services** (bottom of the sidebar) → the service-switch pane, one answer per row:
+  - **SSH** → **off** — the port field beside it is inert while off
   - **Multicast/Broadcast Search** → **off** — only costs vendor tools' LAN auto-discovery; everything here goes by IP
-  - **Private Protocol Authentication Mode** → **Security Mode (Recommended)** — the shipped choice; verify it
+  - **CGI** → **off** — nothing in this build speaks it
+  - **ONVIF** → **leave ON** — the actual ONVIF service; login-gated by the verification toggle on Platform Access, and cheap to keep for the talk-down work planned on the Automations page
+  - **Genetec** → **off**
+  - **Mobile Push Notifications** → **off** — the P2P app path's other half. The **Clear Subscription Info** button beside it wipes phone tokens from a past DMSS pairing; these cameras never met the app, so there is nothing to clear
+  - **Private Protocol** → **leave ON**, with **Private Protocol Authentication Mode** → **Security Mode (Recommended)** — Dahua's own device protocol (port 37777): login-gated, trapped on the LAN by the dead gateway, and the likeliest transport for the talk-down work later
+  - **LLDP** → **off** — link-layer neighbor broadcasting nothing here listens to
+  - **Online Log Backup** → **off** — log upload to the vendor's service; the dead gateway would block it anyway
+  - **TLSv1.1** → **off** — legacy-TLS compatibility for the (disabled) HTTPS service; off is the secure side
 - **Maintenance Center → Update** → two halves on one page. Under **Online Update**: **Auto Check for Updates → off** — it ships **on** on this fleet's firmware, so flip it (the **Manual Check** button beside it is inert with the dead-end gateway; nothing reaches Dahua's servers either way). Under **File Update**: the real path — manual `.bin` files from EmpireTech's own download page, on your schedule
 - **Maintenance Center → Log Info → Remote Log** → **Enable → off**, its shipped state — a syslog push of the camera's logs to a server; the prefilled `192.168.0.108` address is Dahua's placeholder, not a live destination
 - **Maintenance Center → Maintenance** → three blocks on the page:
@@ -879,7 +882,7 @@ The dead-end gateway already stops the traffic; this step turns off the services
   - **Emergency Maintenance → Enable → off** — the least trustworthy switch on the device: Dahua's after-sales access channel, whose own description says **the system re-enables it by itself** if the device "has any trouble performing functions, such as updating." Switch it off — and this self-flipping habit is exactly why the dead-end gateway, not any toggle, is the wall
 - The **Security** menu, tab by tab — mostly leave-as-is, with one trap:
   - **Security Status** → a read-only posture dashboard; glance, nothing to set
-  - **System Service** → two tabs on this firmware — and neither is the seven-switch service pane (that one stays at **Network Settings → Basic Service**, above):
+  - **System Service** → two tabs on this firmware — and neither is the service-switch pane (that one is **Network Settings → Basic Services**, above):
     - **802.1x** → **Enable → off**, as shipped — port-level network authentication this build's switch does not run; the prefilled PEAP/username/password fields are inert while it is off
     - **HTTPS** → **arrives enabled on this fleet — switch Enable → off**: nothing consumes it (the web UI rides `http://`, Frigate pulls plain RTSP), and a listener that serves no one goes dark. **Auto Redirect** stays off; if the UI drops you after Apply, you were browsing the `https://` address — reload at `http://`
   - **Attack Defense** → leave the defaults: **Account Lockout** already guards logins, **Anti-DoS** and **Firewall** off. (The Firewall's allowlist mode — camera-side "only these IPs may connect" — is real extra hardening, but it is belt-on-suspenders after the fence and the dead gateway, and it is also how you lock yourself out when an IP changes. Skip.)
