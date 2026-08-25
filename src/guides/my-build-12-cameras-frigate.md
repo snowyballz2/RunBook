@@ -1246,7 +1246,7 @@ cameras:
 ### Connect to Home Assistant over MQTT
 Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — the last config change, two ways in.
 
-**Edit in place** — find the `mqtt:` block and replace its two lines with the five below; one token to fill, **`MQTT-PASS`**, the `frigate-mqtt-password` field further down. **Save & Restart**, no restreamer bounce:
+**Edit in place** — find the `mqtt:` block and replace its two lines with the five below. One token to fill: **`MQTT-PASS`** becomes the `mqtt-user` login's password — the one set in the Mosquitto broker's **Logins** list on the Home Assistant & Zigbee2MQTT page (recoverable any time at **HA → Settings → Apps → Mosquitto broker → Configuration → Logins**). Record it in the `frigate-mqtt-password` box in this page's credentials section below, so the checklist stands on its own. **Save & Restart**, no restreamer bounce:
 
 ```yaml
 mqtt:
@@ -1439,6 +1439,7 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 > The dedicated user Frigate logs in as, created in the Mosquitto app's Logins on the Home Assistant & Zigbee2MQTT page — `mqtt-user` matches the example; edit if named differently.
 
 > [!SECRET] frigate-mqtt-password | MQTT password
+> The `mqtt-user` login's password from the Mosquitto broker's Logins list — the value that replaces `MQTT-PASS` in the config.
 
 > [!WARNING]
 > **Boot order matters.** The broker lives in the Home Assistant OS VM, which boots slower than this LXC. After a power cut the container can come up before the broker exists, so its MQTT connection never establishes and its Home Assistant entities stay dead until a restart. You set the Home Assistant VM to **order=2** on the Home Assistant & Zigbee2MQTT page; now give this Frigate container **order=3** — in Proxmox, select the container → **Options → Start/Shutdown order** — so the broker's VM (the lower number) always starts first, with a **startup delay** on the container as belt-and-suspenders insurance. Footage still records locally either way; only the automation side goes quiet.
