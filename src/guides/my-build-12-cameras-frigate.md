@@ -877,6 +877,7 @@ The dead-end gateway already stops the traffic; this step turns off the services
   - **General → Time Sync Allowlist** → **Enable → off**, its shipped state — it gates which IPs may *push* time to the camera, and this build's cameras *pull* NTP instead
   - **Account → Password Reset → Enable → off**, blanking the **Email Address** field with it — the reset flow routes a security code through Dahua's cloud to that address, the exact dependency this section severs, and it parks your personal email inside the least-trusted device on the network. Recovery on this build is Vaultwarden; worst case, the hardware reset button
   - **Account → Anonymous Login** → **off**, its shipped state — verify
+  - **Account → Group** tab → not logins but permission *templates*: the factory **admin** and **user** roles. A group with no member accounts is inert, so two rows here is the shipped state — leave both
   - **Account → ONVIF User** tab → Dahua keeps a *separate* account list for ONVIF clients, seeded with one admin at initialization — verify it lists exactly that one account and nothing more; delete any extra
   - **Account → Password Expires in** → **Never**, its shipped state — forced rotation on cameras breeds sticky-note passwords
   - **Peripheral** (Serial Port / External Light / Wiper) → leave untouched — RS-485 and accessory config for hardware these turrets do not have
