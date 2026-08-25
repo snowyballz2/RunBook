@@ -911,7 +911,13 @@ The dead-end gateway already stops the traffic; this step turns off the services
 - **Illegal Login Lockout** → **leave on**: web UI **System → User Management** — a burst of failed logins locks the account for a few minutes; Reolink's counterpart of the turrets' Account Lockout
 - **Email Alerts / FTP upload** → leave **unconfigured**, their shipped state
 - **Reolink Cloud** → nothing to switch: it only exists once a camera is bound to a Reolink account, and this build never signs one in — LAN add-by-IP, the web UI, RTSP, and NTP are all account-free
-- **Server Settings** → already answered at the doorbell's setup step (HTTP on, RTSP on, ONVIF on, RTMP left on for the flv machinery) — just **verify nothing regressed**: web UI **Network → Advanced → Server Settings → Set Up**; a firmware update is the usual culprit when a stream that worked goes dark
+- **Server Settings** → **Network → Advanced → Server Settings → Set Up** — the five-row port dialog, and one row needs action:
+  - **ONVIF → tick it**, port `8000` — it **ships unticked** on this firmware (confirmed on the doorbell), and it is what the Reolink integration's doorbell-press events ride on the Automations page; without it a ring falls back to slow polling. The dialog's dependency note (ONVIF needs RTSP) is already satisfied
+  - **RTSP** `554` and **HTTP** `80` → ticked, as found — the stream paths Frigate lives on
+  - **RTMP** `1935` → ticked, as found — the flv machinery references it
+  - **HTTPS** `443` → as found
+  - **Basic Service** `9000` → leave — Reolink's own LAN protocol, the doorbell's counterpart of Dahua's Private Protocol; the app needs it
+  - **Saving this dialog logs you out of the web UI** — its own warning says so; expected, log back in. A firmware update is the usual culprit if a stream that worked later goes dark — recheck this dialog first
 
 > [!NOTE]
 > Where the passwords live, for the record: the camera's admin login is stored (hashed) **on the device** and checked locally — the vendor's cloud never receives it. What Dahua's P2P service collected, by its own consent text, was device *metadata* (IP, MAC, serial), and both halves of that path are now severed. The password's only copies are local: the camera itself, the credential fields on this page, and Frigate's config where the RTSP lines log in.
