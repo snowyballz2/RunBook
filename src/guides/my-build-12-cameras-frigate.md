@@ -995,7 +995,7 @@ Recordings now land on the dedicated disk, and the container's own 20 GB disk st
 
 **Edit in place** — the running config keeps every password already filled:
 
-1. Paste these two blocks at the **end** of the file — recording, and audio detection (bark, scream, speak and yell become events):
+1. Paste these two blocks at the **end** of the file — recording, and audio detection (bark, scream, speak and yell become events). One paste gotcha: the editor auto-indents the first pasted line to wherever the cursor sat, which quietly swallows `record:` into the last camera and draws squiggles — both `record:` and `audio:` must sit at **column 0**, flush against the left margin:
 
 ```yaml
 record:
