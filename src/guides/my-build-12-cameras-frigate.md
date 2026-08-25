@@ -1448,7 +1448,11 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 > 3. **Restart Home Assistant** — Settings → System → the power menu → Restart
 > 4. **Settings → Devices & services → Add integration → HACS** — tick the acknowledgement boxes, then sign in to **GitHub** with the device code it shows, entered at `github.com/login/device` (a GitHub account is required). A **`could_not_register`** error here means HA's own call to GitHub failed before a code existed — usually a transient hiccup: retry once; if it persists, the real cause is in **Settings → System → Logs** (search `hacs`), and AdGuard's Query Log confirms `github.com` resolves. Success ends on the standard **Name and assign** dialog — no Area; **Skip and finish**. (The GitHub link is low-stakes: HACS requests **no scopes** — a public-read token for rate limits only, revocable at GitHub → Settings → Applications. And while on the Integrations screen: **Ignore** the discovered **UPnP — Verizon Router** card — nothing in this build should drive router port-mappings)
 > 5. The **HACS** panel joins the sidebar — open it, search **Frigate**, **Download**, and **restart Home Assistant again**
-> 6. **Settings → Devices & services → Add integration → Frigate** → URL **`http://192.168.1.52:5000`** — the internal port; HA's `.51` is one of the two addresses the firewall fence admits there
+> 6. **Settings → Devices & services → Add integration → Frigate** — the dialog's four fields:
+>    - **URL** → **`http://192.168.1.52:5000`** — the internal port; HA's `.51` is one of the two addresses the firewall fence admits there
+>    - **Validate SSL** → leave as offered — inert on a plain-`http://` URL; there is no certificate to validate
+>    - **Username / Password** → **blank** — 5000 is the unauthenticated port by design; the fence, not a login, guards it
+>    - **Submit**, then the usual Name-and-assign wrap-up
 
 > [!INPUT] mqtt-user | MQTT username | | mqtt-user
 > The dedicated user Frigate logs in as, created in the Mosquitto app's Logins on the Home Assistant & Zigbee2MQTT page — `mqtt-user` matches the example; edit if named differently.
