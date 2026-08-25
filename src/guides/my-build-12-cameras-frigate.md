@@ -1446,7 +1446,7 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 > 1. **Settings → Apps → App store** → the **⋮ menu (top right) → Repositories** → paste `https://github.com/hacs/addons` → **Add**, close the dialog
 > 2. The **Get HACS** card now exists — search for it, **Install**, then **Start** it once: it downloads HACS into the config folder and stops; its **Log** tab should end in success
 > 3. **Restart Home Assistant** — Settings → System → the power menu → Restart
-> 4. **Settings → Devices & services → Add integration → HACS** — tick the acknowledgement boxes, then sign in to **GitHub** with the device code it shows, entered at `github.com/login/device` (a GitHub account is required)
+> 4. **Settings → Devices & services → Add integration → HACS** — tick the acknowledgement boxes, then sign in to **GitHub** with the device code it shows, entered at `github.com/login/device` (a GitHub account is required). A **`could_not_register`** error here means HA's own call to GitHub failed before a code existed — usually a transient hiccup: retry once; if it persists, the real cause is in **Settings → System → Logs** (search `hacs`), and AdGuard's Query Log confirms `github.com` resolves
 > 5. The **HACS** panel joins the sidebar — open it, search **Frigate**, **Download**, and **restart Home Assistant again**
 > 6. **Settings → Devices & services → Add integration → Frigate** → URL **`http://192.168.1.52:5000`** — the internal port; HA's `.51` is one of the two addresses the firewall fence admits there
 
