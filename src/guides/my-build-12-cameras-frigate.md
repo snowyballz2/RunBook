@@ -1023,9 +1023,37 @@ ffmpeg:
             - audio
 ```
 
-4. Housekeeping, if your file predates the cleanup: `rlc510` may still carry its own `detect:` and `record:` stanzas (four lines, `enabled: true` under each) from an earlier paste — delete them; the global `record:` block you just added makes them redundant. Two more matching touches while you are there: its stanza has no `objects:` block — harmless, since a camera without one tracks Frigate's default list, which is exactly `person` — but add the explicit `objects:` / `track:` / `- person` lines so it reads like its siblings; and confirm it carries **`enabled: false`** until the camera is physically mounted, like `chimney_turret` — an enabled camera with no hardware behind it just spams the logs.
+4. Housekeeping, if your file predates the cleanup: the `rlc510` stanza is the file's oldest text and needs bringing up to the family pattern. Delete its own `detect:` and `record:` stanzas (the global `record:` block makes them redundant), then check the **`go2rtc: streams:`** map at the top — if the `rlc510` / `rlc510_sub` pair is missing, add it (same indent as the other stream names, `RLC-PASS` swapped for the camera's admin password):
 
-**Save & Restart** — go2rtc is untouched this time, so no restreamer bounce.
+```yaml
+    rlc510:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
+    rlc510_sub:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
+```
+
+   And make the camera stanza itself read like its siblings — restream inputs, the audio role, an explicit track list, and dark until the hardware is mounted (a defined-but-disabled camera costs nothing; go2rtc only dials on demand):
+
+```yaml
+  rlc510:
+    enabled: false
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/rlc510
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - audio
+        - path: rtsp://127.0.0.1:8554/rlc510_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+```
+
+**Save & Restart** — and mind the restreamer rule: if step 4 added the `rlc510` pair to the `go2rtc:` block, that block changed, so restart both from the container's **Console** (`systemctl restart go2rtc frigate`); if your file already had the pair, plain Save & Restart is enough — go2rtc untouched, no bounce.
 
 > [!DETAILS] Widening `track:` beyond person
 > Each camera's `objects: track:` list is a filter, not the detector's limits — the model already sees all 80 COCO classes on every frame, and the list only chooses which become events, clips, and automation triggers. Adding classes costs no extra GPU work, just noise and storage when they appear. The additions that earn their place here, added at the same indent as `- person`:
