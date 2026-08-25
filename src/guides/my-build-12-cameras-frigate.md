@@ -877,6 +877,7 @@ The dead-end gateway already stops the traffic; this step turns off the services
   - **General → Time Sync Allowlist** → **Enable → off**, its shipped state — it gates which IPs may *push* time to the camera, and this build's cameras *pull* NTP instead
   - **Account → Password Reset → Enable → off**, blanking the **Email Address** field with it — the reset flow routes a security code through Dahua's cloud to that address, the exact dependency this section severs, and it parks your personal email inside the least-trusted device on the network. Recovery on this build is Vaultwarden; worst case, the hardware reset button
   - **Account → Anonymous Login** → **off**, its shipped state — verify
+  - **Account → ONVIF User** tab → Dahua keeps a *separate* account list for ONVIF clients, seeded with one admin at initialization — verify it lists exactly that one account and nothing more; delete any extra
   - **Account → Password Expires in** → **Never**, its shipped state — forced rotation on cameras breeds sticky-note passwords
   - **Peripheral** (Serial Port / External Light / Wiper) → leave untouched — RS-485 and accessory config for hardware these turrets do not have
 
@@ -889,6 +890,9 @@ The dead-end gateway already stops the traffic; this step turns off the services
 - **Email Alerts / FTP upload** → leave **unconfigured**, their shipped state
 - **Reolink Cloud** → nothing to switch: it only exists once a camera is bound to a Reolink account, and this build never signs one in — LAN add-by-IP, the web UI, RTSP, and NTP are all account-free
 - **Server Settings** → already answered at the doorbell's setup step (HTTP on, RTSP on, ONVIF on, RTMP left on for the flv machinery) — just **verify nothing regressed**: web UI **Device Settings → Network → Advanced → Server Settings**; a firmware update is the usual culprit when a stream that worked goes dark
+
+> [!NOTE]
+> Where the passwords live, for the record: the camera's admin login is stored (hashed) **on the device** and checked locally — the vendor's cloud never receives it. What Dahua's P2P service collected, by its own consent text, was device *metadata* (IP, MAC, serial), and both halves of that path are now severed. The password's only copies are local: the camera itself, the credential fields on this page, and Frigate's config where the RTSP lines log in.
 
 > [!NOTE]
 > The pane names above are verified against Dahua's current Web 5.0 operation manual and Reolink's current support articles — but camera firmware drifts, and a given build may shuffle a pane (the newest Dahua builds, for instance, move updating into a left-rail "Maintenance Center"). Where your camera's screen disagrees with a path here, trust the screen — and flag it so this page gets corrected against the real firmware.
