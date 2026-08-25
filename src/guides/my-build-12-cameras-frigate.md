@@ -1441,7 +1441,14 @@ cameras:
 Then install the Frigate integration in the Home Assistant OS VM through **HACS (the Home Assistant Community Store)**, which itself has to be installed once first. You get a live entity per camera, occupancy and motion binary sensors per camera and zone, object-count and performance sensors, and the recordings browsable in Home Assistant's media browser — the raw material for the automations later in this build.
 
 > [!DETAILS] Install HACS first, then the Frigate integration
-> The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog that must be installed once before any community integration can be downloaded. The order matters: install the **Get HACS** app (**Settings → Apps → Install app → Get HACS**), **restart Home Assistant**, then add the **HACS integration** under **Settings → Devices & services** — that step is where the GitHub sign-in happens, via a device code you enter on github.com — and only then does the HACS panel appear. Open **HACS**, search for **Frigate**, download it, and **restart Home Assistant again**. Finally add the Frigate integration under **Settings → Devices & services**; it asks for Frigate's address (`http://frigate-ip:5000`).
+> The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog installed once. And the App store cannot even *find* the installer until its repository is added — the store only searches repositories it already knows, which is the step everyone hits:
+>
+> 1. **Settings → Apps → App store** → the **⋮ menu (top right) → Repositories** → paste `https://github.com/hacs/addons` → **Add**, close the dialog
+> 2. The **Get HACS** card now exists — search for it, **Install**, then **Start** it once: it downloads HACS into the config folder and stops; its **Log** tab should end in success
+> 3. **Restart Home Assistant** — Settings → System → the power menu → Restart
+> 4. **Settings → Devices & services → Add integration → HACS** — tick the acknowledgement boxes, then sign in to **GitHub** with the device code it shows, entered at `github.com/login/device` (a GitHub account is required)
+> 5. The **HACS** panel joins the sidebar — open it, search **Frigate**, **Download**, and **restart Home Assistant again**
+> 6. **Settings → Devices & services → Add integration → Frigate** → URL **`http://192.168.1.52:5000`** — the internal port; HA's `.51` is one of the two addresses the firewall fence admits there
 
 > [!INPUT] mqtt-user | MQTT username | | mqtt-user
 > The dedicated user Frigate logs in as, created in the Mosquitto app's Logins on the Home Assistant & Zigbee2MQTT page — `mqtt-user` matches the example; edit if named differently.
