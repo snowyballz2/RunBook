@@ -979,10 +979,10 @@ mkdir -p /mnt/frigate-footage && echo 'LABEL=frigate-footage /mnt/frigate-footag
 
 The final `df` line should show the 4 TB disk (about 3.6T usable) on `/mnt/frigate-footage` — that is the fstab entry parsing and mounting in one pass.
 
-**Hand it to the container** as a mount point at `/media/frigate`, and restart it — `102` is this build's Frigate container ID:
+**Hand it to the container** as a mount point at `/media/frigate` — and expect your own wizard choice to push back: the container was built with **Protection: Yes**, and adding a mount point is a disk change, so a bare `pct set` answers `can't update CT 102 drive 'mp0' — protection mode enabled`. This is the deliberate untick-once moment, scripted — drop protection, add the mount, raise it again, reboot (`102` is this build's Frigate container ID):
 
 ```bash
-pct set 102 -mp0 /mnt/frigate-footage,mp=/media/frigate && pct reboot 102
+pct set 102 -protection 0 && pct set 102 -mp0 /mnt/frigate-footage,mp=/media/frigate && pct set 102 -protection 1 && pct reboot 102
 ```
 
 Prove the container sees it:
