@@ -1472,7 +1472,8 @@ systemctl restart frigate
 
 Reload the web UI — the enabled cameras' live views should appear, and walking through a frame should produce a tracked person within a few seconds. Three ways to *see* the tracking, from most direct:
 
-- **Debug view** — on a camera's own view, the **gear icon → Debug**, tick **Bounding boxes**: a live box labeled `person` with a confidence score follows you around the frame — the detector's raw output
+- **Debug view** — on a camera's own view, the **gear icon → Debug**, tick **Bounding boxes**: a live box labeled `person` with a confidence score follows you around the frame — the detector's raw output. Know the two box kinds: **red boxes are motion** (the cheap pixel-change stage — the camera's own OSD clock draws one forever until masked), **labeled boxes are tracked objects**. Motion boxes without ever a labeled box on a plainly visible person means detection is not running — first suspect the **person-silhouette icon** in the camera view's top icon row, a runtime Detect switch that overrides the config until flipped back (HA exposes it as `switch.<camera>_detect`); if that is on, check **Settings → System metrics** for the **onnx** detector and its inference speed
+- **The first motion mask** — every camera whose burned-in clock draws a permanent red box deserves one: **Settings → Masks and Zones** → pick the camera → add a **Motion Mask** → draw a rectangle over the timestamp → Save. Keep the OSD itself (a clock on recordings is evidence); the mask removes Frigate's attention, not the overlay
 - **History** — the walk becomes a review item with a thumbnail; every tracked object does
 - **The occupancy entity** — once the HA integration below is in: **Developer tools → States**, filter the camera; `binary_sensor.<camera>_person_occupancy` reads **on** while you stand in frame and drops to **off** when you leave — the whole camera → detector → MQTT → integration chain proven in one toggle
 
