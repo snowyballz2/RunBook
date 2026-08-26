@@ -152,7 +152,7 @@ Three rules matter more than any product list, which will be stale within a year
 
 - **The listing must say Thread**, usually alongside *"Thread Border Router required."* If it says *"2.4G Wi-Fi only"* it is useless here whatever the Matter badge claims. **TP-Link Tapo is the trap to watch** — the entire Matter line (P125M, P400M) is Wi-Fi. So are Nanoleaf's **newer** Essentials bulbs, where older ones were Thread; the badge is identical and only the fine print differs.
 - **Prefer plugs over bulbs.** A bulb stops routing the moment someone flips the wall switch — a miserable intermittent fault to chase.
-- **Per-device energy monitoring is a bonus, not a reason to buy.** Rack-level draw already arrives free over **NUT** from the CyberPower UPS on the *UPS & Safe Shutdown* page. Commission them **working outward from the ZBT-2**, so each new one is in range of the last.
+- **Per-device energy monitoring is a bonus, not a reason to buy.** Rack-level draw already arrives free over **NUT** from the CyberPower UPS on the *UPS & Safe Shutdown* page.
 - Each lock is **physically installed and powered** — the U400's rechargeable lithium pack charged (it takes USB-C, not disposable cells) and seated, the door able to throw the bolt.
 
 > [!NOTE]
@@ -164,6 +164,36 @@ Three rules matter more than any product list, which will be stale within a year
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 > The address the Home Assistant companion app points at.
+
+### Commission the Thread plugs, working outward
+The plugs are **Matter over Thread**, so they commission the same way the locks do below — from the **companion app over Bluetooth**. They do *not* go through Zigbee2MQTT; that is the Third Reality plugs' path, a different radio entirely, and nothing about the Zigbee pairing flow applies here.
+
+What differs from the locks is the **order**. Each plug you commission becomes a **router** the next one can reach through, so work **outward from the ZBT-2** — nearest first, each one plugged into its final outlet *before* you add it, so what you commission is what you keep. The five spots, in order:
+
+1. **Near the rack** — comfortably inside the ZBT-2's range
+2. **On the path toward the carport**
+3. **By the front door**
+4. **At the top of the basement stairs** — floor assemblies eat 2.4 GHz, so this one is not optional
+5. **Near the sliding glass door** — it gives the MYGGBETT contact sensor a hop of its own
+
+For each plug, in turn:
+
+1. Plug it into its final outlet and let it power up.
+2. In the **Home Assistant companion app**, go to **Settings → Matter** and select **Add device**.
+3. Scan the plug's **Matter QR code** — on the plug body and on the quick-start leaflet. Record the numeric code below before the leaflet goes in a drawer.
+4. The phone commissions it over **Bluetooth** and hands it Home Assistant's **Thread credentials**. It lands as a `switch.*` entity with energy sensors alongside.
+5. Give it a clear name and assign it an **Area**.
+
+> [!SECRET] matter-plug-codes | IKEA GRILLPLATS Matter setup codes (all five)
+> The 11-digit numeric code under each plug's QR, labelled by placement. Re-commissioning a plug after a reset needs these.
+
+> [!WARNING]
+> **Check the first plug's network before commissioning the other four.** Plugs join whatever mesh they can hear exactly as the locks do — and a plug that lands on **NEST-PAN** or **ST-TIZEN** is routing for the neighbours, not for you, while looking perfectly healthy in the device list. Open **Matter Server** in the sidebar, select the new node, and read **Thread Network Diagnostics → NetworkName**: it must be your **`ha-thread-…`** network. If it is not, fix the phone's credentials (the *Send credentials to phone* step above) and re-commission that plug before going further.
+
+> [!TIP]
+> A plug that refuses to commission, or that lands on the wrong network, is the mesh telling you where its edge is — the fix is a plug *between* it and the last working one, not a stubborn retry at the same spot. That is the whole reason for working outward.
+
+Once all five are up and verified, the battery **MYGGBETT** contact sensor for the sliding glass door commissions the same way — end devices belong on a mesh that already has routers, never before it. The Automations page expects it renamed to `binary_sensor.sliding_door`.
 
 ### Find each lock's QR setup code
 Every U400 has a **Matter QR code** — on a sticker inside the battery compartment, on the quick-start card, and usually a peel-off duplicate for your records. You scan each one **once**, into Home Assistant. Record all three now so this checklist stands on its own, and keep them in your password manager (you consolidate these into Vaultwarden later in the build) — you re-commission from them after any factory reset.
