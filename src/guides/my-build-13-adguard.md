@@ -185,7 +185,14 @@ Scroll on and two more settings deserve a deliberate answer — the rest of the 
 ### Set AdGuard as the router's DNS
 Log into the Fios router at `192.168.1.1`. The setting is not under DHCP where you would expect it — on both current models (**G3100** and **CR1000A**) it lives on the broadband side:
 
-**Advanced → Network Settings → Broadband Connection** → switch from the automatic option to **"Use the Following IPv4 DNS Addresses"** → **DNS Address 1** → **`192.168.1.53`** → **Apply**. Applying takes a minute or two. Leave **DNS Address 2** blank — that is the fallback decision below, and blank is the local-first answer.
+**Advanced → Network Settings → Network Connections → Broadband Connection (Ethernet)**, then on the *Settings* page:
+
+- **IPv4 DNS** → **"Use the Following IPv4 DNS Addresses"**
+- **IPv4 DNS Address 1** → **`192.168.1.53`**
+- **IPv4 DNS Address 2** → leave at **`0.0.0.0`** — this UI's way of showing empty, which is the fallback decision below answered the local-first way
+- **Internet Protocol** (above the DNS rows) → **leave it as you found it**. If it reads *Obtain an IP Address Automatically*, keep it there — Verizon assigns the WAN address by DHCP, and pinning it manually means the internet drops the next time they reassign it, in a way that looks nothing like a DNS change
+- **Internet Connection Firewall** → leave **Enable** ticked, as the page itself advises
+- **Apply** — it takes a minute or two to settle
 
 As devices renew their leases, every phone, TV, and computer in the household starts using AdGuard automatically — nothing to configure per device.
 
@@ -193,7 +200,7 @@ As devices renew their leases, every phone, TV, and computer in the household st
 > **Expect the Query Log to show one client, not many.** Fios routers hand out *themselves* (`192.168.1.1`) as the DNS server and forward upstream to whatever you set above, so AdGuard sees every query arriving from the router rather than from the device that asked. Filtering is unaffected and complete; what you lose is per-device visibility and per-client rules. The only real cure is moving DHCP off the router and into AdGuard — a much larger change, and not worth it here.
 
 > [!WARNING]
-> **Disable IPv6 on the router — or AdGuard is bypassable.** Fios hands out IPv6 alongside IPv4, *including IPv6 DNS servers*, and this build's AdGuard container is IPv4-only. Any device that picks up an IPv6 resolver resolves through it and never touches AdGuard, which presents as "blocking works on some things and not others" and sends people hunting through blocklists for a problem that is not there. Turn IPv6 off in the router's settings, or at minimum stop it advertising IPv6 DNS. Two more while you are in there: **UPnP off** (the router half of the camera lockdown), and **remote administration off** — this router is reached from inside the house or over Tailscale, never from the internet.
+> **Disable IPv6 on the router — or AdGuard is bypassable.** Fios hands out IPv6 alongside IPv4, *including IPv6 DNS servers*, and this build's AdGuard container is IPv4-only. Any device that picks up an IPv6 resolver resolves through it and never touches AdGuard, which presents as "blocking works on some things and not others" and sends people hunting through blocklists for a problem that is not there. Turn it off in the same left-hand menu — **IPv6** and **IPv6 Address Distribution** sit a few rows above *Network Connections* — or at minimum stop it advertising IPv6 DNS servers. Two more while you are in there: **UPnP off** (the router half of the camera lockdown), and **remote administration off** — this router is reached from inside the house or over Tailscale, never from the internet.
 
 > [!TIP]
 > Keep this one in your back pocket for the Reverse Proxy page: Fios routers run **DNS rebinding protection**, which drops responses pointing at private addresses. AdGuard's `*.example.com → 192.168.1.54` rewrites are precisely that shape. If the proxy hostnames later resolve to nothing, this router setting is the first suspect, not AdGuard.
