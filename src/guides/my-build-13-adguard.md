@@ -255,6 +255,8 @@ And if the router **refuses to delete its own entries** (Verizon's firmware mana
 >
 > **One household-specific blocker to check first:** if you have **Fios TV set-top boxes**, do not do this. They expect the router's own DHCP with Verizon's vendor options and are unreliable behind third-party DHCP; a broken TV guide diagnosed a week later is a poor trade for a nicer log. No set-top boxes, no objection.
 >
+> One thing it does **not** fix: a **VPN client on a device**. DHCP controls what a machine is *told* its resolver is; a VPN's leak protection overrides what the machine *does*, capturing DNS at the OS level regardless. A laptop running a consumer VPN bypasses AdGuard whether DHCP handed it the router's address or AdGuard's directly — that case is solved only by disconnecting the VPN or pointing its own custom-DNS setting here.
+>
 > Even then, **defer it until the Proxmox Backups page is done**. It makes AdGuard critical for addressing as well as naming, and this build's own rule is not to hand irreplaceable roles to this box before a proven archive exists. Afterwards it is a clean upgrade.
 
 ### Decide on a fallback — a real tradeoff
