@@ -278,6 +278,15 @@ Address:  0.0.0.0
 > [!WARNING]
 > **`connection timed out; no servers could be reached` is not a block — it is silence.** The query got no reply at all, which means AdGuard's DNS service is not answering; and since the router now forwards there, the whole house has no DNS while that is true. Work down: does **`http://192.168.1.53`** still load? If yes the container is fine and the DNS listener specifically is not — check the dashboard shows protection on and the server running, since a setting that failed to apply can leave the web UI up while the DNS server stays down. Then in the container's **Console**, confirm something holds the port with `ss -tulnp | grep ':53'` and check `systemctl status AdGuardHome --no-pager`. If the dashboard does not load either, the container itself is stopped.
 
+Then run it again without naming a server, which uses whatever resolver the Mac actually received — the real end-to-end test:
+
+```bash
+nslookup doubleclick.net
+```
+
+> [!TIP]
+> **If that second lookup reports a `Server:` in the `100.64.x` range** — or anything that is neither your router nor AdGuard — the machine has a **VPN or DNS-filtering app intercepting all DNS**, and it will bypass AdGuard permanently. That also explains a direct query to `192.168.1.53` timing out from that machine while the same query answers fine from the Proxmox host: the interception swallows it. Find it with `ifconfig | grep '^utun'` (active tunnels) and in **System Settings → VPN** plus **General → Login Items & Extensions → DNS Proxy**, where a filtering app registers even with no menu-bar icon. Cloudflare WARP, NextDNS, Mullvad and work VPNs are the usual ones. Verify from a second device before blaming the server — one machine bypassing proves nothing about the rest of the house.
+
 Then back in the **AdGuard dashboard** (`http://192.168.1.53`), open the **Query Log**. You should see live queries from the house flowing in, with blocked ones flagged.
 
 > [!TIP]
