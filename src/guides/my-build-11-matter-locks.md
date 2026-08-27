@@ -198,6 +198,13 @@ Two neighbours of that attribute explain themselves badly, so read them together
 > [!TIP]
 > A plug that refuses to commission, or that lands on the wrong network, is the mesh telling you where its edge is — the fix is a plug *between* it and the last working one, not a stubborn retry at the same spot. That is the whole reason for working outward.
 
+> [!DETAILS] Why the order matters — and where it does not
+> The finished **mesh** is order-independent: Thread routers discover each other and re-route continuously, so a plug added later automatically improves the path of one added earlier, and end devices re-parent onto a better neighbour by themselves. Nothing ever needs re-commissioning to fix topology.
+>
+> The **commissioning event** is the part that cares. A plug commissioned far from every router has three outcomes: it fails to attach (harmless — retry once the nearer ones are up), it joins your network on a thin link (fine, and self-healing), or it **joins a neighbour's network** — because the device reports the networks it can actually hear and the commissioner picks from that list, so a plug that hears NEST-PAN clearly and yours not at all lands on Google's mesh with your credentials sitting unused on the phone. That third case is the expensive one: **a device keeps the network it joined**, so adding closer plugs afterwards cannot rescue it — only deleting and re-commissioning will.
+>
+> Fallback when a plug will not take at its intended outlet: commission it **beside the ZBT-2**, where your network is unmistakably the loudest, then carry it to its real outlet. It keeps your network and re-attaches — and if it goes dark there instead, that is clean information rather than a mystery: the gap is real, and that outlet needs a hop before it.
+
 > [!TIP]
 > **A plug that commissioned fine but then stops updating** has almost always hit that same edge from the other side: commissioning ran over **Bluetooth from the phone standing beside it**, while everything afterwards runs over **Thread from the ZBT-2 in the rack** — so a join can succeed on a radio that is not the one doing the work. Confirm it with the companion app's **Ping** on the device page: *"Ping device complete"* only means the operation finished, and a **red `!`** beside the address means that address never answered. Then work the ladder — power-cycle the plug (ten seconds unplugged; a REED re-attaches on power-up), re-ping; if it still fails, move it to an outlet near the ZBT-2 and ping there, which separates range from routing; if it fails even beside the radio, restart the **OpenThread Border Router** app and confirm **Settings → Thread** still shows your `ha-thread-…` card with `homeassistant-otbr.local` under it.
 
