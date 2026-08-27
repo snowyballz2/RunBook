@@ -245,10 +245,15 @@ Anything you cannot account for beyond those — an old console, a previous NAS,
 > [!TIP]
 > Set it once at the router and it covers everything: the HomePod mini, the Family Hub fridge, the ecobee thermostats, the Nest speakers, all of it. The handful of devices with hardcoded DNS (some smart-home gear) are the only exceptions.
 
+> [!WARNING]
+> **Do not hardcode `192.168.1.53` into a laptop or phone's network settings.** It works beautifully at home and leaves you with no DNS at all the moment the device joins any other network, since that address exists nowhere else. Fine for machines that never travel — a desktop, a TV — and wrong for anything portable. The build's answer for "AdGuard everywhere, including away" is the **Remote Access** page: once the tailnet lists AdGuard as its nameserver, portable devices resolve through this house from anywhere, with nothing hardcoded and nothing to undo when travelling.
+
 > [!DETAILS] Should AdGuard serve DHCP instead of the router?
-> It is the usual advice for households whose router cannot hand out a custom DNS server, and it would buy one real thing here: the **Query Log would show individual devices** rather than attributing every lookup to the router. On this build the answer is still **no**, for a specific reason — **Fios TV set-top boxes**. They expect the router's own DHCP with Verizon's vendor options, and are known to be unreliable behind third-party DHCP servers; a broken TV guide diagnosed a week later is a poor trade for a nicer log. The other reason people make the swap — a router mangling DNS responses — is already handled by the rebind exception above.
+> It is the usual advice for households whose router cannot hand out a custom DNS server, and it buys one real thing: the **Query Log shows individual devices** rather than attributing every lookup to the router, which also unlocks per-client rules. The forcing reason people usually cite — a router mangling DNS responses — is already handled by the rebind exception above, so this is now a nice-to-have rather than a fix.
 >
-> If the per-device visibility appeals, take the middle path instead: set DNS manually to `192.168.1.53` on the few machines you actually care about — the Mac, the phones. Those query AdGuard directly and appear individually in the log, while everything else keeps flowing through the router and stays filtered. No restructuring, nothing to break.
+> **One household-specific blocker to check first:** if you have **Fios TV set-top boxes**, do not do this. They expect the router's own DHCP with Verizon's vendor options and are unreliable behind third-party DHCP; a broken TV guide diagnosed a week later is a poor trade for a nicer log. No set-top boxes, no objection.
+>
+> Even then, **defer it until the Proxmox Backups page is done**. It makes AdGuard critical for addressing as well as naming, and this build's own rule is not to hand irreplaceable roles to this box before a proven archive exists. Afterwards it is a clean upgrade.
 
 ### Decide on a fallback — a real tradeoff
 The **router's secondary DNS** field is a genuine choice on this build, not a formality, and the answer leans toward **leaving it blank** here. (Not to be confused with AdGuard's own *Fallback DNS servers* setting from the previous step — a different thing entirely, and one you did fill in.):
