@@ -203,6 +203,9 @@ Two neighbours of that attribute explain themselves badly, so read them together
 
 Once all five are up and verified, the battery **MYGGBETT** contact sensor for the sliding glass door commissions the same way — end devices belong on a mesh that already has routers, never before it. The Automations page expects it renamed to `binary_sensor.sliding_door`.
 
+> [!WARNING]
+> **Do not diagnose the battery sensor with Ping.** As a Thread *sleepy end device* it keeps its radio off between check-ins, so the companion app's Ping fails against it even when it is perfectly healthy — a red `!` there means nothing. Test it by **triggering it**: separate the magnet and watch the entity move. Its **RoutingRole** correctly reads **`2` (SleepyEndDevice)**, never the `5` a plug should reach. And if it was commissioned before its nearby plug existed, it has no parent to attach to — once that plug is up, **pull the sensor's battery for ten seconds and reseat it** so it hunts for a parent again. Thread re-parents inside the same network on its own, so this needs no re-commissioning; only a wrong **NetworkName** does.
+
 ### Find each lock's QR setup code
 Every U400 has a **Matter QR code** — on a sticker inside the battery compartment, on the quick-start card, and usually a peel-off duplicate for your records. You scan each one **once**, into Home Assistant. Record all three now so this checklist stands on its own, and keep them in your password manager (you consolidate these into Vaultwarden later in the build) — you re-commission from them after any factory reset.
 
