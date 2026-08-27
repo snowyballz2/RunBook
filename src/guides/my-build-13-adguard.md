@@ -262,11 +262,21 @@ Picking a *filtering* secondary — AdGuard's own public resolvers at `94.140.14
 **Back to AdGuard now** — leave the Verizon router UI and return to the AdGuard dashboard at **`http://192.168.1.53`**. Everything in this section happens there. Open **Filters → DNS blocklists**. AdGuard ships with its own **AdGuard DNS filter** enabled; click **Add blocklist → Choose from the list** and add **OISD Blocklist (Big)** — the standard low-breakage pick, comprehensive without being trigger-happy. Stop there for now: more lists block more but break more, and the Query Log below is where you would diagnose it.
 
 ### Confirm it is actually blocking
-First from the **Mac**, in the **Terminal** app — this one is not a browser step. Check that a known tracker domain gets blocked; a blocked domain returns `0.0.0.0` or no address:
+First from the **Mac**, in the **Terminal** app — this one is not a browser step. Check that a known tracker domain gets blocked. A blocked domain comes back answered, with `0.0.0.0` as its address:
 
 ```bash
 nslookup doubleclick.net 192.168.1.53
 ```
+
+```
+Server:   192.168.1.53
+Address:  192.168.1.53#53
+Name:     doubleclick.net
+Address:  0.0.0.0
+```
+
+> [!WARNING]
+> **`connection timed out; no servers could be reached` is not a block — it is silence.** The query got no reply at all, which means AdGuard's DNS service is not answering; and since the router now forwards there, the whole house has no DNS while that is true. Work down: does **`http://192.168.1.53`** still load? If yes the container is fine and the DNS listener specifically is not — check the dashboard shows protection on and the server running, since a setting that failed to apply can leave the web UI up while the DNS server stays down. Then in the container's **Console**, confirm something holds the port with `ss -tulnp | grep ':53'` and check `systemctl status AdGuardHome --no-pager`. If the dashboard does not load either, the container itself is stopped.
 
 Then back in the **AdGuard dashboard** (`http://192.168.1.53`), open the **Query Log**. You should see live queries from the house flowing in, with blocked ones flagged.
 
