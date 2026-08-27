@@ -198,6 +198,9 @@ Two neighbours of that attribute explain themselves badly, so read them together
 > [!TIP]
 > A plug that refuses to commission, or that lands on the wrong network, is the mesh telling you where its edge is — the fix is a plug *between* it and the last working one, not a stubborn retry at the same spot. That is the whole reason for working outward.
 
+> [!TIP]
+> **A plug that commissioned fine but then stops updating** has almost always hit that same edge from the other side: commissioning ran over **Bluetooth from the phone standing beside it**, while everything afterwards runs over **Thread from the ZBT-2 in the rack** — so a join can succeed on a radio that is not the one doing the work. Confirm it with the companion app's **Ping** on the device page: *"Ping device complete"* only means the operation finished, and a **red `!`** beside the address means that address never answered. Then work the ladder — power-cycle the plug (ten seconds unplugged; a REED re-attaches on power-up), re-ping; if it still fails, move it to an outlet near the ZBT-2 and ping there, which separates range from routing; if it fails even beside the radio, restart the **OpenThread Border Router** app and confirm **Settings → Thread** still shows your `ha-thread-…` card with `homeassistant-otbr.local` under it.
+
 Once all five are up and verified, the battery **MYGGBETT** contact sensor for the sliding glass door commissions the same way — end devices belong on a mesh that already has routers, never before it. The Automations page expects it renamed to `binary_sensor.sliding_door`.
 
 ### Find each lock's QR setup code
