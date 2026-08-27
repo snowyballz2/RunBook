@@ -188,7 +188,12 @@ For each plug, in turn:
 > The 11-digit numeric code under each plug's QR, labelled by placement. Re-commissioning a plug after a reset needs these.
 
 > [!WARNING]
-> **Check the first plug's network before commissioning the other four.** Plugs join whatever mesh they can hear exactly as the locks do — and a plug that lands on **NEST-PAN** or **ST-TIZEN** is routing for the neighbours, not for you, while looking perfectly healthy in the device list. Open **Matter Server** in the sidebar, select the new node, scroll to **Endpoints**, and open **Endpoint 0** — the root endpoint (*Ota Requestor*); its siblings are the plug's switch and energy meter, and the network clusters live only on 0. Inside it, expand **Thread Network Diagnostics** (cluster `0x0035`) and read **NetworkName**: it must be your **`ha-thread-…`** network. If it is not, fix the phone's credentials (the *Send credentials to phone* step above) and re-commission that plug before going further.
+> **Check the first plug's network before commissioning the other four.** Plugs join whatever mesh they can hear exactly as the locks do — and a plug that lands on **NEST-PAN** or **ST-TIZEN** is routing for the neighbours, not for you, while looking perfectly healthy in the device list. Open **Matter Server** in the sidebar, select the new node, scroll to **Endpoints**, and open **Endpoint 0** — the root endpoint (*Ota Requestor*); its siblings are the plug's switch and energy meter, and the network clusters live only on 0. Inside it, expand **Thread Network Diagnostics** (cluster `0x0035`) and read **NetworkName**: it must be your **`ha-thread-…`** network.
+
+Two neighbours of that attribute explain themselves badly, so read them together:
+
+- **RoutingRole** — the Matter enum is `0 Unspecified · 1 Unassigned · 2 SleepyEndDevice · 3 EndDevice · 4 REED · 5 Router · 6 Leader`. A fresh plug usually reads **4 (REED)** — *router-eligible*, not yet promoted. That is not a fault: Thread's Leader promotes REEDs only when the mesh needs routers, and on the first plug there is nothing to route for yet. Expect **5 (Router)** once the other plugs are up and the locks have moved over
+- **NeighborTable** — empty `[ ]` on that same first plug, for the same reason; it fills as the mesh grows If it is not, fix the phone's credentials (the *Send credentials to phone* step above) and re-commission that plug before going further.
 
 > [!TIP]
 > A plug that refuses to commission, or that lands on the wrong network, is the mesh telling you where its edge is — the fix is a plug *between* it and the last working one, not a stubborn retry at the same spot. That is the whole reason for working outward.
