@@ -149,6 +149,30 @@ Two more settings live on that same **DNS settings** page, below the upstream bo
 - **Upstream mode** → keep **Load-balancing**, the default — it queries one upstream at a time, favouring whichever has proved fastest and most reliable. *Parallel requests* doubles your query volume to the resolver for a gain the cache already erases, and *Fastest IP address* waits for every server and measures TCP connection speed, which the screen itself warns can significantly slow queries.
 - **Fallback DNS servers** → enter **`1.1.1.2`** and **`1.0.0.2`**, one per line. Both upstreams above are the same provider, so a Quad9-wide outage takes out both and leaves the house with no DNS; this pair is Cloudflare's malware-filtering equivalent — a different company, same security posture, used only when Quad9 does not answer. Unlike the router's secondary-DNS field discussed further down, **this cannot bypass your blocking**: AdGuard still receives and filters every query, it merely forwards through a different resolver while its upstreams are unreachable.
 
+Scroll on and two more settings deserve a deliberate answer — the rest of the page is correct as shipped:
+
+- **Rate limit** (under *DNS server configuration*) → change **20** to **`0`**. This is not per device: the **Subnet prefix length for IPv4** below it defaults to **24**, so that quota is a single bucket shared by *every* client on `192.168.1.0/24`. A few phones plus one media-heavy page load can burst past 20 queries a second between them, and anything over is **silently dropped**. The limit exists to protect resolvers exposed to the internet; AdGuard's own documentation calls `0` safe when the server is not internet-accessible, which is this build exactly — LAN-only, no port-forward, ever.
+- **Optimistic caching** (under *DNS cache configuration*) → **enable it**. AdGuard answers from an expired cache entry immediately and refreshes it in the background, so browsing feels instant and a sluggish upstream never stalls a page.
+
+> [!WARNING]
+> **Leave *Allowed clients* empty**, under *Access settings*. Restricting it to `192.168.1.0/24` looks like free hardening, but the Remote Access page later makes AdGuard the tailnet's nameserver — and those queries arrive from **`100.x`** addresses. An allowlist would silently kill DNS on your phone the moment you left the house, in a way almost nobody connects back to this box.
+
+> [!DETAILS] The rest of the page, and why each stays as it is
+> - **Private reverse DNS servers** → empty — it falls back to the router at `192.168.1.1`, which is what knows your DHCP names
+> - **Use private reverse DNS resolvers** → keep ticked, or `192.168.x` reverse lookups all return NXDOMAIN
+> - **Enable reverse resolving of clients' IP addresses** → keep ticked — this is what makes the Query Log show device *names* instead of bare IP addresses
+> - **Upstream timeout** → `10` seconds, the default
+> - **Subnet prefix lengths** (`24` / `56`) and **Rate limiting allowlist** → leave; with the rate limit at `0` they do nothing
+> - **Enable EDNS client subnet** → keep **off** — enabling it forwards your subnet to authoritative servers, leaking approximate location for a routing gain you do not need
+> - **Enable DNSSEC** → ticked, as set above
+> - **Disable resolving of IPv6 addresses** → keep **off**. The containers here are IPv4-only, but Fios hands real IPv6 to household devices; dropping AAAA records would push them onto slower paths
+> - **Blocking mode** → **Default** — blocked names answer `0.0.0.0`, which every client handles cleanly
+> - **Blocked response TTL** → `10` — short, so unblocking a domain takes effect almost immediately
+> - **Enable cache** ticked, **Cache size** `4194304` — the cache that makes the upstream-latency question above nearly moot
+> - **Override minimum / maximum TTL** → both `0`; a minimum override serves stale records, a maximum override only adds upstream traffic
+> - **Disallowed clients** → empty
+> - **Disallowed domains** → keep the three shipped entries (`version.bind`, `id.server`, `hostname.bind`) — they drop resolver-fingerprinting probes
+
 - **Bootstrap DNS servers** (same page) → leave as offered — they only resolve the upstreams' own names at startup
 - **Enable DNSSEC** (same page) → **tick it** — it validates that answers were not forged, and costs no extra round-trip in the common case
 - **DNS-over-HTTPS / DNS-over-TLS upstreams** (`https://` or `tls://` prefixes) → **do not use them here.** They encrypt the AdGuard→upstream leg, which sounds strictly better but buys little on this build: your ISP already sees every destination IP you connect to, so hiding the lookup does not hide the visit, and each uncached query pays a TLS session — 5–15 ms. Encrypted DNS earns its cost on *untrusted* networks, which is exactly the case Tailscale already covers by routing your phone's DNS back through this house.
