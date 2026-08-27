@@ -74,10 +74,10 @@ A monitor that wanders to a new address after a power cut is worse than none —
 
 ### Start it at boot
 
-- **Options → Start at boot** → **Yes** — select the container in the left tree; or from the node Shell, swapping `109` for the ID shown next to the container's name:
+- **Options → Start at boot** → **Yes** — select the container in the left tree; or from the node Shell, swapping `108` for the ID shown next to the container's name:
 
 ```bash
-pct set 109 -onboot 1
+pct set 108 -onboot 1
 ```
 
 > [!INPUT] kuma-ip | Uptime Kuma container IP | 192.168.1.57

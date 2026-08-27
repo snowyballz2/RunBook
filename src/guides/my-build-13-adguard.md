@@ -91,10 +91,10 @@ Let the script finish — it prints the setup URL when done.
 ### Set it to start at boot
 DNS for the entire house cannot depend on you remembering to start a container after a power cut. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
 
-The `102` is the container ID the script assigned — it shows next to the container's name in the left tree; swap it if yours differs:
+The `103` is the container ID the script assigns here — this build's guests run **100** TrueNAS, **101** Home Assistant, **102** Frigate, then **103** for AdGuard. It shows next to the container's name in the left tree; swap it if yours differs:
 
 ```bash
-pct set 102 -onboot 1
+pct set 103 -onboot 1
 ```
 
 > [!NOTE]

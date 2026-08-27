@@ -75,7 +75,7 @@ The static address matters doubly here: the installer bakes it into Homepage's s
 First, browse to `http://192.168.1.55:3000` and confirm the default page with its sample tiles loads — that proves the install succeeded, and everything below is editing that into your own page. Then make it permanent: a front door that vanishes after a power cut teaches the family to stop using it. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
 
 ```bash
-pct set 108 -onboot 1        # swap in the container's actual ID
+pct set 107 -onboot 1        # swap in the container's actual ID
 ```
 
 > [!NOTE]
