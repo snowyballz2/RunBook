@@ -259,22 +259,22 @@ Picking a *filtering* secondary — AdGuard's own public resolvers at `94.140.14
 ## Tune and verify
 
 ### Add a couple of blocklists
-In the dashboard, open **Filters → DNS blocklists**. AdGuard ships with its own **AdGuard DNS filter** enabled; click **Add blocklist → Choose from the list** and add **OISD Blocklist (Big)** — the standard low-breakage pick, comprehensive without being trigger-happy. Stop there for now: more lists block more but break more, and the Query Log below is where you would diagnose it.
+**Back to AdGuard now** — leave the Verizon router UI and return to the AdGuard dashboard at **`http://192.168.1.53`**. Everything in this section happens there. Open **Filters → DNS blocklists**. AdGuard ships with its own **AdGuard DNS filter** enabled; click **Add blocklist → Choose from the list** and add **OISD Blocklist (Big)** — the standard low-breakage pick, comprehensive without being trigger-happy. Stop there for now: more lists block more but break more, and the Query Log below is where you would diagnose it.
 
 ### Confirm it is actually blocking
-From any computer on the network, check that a known tracker domain gets blocked — a blocked domain returns `0.0.0.0` or no address:
+First from the **Mac**, in the **Terminal** app — this one is not a browser step. Check that a known tracker domain gets blocked; a blocked domain returns `0.0.0.0` or no address:
 
 ```bash
 nslookup doubleclick.net 192.168.1.53
 ```
 
-Then open the **Query Log** in the dashboard. You should see live queries from the house flowing in, with blocked ones flagged.
+Then back in the **AdGuard dashboard** (`http://192.168.1.53`), open the **Query Log**. You should see live queries from the house flowing in, with blocked ones flagged.
 
 > [!TIP]
 > If a site you trust breaks, open the Query Log, find the blocked domain, and click to allow it. That is the normal way to fix the occasional false block — far better than disabling a whole list.
 
 ### Make a local name for it
-Once the reverse proxy is up and giving services tidy hostnames, AdGuard is also where you point those names at the right container. In **Filters → DNS rewrites**, map a wildcard like `*.example.com` to the proxy's IP so internal hostnames resolve on the LAN — noting a `*.` wildcard matches **subdomains only**, never the bare domain itself; the Reverse Proxy page handles that detail when it creates the real rewrite. You do not do this yet — the proxy does not exist at this point in the build, and the Reverse Proxy page walks through adding the rewrite when it stands up. For now, just note that this dashboard is the place that work happens.
+Once the reverse proxy is up and giving services tidy hostnames, AdGuard is also where you point those names at the right container. In AdGuard's **Filters → DNS rewrites**, map a wildcard like `*.example.com` to the proxy's IP so internal hostnames resolve on the LAN — noting a `*.` wildcard matches **subdomains only**, never the bare domain itself; the Reverse Proxy page handles that detail when it creates the real rewrite. You do not do this yet — the proxy does not exist at this point in the build, and the Reverse Proxy page walks through adding the rewrite when it stands up. For now, just note that AdGuard's dashboard is the place that work happens.
 
 > [!NOTE]
 > That is the whole lifecycle for this container: unprivileged, pinned static IP, start-at-boot, run the wizard, point the router at it, verify in the Query Log. Snapshot it before any blocklist experiment or upgrade — rollback is instant if a new list breaks something.
