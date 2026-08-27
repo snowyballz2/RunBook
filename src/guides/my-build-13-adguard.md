@@ -246,6 +246,13 @@ The **router's secondary DNS** field is a genuine choice on this build, not a fo
 - **Blank (or also AdGuard):** strongest blocking, and it keeps DNS *local-first* — the guiding principle of this whole build. The catch is that if the server or the AdGuard container is down, the house has no DNS until it returns.
 - **A public resolver like `1.1.1.1`:** resilience if the box hiccups, at the cost of some devices quietly bypassing your blocking through the fallback.
 
+Picking a *filtering* secondary — AdGuard's own public resolvers at `94.140.14.14` / `94.140.15.15`, which do block ads, unlike Cloudflare's family options that cover malware and adult content only — answers the blocking objection neatly. It does not answer the bigger one:
+
+> [!WARNING]
+> **A secondary resolver breaks local names, intermittently.** The next page has AdGuard answering `*.example.com → 192.168.1.54`, and those rewrites exist nowhere else — a query that lands on a public secondary returns NXDOMAIN for them. So `frigate.example.com` resolves, then does not, then does, depending on which resolver a client happened to ask. That intermittency is genuinely miserable to diagnose because every symptom points at the proxy or the certificate instead of at this setting. Local hostnames and DHCP device names fail the same way.
+>
+> Keep the secondary blank at least until the Reverse Proxy page is behind you and you know how much you lean on those names. If the "no DNS during a host reboot" window does start to grate, the clean answer is not a public secondary but a **second AdGuard on separate always-on hardware** carrying its own copy of the rewrites — the same shape as the second-Uptime-Kuma advice later in this build, and it buys resilience *and* local names *and* blocking rather than trading them against each other.
+
 > [!NOTE]
 > Because this server already sits on a UPS and start-at-boot brings AdGuard straight back, the "box is down" window is small. Leaning toward AdGuard-only keeps the household local-first and the blocking complete. Add `1.1.1.1` as a fallback only if never losing the internet matters more to you than airtight blocking.
 
