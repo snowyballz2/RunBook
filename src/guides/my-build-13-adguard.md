@@ -245,6 +245,11 @@ Anything you cannot account for beyond those — an old console, a previous NAS,
 > [!TIP]
 > Set it once at the router and it covers everything: the HomePod mini, the Family Hub fridge, the ecobee thermostats, the Nest speakers, all of it. The handful of devices with hardcoded DNS (some smart-home gear) are the only exceptions.
 
+> [!DETAILS] Should AdGuard serve DHCP instead of the router?
+> It is the usual advice for households whose router cannot hand out a custom DNS server, and it would buy one real thing here: the **Query Log would show individual devices** rather than attributing every lookup to the router. On this build the answer is still **no**, for a specific reason — **Fios TV set-top boxes**. They expect the router's own DHCP with Verizon's vendor options, and are known to be unreliable behind third-party DHCP servers; a broken TV guide diagnosed a week later is a poor trade for a nicer log. The other reason people make the swap — a router mangling DNS responses — is already handled by the rebind exception above.
+>
+> If the per-device visibility appeals, take the middle path instead: set DNS manually to `192.168.1.53` on the few machines you actually care about — the Mac, the phones. Those query AdGuard directly and appear individually in the log, while everything else keeps flowing through the router and stays filtered. No restructuring, nothing to break.
+
 ### Decide on a fallback — a real tradeoff
 The **router's secondary DNS** field is a genuine choice on this build, not a formality, and the answer leans toward **leaving it blank** here. (Not to be confused with AdGuard's own *Fallback DNS servers* setting from the previous step — a different thing entirely, and one you did fill in.):
 
@@ -299,7 +304,9 @@ nslookup doubleclick.net
 >
 > **The fix, on this hardware:** **Advanced → Network Settings → DNS Server**, where a **"Enable DNS Rebind Protection"** checkbox sits below the DNS entry list, ticked by default. Try the surgical route first — the **Exceptions to DNS Rebind Protection** field below it takes an **IP/Netmask**; enter **`192.168.1.0/24`** (your LAN is both the client range and the answer range, so that covers either meaning of the ambiguous wording) and **Apply Changes**, then re-run the lookup. If it still comes back empty, untick the checkbox itself.
 >
-> Know what that trades away: DNS rebinding is a genuine attack class — a hostile page whose domain re-resolves to a private address, letting its scripts reach LAN devices from inside your browser — and this filter blocks it. Relaxing it is nevertheless the standard move for anyone running local DNS rewrites, and it is defensible on this build because every service it exposes sits behind a login: Proxmox, Home Assistant, Frigate's 8971, AdGuard, the proxy, and the cameras all authenticate. Prefer the exception over the global untick, so the protection survives everywhere except your own subnet.
+> Know what that trades away: DNS rebinding is a genuine attack class — a hostile page whose domain re-resolves to a private address, letting its scripts reach LAN devices from inside your browser — and this filter blocks it. Relaxing it is nevertheless the standard move for anyone running local DNS rewrites, and it is defensible on this build because every service it exposes sits behind a login: Proxmox, Home Assistant, Frigate's 8971, AdGuard, the proxy, and the cameras all authenticate. Prefer the exception over the global untick, so the protection survives everywhere except your own subnet. On this build the **`192.168.1.0/24`** exception was enough — the rewrites resolved through the router immediately after applying it.
+>
+> Optional tightening, if you want to know the field's exact semantics: change the exception to just **`192.168.1.54`** and re-run the lookup. Still working means the field matches *answer* addresses, and you now have a rule that permits only responses pointing at the proxy while still blocking a rebind aimed at your router or a camera. Broken means it matches *client* addresses instead — revert to `/24`. A marginal gain on a marginal defence either way; `/24` is a fine place to stop.
 
 Then back in the **AdGuard dashboard** (`http://192.168.1.53`), open the **Query Log**. You should see live queries from the house flowing in, with blocked ones flagged.
 
