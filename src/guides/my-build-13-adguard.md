@@ -135,7 +135,14 @@ The dashboard now lives at the plain IP (`http://192.168.1.53`). Before anything
 149.112.112.112
 ```
 
-That is **Quad9**, primary and secondary: it blocks known-malicious domains at the resolver level (a second net under AdGuard's blocklists) and does not monetize query data. Cloudflare's `1.1.1.1` is a fine alternative and marginally faster; the one to avoid is your ISP's resolver, which sees every lookup and has commercial reasons to care.
+That is **Quad9**, primary and secondary: it blocks known-malicious domains at the resolver level — command-and-control, phishing, malware distribution, a *different* list from the ad-and-tracker blocklists below, so the two layer rather than overlap — and it is a Swiss non-profit that does not monetize query data. The one to avoid is your ISP's resolver, which sees every lookup and has commercial reasons to care.
+
+> [!DETAILS] "But Cloudflare benchmarks faster"
+> It does, and it will not reach you: **AdGuard caches**. A household hits the same few hundred domains repeatedly, so most lookups are answered by this container at effectively zero milliseconds and never touch an upstream at all. Upstream latency applies only to cache misses, where the gap between the major resolvers is single-digit milliseconds — the benchmarks that rank them are measuring bare resolvers with no cache in front, which is not this setup.
+>
+> If you prefer Cloudflare regardless, the apples-to-apples pick is **`1.1.1.2` / `1.0.0.2`** — the malware-blocking variant — not plain `1.1.1.1`, which filters nothing and drops the security layer entirely.
+>
+> What not to do either way: **mix a filtering resolver with a non-filtering one.** AdGuard's default load-balancing mode picks an upstream per query, so a Quad9-plus-`1.1.1.1` pair blocks a malicious domain only when the coin lands right. Both filtering, or neither.
 
 - **Bootstrap DNS servers** (same page) → leave as offered — they only resolve the upstreams' own names at startup
 - **Enable DNSSEC** (same page) → **tick it** — it validates that answers were not forged, and costs no extra round-trip in the common case
