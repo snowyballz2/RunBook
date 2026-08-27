@@ -320,6 +320,11 @@ Then back in the **AdGuard dashboard** (`http://192.168.1.53`), open the **Query
 > [!TIP]
 > If a site you trust breaks, open the Query Log, find the blocked domain, and click to allow it. That is the normal way to fix the occasional false block — far better than disabling a whole list.
 
+> [!NOTE]
+> **YouTube ads will still play, and that is not a fault.** DNS filtering works by refusing to resolve *ad-serving domains* — `doubleclick.net` and its cousins, which is what the test above proved. YouTube serves its ads from **the same domains as the video itself**, so there is no separate name to refuse; blocking it would break YouTube outright. Google does this deliberately, and Facebook, Instagram, Twitch and Spotify all serve their ads first-party for the same reason.
+>
+> What this container genuinely stops: trackers and analytics across the web, banner and display advertising on ordinary sites, app telemetry, smart-device phone-home traffic, and known malware domains. Compare a news site here against the same site on cellular and the difference is obvious. For YouTube specifically the only real answers are a browser extension on desktop, a subscription, or acceptance — **no network-level tool solves it**, and piling on aggressive blocklists to chase it is how people end up breaking legitimate sites instead.
+
 ### Make a local name for it
 Once the reverse proxy is up and giving services tidy hostnames, AdGuard is also where you point those names at the right container. In AdGuard's **Filters → DNS rewrites**, map a wildcard like `*.example.com` to the proxy's IP so internal hostnames resolve on the LAN — noting a `*.` wildcard matches **subdomains only**, never the bare domain itself; the Reverse Proxy page handles that detail when it creates the real rewrite. You do not do this yet — the proxy does not exist at this point in the build, and the Reverse Proxy page walks through adding the rewrite when it stands up. For now, just note that AdGuard's dashboard is the place that work happens.
 
