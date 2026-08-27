@@ -178,7 +178,7 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 > [!DETAILS] Optional extras — exit node and a clean certificate
 > Two add-ons, neither required and nothing later depends on them:
 >
-> - **Exit node** — `tailscale set --advertise-exit-node` on the host, approved on the Machines page like the subnet route. Selected on your iPhone, it routes *all* the phone's traffic through home — handy on hostile hotel Wi-Fi, off by default, separate from the subnet route.
+> - **Exit node** — `tailscale set --advertise-exit-node` on the host, approved on the Machines page like the subnet route. Selected on your iPhone, it routes *all* the phone's traffic through home — handy on hostile hotel Wi-Fi, off by default, separate from the subnet route. It is also the closest thing this build has to a consumer VPN; see below for how far that goes.
 > - **Quiet the Proxmox certificate warning over Tailscale** — Tailscale Serve fronts the web UI with a valid certificate. Run it in the host shell:
 >
 >   ```bash
@@ -186,6 +186,25 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 >   ```
 >
 >   Tailscale's "on a Proxmox host" guide also documents a second route — installing a Tailscale-issued HTTPS certificate directly into Proxmox, kept current with a cron job. Serve is the simpler, self-contained option and is plenty here.
+
+> [!DETAILS] Does this replace a consumer VPN like NordVPN?
+> Half of one, better — and the other half not at all, so decide by what you actually bought it for.
+>
+> **Replaced properly:**
+>
+> - **Safety on hostile Wi-Fi** — the exit node above routes everything through your own house, which is the same protection with one fewer company to trust
+> - **Ad and tracker blocking** — AdGuard does what those services' "threat protection" features do, with lists you pick and a query log you can read; through the exit node it follows you off the LAN
+> - **Reaching your own machines from anywhere** — a consumer VPN never did this at all
+>
+> **Not replaced, and not replaceable here:**
+>
+> - **Hiding your browsing from your ISP** — traffic through your own exit node still leaves on your own line, so your ISP sees exactly what it always did. Moving that visibility elsewhere was the entire product
+> - **Masking your address from websites** — sites see your *home* IP, which is a stable identifier tied to where you live rather than an anonymising one
+> - **Geo-shifting**, and **torrent privacy** if that matters
+>
+> One new cost too: an exit node caps mobile speed at your home *upload* bandwidth, adds a hop of latency, and dies with the server.
+>
+> **Either way, disconnect it while at home.** On your own LAN a consumer VPN buys only ISP opacity, and it costs you real things: it bypasses AdGuard's filtering, it stops the `*.example.com` names from the Reverse Proxy page resolving on the machine you administer from, and it fights Tailscale for control of routing and DNS on macOS. Run one at a time.
 
 > [!DETAILS] Confirming this stays free
 > Everything here runs on Tailscale's free Personal plan: $0 forever, up to 6 users, unlimited devices for those users — subnet routing and **Disable Key Expiry** included. If you read elsewhere that the free plan is "3 users / 100 devices," that is the old limit; the current Personal plan allows 6 users with free, unlimited user devices.
