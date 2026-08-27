@@ -144,6 +144,11 @@ That is **Quad9**, primary and secondary: it blocks known-malicious domains at t
 >
 > What not to do either way: **mix a filtering resolver with a non-filtering one.** AdGuard's default load-balancing mode picks an upstream per query, so a Quad9-plus-`1.1.1.1` pair blocks a malicious domain only when the coin lands right. Both filtering, or neither.
 
+Two more settings live on that same **DNS settings** page, below the upstream box:
+
+- **Upstream mode** → keep **Load-balancing**, the default — it queries one upstream at a time, favouring whichever has proved fastest and most reliable. *Parallel requests* doubles your query volume to the resolver for a gain the cache already erases, and *Fastest IP address* waits for every server and measures TCP connection speed, which the screen itself warns can significantly slow queries.
+- **Fallback DNS servers** → enter **`1.1.1.2`** and **`1.0.0.2`**, one per line. Both upstreams above are the same provider, so a Quad9-wide outage takes out both and leaves the house with no DNS; this pair is Cloudflare's malware-filtering equivalent — a different company, same security posture, used only when Quad9 does not answer. Unlike the router's secondary-DNS field discussed further down, **this cannot bypass your blocking**: AdGuard still receives and filters every query, it merely forwards through a different resolver while its upstreams are unreachable.
+
 - **Bootstrap DNS servers** (same page) → leave as offered — they only resolve the upstreams' own names at startup
 - **Enable DNSSEC** (same page) → **tick it** — it validates that answers were not forged, and costs no extra round-trip in the common case
 - **DNS-over-HTTPS / DNS-over-TLS upstreams** (`https://` or `tls://` prefixes) → **do not use them here.** They encrypt the AdGuard→upstream leg, which sounds strictly better but buys little on this build: your ISP already sees every destination IP you connect to, so hiding the lookup does not hide the visit, and each uncached query pays a TLS session — 5–15 ms. Encrypted DNS earns its cost on *untrusted* networks, which is exactly the case Tailscale already covers by routing your phone's DNS back through this house.
@@ -160,7 +165,7 @@ Log into the Fios router at `192.168.1.1`, find the DHCP or DNS settings, and se
 > Set it once at the router and it covers everything: the HomePod mini, the Family Hub fridge, the ecobee thermostats, the Nest speakers, all of it. The handful of devices with hardcoded DNS (some smart-home gear) are the only exceptions.
 
 ### Decide on a fallback — a real tradeoff
-The secondary DNS field is a genuine choice on this build, not a formality, and the answer leans toward **leaving it blank** here:
+The **router's secondary DNS** field is a genuine choice on this build, not a formality, and the answer leans toward **leaving it blank** here. (Not to be confused with AdGuard's own *Fallback DNS servers* setting from the previous step — a different thing entirely, and one you did fill in.):
 
 - **Blank (or also AdGuard):** strongest blocking, and it keeps DNS *local-first* — the guiding principle of this whole build. The catch is that if the server or the AdGuard container is down, the house has no DNS until it returns.
 - **A public resolver like `1.1.1.1`:** resilience if the box hiccups, at the cost of some devices quietly bypassing your blocking through the fallback.
