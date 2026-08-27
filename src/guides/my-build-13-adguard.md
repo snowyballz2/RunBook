@@ -198,7 +198,7 @@ Every phone, TV, and computer in the household now uses AdGuard automatically �
 
 Most likely nothing needs to renew a lease, either: this router hands clients *itself* as their DNS server and forwards upstream, so changing where it forwards takes effect immediately and the address the clients hold never changed. Rather than guess, check the outcome — open AdGuard's **Query Log** and browse something. Entries appearing is the proof.
 
-If the log stays empty after a minute or two, find out what a client actually holds. On a Mac:
+If the log stays empty after a minute or two, find out what a client actually holds. On the **Mac**, in the **Terminal** app (⌘-Space, type *Terminal*) — not a Proxmox shell or a container console:
 
 ```bash
 scutil --dns | grep 'nameserver\[0\]' | head -3
