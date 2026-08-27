@@ -177,6 +177,9 @@ Scroll on and two more settings deserve a deliberate answer — the rest of the 
 - **Enable DNSSEC** (same page) → **tick it** — it validates that answers were not forged, and costs no extra round-trip in the common case
 - **DNS-over-HTTPS / DNS-over-TLS upstreams** (`https://` or `tls://` prefixes) → **do not use them here.** They encrypt the AdGuard→upstream leg, which sounds strictly better but buys little on this build: your ISP already sees every destination IP you connect to, so hiding the lookup does not hide the visit, and each uncached query pays a TLS session — 5–15 ms. Encrypted DNS earns its cost on *untrusted* networks, which is exactly the case Tailscale already covers by routing your phone's DNS back through this house.
 
+> [!WARNING]
+> **That reasoning inverts if you route traffic through a consumer VPN.** It rests on "your ISP sees the destination IPs anyway" — true when you browse normally, false the moment a VPN tunnel hides those IPs. Point a VPN client's *custom DNS* at this AdGuard and the queries travel your own line in cleartext while the browsing goes through the tunnel: the content is hidden and the index is published, which is the classic **DNS leak** the VPN's own leak-protection exists to prevent. It can also break geo-shifting, since some services compare your resolver's location against your exit IP. If you intend to run both, switch these upstreams to `tls://` so the only unencrypted thing left is not the list of every site you visit.
+
 > [!NOTE]
 > Upstream choice only affects **uncached** lookups. AdGuard answers repeats from cache in about a millisecond, and blocked domains never leave the LAN at all — which is why adding a DNS hop makes browsing feel *faster*, not slower.
 
