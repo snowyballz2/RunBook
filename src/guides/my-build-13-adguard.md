@@ -250,7 +250,9 @@ And if the router **refuses to delete its own entries** (Verizon's firmware mana
 > [!WARNING]
 > **Do not hardcode `192.168.1.53` into a laptop or phone's network settings.** It works beautifully at home and leaves you with no DNS at all the moment the device joins any other network, since that address exists nowhere else. Fine for machines that never travel — a desktop, a TV — and wrong for anything portable. The build's answer for "AdGuard everywhere, including away" is the **Remote Access** page: once the tailnet lists AdGuard as its nameserver, portable devices resolve through this house from anywhere, with nothing hardcoded and nothing to undo when travelling.
 
-> [!DETAILS] Should AdGuard serve DHCP instead of the router?
+> [!DETAILS] Should AdGuard serve DHCP instead of the router? (this build says no)
+> **This build leaves DHCP on the router.** The blocking works, the proxy names resolve, and nothing else in the collection depends on what the swap would buy — recorded here so the question does not have to be re-litigated later. What follows is the reasoning, and the conditions under which it would be worth revisiting.
+>
 > It is the usual advice for households whose router cannot hand out a custom DNS server, and it buys one real thing: the **Query Log shows individual devices** rather than attributing every lookup to the router, which also unlocks per-client rules, per-client upstreams, and per-device statistics.
 >
 > Blocking itself is unaffected either way — every device is filtered identically. What the router-proxy arrangement costs is the ability to tell devices *apart*, and on this build the sharpest example is **camera and IoT forensics**: the Cameras page spends a long section severing seven cameras from their vendors' clouds, and without per-device identity, a camera that starts resolving a vendor domain tomorrow shows up in the log as a domain with no owner. The same blindness covers the fridge, the thermostats and the speakers. The visibility that would *verify* the hardening is precisely what is missing. The forcing reason people usually cite — a router mangling DNS responses — is already handled by the rebind exception above, so this is now a nice-to-have rather than a fix.
@@ -259,7 +261,7 @@ And if the router **refuses to delete its own entries** (Verizon's firmware mana
 >
 > One thing it does **not** fix: a **VPN client on a device**. DHCP controls what a machine is *told* its resolver is; a VPN's leak protection overrides what the machine *does*, capturing DNS at the OS level regardless. A laptop running a consumer VPN bypasses AdGuard whether DHCP handed it the router's address or AdGuard's directly — that case is solved only by disconnecting the VPN or pointing its own custom-DNS setting here.
 >
-> Even then, **defer it until the Proxmox Backups page is done**. It makes AdGuard critical for addressing as well as naming, and this build's own rule is not to hand irreplaceable roles to this box before a proven archive exists. Afterwards it is a clean upgrade.
+> Even then, **defer it until the Proxmox Backups page is done**. It makes AdGuard critical for addressing as well as naming, and this build's own rule is not to hand irreplaceable roles to this box before a proven archive exists. The trigger for revisiting: wanting per-device rules for a household member, or a camera starting to resolve something it should not and needing to know *which* camera.
 
 ### Decide on a fallback — a real tradeoff
 The **router's secondary DNS** field is a genuine choice on this build, not a formality, and the answer leans toward **leaving it blank** here. (Not to be confused with AdGuard's own *Fallback DNS servers* setting from the previous step — a different thing entirely, and one you did fill in.):
