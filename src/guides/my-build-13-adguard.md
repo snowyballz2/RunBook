@@ -254,7 +254,7 @@ Picking a *filtering* secondary — AdGuard's own public resolvers at `94.140.14
 > Keep the secondary blank at least until the Reverse Proxy page is behind you and you know how much you lean on those names. If the "no DNS during a host reboot" window does start to grate, the clean answer is not a public secondary but a **second AdGuard on separate always-on hardware** carrying its own copy of the rewrites — the same shape as the second-Uptime-Kuma advice later in this build, and it buys resilience *and* local names *and* blocking rather than trading them against each other.
 
 > [!NOTE]
-> Because this server already sits on a UPS and start-at-boot brings AdGuard straight back, the "box is down" window is small. Leaning toward AdGuard-only keeps the household local-first and the blocking complete. Add `1.1.1.1` as a fallback only if never losing the internet matters more to you than airtight blocking.
+> Because this server already sits on a UPS and start-at-boot brings AdGuard straight back, the "box is down" window is small. Leaning toward AdGuard-only keeps the household local-first and the blocking complete. If never losing the internet matters more to you than airtight blocking, add a secondary — but make it **AdGuard's own public resolvers**, `94.140.14.14` and `94.140.15.15`, not `1.1.1.1`. Same resilience, and a device that falls through still gets ads and trackers filtered rather than the raw internet; `1.1.1.1` buys the outage protection and hands you the ads with it. Either way, bank the local-names warning above: when a proxy hostname turns flaky weeks from now, check this field before tearing into the proxy or its certificate.
 
 ## Tune and verify
 
