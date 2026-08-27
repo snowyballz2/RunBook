@@ -194,7 +194,18 @@ Log into the Fios router at `192.168.1.1`. The setting is not under DHCP where y
 - **Internet Connection Firewall** → leave **Enable** ticked, as the page itself advises
 - **Apply** — it takes a minute or two to settle
 
-As devices renew their leases, every phone, TV, and computer in the household starts using AdGuard automatically — nothing to configure per device.
+Every phone, TV, and computer in the household now uses AdGuard automatically — nothing to configure per device.
+
+Most likely nothing needs to renew a lease, either: this router hands clients *itself* as their DNS server and forwards upstream, so changing where it forwards takes effect immediately and the address the clients hold never changed. Rather than guess, check the outcome — open AdGuard's **Query Log** and browse something. Entries appearing is the proof.
+
+If the log stays empty after a minute or two, find out what a client actually holds. On a Mac:
+
+```bash
+scutil --dns | grep 'nameserver\[0\]' | head -3
+```
+
+- **`192.168.1.1`** — the router is proxying as expected, so an empty log means the router did not accept the change; go back and confirm it applied
+- **`192.168.1.53`** — this router hands the resolver out directly, and *this* is the case where clients need a new lease: **System Settings → Network → the connection → Details → TCP/IP → Renew DHCP Lease** on a Mac, or toggle Wi-Fi off and on for a phone
 
 > [!NOTE]
 > **Expect the Query Log to show one client, not many.** Fios routers hand out *themselves* (`192.168.1.1`) as the DNS server and forward upstream to whatever you set above, so AdGuard sees every query arriving from the router rather than from the device that asked. Filtering is unaffected and complete; what you lose is per-device visibility and per-client rules. The only real cure is moving DHCP off the router and into AdGuard — a much larger change, and not worth it here.
