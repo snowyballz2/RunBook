@@ -95,7 +95,7 @@ Browser-trusted certificates come from public certificate authorities, and publi
 Buy a real domain, used purely for naming and certificates. Nothing about it will point at your house — no records with your home IP, no exposure. Expect roughly $10–15 a year; judge by the renewal price, not the first-year offer. A zero-cost path (DuckDNS) follows.
 
 > [!DETAILS] The honest alternatives to buying a name
-> Two other routes work. Run your own certificate authority with a tool like minica or step-ca and issue certificates for any name you like, fully offline — the catch is installing your authority's root certificate by hand on every Apple device in the house. Or skip certificates entirely: plain-HTTP addresses on your own LAN, wrapped in the encrypted tunnel from remote access when you are away, is a defensible place to stop. This build buys a cheap domain because it is less chore than either.
+> Two other routes work. Run your own certificate authority with a tool like minica or step-ca and issue certificates for any name you like, fully offline — the catch is installing your authority's root certificate by hand on every Apple device in the house, and that it fails precisely where you need it most: Android apps ignore user-installed CAs by default, and the Bitwarden mobile apps are exactly the kind that refuse a certificate they do not trust. If phone sync for Vaultwarden is one of your reasons for wanting certificates, this route works against you. Or skip certificates entirely: plain-HTTP addresses on your own LAN, wrapped in the encrypted tunnel from remote access when you are away, is a defensible place to stop. This build buys a cheap domain because it is less chore than either.
 
 ### Get the domain — and DNS with an API
 What matters is not where you buy but where the domain's **DNS is hosted**: the next step needs NPM's built-in Certbot to publish a DNS record through an API (Application Programming Interface). NPM ships support for dozens of providers — Cloudflare, Porkbun, deSEC, Route 53, and more — so register somewhere on that list, or point the domain's nameservers at a host that is. Then create an **API token** scoped to edit only this domain's DNS, per your provider's docs.
@@ -106,6 +106,12 @@ What matters is not where you buy but where the domain's **DNS is hosted**: the 
 > Scoped to edit only this domain's DNS — Certbot uses it to prove ownership.
 
 Create no other records. No A record with your home IP — nothing about this domain ever points at your house. From outside your LAN the names simply will not resolve, and that is the design working.
+
+> [!DETAILS] The better free path — deSEC
+> If the annual cost is the sticking point, **deSEC** beats DuckDNS on every axis and NPM supports it natively. It is run by a German non-profit, hands you a name like `yourname.dedyn.io`, and — unlike DuckDNS — gives you a **real DNS API with proper wildcard support and no one-TXT-record limit**, so certificates behave exactly as they would on a purchased domain. Still a borrowed name and still a third-party dependency, but without the compromises below. Take this over DuckDNS unless you have a specific reason not to.
+
+> [!WARNING]
+> **One DuckDNS drawback that bites this build in particular:** `duckdns.org` is a shared parent domain used heavily for malware and phishing, so it turns up periodically on reputation blocklists — potentially including lists **your own AdGuard subscribes to**. Watching your own DNS filter block your own services is a memorable way to spend an evening. A purchased domain or deSEC avoids the issue entirely.
 
 > [!DETAILS] The free path with DuckDNS
 > DuckDNS hands out free subdomains of `duckdns.org`. Claim one, copy the token from its dashboard, and your services become `proxmox.yourname.duckdns.org` and friends — NPM's provider list includes **DuckDNS**, credentials a single line: `dns_duckdns_token=your-token`. The trade: longer, visibly borrowed names, and DuckDNS allows only one TXT record at a time, so request exactly one certificate — the wildcard `*.yourname.duckdns.org`, which covers every service anyway. Everywhere below you see `*.example.com`, read your DuckDNS name instead.
