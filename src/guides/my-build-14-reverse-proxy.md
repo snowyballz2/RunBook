@@ -102,13 +102,19 @@ What matters is not where you buy but where the domain's **DNS is hosted**: the 
 
 Two concrete picks, since "somewhere on that list" is not much help:
 
-- **Cloudflare Registrar** — sells at wholesale with no first-year gimmick and no renewal jump, free DNS, and the best-documented API path in this page. Limited selection of endings, which is the only catch
+- **Cloudflare Registrar** — sells at wholesale with no first-year gimmick and no renewal jump, free DNS, and the best-documented API path in this page. Supports 400+ endings, so selection is not a constraint
 - **Porkbun** — the alternative when Cloudflare does not carry the ending you want; honest renewal pricing, free WHOIS privacy, supported API
 
 **Avoid GoDaddy**: heavy upsells, renewals well above the hook price, and API access gated behind account conditions a single-domain owner will not meet. Whatever you choose, judge by the **renewal** price — the $1-first-year endings routinely renew near $40.
 
 > [!NOTE]
-> **Pick a name you do not mind being public.** Every Let's Encrypt certificate is published to public **Certificate Transparency** logs, so the domain itself becomes discoverable even though nothing about it resolves or points anywhere near your house. Avoid anything that pins your address or identity. Using a **wildcard** helps: the log records `*.example.com` rather than `frigate.example.com` and `vault.example.com`, so which services you run stays private — a quiet argument for the wildcard beyond convenience. Beyond that the only criteria are short and typeable, since somebody else in the house will eventually type it on a phone.
+> **Pick a name you do not mind being public.** Every Let's Encrypt certificate is published to public **Certificate Transparency** logs, so the domain itself becomes discoverable even though nothing about it resolves or points anywhere near your house. Avoid anything that pins your address or identity. Using a **wildcard** helps: the log records `*.example.com` rather than `frigate.example.com` and `vault.example.com`, so which services you run stays private — a quiet argument for the wildcard beyond convenience. Beyond that the only criteria are short and typeable, since somebody else in the house will eventually type it on a phone. One quirk if you are choosing an ending: **`.dev` and `.app` are HSTS-preloaded**, so browsers force HTTPS on them permanently — fine here, except you could never drop to plain `http://` to troubleshoot. `.com`, `.net`, `.org` and `.xyz` carry no such constraint.
+
+> [!TIP]
+> **Two free settings worth taking while you are in the registrar, both aimed at the one job this domain has.**
+>
+> - **DNSSEC → enable it.** One click at Cloudflare, and the usual footgun does not apply: DNSSEC normally breaks domains when the registrar's DS record drifts from the DNS host's signing key, and here Cloudflare is both. What it buys is narrow but real — your domain publishes nothing except the temporary `_acme-challenge` records Certbot creates, so this protects those from being spoofed by someone trying to obtain a certificate in your name. (Distinct from the DNSSEC you enabled in AdGuard, which *validates* other people's signatures rather than signing yours.)
+> - **Add a CAA record → `letsencrypt.org`.** More pointed than DNSSEC for this setup: it declares which certificate authorities may issue for your domain, so no other CA can legitimately mint a certificate for your name even if someone reached your registrar account. One record, precisely aimed at the only thing this domain does.
 
 > [!INPUT] domain-name | Your domain | example.com
 
