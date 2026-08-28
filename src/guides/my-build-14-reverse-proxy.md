@@ -126,7 +126,7 @@ Buy it, and stop there — the token and the certificate are separate steps belo
 Eight things, ordered by what hurts most if skipped. Cloudflare splits these across two levels, and mixing them up is the main reason a setting looks missing:
 
 - **Zone** settings — DNS records, SSL/TLS, DNSSEC. Reached by clicking the domain from the dashboard home
-- **Registrar** settings — auto-renew, transfer lock, WHOIS contacts. Reached by leaving the zone (**Back to Domains** at the top of the sidebar) and going to **Domain Registration → Manage Domains → your domain**
+- **Registrar** settings — auto-renew, transfer lock, WHOIS contacts. Reached by leaving the zone (**Back to Domains** at the top of the sidebar), then **Domains → Registrations → your domain**, which opens on three tabs: **Overview** (auto-renew and expiry), **Contact** (registrant details), and **Settings** (DNSSEC status, WHOIS privacy, transfer lock, and the delete button — leave that one alone)
 
 
 
@@ -152,7 +152,7 @@ Eight things, ordered by what hurts most if skipped. Cloudflare splits these acr
    - **Certificate Transparency Monitoring → on** — free, and it emails you whenever any authority issues a certificate for your domain. It is the natural partner to the CAA record: CAA *prevents* unauthorised issuance, this *tells you* when something was issued anyway. Your own renewals will generate a notice every couple of months, which is confirmation rather than noise
    - **Always Use HTTPS**, **HSTS**, **Automatic HTTPS Rewrites**, **Total TLS**, and anything gated behind Advanced Certificate Manager → leave them. All of them act on traffic proxied through Cloudflare, and none of your traffic is
 7. **Ignore the registrar's own recommendations.** Cloudflare will show a Recommendations panel urging you to add an A record so "visitors can reach" your domain, a `www` record, and MX records to receive mail. Every one of them assumes you are publishing a website, and acting on the A-record suggestion would point your domain at a real host on the public internet — exactly what this design forbids. The mail suggestion is already answered better than they propose: you are declaring that the domain sends and receives nothing, rather than configuring it to. The panel never goes away, and its persistence is confirmation the domain is doing its job
-8. **Verify what is already on** → **Manage domains → Manage domain** for **transfer lock** and **WHOIS redaction**, both of which Cloudflare applies by default, so this is a confirm rather than a change. Then **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance
+8. **Verify what is already on** → the registrar **Settings** tab, where **WHOIS privacy** should read *data redaction is currently enabled* (the button offers *Disable*, which is the action, not the state) and **Transfer to another registrar** should be locked — on a fresh registration the Unlock control is greyed out with *domain created within the last 60 days*, which is ICANN's new-registration lock doing a transfer lock's job for you. Then **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance
 
 That last check is the one the build's threat model rests on: a domain that resolves to nothing publicly is what stops a purchased name from becoming an attack surface.
 
