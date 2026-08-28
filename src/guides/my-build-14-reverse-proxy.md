@@ -126,8 +126,11 @@ Two concrete picks, since "somewhere on that list" is not much help:
 
 > [!INPUT] domain-name | Your domain | example.com
 
+> [!INPUT] dns-token-name | Cloudflare API token name | npm-certbot
+> The label the token carries in Cloudflare's list — the only thing identifying it when you come back to revoke or rotate it. Name it after what holds it and what it does.
+
 > [!SECRET] dns-api-token | DNS provider API token
-> Scoped to edit only this domain's DNS — Certbot uses it to prove ownership.
+> Scoped to edit only this domain's DNS — Certbot uses it to prove ownership. Shown once at creation; the field above records which token in Cloudflare this value belongs to.
 
 **Creating the token on Cloudflare**, this build's registrar, since "per your provider's docs" is not much of a step:
 
