@@ -110,6 +110,14 @@ Two concrete picks, since "somewhere on that list" is not much help:
 > [!NOTE]
 > **Pick a name you do not mind being public.** Every Let's Encrypt certificate is published to public **Certificate Transparency** logs, so the domain itself becomes discoverable even though nothing about it resolves or points anywhere near your house. Avoid anything that pins your address or identity. Using a **wildcard** helps: the log records `*.example.com` rather than `frigate.example.com` and `vault.example.com`, so which services you run stays private — a quiet argument for the wildcard beyond convenience. Beyond that the only criteria are short and typeable, since somebody else in the house will eventually type it on a phone. One quirk if you are choosing an ending: **`.dev` and `.app` are HSTS-preloaded**, so browsers force HTTPS on them permanently — fine here, except you could never drop to plain `http://` to troubleshoot. `.com`, `.net`, `.org` and `.xyz` carry no such constraint.
 
+> [!WARNING]
+> **Two reasons not to grab the cheapest ending on the list.** Most of the usual objections do not apply to a domain that hosts nothing and sends no mail — but these two do:
+>
+> - **Heavily abused TLDs get blocked wholesale.** `.win`, `.top`, `.click`, `.gq`, `.tk` and their cousins are cheap because they are saturated with malware and phishing, and blocklists answer by blocking the entire ending — potentially including **the lists this build subscribes to in AdGuard**. Your own filter refusing to resolve your own services, months after you set it up, is a bad afternoon
+> - **`.us` prohibits WHOIS privacy.** The US registry mandates accurate, publicly queryable registrant details and forbids proxy services, so your name and contact information become public. Every other ending here comes with free WHOIS privacy
+>
+> `.com`, `.net` or `.org` at roughly $10–15 avoid both, and `.xyz` is a legitimate cheap option these days. The saving on a bargain ending is a few dollars a year on a build with seven cameras in it.
+
 > [!TIP]
 > **Two free settings worth taking while you are in the registrar, both aimed at the one job this domain has.**
 >
