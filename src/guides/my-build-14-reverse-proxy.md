@@ -123,14 +123,17 @@ Two concrete picks, since "somewhere on that list" is not much help:
 Buy it, and stop there — the token and the certificate are separate steps below. Create no records of your own: no A record with your home IP, nothing pointing at your house. From outside your LAN these names will simply not resolve, and that is the design working.
 
 ### Harden the domain before moving on
-Six things at the registrar, ordered by what hurts most if skipped:
+Six things, ordered by what hurts most if skipped. Cloudflare splits these across two levels — **account** settings, and **zone** settings you reach by clicking the domain first:
 
-1. **Two-factor authentication on the registrar account** — the highest-value item on this page. That account controls DNS for the domain every certificate in the house depends on; anyone inside it could redirect your names or issue certificates as you. TOTP or a hardware key, before anything else
-2. **Auto-renew on**, with a registrant email you will still read in three years — a lapsed domain breaks every hostname and every certificate at once, and presents as a network fault rather than an expiry
-3. **DNSSEC** → enable (one click when the registrar also hosts the DNS)
-4. **CAA record** → `letsencrypt.org`, so no other authority can legitimately issue for your name
-5. **Declare that the domain sends no mail.** You will never send from it, which currently leaves it free for anyone to spoof in phishing. Three records close that permanently: a **TXT** at the root reading `v=spf1 -all`, a **TXT** at `_dmarc` reading `v=DMARC1; p=reject;`, and a single **null MX** record of `0 .`
-6. **Verify what is already on** — registrar lock (usually default), WHOIS privacy, and above all that the DNS records list is **empty**. The only entries that should ever appear are the `_acme-challenge` records Certbot creates and deletes during issuance
+1. **Two-factor authentication** → **My Profile → Authentication**, the same profile menu as the API token below. The highest-value item on this page: that account controls DNS for the domain every certificate in the house depends on, so anyone inside it could redirect your names or issue certificates as you. TOTP or a hardware key, before anything else
+2. **Auto-renew on** → **Domain Registration → Manage domains → your domain → Manage domain**, where the Auto-Renew status lives. Use a registrant email you will still read in three years — a lapsed domain breaks every hostname and every certificate at once, and presents as a network fault rather than an expiry
+3. **DNSSEC** → click the **domain**, then **DNS → Settings → Enable DNSSEC**. One click here and nothing else: because Cloudflare is both registrar and DNS host it **publishes the DS record itself**, which is the step that breaks DNSSEC for people whose registrar and DNS are separate
+4. **CAA record** → **DNS → Records → Add record**, type **CAA**, allowing `letsencrypt.org` — so no other authority can legitimately issue for your name
+5. **Declare that the domain sends no mail.** You will never send from it, which currently leaves it free for anyone to spoof in phishing. Three records on the same **DNS → Records** page close that permanently:
+   - **TXT**, name `@`, content `v=spf1 -all`
+   - **TXT**, name `_dmarc`, content `v=DMARC1; p=reject;`
+   - **MX**, name `@`, server `.`, priority `0`
+6. **Verify what is already on** → **Manage domains → Manage domain** for **transfer lock** and **WHOIS redaction**, both of which Cloudflare applies by default, so this is a confirm rather than a change. Then **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance
 
 That last check is the one the build's threat model rests on: a domain that resolves to nothing publicly is what stops a purchased name from becoming an attack surface.
 
