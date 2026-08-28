@@ -147,6 +147,18 @@ dns_cloudflare_api_token = your-token-here
 
 Create no other records. No A record with your home IP — nothing about this domain ever points at your house. From outside your LAN the names simply will not resolve, and that is the design working.
 
+### Harden the domain before moving on
+Six things at the registrar, ordered by what hurts most if skipped:
+
+1. **Two-factor authentication on the registrar account** — the highest-value item on this page. That account controls DNS for the domain every certificate in the house depends on; anyone inside it could redirect your names or issue certificates as you. TOTP or a hardware key, before anything else
+2. **Auto-renew on**, with a registrant email you will still read in three years — a lapsed domain breaks every hostname and every certificate at once, and presents as a network fault rather than an expiry
+3. **DNSSEC** → enable (one click when the registrar also hosts the DNS)
+4. **CAA record** → `letsencrypt.org`, so no other authority can legitimately issue for your name
+5. **Declare that the domain sends no mail.** You will never send from it, which currently leaves it free for anyone to spoof in phishing. Three records close that permanently: a **TXT** at the root reading `v=spf1 -all`, a **TXT** at `_dmarc` reading `v=DMARC1; p=reject;`, and a single **null MX** record of `0 .`
+6. **Verify what is already on** — registrar lock (usually default), WHOIS privacy, and above all that the DNS records list is **empty**. The only entries that should ever appear are the `_acme-challenge` records Certbot creates and deletes during issuance
+
+That last check is the one the build's threat model rests on: a domain that resolves to nothing publicly is what stops a purchased name from becoming an attack surface.
+
 > [!DETAILS] The better free path — deSEC
 > If the annual cost is the sticking point, **deSEC** beats DuckDNS on every axis and NPM supports it natively. It is run by a German non-profit, hands you a name like `yourname.dedyn.io`, and — unlike DuckDNS — gives you a **real DNS API with proper wildcard support and no one-TXT-record limit**, so certificates behave exactly as they would on a purchased domain. Still a borrowed name and still a third-party dependency, but without the compromises below. Take this over DuckDNS unless you have a specific reason not to.
 
