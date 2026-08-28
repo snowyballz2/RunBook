@@ -118,37 +118,9 @@ Two concrete picks, since "somewhere on that list" is not much help:
 >
 > `.com`, `.net` or `.org` at roughly $10–15 avoid both, and `.xyz` is a legitimate cheap option these days. The saving on a bargain ending is a few dollars a year on a build with seven cameras in it.
 
-> [!TIP]
-> **Two free settings worth taking while you are in the registrar, both aimed at the one job this domain has.**
->
-> - **DNSSEC → enable it.** One click at Cloudflare, and the usual footgun does not apply: DNSSEC normally breaks domains when the registrar's DS record drifts from the DNS host's signing key, and here Cloudflare is both. What it buys is narrow but real — your domain publishes nothing except the temporary `_acme-challenge` records Certbot creates, so this protects those from being spoofed by someone trying to obtain a certificate in your name. (Distinct from the DNSSEC you enabled in AdGuard, which *validates* other people's signatures rather than signing yours.)
-> - **Add a CAA record → `letsencrypt.org`.** More pointed than DNSSEC for this setup: it declares which certificate authorities may issue for your domain, so no other CA can legitimately mint a certificate for your name even if someone reached your registrar account. One record, precisely aimed at the only thing this domain does.
-
 > [!INPUT] domain-name | Your domain | example.com
 
-> [!INPUT] dns-token-name | Cloudflare API token name | npm-certbot
-> The label the token carries in Cloudflare's list — the only thing identifying it when you come back to revoke or rotate it. Name it after what holds it and what it does.
-
-> [!SECRET] dns-api-token | DNS provider API token
-> Scoped to edit only this domain's DNS — Certbot uses it to prove ownership. Shown once at creation; the field above records which token in Cloudflare this value belongs to.
-
-**Creating the token on Cloudflare**, this build's registrar, since "per your provider's docs" is not much of a step:
-
-1. In the Cloudflare dashboard, open **My Profile → API Tokens** and select **Create Token**
-2. Choose the **Edit zone DNS** template — it exists precisely for this and pre-fills the right permission
-3. **Token name** → something you will recognise in a year, like `npm-certbot`
-4. **Permissions** → the template sets **Zone · DNS · Edit**; leave it
-5. **Zone Resources** → **Include → Specific zone → your domain**. Not "All zones" — this token should reach exactly one thing
-6. **Client IP Address Filtering** and **TTL** → leave both empty; the container's address can change and an expiring token means a silently failed renewal months from now
-7. **Continue to summary → Create Token**, then copy it — the value is shown **once**, so put it in the field above and your password manager before leaving the page
-
-Back in NPM, the **Credentials File Content** box wants that token in Certbot's Cloudflare format — replace the prefilled template with:
-
-```ini
-dns_cloudflare_api_token = your-token-here
-```
-
-Create no other records. No A record with your home IP — nothing about this domain ever points at your house. From outside your LAN the names simply will not resolve, and that is the design working.
+Buy it, and stop there — the token and the certificate are separate steps below. Create no records of your own: no A record with your home IP, nothing pointing at your house. From outside your LAN these names will simply not resolve, and that is the design working.
 
 ### Harden the domain before moving on
 Six things at the registrar, ordered by what hurts most if skipped:
@@ -161,6 +133,25 @@ Six things at the registrar, ordered by what hurts most if skipped:
 6. **Verify what is already on** — registrar lock (usually default), WHOIS privacy, and above all that the DNS records list is **empty**. The only entries that should ever appear are the `_acme-challenge` records Certbot creates and deletes during issuance
 
 That last check is the one the build's threat model rests on: a domain that resolves to nothing publicly is what stops a purchased name from becoming an attack surface.
+
+### Create the DNS API token
+NPM's built-in Certbot proves you own the domain by publishing a temporary record into its DNS, which means it needs an API token scoped to exactly that. Make it now; you paste it in the next step.
+
+> [!INPUT] dns-token-name | Cloudflare API token name | npm-certbot
+> The label the token carries in Cloudflare's list — the only thing identifying it when you come back to revoke or rotate it. Name it after what holds it and what it does.
+
+> [!SECRET] dns-api-token | DNS provider API token
+> Scoped to edit only this domain's DNS. Shown once at creation; the field above records which token in Cloudflare this value belongs to.
+
+On **Cloudflare**, this build's registrar:
+
+1. In the dashboard, open **My Profile → API Tokens** and select **Create Token**
+2. Choose the **Edit zone DNS** template — it exists precisely for this and pre-fills the right permission
+3. **Token name** → the name from the field above
+4. **Permissions** → the template sets **Zone · DNS · Edit**; leave it
+5. **Zone Resources** → **Include → Specific zone → your domain**. Not "All zones" — this token should reach exactly one thing
+6. **Client IP Address Filtering** and **TTL** → leave both empty; the container's address can change, and an expiring token means a renewal that fails silently months from now
+7. **Continue to summary → Create Token**, then copy the value into the field above and your password manager — it is shown **once**
 
 > [!DETAILS] The better free path — deSEC
 > If the annual cost is the sticking point, **deSEC** beats DuckDNS on every axis and NPM supports it natively. It is run by a German non-profit, hands you a name like `yourname.dedyn.io`, and — unlike DuckDNS — gives you a **real DNS API with proper wildcard support and no one-TXT-record limit**, so certificates behave exactly as they would on a purchased domain. Still a borrowed name and still a third-party dependency, but without the compromises below. Take this over DuckDNS unless you have a specific reason not to.
@@ -177,7 +168,12 @@ In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Enc
 - **Domain Names** — `*.example.com`, your own domain swapped in.
 - **Key Type** — leave the default.
 - **DNS Provider** — pick yours from the searchable list; the two fields below only appear once a provider is chosen.
-- **Credentials File Content** — the box pre-fills a template for the chosen provider; replace the placeholder with your real `dns-api-token`.
+- **Credentials File Content** — the box pre-fills a template for the chosen provider; replace it entirely with your real token in Certbot's Cloudflare format:
+
+  ```ini
+  dns_cloudflare_api_token = your-token-here
+  ```
+
 - **Propagation Seconds** — leave empty for the plugin's default.
 
 There is no email field or terms-of-service box — Let's Encrypt stopped sending expiry emails in 2025, and current NPM handles the terms agreement itself. (If your NPM instead shows an **SSL Certificates** menu with an email field and an *I Agree* checkbox, it predates the v2.13 interface rewrite — run `update` from the container's Console to come current.)
