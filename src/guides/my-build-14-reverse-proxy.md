@@ -214,13 +214,20 @@ Save, and after a short wait the certificate appears, valid for every name under
 ## Teach the LAN the names
 
 ### Point the wildcard at the proxy
-In the AdGuard dashboard, open **Filters → DNS rewrites** and click **Add DNS rewrite**. Domain: `*.example.com`. Answer: your `proxy-ip`. With the wildcard, every name under your domain now answers with the proxy's address for every device that asks AdGuard. Verify from any computer in the house:
+In the AdGuard dashboard, open **Filters → DNS rewrites** and click **Add DNS rewrite**. Domain: `*.example.com`. Answer: your `proxy-ip`. With the wildcard, every name under your domain now answers with the proxy's address for every device that asks AdGuard.
+
+A wildcard covers subdomains only, never the bare domain, so **add a second rewrite** — domain `example.com`, same answer — if you included the bare name on the certificate. Two entries, one for `*.example.com` and one for `example.com`.
+
+Verify from the **Mac**, in **Terminal**:
 
 ```bash
 nslookup proxmox.example.com
 ```
 
 Expect the proxy's IP. The names resolve; nothing answers on them yet — that is the next phase.
+
+> [!WARNING]
+> **Read the `Server:` line in that output before believing the result.** It names the resolver that actually answered, and it should be your router or AdGuard. Anything else — a `100.64.x` address especially — means a **VPN client on that machine is intercepting DNS**, the query never reached AdGuard, and the `No answer` you are looking at says nothing about whether the rewrite works. These names exist only inside your AdGuard, so they cannot resolve through any tunnelled resolver. Disconnect the VPN and run it again. This will recur for as long as that machine runs a consumer VPN, so make the `Server:` line the first thing you check whenever a name misbehaves.
 
 > [!DETAILS] Carrying the names with you over Tailscale
 > These names exist only inside AdGuard, so a phone off the LAN will not find them on its own. Once remote access is set up on the next page, the names can travel: on the Tailscale admin console's DNS page, add AdGuard's LAN IP under **Global nameservers** and enable **Override DNS servers** — tailnet devices then resolve through AdGuard, and `https://proxmox.example.com` works from anywhere the subnet route reaches. The trade: with Override on, the phone's DNS depends on the server being up. The gentler variant is split DNS — send only `example.com` lookups to AdGuard and leave the rest of the phone alone.
