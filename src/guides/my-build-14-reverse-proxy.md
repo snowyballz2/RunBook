@@ -123,7 +123,12 @@ Two concrete picks, since "somewhere on that list" is not much help:
 Buy it, and stop there — the token and the certificate are separate steps below. Create no records of your own: no A record with your home IP, nothing pointing at your house. From outside your LAN these names will simply not resolve, and that is the design working.
 
 ### Harden the domain before moving on
-Eight things, ordered by what hurts most if skipped. Cloudflare splits these across two levels — **account** settings, and **zone** settings you reach by clicking the domain first:
+Eight things, ordered by what hurts most if skipped. Cloudflare splits these across two levels, and mixing them up is the main reason a setting looks missing:
+
+- **Zone** settings — DNS records, SSL/TLS, DNSSEC. Reached by clicking the domain from the dashboard home
+- **Registrar** settings — auto-renew, transfer lock, WHOIS contacts. Reached by leaving the zone (**Back to Domains** at the top of the sidebar) and going to **Domain Registration → Manage Domains → your domain**
+
+
 
 1. **Two-factor authentication** → **My Profile → Authentication**, the same profile menu as the API token below. The highest-value item on this page: that account controls DNS for the domain every certificate in the house depends on, so anyone inside it could redirect your names or issue certificates as you. TOTP or a hardware key, before anything else.
 
