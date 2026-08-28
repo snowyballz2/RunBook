@@ -115,6 +115,22 @@ Two concrete picks, since "somewhere on that list" is not much help:
 > [!SECRET] dns-api-token | DNS provider API token
 > Scoped to edit only this domain's DNS — Certbot uses it to prove ownership.
 
+**Creating the token on Cloudflare**, this build's registrar, since "per your provider's docs" is not much of a step:
+
+1. In the Cloudflare dashboard, open **My Profile → API Tokens** and select **Create Token**
+2. Choose the **Edit zone DNS** template — it exists precisely for this and pre-fills the right permission
+3. **Token name** → something you will recognise in a year, like `npm-certbot`
+4. **Permissions** → the template sets **Zone · DNS · Edit**; leave it
+5. **Zone Resources** → **Include → Specific zone → your domain**. Not "All zones" — this token should reach exactly one thing
+6. **Client IP Address Filtering** and **TTL** → leave both empty; the container's address can change and an expiring token means a silently failed renewal months from now
+7. **Continue to summary → Create Token**, then copy it — the value is shown **once**, so put it in the field above and your password manager before leaving the page
+
+Back in NPM, the **Credentials File Content** box wants that token in Certbot's Cloudflare format — replace the prefilled template with:
+
+```ini
+dns_cloudflare_api_token = your-token-here
+```
+
 Create no other records. No A record with your home IP — nothing about this domain ever points at your house. From outside your LAN the names simply will not resolve, and that is the design working.
 
 > [!DETAILS] The better free path — deSEC
