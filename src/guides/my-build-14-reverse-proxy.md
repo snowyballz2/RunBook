@@ -100,6 +100,16 @@ Buy a real domain, used purely for naming and certificates. Nothing about it wil
 ### Get the domain — and DNS with an API
 What matters is not where you buy but where the domain's **DNS is hosted**: the next step needs NPM's built-in Certbot to publish a DNS record through an API (Application Programming Interface). NPM ships support for dozens of providers — Cloudflare, Porkbun, deSEC, Route 53, and more — so register somewhere on that list, or point the domain's nameservers at a host that is. Then create an **API token** scoped to edit only this domain's DNS, per your provider's docs.
 
+Two concrete picks, since "somewhere on that list" is not much help:
+
+- **Cloudflare Registrar** — sells at wholesale with no first-year gimmick and no renewal jump, free DNS, and the best-documented API path in this page. Limited selection of endings, which is the only catch
+- **Porkbun** — the alternative when Cloudflare does not carry the ending you want; honest renewal pricing, free WHOIS privacy, supported API
+
+**Avoid GoDaddy**: heavy upsells, renewals well above the hook price, and API access gated behind account conditions a single-domain owner will not meet. Whatever you choose, judge by the **renewal** price — the $1-first-year endings routinely renew near $40.
+
+> [!NOTE]
+> **Pick a name you do not mind being public.** Every Let's Encrypt certificate is published to public **Certificate Transparency** logs, so the domain itself becomes discoverable even though nothing about it resolves or points anywhere near your house. Avoid anything that pins your address or identity. Using a **wildcard** helps: the log records `*.example.com` rather than `frigate.example.com` and `vault.example.com`, so which services you run stays private — a quiet argument for the wildcard beyond convenience. Beyond that the only criteria are short and typeable, since somebody else in the house will eventually type it on a phone.
+
 > [!INPUT] domain-name | Your domain | example.com
 
 > [!SECRET] dns-api-token | DNS provider API token
