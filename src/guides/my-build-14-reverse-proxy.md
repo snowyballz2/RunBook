@@ -123,7 +123,7 @@ Two concrete picks, since "somewhere on that list" is not much help:
 Buy it, and stop there — the token and the certificate are separate steps below. Create no records of your own: no A record with your home IP, nothing pointing at your house. From outside your LAN these names will simply not resolve, and that is the design working.
 
 ### Harden the domain before moving on
-Six things, ordered by what hurts most if skipped. Cloudflare splits these across two levels — **account** settings, and **zone** settings you reach by clicking the domain first:
+Seven things, ordered by what hurts most if skipped. Cloudflare splits these across two levels — **account** settings, and **zone** settings you reach by clicking the domain first:
 
 1. **Two-factor authentication** → **My Profile → Authentication**, the same profile menu as the API token below. The highest-value item on this page: that account controls DNS for the domain every certificate in the house depends on, so anyone inside it could redirect your names or issue certificates as you. TOTP or a hardware key, before anything else.
 
@@ -142,7 +142,8 @@ Six things, ordered by what hurts most if skipped. Cloudflare splits these acros
    - **TXT**, name `@`, content `v=spf1 -all`
    - **TXT**, name `_dmarc`, content `v=DMARC1; p=reject;`
    - **MX**, name `@`, server `.`, priority `0`
-6. **Verify what is already on** → **Manage domains → Manage domain** for **transfer lock** and **WHOIS redaction**, both of which Cloudflare applies by default, so this is a confirm rather than a change. Then **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance
+6. **Ignore the registrar's own recommendations.** Cloudflare will show a Recommendations panel urging you to add an A record so "visitors can reach" your domain, a `www` record, and MX records to receive mail. Every one of them assumes you are publishing a website, and acting on the A-record suggestion would point your domain at a real host on the public internet — exactly what this design forbids. The mail suggestion is already answered better than they propose: you are declaring that the domain sends and receives nothing, rather than configuring it to. The panel never goes away, and its persistence is confirmation the domain is doing its job
+7. **Verify what is already on** → **Manage domains → Manage domain** for **transfer lock** and **WHOIS redaction**, both of which Cloudflare applies by default, so this is a confirm rather than a change. Then **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance
 
 That last check is the one the build's threat model rests on: a domain that resolves to nothing publicly is what stops a purchased name from becoming an attack surface.
 
