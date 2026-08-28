@@ -130,7 +130,14 @@ Six things, ordered by what hurts most if skipped. Cloudflare splits these acros
    **If you signed up with Sign in with Apple (or Google), that page will not let you.** Cloudflare accounts authenticating through SSO **cannot configure 2FA at all** — a documented limitation, not a password problem. You are not unprotected: Apple mandates two-factor on Apple IDs and it is hardware-backed on your own devices, so the account has a second factor, just Apple's rather than Cloudflare's. That is the same posture the Remote Access page takes for the tailnet. Harden the identity that now carries the weight — confirm Apple ID two-factor is on, trusted numbers are current, and a **recovery key or recovery contacts** exist. The failure mode is slow rather than sudden: an Apple lockout would cost certificate renewals on their 90-day cycle and the domain at its annual one, leaving weeks to recover. If native 2FA matters more than that, the cheapest moment to move to an email-and-password account is now, while the account holds one domain and nothing else — though a new registration carries a 60-day ICANN transfer lock
 2. **Auto-renew on** → **Domain Registration → Manage domains → your domain → Manage domain**, where the Auto-Renew status lives. Use a registrant email you will still read in three years — a lapsed domain breaks every hostname and every certificate at once, and presents as a network fault rather than an expiry
 3. **DNSSEC** → click the **domain**, then **DNS → Settings → Enable DNSSEC**. One click here and nothing else: because Cloudflare is both registrar and DNS host it **publishes the DS record itself**, which is the step that breaks DNSSEC for people whose registrar and DNS are separate
-4. **CAA record** → **DNS → Records → Add record**, type **CAA**, allowing `letsencrypt.org` — so no other authority can legitimately issue for your name
+4. **CAA record** → click the **domain** first (this is zone-level, which is why it looks missing from the account home), then **DNS → Records → Add record**, and fill the form:
+   - **Type** → **CAA**
+   - **Name** → **`@`**, the root of the domain
+   - **Tag** → **"Only allow specific hostnames"** — Cloudflare's friendly label for the `issue` tag
+   - **CA domain name** → **`letsencrypt.org`**
+   - **TTL** → **Auto**, then **Save**
+
+   That one record is enough. It looks like a wildcard certificate would need a second rule, but the spec applies `issue` to wildcards whenever no wildcard-specific rule exists — so the dropdown's other options, *Only allow wildcards* (`issuewild`) and *Send violation reports to* (`iodef`), stay unused. The effect: no certificate authority other than Let's Encrypt can legitimately issue for your name
 5. **Declare that the domain sends no mail.** You will never send from it, which currently leaves it free for anyone to spoof in phishing. Three records on the same **DNS → Records** page close that permanently:
    - **TXT**, name `@`, content `v=spf1 -all`
    - **TXT**, name `_dmarc`, content `v=DMARC1; p=reject;`
