@@ -266,10 +266,16 @@ Save, then browse to `https://proxmox.example.com`: the familiar login, a real p
 ### Tell Home Assistant to trust the proxy
 Add the next host the same way — `ha.example.com`, Scheme `http`, Forward to your `ha-ip`, port `8123`, **Websockets Support** on, then the same SSL tab (wildcard certificate, **Force SSL**). Browse to `https://ha.example.com` and meet a deliberate roadblock: a bare **400: Bad Request**. Home Assistant OS refuses proxied requests until you name your proxy.
 
-The fix lives in the **Home Assistant UI** (`192.168.1.51:8123`), not NPM — as of Home Assistant 2026.8 it is a settings screen, not a YAML edit. Go to **Settings → System → Network**, scroll to the **HTTP server** section, and set two things:
+The fix lives in the **Home Assistant UI** (`192.168.1.51:8123`), not NPM — as of Home Assistant 2026.8 it is a settings screen, not a YAML edit. Go to **Settings → System → Network**, scroll to the **HTTP server** section — **not there? your Home Assistant predates it; see the callout below** — and set two things:
 
 - **Trust X-Forwarded-For** → **on** — lets HA read the real client address the proxy passes along
 - **Trusted proxies** → add **`192.168.1.54`** — the only machine allowed to speak for clients
+
+> [!IMPORTANT]
+> **No HTTP server section on that page? Update Home Assistant first.** That screen arrived in **2026.8** (5 August 2026); on anything older these two settings exist only as an `http:` block in `configuration.yaml`, which on HAOS means installing a file-editor app purely to write four lines the next upgrade deprecates. Skip that: **Settings → System → Updates → Home Assistant Core**, then come back and the section is there. Two reassurances before you press it, since this build otherwise defers updates until the collection is finished:
+>
+> - **Your port does not move.** 2026.8 changed the HAOS default to **80**, but only for brand-new installs — the release notes are explicit that ["If you are already running Home Assistant, nothing changes and there is nothing you need to do."](https://www.home-assistant.io/blog/2026/08/05/release-20268/) This VM keeps `8123`, so the proxy host you just built stays correct.
+> - **Nothing else in the collection depends on the older version.** Zigbee2MQTT, Mosquitto, Matter Server and the Frigate integration are apps and HACS components with their own versions; a Core update does not disturb them.
 
 Saving **restarts Home Assistant by itself** — and then comes the step people miss: after the restart, HA asks an administrator to **confirm the new network settings within five minutes**, or it reverts them (a guard against locking yourself out with a bad proxy config). Confirm, then reload `https://ha.example.com` — the normal dashboard, behind a real lock.
 
