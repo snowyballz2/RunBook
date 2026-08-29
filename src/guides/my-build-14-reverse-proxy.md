@@ -346,10 +346,18 @@ Add the first four now; come back and add each of the others when its page build
 > When you later build Uptime Kuma and put it behind the proxy, tell it so: **Settings → Reverse Proxy**, and under HTTP Headers set **Trust Proxy** on — its logs and rate limiting then see real client IPs instead of the proxy's.
 
 ### Decide what keeps its number
-Walk the bookmarks bar and replace what you have today: `proxmox.`, `ha.`, `nas.`, `frigate.` — `cloud.`, `status.`, and more join the set as later pages bring their services up, every name behind the same lock, and Force SSL means even a typed `http://` lands on HTTPS. Three addresses deliberately stay raw, because they are the system's own foundations:
+Walk the bookmarks bar and replace what you have today: `proxmox.`, `ha.`, `nas.`, `frigate.` — `cloud.`, `status.`, and more join the set as later pages bring their services up, every name behind the same lock, and Force SSL means even a typed `http://` lands on HTTPS.
 
-- **NPM's admin interface** at `http://192.168.1.54:81`. When the proxy is the thing that is sick, a name routed through itself is no way to reach its controls.
-- **AdGuard's dashboard** at `192.168.1.53`. The names are answered there — if AdGuard is down, every name is down with it.
-- **Proxmox** at `https://192.168.1.50:8006`, the emergency door. A stopped proxy container takes every name with it; this is the address you start it again from.
+Three addresses are different, though not in the way people usually assume. Adding a proxy host **never removes** the direct address, so this is not a choice between them:
+
+- **NPM's admin interface**, `http://192.168.1.54:81`
+- **AdGuard's dashboard**, `http://192.168.1.53`
+- **Proxmox**, `https://192.168.1.50:8006`
+
+**Worth proxying** — both admin interfaces above are plain HTTP, so those passwords currently cross the LAN in the clear, and a proxy host with the wildcard certificate is the cheapest fix for that.
+
+**Never rely on the name**, because each of these can only fail in a way that takes its own name with it. AdGuard down means no DNS, so *nothing* in the house resolves, including a name pointing at AdGuard. A broken proxy-host entry can lock you out of the very interface that would correct it. Proxmox is the door you open to start a stopped proxy container in the first place.
+
+So: add the hosts for the encryption, and keep those three raw addresses bookmarked and memorable. The rule is not "do not proxy them" — it is "never let the name be the only way in."
 
 Machine-to-machine settings keep their IPs too. The Home Assistant ↔ Frigate integration stays on the LAN address at port `5000`, and Uptime Kuma's monitors should keep watching services at their direct addresses — through the proxy, every alert would be ambiguous (service down, or proxy down?). If you want the front door watched as well, add one HTTP(s) monitor pointed at a proxied name — that single check exercises the DNS rewrite, the proxy, and the certificate in one pass.
