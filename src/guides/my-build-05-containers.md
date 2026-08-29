@@ -61,7 +61,12 @@ Templates are built ahead of time, so the packages inside are a little stale. Fi
 
 ```bash
 apt update && apt full-upgrade -y
-dpkg-reconfigure tzdata   # match the container's clock to yours
+```
+
+Then match the container's clock to yours:
+
+```bash
+dpkg-reconfigure tzdata
 ```
 
 `full-upgrade` will also **remove** installed packages when a dependency shift demands it — plain `apt upgrade` installs what's needed but never removes anything — which makes `full-upgrade` the right tool for a first sync. For routine updates later, plain `apt upgrade` is the more conservative habit.
@@ -85,8 +90,10 @@ A helper-script container may be built from a leaner template that does not ship
 A useful container should survive a power cut without you remembering it exists. Select it, open **Options**, and set **Start at boot** to Yes — or from the host shell:
 
 ```bash
-pct set 100 -onboot 1      # swap in the container's ID
+pct set 100 -onboot 1
 ```
+
+(`100` here is the practice container — swap in the real ID for any later guest.)
 
 Enable this on **every** service container so the whole stack reassembles itself after mains returns.
 
@@ -101,8 +108,10 @@ That 8 GB starter disk enlarges with no downtime — in **Resources**, select th
 ```bash
 pct resize 100 rootfs +4G
 pct set 100 -cores 4
-pct set 100 -memory 4096   # MB
+pct set 100 -memory 4096
 ```
+
+(memory is in MB — `4096` is 4 GB.)
 
 The filesystem inside grows along with the disk — unlike a VM, where the guest has to be resized separately. Proxmox hot-plugs most core and memory changes into the running container instantly; the rare change that cannot apply live shows in red as a pending value until the next restart.
 
