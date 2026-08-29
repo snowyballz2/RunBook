@@ -97,7 +97,9 @@ A NAS (network-attached storage) that notices a dying IronWolf but has no way to
 
 - **Send Mail Method** → **SMTP** (Simple Mail Transfer Protocol) — the general path for this mostly-iCloud household; **GMail OAuth** / **Outlook OAuth** spare app-password wrangling if you have one of those accounts
 - **Email Recipients** → the inbox you actually read
-- **Send Test Mail** → click it, and only **Save** once the test actually lands With email working, TrueNAS also sends a nightly status email that includes disk health.
+- **Send Test Mail** → click it, and only **Save** once the test actually lands
+
+With email working, TrueNAS also sends a nightly status email that includes disk health.
 
 > [!DETAILS] Filling in the SMTP fields
 > - **From Email** → the sending address
@@ -114,7 +116,8 @@ In the TrueNAS UI, go to **System → Alert Settings**. Two rows ship by default
 - **Email Address** → the recipient
 - **Level** → keep the default **Warning** — alerts at that level and above are sent
 - **Send Test Alert** → click; save once the test arrives
- The built-in categories already cover what matters here: an unhealthy pool, a pool filling up, an IronWolf running hot or failing a self-test, and any failed snapshot, scrub, replication, or cloud sync task.
+
+The built-in categories already cover what matters here: an unhealthy pool, a pool filling up, an IronWolf running hot or failing a self-test, and any failed snapshot, scrub, replication, or cloud sync task.
 
 > [!WARNING]
 > The two test buttons in this phase are the whole point — one per screen: **Send Test Mail** in the Email settings dialog (proves TrueNAS can send mail at all) and **Send Test Alert** in the Alert Services entry (proves the alert engine routes through that mail setup to your recipient — a different failure point, which is why both exist). An alert chain you have never tested is the exact silent failure you set it up to prevent — press both, confirm both land. Do it now, while you are looking at the screen, not in two years when a drive is already dying.
