@@ -67,6 +67,8 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 > The plain **Nextcloud** entry in the catalog is a TurnKey **VM**, not a container — the repo's two LXC options are this NextCloudPi one and a lighter Alpine variant. NCP is the relaxed household choice; take it.
 
 ### Start it at boot
+Two things on the way past that look like problems and are not. The build report marks **IPv6 Internet Not Connected** with a red ✗ a couple of lines below its own **Disabled IPv6** ✓ — it is testing connectivity you deliberately turned off in the walk above, so ignore it. Then a **`Do you want to continue? [y/N]`** prompt appears under a warning that the script runs an external installer from a third-party source that the repo does not audit. **Answer `y`.** The wrapper only builds the LXC; Nextcloud itself is installed by NextcloudPi's own `install.sh`, and the URL printed above the prompt is `github.com/nextcloud/nextcloudpi` — **Nextcloud's own GitHub organisation**, not an unrelated third party. The warning is community-scripts being honest about the handoff, not a signal about the code.
+
 The script finishes by printing the container's address as `http://192.168.1.58` — no port, no passwords yet; those come in the browser. The address was set statically in the Advanced walk (it is about to be baked into every device's sync client, so it must never move — nothing to reserve at the router). Before opening it, enable **Options → Start at boot** in Proxmox so the family cloud survives a power cut, and confirm **Options → Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
 
 > [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.58
