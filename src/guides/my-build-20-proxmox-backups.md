@@ -77,6 +77,17 @@ The other three tabs, so nothing on them surprises you:
 > [!DETAILS] Choosing what to keep — retention
 > By default every backup is kept forever and slowly fills the share. The job's **Retention** tab shows a **Keep all backups** box above six keep fields (**Keep Last / Hourly / Daily / Weekly / Monthly / Yearly**). Clear **Keep all backups**, set **Keep Daily** `7` and **Keep Weekly** `4`, and leave the other four empty — a week of daily restore points plus a month of weekly ones, pruned automatically. Job-level retention overrides whatever the storage is configured to keep.
 
+### Make a failed backup able to reach you
+The job's Notifications tab said **"Use global notification settings"** — so check what those actually are, because out of the box they cannot deliver. The default is a **`mail-to-root` sendmail target**: the host's own postfix handing mail directly to your inbox's mail server, which residential ISPs — Verizon included — block at port 25. A failed nightly backup would be announced into a void, forever. And nothing else in this build catches it: Uptime Kuma watches whether *services answer*, not whether a 02:30 *task succeeded*.
+
+Fix it once, at **Datacenter → Notifications**:
+
+1. Under **Notification Targets**, click **Add → SMTP** and fill it like the TrueNAS email on the Protect Your Data page: your provider's SMTP server, port **587** with **STARTTLS**, the full address as username, an **app-specific password** (iCloud senders generate one at appleid.apple.com), your real inbox as recipient.
+2. Select the new target and press its **Test** button — do not move on until the test mail lands.
+3. Under **Notification Matchers**, edit the default matcher and point its target at the SMTP entry instead of `mail-to-root`.
+
+The backup job needs no change after this — its "global settings" default now routes through a path that genuinely delivers. (Fields here that drift from your screen: true the guide against the screen, as always.)
+
 ### Know how to restore — and prove it
 Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's own **Backup** tab), select an archive, and click **Restore**. The dialog's fields: **Storage** (where the restored disks land — leave the default), **CT/VM ID** (editable only when you came in from the *storage's* Backups view, where it pre-fills the next free ID — from a guest's own tab it restores over that guest), **Bandwidth Limit** (empty), **Unique** (off), **Start after restore** (off for a practice run), a container-only **Privilege Level** (keep **From Backup**), and a collapsible **Override Settings** section (Hostname, Cores, Memory) to ignore. Restoring over an existing guest returns it to the archived state — everything since is discarded, behind the warning "This will permanently erase current VM data." Restoring into a different, unused ID makes a *copy* alongside the original — the gentlest way to do a practice run.
 
@@ -139,7 +150,13 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 >   /etc/default/grub /etc/nut /etc/modules
 > ```
 >
-> Run it after any change to networking, storage, or passthrough — or drop it in a weekly `cron` job so it keeps pace on its own. It is small; keep a few generations. (`/etc/pve` is a live filesystem, so `tar` may warn that a file changed while reading — harmless for these config files.)
+> Run it after any change to networking, storage, or passthrough — and let a weekly `cron` keep it honest on its own. Still in the host shell, this appends the schedule (Sundays 03:00) to root's crontab:
+>
+> ```bash
+> (crontab -l 2>/dev/null; echo '0 3 * * 0 tar czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +\%F).tar.gz /etc/pve /etc/network/interfaces /etc/fstab /etc/modprobe.d /etc/default/grub /etc/nut /etc/modules') | crontab -
+> ```
+>
+> (The `\%` is required — cron treats a bare `%` as a newline.) It is small; keep a few generations. (`/etc/pve` is a live filesystem, so `tar` may warn that a file changed while reading — harmless for these config files.)
 
 > [!INPUT] proxmox-user | Proxmox web UI username | | root
 
