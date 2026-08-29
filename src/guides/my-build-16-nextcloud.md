@@ -182,7 +182,7 @@ The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated
 > reboot
 > ```
 >
-> Do it **before** creating the mount below, so the row uses the module from the start.
+> Do it **before** creating the mount below, so the row uses the module from the start. The reboot is what makes PHP-FPM load the module — installed is not loaded — and the proof it took is the page itself: reload **Administration settings → External storage** and the red php-smbclient notice is gone.
 
 Now hang the share inside Nextcloud:
 
