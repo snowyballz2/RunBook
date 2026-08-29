@@ -159,11 +159,9 @@ Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root dis
   pct config 105 | grep -E 'rootfs|protection'
   ```
 
-  **Shrinking is not supported**, so add space in honest increments rather than one giant leap. If the resize ever errors about the container being protected, drop the flag for the one command and put it straight back — the same wrapper the Frigate mount point needed on the Cameras page:
+  Expect `protection: 1` in that output, and **no need to touch it** — verified on this build, `pct resize` runs fine on a protected container. That is worth stating because the Cameras page had to drop protection to add Frigate's mount point, which invites the assumption that every disk operation needs the same dance. It does not: the flag blocks **`pct set`** disk-config changes and container-or-disk **deletion**, while `pct resize` is permitted. Leave protection on.
 
-  ```bash
-  pct set 105 -protection 0 && pct resize 105 rootfs +32G && pct set 105 -protection 1
-  ```
+  **Shrinking is not supported**, so add space in honest increments rather than one giant leap.
 
 - **Park the heavy archive on the mirror.** The photo and media archive belongs on the two IronWolf drives in the ZFS mirror, where there is real room — reached through Nextcloud's **External Storage**, not by moving the data directory.
 
