@@ -257,7 +257,8 @@ Then `systemctl restart nut-server nut-monitor`. In Home Assistant, go to **Sett
 - **Host** → `192.168.1.50`
 - **Port** → `3493`
 - **Username / Password** → the `hauser` login from the fields below
- The CyberPower appears as a device with **Battery charge**, **Status**, **Load**, and **Input voltage** enabled out of the box — Status reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime**, **Battery voltage**, and the diagnostic sensors arrive disabled; enable them per entity if you want them.
+
+The CyberPower appears as a device with **Battery charge**, **Status**, **Load**, and **Input voltage** enabled out of the box — Status reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime**, **Battery voltage**, and the diagnostic sensors arrive disabled; enable them per entity if you want them.
 
 > [!INPUT] nut-ha-user | NUT read-only username | | hauser
 > The `[hauser]` section name in `upsd.users` — the account Home Assistant signs in with.
