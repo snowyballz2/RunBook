@@ -100,10 +100,12 @@ The second VM — **Home Assistant OS**, the brain of the house — is built on 
 An appliance should come back on its own after a power cut or host reboot. Two ways, same result. In the web UI: select the **truenas** VM in the left tree and open its **Options** tab:
 
 - **Start at boot** → double-click, tick, **OK**
-- **Protection** → double-click, tick, **OK** — this VM carries the storage pool, and the flag blocks deleting it until deliberately unticked Or from the **host shell** — **Datacenter → the `pve` node → Shell**, the same shell the post-install script ran in:
+- **Protection** → double-click, tick, **OK** — this VM carries the storage pool, and the flag blocks deleting it until deliberately unticked
+
+Or set both at once from the **host shell** — **Datacenter → the `pve` node → Shell**, the same shell the post-install script ran in:
 
 ```bash
-qm set 100 -onboot 1
+qm set 100 -onboot 1 -protection 1
 ```
 
 `100` is the VM ID the wizard assigned, shown next to the VM's name in the left tree. Every later guest gets this same setting on the page that builds it.
