@@ -84,10 +84,10 @@ Then walk away. This script *compiles* Vaultwarden from source — it is a Rust 
 ### Confirm it is alive, then set it to start at boot
 After a half-hour compile, prove it actually came up before going further. Browse to `https://192.168.1.56:8000`, click through the self-signed certificate warning your browser shows (expected — the install script's own certificate, replaced by a real one two steps from now), and the Bitwarden web vault login screen should appear. Do **not** create an account yet: in two steps this container gets its proper proxied address, and accounts made before that point are born with the wrong links.
 
-Once you have seen the login, make it permanent. A password manager that does not survive a power cut is a household incident — you would be locked out of the very credentials needed to fix the server. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
+Once you have seen the login, make it permanent. A password manager that does not survive a power cut is a household incident — you would be locked out of the very credentials needed to fix the server. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell (`106` is this build's next free ID after Nextcloud's `105`; confirm against the left tree):
 
 ```bash
-pct set 106 -onboot 1        # swap in the container's actual ID
+pct set 106 -onboot 1
 ```
 
 In the same **Options** panel, confirm **Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.

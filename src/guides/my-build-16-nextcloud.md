@@ -240,10 +240,19 @@ The share appears as a folder in everyone's files. Photo archives and media sit 
 ## Make it yours
 
 ### Put it on every device
-Get the desktop client from [nextcloud.com/install](https://nextcloud.com/install/) — the macOS app for the Macs and the Windows app for the PC, since both get used equally here — and the mobile app from the App Store. The desktop wizard asks for the server address (the same URL you type into the browser), opens the browser to log in, and after **Grant access** syncs into a local **Nextcloud** folder. The Google-Photos replacement is **Auto upload** in the iOS app: point it at the camera roll and every photo lands on your server from then on.
+Get the desktop client from [nextcloud.com/install](https://nextcloud.com/install/) — the macOS app for the Macs and the Windows app for the PC, since both get used equally here — and the mobile app from the App Store. The desktop wizard asks for the server address — enter **`https://cloud.example.com`**, the proxied name from the Reverse Proxy page, on every device without exception — then it opens the browser to log in, and after **Grant access** syncs into a local **Nextcloud** folder. The Google-Photos replacement is **Auto upload** in the iOS app: point it at the camera roll and every photo lands on your server from then on.
 
 > [!NOTE]
-> Each new device raises the same self-signed-certificate objection the browser did. On a LAN-only box, accepting it per device is the usual compromise; the clean fix is the panel's Let's Encrypt tool plus a public name, which this build deliberately skips.
+> No certificate objection should appear — the proxied name carries the real wildcard certificate. If a device does complain about a self-signed certificate, it was pointed at the raw address (`https://192.168.1.58`); re-enter the name. The raw address also stops working the moment the device leaves the house, while the name follows it over Tailscale — same login, couch or hotel.
+
+> [!WARNING]
+> **Web uploads over 2 GB fail through the proxy until you raise one limit.** Nginx Proxy Manager ships a global `client_max_body_size 2000m` in its `nginx.conf`, so dragging anything bigger into the browser at `cloud.example.com` dies with **413 Request Entity Too Large**. The sync clients never hit it — they upload in small chunks — which is exactly what makes this a months-later bug: everything works until the first big video goes in through the web page. Close it now, in **Nginx Proxy Manager** (`http://192.168.1.54:81`): edit the `cloud.example.com` proxy host → **Advanced** tab → paste the line below → **Save**.
+>
+> ```
+> client_max_body_size 0;
+> ```
+>
+> `0` removes the proxy-side cap entirely — fine on a LAN-only host behind Tailscale. PHP keeps its own upload ceiling on the container itself; if a giant web upload still stops after this, that ceiling is the remaining one, adjustable in the NCP panel's `nc-limits`.
 
 > [!WARNING]
 > Away from home, reach Nextcloud over the Tailscale tunnel — never a router port-forward. A personal cloud full of the household's files and photos is exactly what you don't expose to the public internet.
