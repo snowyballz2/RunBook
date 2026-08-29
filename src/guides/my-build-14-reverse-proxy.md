@@ -269,7 +269,7 @@ Add the next host the same way — `ha.example.com`, Scheme `http`, Forward to y
 The fix lives in the **Home Assistant UI** (`192.168.1.51:8123`), not NPM — as of Home Assistant 2026.8 it is a settings screen, not a YAML edit. Go to **Settings → System → Network**, scroll to the **HTTP server** section — **not there? your Home Assistant predates it; see the callout below** — and set two things:
 
 - **Trust X-Forwarded-For** → **on** — lets HA read the real client address the proxy passes along
-- **Trusted proxies** → add **`192.168.1.54`** — the only machine allowed to speak for clients
+- **Trusted proxies** → add **`192.168.1.54`** — the only machine allowed to speak for clients; it saves back as **`192.168.1.54/32`**, which is the same single address written as a one-address network, not a sign anything went wrong. Leave it that narrow — and if you ever do mean a whole subnet, Home Assistant wants the *network* address there (`192.168.1.0/24`), never a host address wearing a broad mask (`192.168.1.54/24`)
 
 > [!IMPORTANT]
 > **No HTTP server section on that page? Update Home Assistant first.** That screen arrived in **2026.8** (5 August 2026); on anything older these two settings exist only as an `http:` block in `configuration.yaml`, which on HAOS means installing a file-editor app purely to write four lines the next upgrade deprecates. Skip that: **Settings → System → Updates → Home Assistant Core**, then come back and the section is there. Two reassurances before you press it, since this build otherwise defers updates until the collection is finished:
