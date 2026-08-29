@@ -87,6 +87,9 @@ apt-get update
 apt-get install tailscale
 ```
 
+> [!NOTE]
+> **If apt asks about `tailscale-archive-keyring.gpg`, answer `Y`.** The first `curl` above writes that keyring by hand, and the package ships its own copy of the same file — so dpkg stops and asks rather than overwriting something you appear to have edited. Both files are Tailscale's own repository signing key, so either answer installs correctly. **Y** (install the package maintainer's version) is the better one: it puts the file back under package management, so future Tailscale updates refresh the key silently instead of raising this prompt again every time. `D` shows the diff first if you want to see for yourself; `N` keeps your copy and works, at the cost of meeting this prompt again later.
+
 > [!DETAILS] Why this method, and not the install script
 > Note what those two `curl` commands do *not* do: execute anything. One downloads a signing key, the other a one-line repo definition (open the `.list` URL in a browser and read it — it is genuinely one line), and then apt installs a normally signed package. Nothing is piped into a root shell, which is why this is the default here.
 >
