@@ -305,7 +305,7 @@ Two separate sticks, both written now while a working PC exists:
 - **The Proxmox installer USB** — download the Proxmox VE ISO and write it to a 4 GB+ stick with balenaEtcher. (The Install Proxmox page has the full steps — do them now.)
 - **The BIOS-update USB** — download the latest Maximus X Hero BIOS, run ASUS's BIOSRenamer, and copy it onto a FAT32 stick. (The Hardware & BIOS page has the full steps.)
 
-Do not reuse one stick for both — copying the BIOS file onto the installer stick would overwrite the installer you just wrote.
+Do not reuse one stick for both. Writing the installer image converts the stick to a read-only installer layout Windows cannot add files to — and USB BIOS Flashback only reads a plain **FAT32** stick anyway, so the BIOS file needs its own.
 
 ### Round up a monitor and keyboard
 Borrow both and plug them into the server for the install itself. You unplug them once Proxmox is up and drive everything from a browser after that.
