@@ -512,7 +512,9 @@ Still under **Advanced**, a quick pass through the onboard extras — none of th
 > [!TIP]
 > The FTW3's own lights are set from EVGA's Windows software, not this BIOS — and Linux has no tool for them. While Windows still exists on the NVMe, open **Precision X1** and turn the GPU LEDs off; settings made there generally persist on the card after the OS is gone. Two minutes now, or a GPU glowing through the glass in the room with you indefinitely.
 
-### Save and confirm
+### Save a profile, then save and confirm
+Before leaving, bank the work: **Tool → ASUS User Profile**, save the current settings into a slot named **`PVE-BASE`** — and with the FAT32 stick still plugged in, use **Save to USB** for an off-board copy too. The reason is a slow one: these settings live in CMOS behind a coin-cell battery that dies after enough years, and on a headless server the failure is quiet — an extended outage drains it, the board reverts to defaults, **VT-d comes back off**, and TrueNAS refuses to start because the HBA passthrough underneath it is gone. With the profile, recovery is *load `PVE-BASE`* instead of rebuilding this page from memory. One honest limit: ASUS ties profiles to the BIOS version, so re-save it after any future BIOS update. (Reading this after the build is done? Do it during the next planned reboot — two minutes in the BIOS.)
+
 Press `F10`, confirm, and let the board reboot. Leave the monitor and keyboard attached for now — you will need them for the OS install.
 
 > [!TIP]
