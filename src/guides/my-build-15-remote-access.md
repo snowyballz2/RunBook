@@ -226,6 +226,22 @@ Back in the Tailscale window the red text flips to **Granted** and **Next** un-g
 
 Then **Log in** with the same account as the host, and the Mac appears on the [Machines page](https://login.tailscale.com/admin/machines). The `192.168.1.0/24` subnet route is picked up automatically — macOS needs no equivalent of the `--accept-routes` a Linux client would want.
 
+### Start at login, and when you actually need it running
+Onboarding's last screen offers **start at login**. Take it. Idle Tailscale costs nothing — traffic only enters the tunnel when its destination is a `100.x` tailnet address or something on `192.168.1.0/24` — and the failure mode of leaving it off is the one that bites: you are away, you want to check the house, and the client is not running.
+
+Strictly, this Mac needs it in only two situations, and neither happens at home:
+
+- **You are away from home** — it is the only path back to the rack.
+- **You want the `*.example.com` names to resolve while away** — those exist only in AdGuard, and the tailnet DNS override is what carries them off the LAN.
+
+Leaving it connected at home changes nothing, which is exactly why start-at-login is the right default: nothing to remember on the way out the door.
+
+> [!WARNING]
+> **Run Tailscale or a consumer VPN, never both at once.** They do not merely compete — they overlap. Tailscale assigns its `100.x` addresses out of the **`100.64.0.0/10` CGNAT block**, and NordVPN runs its own resolver at `100.64.0.2`, inside that same range. This build hit exactly that during the AdGuard page, where every lookup came back `Server: 100.64.0.2`. Keep both installed if you want them, but switch with the menu-bar toggle rather than running them together, and expect DNS to be the thing that breaks first if you forget.
+
+> [!NOTE]
+> **Your phone is the opposite case: leave Tailscale on there permanently.** The Home Assistant companion app reports location through the tailnet when the phone is away from home. Switch Tailscale off and the phone stops reporting — its tracker freezes on *home*, and the presence automations on the Automations page never see anyone leave.
+
 > [!NOTE]
 > **This does not put your browsing through a VPN**, whatever the prompt's wording suggests. Tailscale carries exactly two things: the `100.x` tailnet addresses, and the `192.168.1.0/24` subnet route you approved. Everything else leaves this Mac as it does today, over whatever network it is on. That is the whole distinction between a mesh VPN and a consumer one — and it is why leaving Tailscale connected at home is harmless, while leaving NordVPN connected is not. The single exception is deliberately selecting an **exit node**, which stays off unless you choose it.
 
