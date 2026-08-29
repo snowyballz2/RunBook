@@ -347,17 +347,19 @@ Two things to bank if you pre-create them: a **502 means "not built yet", not "b
 > sudo -E -u www-data php occ config:system:set trusted_domains 8 --value=cloud.example.com
 > ```
 >
-> Second, the reverse-proxy settings. **`trusted_proxies` is indexed the same way**, so read it before writing — on a clean install it prints nothing and `0` is correct; if it lists anything, use the next free number rather than overwriting:
+> Second, the reverse-proxy settings. **`trusted_proxies` is indexed the same way, and on NextcloudPi index `0` is already taken** — a fresh NCP install ships `127.0.0.1` at `0` and `::1` at `1`, both used by its own local plumbing, so the proxy goes at **`2`**. Confirm with a read first; if your list differs, use whatever number comes after the last one:
 >
 > ```bash
 > sudo -E -u www-data php occ config:system:get trusted_proxies
 > ```
 >
 > ```bash
-> sudo -E -u www-data php occ config:system:set trusted_proxies 0 --value=192.168.1.54
+> sudo -E -u www-data php occ config:system:set trusted_proxies 2 --value=192.168.1.54
 > sudo -E -u www-data php occ config:system:set overwriteprotocol --value=https
 > sudo -E -u www-data php occ config:system:set overwrite.cli.url --value=https://cloud.example.com
 > ```
+>
+> Position does not matter for `trusted_domains` — Nextcloud tests membership of that list, not where an entry sits — so if a name lands at a different index than planned, nothing needs correcting.
 >
 > Existing sync clients signed in against the IP keep working as long as that IP stays in `trusted_domains`; set up new devices with the new name.
 
