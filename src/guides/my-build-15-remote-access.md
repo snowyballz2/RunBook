@@ -42,6 +42,17 @@ Do it now, while the console is open — Tailscale's *Admin account with passkey
 - Store its passkey with the same discipline as the Home Assistant backup key — the device keychain now, Vaultwarden when it exists later in the build
 - Sign in with it **once** to prove it works — an untested break-glass login is a decoration
 
+There is deliberately **no password field below for the passkey itself** — a passkey has no secret string to record. Its private key is generated inside the device's secure hardware and never leaves; Tailscale only ever holds the public half. What does need recording is the username, because it is permanent and you will be typing it on your worst day:
+
+> [!INPUT] tailscale-passkey-user | Tailscale passkey admin username | yourname@passkey
+> Permanent and never reusable, even by you. This is the name you sign in with if the Apple ID is ever unavailable.
+
+> [!INPUT] tailnet-name | Tailnet name (MagicDNS suffix) | example-name.ts.net
+> Shown in the admin console header; it is what fills the `<tailnet>` in `pve.<tailnet>.ts.net`.
+
+> [!WARNING]
+> **Do not let the passkey live only in iCloud Keychain.** The whole point of this admin is surviving a locked Apple ID — and a passkey held in that same Apple account is guarded by the very thing it insures against. Passkeys stay usable on devices already signed in, so this is thinning rather than fatal, but close the gap deliberately: **register the passkey on a second device as well** (the Mac's local keychain alongside the phone) so no single account lockout takes both, and treat the Vaultwarden migration below as required rather than optional.
+
 This is stage one of a two-stage plan. Today the Apple ID does daily duty and the passkey is the backstop; **the Vaultwarden page later demotes the Apple login** once the passkey lives in self-hosted custody — sovereignty on a schedule, not a leap.
 
 > [!NOTE]
