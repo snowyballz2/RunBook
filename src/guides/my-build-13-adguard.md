@@ -289,12 +289,12 @@ Picking a *filtering* secondary — AdGuard's own public resolvers at `94.140.14
 ### Cap the query log before it fills the disk
 One default has to change now, because it fails months from today. AdGuard keeps its **Query Log** as plain uncompressed JSON on the container's disk, rotates it every **90 days** by default, and rotation keeps the old file too — so retention is really **two** intervals' worth. A household's worth of lookups grows that to hundreds of megabytes and beyond (multi-gigabyte logs are well documented), and this container has a **2 GB disk**. The failure shape is the bad one: nothing wrong for months, then the disk fills, AdGuard stops answering, and **the whole house appears to lose the internet** — with the cause nowhere near the symptom.
 
-Still in the AdGuard dashboard, open **Settings → General settings**:
+This is not hypothetical — it was **measured on this build**: ~43 MB/day of entries (106 MB by day three, first entry to last), which against the disk's ~870 MB of free space meant whole-house DNS death in roughly **three weeks**. Still in the AdGuard dashboard, open **Settings → General settings**:
 
-- **Query logs rotation** → **7 days** — a week of per-query history is plenty for diagnosing a blocked page, at a bounded few tens of megabytes
+- **Query logs rotation** → **24 hours** — the log then idles under ~90 MB across its two rotation files, and every DNS diagnosis this collection has ever needed used entries from the same hour
 - **Statistics retention** → leave at its default — the aggregate counters are tiny compared to the per-query log
 
-If you ever genuinely want 90 days of query history, grow the disk first (`pct resize 103 rootfs +2G` in the host shell) rather than trusting the default to fit.
+Want a week or more of per-query history instead? Size it honestly first: retention holds **two** intervals' worth, so at this house's measured rate 7 days steady-states near 600 MB — grow the disk before choosing it (`pct resize 103 rootfs +2G` in the host shell), never trust the default to fit.
 
 ### Confirm it is actually blocking
 First from the **Mac**, in the **Terminal** app — this one is not a browser step. Check that a known tracker domain gets blocked. A blocked domain comes back answered, with `0.0.0.0` as its address:
