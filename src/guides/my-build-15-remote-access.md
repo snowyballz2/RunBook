@@ -191,7 +191,7 @@ A phone on cellular data is the cleanest test: a device that is definitely not o
 ### Reach every service from anywhere
 Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app shows connected, then browse to each service on its normal LAN address — no Tailscale install needed on any of them, because the subnet route carries them all:
 
-- **Proxmox** — `https://192.168.1.50:8006` (the same self-signed certificate warning as on the LAN — Chrome's **Advanced → Proceed**, Safari's **Show Details → visit this website**).
+- **Proxmox** — `https://192.168.1.50:8006`. Expect the same self-signed certificate warning as on the LAN, and know that **iOS Safari cannot reliably get past it**: on recent versions the *Show Details → visit this website* control is simply unresponsive, a known bug rather than anything you are doing wrong. Do not burn time on it — the warning appearing at all already proves the test, since Safari had to reach the host and receive its certificate to show one (a broken route times out instead). Confirm with an **HTTP** service below, and reach Proxmox by its proxied name once DNS is set at the end of this list.
 - **Home Assistant** — `http://192.168.1.51:8123`.
 - **TrueNAS** — `http://192.168.1.20`.
 - **Frigate and AdGuard** — `https://192.168.1.52:8971` and `http://192.168.1.53`, exactly as on the couch.
