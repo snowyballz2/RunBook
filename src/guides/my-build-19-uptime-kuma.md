@@ -115,7 +115,7 @@ Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
-> The Frigate container sits behind the Proxmox firewall fence built on the Cameras & Frigate page, which allows Kuma's address (`.57`) through to port `5000` and answers pings — so both monitor styles work. If a Frigate check ever times out from here, confirm Kuma still holds `.57` before blaming Frigate.
+> The Frigate container sits behind the Proxmox firewall fence built on the Cameras & Frigate page. The `8971` monitor above rides the fence's LAN-open rule like any browser; on top of that the fence specifically admits Kuma's address (`.57`) to port `5000` and answers pings, so every monitor style works from here. If a Frigate check ever times out, confirm Kuma still holds `.57` before blaming Frigate.
 
 > [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.58
 
@@ -151,6 +151,14 @@ Your dashboard sits behind your login; a status page is the version everyone els
 
 > [!NOTE]
 > Slugs accept lowercase letters, digits, and dashes — starting and ending alphanumeric, no doubled dashes. The slug `default` is special — `/status` with no slug points to it. Status pages lag the live dashboard slightly: the server caches them for five minutes, and each viewer's page re-fetches on the editor's Refresh Interval (the 300-second default). For "is it down, or is it just me", that is plenty.
+
+### Give it a name behind the proxy
+If the Reverse Proxy page's eight hosts went in as one sitting, `status.example.com` already exists and forwards here — skip straight to the toggle below. Otherwise add it now in **Nginx Proxy Manager** (`http://192.168.1.54:81`): **Hosts → Proxy Hosts → Add Proxy Host** — domain `status.example.com`, Scheme `http`, forward to `192.168.1.57` port `3001`, **Websockets Support** on, then the wildcard certificate and **Force SSL** on the SSL tab.
+
+Then the one step unique to Kuma, in the **Uptime Kuma UI** (`http://192.168.1.57:3001`): open **Settings → Reverse Proxy**, and under **HTTP Headers** switch **Trust Proxy** to **on** — without it every visitor arriving through the proxy is logged and rate-limited as the proxy's own `.54` address; with it, Kuma believes the real client address the proxy forwards. This is the step the Reverse Proxy page's service-side table points here for.
+
+> [!TIP]
+> With names in play, one deliberate monitor earns its place: an **HTTP(s)** monitor pointed at a proxied name — `https://home.example.com` is a good pick — which exercises the AdGuard rewrite, the proxy, and the certificate in a single check. Every *other* monitor stays on direct addresses on purpose, so an alert never leaves you guessing whether the service died or the proxy did.
 
 ## Keep it honest
 
