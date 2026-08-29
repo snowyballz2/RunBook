@@ -277,21 +277,49 @@ Saving **restarts Home Assistant by itself** — and then comes the step people 
 > The browser only shows the bare 400; the explanation is in Home Assistant's log (**Settings → System → Logs**). "Not set-up for reverse proxies" means the settings have not applied — check they survived the five-minute confirmation. "Received X-Forwarded-For header from an untrusted proxy" means the address under Trusted proxies does not match the proxy's. A history note, because old write-ups still show it: this used to be an `http:` block in `configuration.yaml`. On 2026.8 and later that YAML was imported once, at migration, and is **ignored afterwards** — adding it fresh does nothing but raise a Repairs issue — so make the change in the UI. And one forward-looking quirk: a *fresh* HAOS install now serves port **80** by default; existing installs like this one keep `8123`, but if HA is ever rebuilt, this proxy host's Forward Port follows it. The pattern generalizes — if a service errors through its new name but works by IP, hunt its settings for a "trusted proxy" or "allowed hosts" option.
 
 ### Work down the rack
-More proxy hosts, same dialog. Every one gets the wildcard certificate and **Force SSL** on the SSL tab, and **Websockets Support** on — some need it outright and it is harmless elsewhere. The two services up at this point:
+Every remaining host is the **same dialog with four fields changed**. Nothing else varies — so rather than repeat the walk, here is the whole set in one place.
 
-- **TrueNAS** — `nas.example.com`, Scheme `http`, forwarding to `192.168.1.20`, port `80` — the address you browse to today, just named.
-- **Frigate** — `frigate.example.com`, Scheme **`https`** — Frigate ships TLS (Transport Layer Security) on at 8971 with its own self-signed certificate, and the proxy forwards to it without verifying, exactly as it does for Proxmox — the Frigate LXC's IP, port **`8971`** — deliberately *not* `5000`. The warning below is why.
+**Identical on every host**, without exception:
+
+| Field | Value |
+|---|---|
+| Websockets Support | **on** |
+| Access List | Publicly Accessible |
+| Cache Assets | off |
+| Block Common Exploits | off |
+| SSL Certificate | the `*.example.com` wildcard |
+| Force SSL | **on** |
+| HTTP/2, HSTS, HSTS Sub-domains | off |
+| Custom Locations, Advanced tab | untouched |
+
+**The four fields that change**, one row per host:
+
+| Domain Names | Scheme | Forward Hostname / IP | Forward Port | Built on |
+|---|---|---|---|---|
+| `proxmox.example.com` | **https** | `192.168.1.50` | `8006` | done above |
+| `ha.example.com` | http | `192.168.1.51` | `8123` | done above |
+| `nas.example.com` | http | `192.168.1.20` | `80` | now |
+| `frigate.example.com` | **https** | `192.168.1.52` | `8971` | now |
+| `cloud.example.com` | **https** | `192.168.1.58` | `443` | Nextcloud page |
+| `vault.example.com` | http | `192.168.1.56` | `8000` | Vaultwarden page |
+| `home.example.com` | http | `192.168.1.55` | `3000` | Homepage page |
+| `status.example.com` | http | `192.168.1.57` | `3001` | Uptime Kuma page |
+
+Add the first four now; come back and add each of the others when its page builds the container.
+
+**Three services also need telling, on their own side** — the proxy host alone is not enough, and each fails in its own way through the new name while working fine by IP:
+
+| Service | Where | What |
+|---|---|---|
+| Home Assistant | Settings → System → Network | Trust X-Forwarded-For on, proxy IP in Trusted proxies — **done above**, with the five-minute confirmation |
+| Nextcloud | container console, `occ` | `trusted_domains`, `trusted_proxies`, `overwriteprotocol`, `overwrite.cli.url` — see below |
+| Uptime Kuma | Settings → Reverse Proxy | Trust Proxy on |
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
 > The container running detection on the 1080 Ti — proxy its authenticated port, not the internal one.
 
 > [!WARNING]
 > Frigate splits its two ports: **8971** is the authenticated UI and API that reverse proxies should use, while **5000** is internal, unauthenticated access treated as admin regardless of login. Proxying 5000 would hand admin to anything that can resolve the name. Use 8971, and leave 5000 as the internal address the Home Assistant integration talks to.
-
-More proxy hosts get added later, once their containers exist — come back and repeat this exact Add-Proxy-Host pattern each time a later page brings a new service up. Two you already know are coming:
-
-- **Nextcloud** (built later in this build) — `cloud.example.com`, Scheme `https`, the Nextcloud IP, port `443`. The first visit stops at **Access through untrusted domain**; the fix is in the Nextcloud page (and recapped below for when you reach it).
-- **Uptime Kuma** (built later in this build) — `status.example.com`, Scheme `http`, the Kuma IP, port `3001`. It is built on WebSocket, so with the toggle off the dashboard never loads — leave **Websockets Support** on.
 
 > [!DETAILS] Frigate's "plain HTTP request was sent to HTTPS port"
 > If `frigate.example.com` answers with a 400 carrying that phrase, the proxy host's **Scheme** got set to `http` while Frigate's own TLS sits on at 8971 — its default. Fix it in NPM: edit the proxy host, flip Scheme to `https`, save; Frigate itself needs no change. (Old write-ups instead disable Frigate's TLS with a `tls: enabled: false` config block. That works, but this build keeps Frigate's TLS on — the admin login then never crosses the LAN in the clear, and every page here points at `https://192.168.1.52:8971` consistently.)
