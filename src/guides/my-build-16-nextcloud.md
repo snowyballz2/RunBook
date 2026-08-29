@@ -147,13 +147,19 @@ Record each one as you create it — these are the logins that go into the phone
 ### Decide where the bytes live
 Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root disk — fine to start, tiny against a camera roll across the whole household. There are two ways to give it room, and this build uses both:
 
-- **Grow the container disk** for the app, database, and sync-critical data. From the Proxmox host shell, with the container's ID:
+- **Grow the container disk** for the app, database, and sync-critical data. This runs in the **Proxmox host shell** (`pve` node → **Shell**), not the container console. **Protection blocks it** — the flag prevents disk *update* operations, not just deletion, so a bare `pct resize` on this container fails the way the Frigate mount point did on the Cameras page. Drop it, resize, and put it straight back in one line:
 
   ```bash
-  pct resize <ctid> rootfs +32G
+  pct set 105 -protection 0 && pct resize 105 rootfs +32G && pct set 105 -protection 1
   ```
 
-  Growing works while the container runs; **shrinking is not supported**, so add space in honest increments rather than one giant leap.
+  Confirm both halves landed:
+
+  ```bash
+  pct config 105 | grep -E 'rootfs|protection'
+  ```
+
+  The rootfs line should read `40G` and `protection: 1` should be back. Growing works while the container runs; **shrinking is not supported**, so add space in honest increments rather than one giant leap.
 
 - **Park the heavy archive on the mirror.** The photo and media archive belongs on the two IronWolf drives in the ZFS mirror, where there is real room — reached through Nextcloud's **External Storage**, not by moving the data directory.
 
