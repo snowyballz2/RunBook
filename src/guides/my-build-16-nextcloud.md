@@ -172,6 +172,23 @@ Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root dis
 The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated SMB user. Hang it inside Nextcloud:
 
 1. Under **Apps**, find **External storage support** and click **Enable** — it ships with the server and is simply switched off. (Apps from the store read **Download and enable** instead, fetching and installing in the same click, so a few seconds' pause on those is normal rather than a fault.)
+
+   > [!WARNING]
+   > **If the Apps page loads as a blank white screen, raise PHP's memory limit.** NextcloudPi ships `memory_limit = 128M`, and the Apps page is the only one that downloads and parses the whole app-store catalog — it lands around **126.5 MB**, so it dies just short of the ceiling with no error in the browser. The Nextcloud log names it exactly (`Allowed memory size … exhausted at lib/private/App/AppStore/Fetcher/Fetcher.php`), and note the store being *reachable* is what triggers it, so connectivity tests come back clean and mislead you. Nextcloud's own recommendation is 512 MB. In the container console:
+   >
+   > ```bash
+   > sed -i 's/^memory_limit = .*/memory_limit = 512M/' /etc/php/*/fpm/php.ini
+   > ```
+   >
+   > ```bash
+   > reboot
+   > ```
+   >
+   > You can also skip the page entirely — this one app enables from the console, which is the faster route if you would rather not stop:
+   >
+   > ```bash
+   > sudo -E -u www-data php occ app:enable files_external
+   > ```
 2. Go to **Administration settings → External storage**.
 3. Fill the new row, every field:
    - **Folder name** → `Pool` — the folder name everyone sees in their Files
