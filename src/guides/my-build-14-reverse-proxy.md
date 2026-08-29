@@ -333,11 +333,18 @@ Two things to bank if you pre-create them: a **502 means "not built yet", not "b
 > If `frigate.example.com` answers with a 400 carrying that phrase, the proxy host's **Scheme** got set to `http` while Frigate's own TLS sits on at 8971 — its default. Fix it in NPM: edit the proxy host, flip Scheme to `https`, save; Frigate itself needs no change. (Old write-ups instead disable Frigate's TLS with a `tls: enabled: false` config block. That works, but this build keeps Frigate's TLS on — the admin login then never crosses the LAN in the clear, and every page here points at `https://192.168.1.52:8971` consistently.)
 
 > [!DETAILS] Telling Nextcloud about its new name (for when you build it)
-> Nextcloud comes later in this build; keep this for then. Two settings, both from the Nextcloud container's console at `/var/www/nextcloud` via the `occ` tool. First, the untrusted-domain page — add the new name at the next free index:
+> Nextcloud comes later in this build; keep this for then. Two settings, both from the Nextcloud container's console at `/var/www/nextcloud` via the `occ` tool.
+>
+> **Every `example.com` below is a placeholder** — substitute the real domain recorded in the *Your domain* field above before running anything. And the index is **not** a fixed number: run the `get` on its own first, count the entries it prints starting at **0**, and use the next number after the last one. A NextcloudPi install ships with roughly **eight** already (`localhost`, several `nextcloudpi` variants, the container IP, the detected public IP), so the next free index is usually **8** — reusing a number that is already listed silently overwrites that entry instead of adding yours.
 >
 > ```bash
 > sudo -E -u www-data php occ config:system:get trusted_domains
-> sudo -E -u www-data php occ config:system:set trusted_domains 3 --value=cloud.example.com
+> ```
+>
+> Then, with the real domain and the index you just counted:
+>
+> ```bash
+> sudo -E -u www-data php occ config:system:set trusted_domains 8 --value=cloud.example.com
 > ```
 >
 > Second, the reverse-proxy settings:
