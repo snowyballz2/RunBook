@@ -305,7 +305,9 @@ Every remaining host is the **same dialog with four fields changed**. Nothing el
 | `home.example.com` | http | `192.168.1.55` | `3000` | Homepage page |
 | `status.example.com` | http | `192.168.1.57` | `3001` | Uptime Kuma page |
 
-Add the first four now; come back and add each of the others when its page builds the container.
+Add the first four now, and come back for the others as their pages build them — or **create all eight in one sitting**, which is the better use of the time. Forwarding is by IP, so nginx has nothing to resolve and reloads cleanly whether or not the container exists; a name whose service is not built yet simply returns **502 Bad Gateway** until it is. Doing them together while the pattern is fresh also avoids the classic omission — one host added alone weeks later, missing Websockets or the certificate.
+
+Two things to bank if you pre-create them: a **502 means "not built yet", not "broken"**, which is worth remembering before you debug a proxy that is behaving perfectly; and pre-creating the host does **not** do the service-side configuration in the table below, which still happens on each service's own page.
 
 **Three services also need telling, on their own side** — the proxy host alone is not enough, and each fails in its own way through the new name while working fine by IP:
 
