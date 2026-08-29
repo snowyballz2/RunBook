@@ -347,7 +347,11 @@ Two things to bank if you pre-create them: a **502 means "not built yet", not "b
 > sudo -E -u www-data php occ config:system:set trusted_domains 8 --value=cloud.example.com
 > ```
 >
-> Second, the reverse-proxy settings:
+> Second, the reverse-proxy settings. **`trusted_proxies` is indexed the same way**, so read it before writing — on a clean install it prints nothing and `0` is correct; if it lists anything, use the next free number rather than overwriting:
+>
+> ```bash
+> sudo -E -u www-data php occ config:system:get trusted_proxies
+> ```
 >
 > ```bash
 > sudo -E -u www-data php occ config:system:set trusted_proxies 0 --value=192.168.1.54
