@@ -47,8 +47,8 @@ There is deliberately **no password field below for the passkey itself** — a p
 > [!INPUT] tailscale-passkey-user | Tailscale passkey admin username | yourname@passkey
 > Permanent and never reusable, even by you. This is the name you sign in with if the Apple ID is ever unavailable.
 
-> [!INPUT] tailnet-name | Tailnet name (MagicDNS suffix) | example-name.ts.net
-> Shown in the admin console header; it is what fills the `<tailnet>` in `pve.<tailnet>.ts.net`.
+> [!INPUT] tailnet-name | Tailnet name (MagicDNS suffix) | tailnet-fe8c.ts.net
+> Found on the admin console's [DNS page](https://login.tailscale.com/admin/dns), not the header. It is what fills the `<tailnet>` in `pve.<tailnet>.ts.net`.
 
 > [!WARNING]
 > **Do not let the passkey live only in iCloud Keychain.** The whole point of this admin is surviving a locked Apple ID — and a passkey held in that same Apple account is guarded by the very thing it insures against. Passkeys stay usable on devices already signed in, so this is thinning rather than fatal, but close the gap deliberately: **register the passkey on a second device as well** (the Mac's local keychain alongside the phone) so no single account lockout takes both, and treat the Vaultwarden migration below as required rather than optional.
@@ -184,7 +184,13 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 > One honest limitation: every remote path runs through this single host. If the i7-8700K is powered off, crashed, or wedged mid-boot while you are away, remote access is down with it. Tailscale can fail over between two subnet routers, but that needs a second always-on machine; on a one-server build, a dead host means a trip home — or a housemate and the power button. The CyberPower UPS (uninterruptible power supply) and the NUT (Network UPS Tools) shutdown handling you will set up later in this build, on the UPS & Safe Shutdown page, cover the *power-blip* case, not a hard crash.
 
 > [!DETAILS] MagicDNS and the day-to-day habit
-> The [Machines page](https://login.tailscale.com/admin/machines) now lists both devices, and MagicDNS (on by default for new tailnets) gives each a name like `pve.<tailnet>.ts.net`, drawn from its hostname — so `https://pve.<tailnet>.ts.net:8006` also reaches the web UI. Day to day, keep using the LAN IPs: thanks to the subnet route, they are the addresses that reach the host *and* every guest, both at home and away, with nothing to remember per service.
+> The [Machines page](https://login.tailscale.com/admin/machines) now lists both devices, and MagicDNS (on by default for new tailnets) gives each a name like `pve.<tailnet>.ts.net`, drawn from its hostname — so `https://pve.<tailnet>.ts.net:8006` also reaches the web UI.
+>
+> **Where `<tailnet>` comes from**, since it is not on the page you would expect: the admin console's **[DNS page](https://login.tailscale.com/admin/dns)**, the same one that later takes AdGuard as a global nameserver. A new personal tailnet is issued a generated name of the form **`tail<hex>.ts.net`** — something like `tailnet-fe8c.ts.net`. There is no separate "tailnet ID" elsewhere; that hex string *is* the name.
+>
+> That page also offers **Rename tailnet**, which trades the hex for a generated word pair like `cat-crocodile.ts.net`, and you can switch back and forth between the two. **Do it now if you are going to.** Renaming breaks every MagicDNS name, any Tailscale-issued HTTPS certificate, and any device-sharing link built on the old one — costless today because nothing depends on it yet, and not costless once `tailscale serve` or a Tailscale certificate is in play (a randomized name already used for certificates cannot be regenerated). For this build it is cosmetic either way, since the Reverse Proxy page gives every service a real `*.example.com` name.
+>
+> Day to day, keep using the LAN IPs: thanks to the subnet route, they are the addresses that reach the host *and* every guest, both at home and away, with nothing to remember per service.
 
 > [!DETAILS] Optional extras — exit node and a clean certificate
 > Two add-ons, neither required and nothing later depends on them:
