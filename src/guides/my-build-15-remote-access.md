@@ -41,6 +41,15 @@ Tailscale calls your private network a *tailnet*; it is created the moment you f
 >
 > If you find yourself about to invite your own laptop, that is the sign to stop and just sign in on it instead.
 
+> [!DETAILS] Why the second phone is a Member and not an Admin
+> The two settings are independent, and the reason the household invite says *Member* is not that it grants less access. **Roles govern the admin console; ACLs govern the network.** This tailnet defines no ACL section, so Tailscale applies its default **allow-all** policy — meaning a Member and an Admin reach exactly the same things. Her phone can already open Proxmox, Home Assistant, TrueNAS and everything else on `192.168.1.0/24`, precisely as yours can. Admin would add nothing she uses.
+>
+> What Admin *does* add is the ability to change the tailnet itself: rewrite access policies, un-approve the subnet route that makes every remote address work, alter the DNS settings this build points at AdGuard, remove devices and users, touch billing. None of that is anything a second phone needs, and each is a way for a stray click — or a compromised Apple ID — to take the network down.
+>
+> The one honest argument for a second admin is bus factor: what happens if you are unreachable and something needs fixing. The **passkey admin** above already answers it, and answers it better — a second login *you* control, rather than standing privilege on somebody else's account. An admin who does not know Tailscale cannot fix an outage anyway, so walk her through the passkey login before a long trip instead.
+>
+> And if you ever want the reverse — her phone on the tailnet but unable to reach, say, Proxmox — that is an **ACL** edit, not a role change. Roles are the wrong lever for it.
+
 ### Add a break-glass passkey admin
 Fair question to ask here: why should a third party's identity sit between you and your own network? Answer: Tailscale's **initial signup requires an identity provider** — passkey-only account creation does not exist yet — so the Apple ID bootstraps. But it does not have to stay a single point of failure, and Tailscale's own docs recommend the fix: a second **admin user that signs in with a passkey**, whose login *"has no dependency on an SSO identity provider."* If Apple ever locks the Apple ID, the tailnet still answers to you.
 
