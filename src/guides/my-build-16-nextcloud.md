@@ -122,6 +122,19 @@ Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. 
 ### Add accounts for the household
 Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account** — fill **Username** and **Password**, leave the dialog's other fields (Display name, Email, Groups, Quota, Language, Manager) blank or default, and click **Add new account** — one per person, so everyone gets their own files, photos, and password. NCP pre-enables the household set — Files, Activity, Photos, **and** Calendar, Contacts, Notes, and Tasks are all ready on first login. Anything further comes from the **Apps** page: for a store app the button reads **Download and enable** — one click fetches, installs, and enables it, so a brief pause is expected, not a fault. (Plain **Enable** appears only on apps that ship with the server, like the one in the next section.)
 
+Record each one as you create it — these are the logins that go into the phone and desktop sync clients later on this page, and a household account whose password only exists in somebody's head is the one that gets reset at the worst moment:
+
+> [!INPUT] nextcloud-user-1 | Household account 1 — username
+
+> [!SECRET] nextcloud-password-1 | Household account 1 — password
+
+> [!INPUT] nextcloud-user-2 | Household account 2 — username
+
+> [!SECRET] nextcloud-password-2 | Household account 2 — password
+
+> [!NOTE]
+> These fields live on this device only, like every credential in this collection — they are a convenience while you follow along, not the household's password store. **Vaultwarden**, built on the next page, is where these belong permanently, and where the second person can actually reach their own copy. Move them there once it exists rather than leaving two people's logins recorded on one laptop.
+
 ### Decide where the bytes live
 Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root disk — fine to start, tiny against a camera roll across the whole household. There are two ways to give it room, and this build uses both:
 
