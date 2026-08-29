@@ -120,7 +120,16 @@ Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. 
 ## Point the storage at the ZFS pool
 
 ### Add accounts for the household
-Don't share the `ncp` login. Click your avatar (top right) → **Accounts** → **New account** — fill **Username** and **Password**, leave the dialog's other fields (Display name, Email, Groups, Quota, Language, Manager) blank or default, and click **Add new account** — one per person, so everyone gets their own files, photos, and password. NCP pre-enables the household set — Files, Activity, Photos, **and** Calendar, Contacts, Notes, and Tasks are all ready on first login. Anything further comes from the **Apps** page: for a store app the button reads **Download and enable** — one click fetches, installs, and enables it, so a brief pause is expected, not a fault. (Plain **Enable** appears only on apps that ship with the server, like the one in the next section.)
+**Do not share the `ncp` login** — one account per person, so everyone gets their own files, photos, and password. Click your avatar (top right) → **Accounts** → **New account**, and fill the dialog:
+
+- **Username** → the person's own login name
+- **Password** → their own, never a shared one
+- **Display name**, **Email**, **Groups**, **Quota**, **Language**, **Manager** → leave blank or default
+
+Click **Add new account**, then repeat for the second person.
+
+> [!NOTE]
+> **Background, not a step — there is nothing for you to do on the Apps page here.** NCP arrives with the household set already switched on: Files, Activity, Photos, Calendar, Contacts, Notes, and Tasks all work at first login. The only app this build enables by hand is **External storage support**, and that happens further down this page at the step that needs it.
 
 Record each one as you create it — these are the logins that go into the phone and desktop sync clients later on this page, and a household account whose password only exists in somebody's head is the one that gets reset at the worst moment:
 
@@ -154,7 +163,7 @@ Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root dis
 ### Mount the TrueNAS share as External Storage
 The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated SMB user. Hang it inside Nextcloud:
 
-1. Under **Apps**, find **External storage support** and click **Enable** (it ships with the server, disabled).
+1. Under **Apps**, find **External storage support** and click **Enable** — it ships with the server and is simply switched off. (Apps from the store read **Download and enable** instead, fetching and installing in the same click, so a few seconds' pause on those is normal rather than a fault.)
 2. Go to **Administration settings → External storage**.
 3. Fill the new row, every field:
    - **Folder name** → `Pool` — the folder name everyone sees in their Files
