@@ -262,6 +262,12 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 >   tailscale serve --bg https+insecure://localhost:8006
 >   ```
 >
+>   **The first run will refuse**, with `Serve is not enabled on your tailnet` and a `login.tailscale.com/f/serve?node=…` link. That is expected: Serve provisions a real Let's Encrypt certificate for the machine, so HTTPS certificates have to be switched on for the tailnet once. Follow the link, or do it on the [DNS page](https://login.tailscale.com/admin/dns) under **HTTPS Certificates → Enable HTTPS**, then run the command again. The result is `https://pve.<tailnet>.ts.net` with no warning to click past.
+>
+>   Enabling it publishes your **machine names** to the public Certificate Transparency ledger, as `pve.<tailnet>.ts.net` — the same ledger discussed when picking a domain on the Reverse Proxy page. Tailscale's own caution is simply not to enable it if machine names contain sensitive information; `pve` on a randomly generated tailnet string carries nothing worth hiding.
+>
+>   **Worth doing even though the Reverse Proxy page already gives Proxmox a valid certificate**, because the two fail independently. `proxmox.example.com` is a DNS rewrite inside AdGuard, and with **Override DNS servers** on, every lookup depends on AdGuard being alive. `pve.<tailnet>.ts.net` resolves through **MagicDNS**, handled by Tailscale itself, and Serve runs on the host rather than in a container. So on the day AdGuard or NPM is the broken thing — precisely when you need a shell — this name still opens Proxmox cleanly. Keep it bookmarked as the break-glass route.
+>
 >   Tailscale's "on a Proxmox host" guide also documents a second route — installing a Tailscale-issued HTTPS certificate directly into Proxmox, kept current with a cron job. Serve is the simpler, self-contained option and is plenty here.
 
 > [!DETAILS] Does this replace a consumer VPN like NordVPN?
