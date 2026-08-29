@@ -169,7 +169,22 @@ Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root dis
 > You cannot simply point Nextcloud's data directory at the TrueNAS share — NCP enforces that "Only ext/btrfs/zfs filesystems can hold the data directory," and an **SMB (Server Message Block)** mount is none of those. External Storage is the supported way to put files on the pool; the data directory stays on the container's local disk.
 
 ### Mount the TrueNAS share as External Storage
-The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated SMB user. Hang it inside Nextcloud:
+The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated SMB user.
+
+> [!WARNING]
+> **Install `php-smbclient` first — this one is not cosmetic.** The External storage page shows a red notice recommending it, and without the PHP module Nextcloud falls back to spawning the `smbclient` binary, a path that **fails on downloads larger than roughly 512 MB**. Since the entire point here is parking the photo and video archive on the mirror, that limit lands precisely on the files you most want, and it surfaces weeks later as "large videos will not download" — a symptom almost impossible to trace back to this page. In the container console:
+>
+> ```bash
+> apt update && apt install -y smbclient php-smbclient
+> ```
+>
+> ```bash
+> reboot
+> ```
+>
+> Do it **before** creating the mount below, so the row uses the module from the start.
+
+Now hang the share inside Nextcloud:
 
 1. Under **Apps**, find **External storage support** and click **Enable** — it ships with the server and is simply switched off. (Apps from the store read **Download and enable** instead, fetching and installing in the same click, so a few seconds' pause on those is normal rather than a fault.)
 
@@ -200,6 +215,15 @@ The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated
    - **Username / Password** → the existing SMB credentials, per the share
    - **Available for** → leave empty — empty means everyone
 4. Save the row (the checkmark at its right). A **green dot** at the row's left edge means the mount works; red or yellow means Nextcloud could not connect — recheck host, share, and credentials.
+
+> [!DETAILS] The five setup warnings on Administration → Overview
+> A fresh NCP shows a short list under *Security & setup warnings*. Only one earns a command:
+>
+> - **Maintenance window start** → set it. Heavy nightly jobs otherwise run during the day. The value is a **UTC hour**, so `5` puts them at 1 a.m. US Eastern: `sudo -E -u www-data php occ config:system:set maintenance_window_start --type=integer --value=5`
+> - **Errors in the log** → expect two, from background jobs left registered by the **disabled** `app_api` and `updatenotification` apps. Log noise, nothing broken.
+> - **Second factor configuration** → an informational ℹ, not a warning. On a household cloud reachable only across your own tailnet, enforcing 2FA is friction for little gain; leave it unless you want it.
+> - **Default phone region** → cosmetic. It only affects validating phone numbers typed without a country code.
+> - **PHP Imagick module** → cosmetic. It only affects favicon generation for the theming app.
 
 The share appears as a folder in everyone's files. Photo archives and media sit on the ZFS pool with all its space and its snapshots, while the documents and photos people want everywhere keep syncing from the local disk.
 
