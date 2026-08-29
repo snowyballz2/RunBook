@@ -194,7 +194,9 @@ With the card on vfio-pci, hand the **whole device** to the TrueNAS VM — the T
 
 - **Device** → the 9300-8i
 - **All Functions** → ticked
-- **PCI-Express** → ticked Or, equivalently, from the host shell — this build's values are the TrueNAS VM ID (`100`) and the HBA's chipset-side bus address from the `lspci` step (`03:00.0`, entered without the `.0` function suffix so all functions pass, matching the GUI ticks; the top-slot `01:00` is the 1080 Ti — never that one):
+- **PCI-Express** → ticked
+
+Or, equivalently, from the host shell — this build's values are the TrueNAS VM ID (`100`) and the HBA's chipset-side bus address from the `lspci` step (`03:00.0`, entered without the `.0` function suffix so all functions pass, matching the GUI ticks; the top-slot `01:00` is the 1080 Ti — never that one):
 
 ```bash
 qm set 100 -hostpci0 0000:03:00,pcie=1,rombar=0
