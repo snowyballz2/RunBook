@@ -286,6 +286,16 @@ Picking a *filtering* secondary — AdGuard's own public resolvers at `94.140.14
 ### Add a couple of blocklists
 **Back to AdGuard now** — leave the Verizon router UI and return to the AdGuard dashboard at **`http://192.168.1.53`**. Everything in this section happens there. Open **Filters → DNS blocklists**. AdGuard ships with its own **AdGuard DNS filter** enabled; click **Add blocklist → Choose from the list** and add **OISD Blocklist (Big)** — the standard low-breakage pick, comprehensive without being trigger-happy. Stop there for now: more lists block more but break more, and the Query Log below is where you would diagnose it.
 
+### Cap the query log before it fills the disk
+One default has to change now, because it fails months from today. AdGuard keeps its **Query Log** as plain uncompressed JSON on the container's disk, rotates it every **90 days** by default, and rotation keeps the old file too — so retention is really **two** intervals' worth. A household's worth of lookups grows that to hundreds of megabytes and beyond (multi-gigabyte logs are well documented), and this container has a **2 GB disk**. The failure shape is the bad one: nothing wrong for months, then the disk fills, AdGuard stops answering, and **the whole house appears to lose the internet** — with the cause nowhere near the symptom.
+
+Still in the AdGuard dashboard, open **Settings → General settings**:
+
+- **Query logs rotation** → **7 days** — a week of per-query history is plenty for diagnosing a blocked page, at a bounded few tens of megabytes
+- **Statistics retention** → leave at its default — the aggregate counters are tiny compared to the per-query log
+
+If you ever genuinely want 90 days of query history, grow the disk first (`pct resize 103 rootfs +2G` in the host shell) rather than trusting the default to fit.
+
 ### Confirm it is actually blocking
 First from the **Mac**, in the **Terminal** app — this one is not a browser step. Check that a known tracker domain gets blocked. A blocked domain comes back answered, with `0.0.0.0` as its address:
 
