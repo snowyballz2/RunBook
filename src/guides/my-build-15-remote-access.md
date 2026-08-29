@@ -197,6 +197,15 @@ Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app 
 - **Frigate and AdGuard** — `https://192.168.1.52:8971` and `http://192.168.1.53`, exactly as on the couch.
 - **Nginx Proxy Manager** — its admin UI at `http://192.168.1.54:81`. The `*.example.com` hostnames it serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System): on the admin console's [DNS page](https://login.tailscale.com/admin/dns), add AdGuard's LAN IP (`192.168.1.53`) under **Global nameservers** and enable **Override DNS servers** — the step previewed on the Reverse Proxy page. After that, `https://proxmox.example.com` and the rest work from anywhere too.
 
+> [!DETAILS] If the phone reaches nothing — bisect before you change settings
+> Three different failures look identical from the phone, and the iOS app's own toggles are a tempting wrong turn: **VPN On Demand** only decides whether iOS raises the tunnel automatically, and **Detect MagicDNS hostnames** only auto-connects for names ending in `.ts.net`. Neither affects reaching a raw `192.168.1.x` address, so leave both alone while diagnosing.
+>
+> One test separates all three. Still on cellular, browse to the **host's own `100.x` tailnet address** with its port — `https://100.x.y.z:8006`, the address recorded further up this page:
+>
+> - **The `100.x` address works, `192.168.1.x` does not** → Tailscale is healthy and the **subnet route** is the fault. Overwhelmingly the cause is a route advertised but never approved — nothing warns you, it simply drops traffic. Approve it on the [Machines page](https://login.tailscale.com/admin/machines) as described above, and confirm the **pve** row carries a **Subnets** badge (no badge means it is not advertising, so re-check the `sysctl` forwarding file and that `tailscale up` was re-run with `--advertise-routes=192.168.1.0/24`).
+> - **Neither address works** → Tailscale itself is not connected. Confirm the app shows connected, and that the phone signed in with the **same account as the host** — signing in with a different identity silently creates a second, empty tailnet, which looks like a broken network rather than the wrong one.
+> - **Both work** → nothing is wrong; you were testing while still on Wi-Fi.
+
 Served to a phone nowhere near the house, through zero opened ports. Nextcloud, Vaultwarden, Homepage, and Uptime Kuma join this same list automatically as you build them in the pages ahead — no extra remote-access setup per service.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
