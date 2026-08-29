@@ -70,6 +70,16 @@ A full disk fails loudly and at the worst time, so this glance is its own habit.
 - **TrueNAS ZFS pool** — on the **Storage** dashboard, keep the mirror under roughly **80%** full. Past that, ZFS slows down and snapshots have nowhere to grow. This pool also holds the nightly Proxmox backups, so it creeps up from two directions.
 - **Frigate's footage disk** — the third IronWolf on the motherboard SATA port. Check Frigate's own storage figures (its UI reports usage), or run `df -h /mnt/frigate-footage` in the node **Shell** — the node's **Disks** view shows the drive's health, not how full it is. Footage is replaceable, but a full disk still stops new recordings.
 - **Nextcloud storage** — its data lives in the service LXC; glance at the usage in its admin view.
+- **The host's own NVMe** — the one disk the three above quietly assume. The node's **Summary** shows root usage, and **local-lvm** in the left tree shows the thin pool every guest disk *and every snapshot* lives in. This is where the snapshot-before-update habit collects its tax: each pass leaves a snapshot behind, and a thin pool filled by stale ones ends with **every guest pausing on IO errors at once**. So close the loop each pass — once an updated guest has proven healthy, open its **Snapshots** tab and delete the pre-update snapshots it no longer needs.
+
+### Glance at the card
+One command in the node **Shell** keeps two promises from earlier pages:
+
+```bash
+nvidia-smi
+```
+
+The **temperature** is the early-warning line the Cooling page set up — a slow creep over months is how a drying pad or failing fan announces itself while it can still be serviced on your schedule. And the **process list** should show all three borrowers — Frigate, Ollama, and faster-whisper — because a missing one usually means a driver mismatch quietly benched it rather than anything crashing loudly.
 
 > [!TIP]
 > On the same pass, open **Datacenter → Backup** and check the job — the **Job Detail** button opens a "Backup Details" window listing exactly what the job covers — confirming **AdGuard** and **Nginx Proxy Manager (NPM)** are in the selection. Selection mode **All** includes them automatically, but a hand-picked list is one careless edit from dropping the two guests you can least afford to lose: AdGuard is the household's DNS (Domain Name System), and NPM holds every reverse-proxy route and certificate. Restore everything *except* those two and the rest is unreachable until you rebuild them by hand. While the job is open, glance at its **Retention** settings too — **Keep Daily 7** and **Keep Weekly 4** (set when the backup job was created) are what prune old archives so the share does not fill forever. If the ZFS pool keeps climbing, confirm retention is still set on the job and has not drifted to "keep all."
@@ -98,6 +108,14 @@ While you are in the quarterly mood, check the two long-game protections:
 
 > [!INPUT] zfs-mirror-disk2-serial | IronWolf mirror disk 2 serial
 > Knowing the two mirror serials in advance turns a degraded-pool panic into a careful swap — the ST4000VN006s are identical at a glance, so the serial is the only safe way to tell which one to pull from the screw-plate mounts behind the View 71's motherboard tray.
+
+### The physical quarter-hour
+Once a quarter, look at the machine, not just its dashboards:
+
+- **Dust** — an air-duster pass over the front intake filters and a look at the GPU fins through the glass; positive pressure delays dust, it does not repeal it.
+- **Fans** — all five visibly spinning, nothing newly audible. A stalled fan only flags itself in firmware at boot, and this box rarely boots.
+- **UPS battery** — in the node Shell, `upsc cyberpower@localhost` with the UPS at full charge; compare `battery.runtime` against the number from the UPS page's timed drill. Batteries live three to five years — a big slide in runtime, or `RB` appearing in `ups.status`, means a replacement pack, on your schedule rather than mid-outage.
+- **BIOS keepsakes** — if a BIOS update happened this quarter, re-save the `PVE-BASE` profile (ASUS version-locks profiles). And remember the board's coin cell is a consumable: a clock that resets or settings that vanish after an outage means a fresh CR2032 and a profile load, per the Hardware & BIOS page — cheaper found here than the morning TrueNAS refuses to start because VT-d silently reverted.
 
 ### Let the rest come to you
 Everything not on these two lists is event-driven, and you already built the events. Uptime Kuma shouts when a service dies, TrueNAS emails when a disk or scrub complains, and the NUT (Network UPS Tools) shutdown drill on the CyberPower UPS (uninterruptible power supply) proved a power cut handles itself. The Home Assistant leak automations already make the Third Reality sensors announce a wet floor on the Nest speakers. If no alert fires between passes, the server needs exactly none of your attention — which is the entire point of the build.
