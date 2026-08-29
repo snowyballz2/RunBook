@@ -200,7 +200,9 @@ In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Enc
 
 There is no email field or terms-of-service box — Let's Encrypt stopped sending expiry emails in 2025, and current NPM handles the terms agreement itself. (If your NPM instead shows an **SSL Certificates** menu with an email field and an *I Agree* checkbox, it predates the v2.13 interface rewrite — run `update` from the container's Console to come current.)
 
-Save, and after a short wait the certificate appears, valid for every name under your domain. If it fails on timing, set **Propagation Seconds** to something patient like `120` and try again.
+Save, and after a short wait the certificate appears, valid for every name under your domain.
+
+It will show an expiry roughly **90 days** out, which is normal rather than a problem: Let's Encrypt issues short-lived certificates deliberately, to limit the damage window if a key leaks and to force renewal to be automatic rather than a calendar reminder. NPM renews it at around 30 days remaining by repeating the DNS challenge with the stored token — nothing for you to do. It is also why the token was created without a TTL: an expiring token turns renewal into a silent failure that surfaces months later as certificate errors on every service at once. If Certificate Transparency Monitoring is on at the registrar, each renewal emails you, which doubles as passive proof the automation is alive. If it fails on timing, set **Propagation Seconds** to something patient like `120` and try again.
 
 > [!NOTE]
 > The dialog warns that these credentials are stored as plaintext in NPM's database and in a file. That is the trade for hands-off issuance and renewal: the proxy keeps your DNS token. A tightly scoped token and a strong NPM admin password are the mitigations.
