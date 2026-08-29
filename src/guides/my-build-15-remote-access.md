@@ -197,6 +197,25 @@ Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app 
 - **Frigate and AdGuard** — `https://192.168.1.52:8971` and `http://192.168.1.53`, exactly as on the couch.
 - **Nginx Proxy Manager** — its admin UI at `http://192.168.1.54:81`. The `*.example.com` hostnames it serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System): on the admin console's [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers** open **Add nameserver** and choose **Custom…** — every preset in that list (Google, Cloudflare, Quad9, Mullvad, NextDNS, Control D) is a public resolver, and you want your own. Enter AdGuard's LAN IP, `192.168.1.53`, and save; the **Override DNS servers** toggle stays greyed until a nameserver exists, then turn it **on**. After that, `https://proxmox.example.com` and the rest work from anywhere too.
 
+> [!DETAILS] What the override actually changed, followed one query at a time
+> `proxmox.example.com` does not exist on the internet — it is a rewrite living only inside AdGuard. At home that is invisible, because the router hands AdGuard out as the resolver. On cellular the phone uses the carrier's resolver, which has never heard of the name and never will.
+>
+> The two fields do different jobs. **Global nameservers** names *which* resolver tailnet devices use. **Override DNS servers** decides *when*: off, Tailscale handles only `.ts.net` names and defers everything else to the local network; on, the device ignores whatever resolver it was handed and sends **all** DNS to AdGuard.
+>
+> Follow one lookup from a phone on cellular:
+>
+> 1. Override sends the query to `192.168.1.53` rather than the carrier's resolver.
+> 2. That address is private and unroutable across the internet — but it falls inside `192.168.1.0/24`, the subnet route approved earlier.
+> 3. Tailscale carries the query through the tunnel to the Proxmox host.
+> 4. The host forwards it onto the LAN to AdGuard.
+> 5. AdGuard's rewrite answers `192.168.1.54` — Nginx Proxy Manager.
+> 6. The answer returns the same way, and the phone connects to `.54` over that same route.
+> 7. NPM reads the hostname, forwards to Proxmox on `8006`, and serves the Let's Encrypt certificate.
+>
+> **The subnet route and the DNS override are two halves of one mechanism** — the route makes private *addresses* reachable, the override makes private *names* resolvable, and neither is useful here without the other.
+>
+> Two consequences beyond the names working. **Ad blocking now follows the phone**: every query it makes goes through AdGuard, in any app, anywhere, not just lookups for your own domain. And **this is tailnet-wide**, so the second household phone resolves through your AdGuard too once it joins, its browsing appearing in your query log whenever its Tailscale is connected. In that log expect everything to read `192.168.1.50` — subnet routers masquerade by default, so tailnet traffic reaches the LAN wearing the Proxmox host's address, the same per-device blindness the router caused, arriving by a different road.
+
 > [!WARNING]
 > **Add exactly one nameserver here — do not pair AdGuard with a public resolver as a fallback.** Tailscale queries every global nameserver **in parallel and takes the fastest answer**, rather than trying them in order the way AdGuard's own upstream list does. Add `1.1.1.1` alongside AdGuard and the public resolver wins most races, so ads resolve and the filtering silently stops working — Tailscale's own documentation warns that multiple nameservers "can bypass explicit content restrictions if they aren't the same." The fallback instinct is right on the AdGuard page and wrong here, because the two behave differently.
 >
