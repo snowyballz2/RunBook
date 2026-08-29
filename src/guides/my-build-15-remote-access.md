@@ -31,6 +31,16 @@ Tailscale calls your private network a *tailnet*; it is created the moment you f
 > [!TIP]
 > Pick the account you are most certain you will still control in five years; it *is* your Tailscale identity, and the same account goes on every device here. Signing in with one account everywhere is the whole trick — that is what puts the host, your iPhone, and your MacBook on the same network.
 
+> [!NOTE]
+> **Invites create logins, not devices** — the distinction that decides how many you send. A login covers every device that person signs in on, so your own machines never need one: the Proxmox host, your iPhone, and your MacBook all just sign in with *your* Apple ID and appear as separate machines under your single user.
+>
+> That leaves exactly **two invites for this build**, both sent with the same **Invite external users** button:
+>
+> - **The second phone in the house** — its own Apple ID, role **Member**, because a second *person* needs a second login
+> - **The break-glass passkey admin** below — role **Admin**, which looks like an invite even though nobody else is involved, because it is a second login for you
+>
+> If you find yourself about to invite your own laptop, that is the sign to stop and just sign in on it instead.
+
 ### Add a break-glass passkey admin
 Fair question to ask here: why should a third party's identity sit between you and your own network? Answer: Tailscale's **initial signup requires an identity provider** — passkey-only account creation does not exist yet — so the Apple ID bootstraps. But it does not have to stay a single point of failure, and Tailscale's own docs recommend the fix: a second **admin user that signs in with a passkey**, whose login *"has no dependency on an SSO identity provider."* If Apple ever locks the Apple ID, the tailnet still answers to you.
 
