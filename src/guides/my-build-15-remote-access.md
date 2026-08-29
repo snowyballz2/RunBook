@@ -206,5 +206,26 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 >
 > **Either way, disconnect it while at home.** On your own LAN a consumer VPN buys only ISP opacity, and it costs you real things: it bypasses AdGuard's filtering, it stops the `*.example.com` names from the Reverse Proxy page resolving on the machine you administer from, and it fights Tailscale for control of routing and DNS on macOS. Run one at a time.
 
+## Put Tailscale on the Mac you administer from
+
+### Install the Standalone build, not the App Store one
+The phone proved the tailnet reaches home from outside. The Mac is the machine you actually administer *from*, and it is worth a moment because **the two macOS builds are not interchangeable**.
+
+Take the **Standalone** build from [tailscale.com/download/macos](https://tailscale.com/download/macos) — Tailscale's own standing recommendation. The Mac App Store build runs fully sandboxed, which costs you the **Tailscale SSH server** and carries a documented conflict with **Screen Time web filters**; neither is worth inheriting on the machine you run the house from.
+
+> [!WARNING]
+> **Never have both builds installed.** Running the Standalone and App Store versions together prevents the Tailscale extension from launching at all — and on macOS 26 an orphaned App Store extension can block a later Standalone install outright. If the App Store one is already on this Mac: quit it, delete the app, **empty the Trash**, and **reboot** before installing Standalone. Emptying the Trash is not optional — the extension stays registered with the system until the bundle is genuinely gone.
+
+### Take the two approval prompts
+macOS asks twice, and both are expected rather than anything going wrong:
+
+- **"Tailscale would like to add VPN configurations"** → **Allow**. An app on macOS cannot create a network interface directly; Apple routes all tunnelling through the Network Extension framework, so every VPN app must register a configuration first. This is macOS describing the mechanism, not Tailscale asking to carry your browsing. Decline it and the app installs but can never connect to anything.
+- **The system extension, blocked on first launch** → approve it at **System Settings → General → Login Items & Extensions → Network Extensions**, select the ⓘ beside **Tailscale Network Extension**, toggle it **on**, authenticate with Touch ID, and select **Done**. On macOS Sonoma 14 and earlier it surfaces instead as a blocked-software message under **System Settings → Privacy & Security** with an **Allow** button.
+
+Then **Log in** with the same account as the host, and the Mac appears on the [Machines page](https://login.tailscale.com/admin/machines). The `192.168.1.0/24` subnet route is picked up automatically — macOS needs no equivalent of the `--accept-routes` a Linux client would want.
+
+> [!NOTE]
+> **This does not put your browsing through a VPN**, whatever the prompt's wording suggests. Tailscale carries exactly two things: the `100.x` tailnet addresses, and the `192.168.1.0/24` subnet route you approved. Everything else leaves this Mac as it does today, over whatever network it is on. That is the whole distinction between a mesh VPN and a consumer one — and it is why leaving Tailscale connected at home is harmless, while leaving NordVPN connected is not. The single exception is deliberately selecting an **exit node**, which stays off unless you choose it.
+
 > [!DETAILS] Confirming this stays free
 > Everything here runs on Tailscale's free Personal plan: $0 forever, up to 6 users, unlimited devices for those users — subnet routing and **Disable Key Expiry** included. If you read elsewhere that the free plan is "3 users / 100 devices," that is the old limit; the current Personal plan allows 6 users with free, unlimited user devices.
