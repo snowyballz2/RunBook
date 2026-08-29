@@ -199,7 +199,7 @@ actions:
     target: { entity_id: [lock.carport_door, lock.front_door, lock.basement_door] }
   - action: climate.set_temperature
     target: { entity_id: climate.downstairs }
-    data: { temperature: 16 }
+    data: { temperature: 62 }
   - if:
       - condition: state
         entity_id: binary_sensor.sliding_door
@@ -212,7 +212,7 @@ actions:
 
 The last block is why the sliding glass door gets a **MYGGBETT** contact sensor. The three deadbolts lock themselves on the line above, but the slider has no smart hardware and cannot be closed remotely — so the only useful action is to tell you before you are too far away to turn around. Confirm the entity's real name under **Entities** after you pair it; the guide assumes you renamed it to `binary_sensor.sliding_door`.
 
-Coming home is the easy half — trigger on the first phone reaching `home`, no conditions needed. Mirror the above with `to: "home"`, then turn on `light.entryway` and set the ecobee back to 21.
+Coming home is the easy half — trigger on the first phone reaching `home`, no conditions needed. Mirror the above with `to: "home"`, then turn on `light.entryway` and set the ecobee back to **70**. Both numbers are **Fahrenheit** — this install runs US units, so `temperature:` values are °F (a °C-configured install would use 17 and 21; a Celsius value on this one would clamp the thermostat to its floor).
 
 ## Comfort and awareness
 
@@ -227,7 +227,7 @@ The presence pair above already nudges the **two ecobees** through `climate.set_
 > triggers:
 >   - trigger: state
 >     entity_id: binary_sensor.sliding_door
->     to: "on"             # contact sensors read "on" when open
+>     to: "on"
 >     for: "00:02:00"
 > actions:
 >   - action: climate.set_hvac_mode
@@ -235,7 +235,7 @@ The presence pair above already nudges the **two ecobees** through `climate.set_
 >     data: { hvac_mode: "off" }
 > ```
 >
-> Pair it with the mirror automation — door closed, set the mode back to `heat` or `cool` — and the two-minute **For** keeps a quick airing-out from cycling the furnace.
+> A contact sensor reads `on` when open — that is what the trigger matches. Pair it with the mirror automation — door closed, set the mode back to `heat` or `cool` — and the two-minute **For** keeps a quick airing-out from cycling the furnace.
 
 ### Frigate person alerts
 The **Reolink doorbell**, the **RLC-510WA**, and the five **EmpireTech cameras** run through Frigate with detection on the 1080 Ti. The Frigate integration gives you a quick `binary_sensor.*_person_occupancy` per camera, which is fine for switching a porch light — but for a *notification* build the graduate version that triggers on the **`frigate/events`** MQTT (MQ Telemetry Transport) topic. It fires on Frigate's considered judgement rather than its fast first guess, and each event carries its own `id`, which Frigate turns into a permanent snapshot URL — so the push shows the exact frame that fired, not a live view of an empty driveway three seconds later. Frigate already shares Mosquitto with Zigbee2MQTT, so Home Assistant is listening on this topic.
