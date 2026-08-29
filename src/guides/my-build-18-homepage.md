@@ -75,8 +75,10 @@ The static address matters doubly here: the installer bakes it into Homepage's s
 First, browse to `http://192.168.1.55:3000` and confirm the default page with its sample tiles loads — that proves the install succeeded, and everything below is editing that into your own page. Then make it permanent: a front door that vanishes after a power cut teaches the family to stop using it. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
 
 ```bash
-pct set 107 -onboot 1        # swap in the container's actual ID
+pct set 107 -onboot 1
 ```
+
+(`107` is this build's next free ID after Vaultwarden's `106`; confirm against the left tree.)
 
 > [!NOTE]
 > This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief power blips never reach the container. Start-at-boot covers the longer outages that drain the battery and force a clean shutdown.
@@ -131,10 +133,10 @@ Replace the sample content of `services.yaml` with the build itself — two grou
         icon: frigate.png
         href: https://192.168.1.52:8971
         description: Cameras and recordings
-        siteMonitor: https://192.168.1.52:8971   # self-signed cert is fine — these checks skip certificate validation
+        siteMonitor: https://192.168.1.52:8971
     - Nextcloud:
         icon: nextcloud.png
-        href: https://192.168.1.58
+        href: https://cloud.example.com
         description: Files and photo backup
         siteMonitor: https://192.168.1.58
     - Vaultwarden:
@@ -144,7 +146,7 @@ Replace the sample content of `services.yaml` with the build itself — two grou
         siteMonitor: http://192.168.1.56:8000
 ```
 
-Save, click the refresh icon, and the page is suddenly worth bookmarking. One exception on purpose: the Uptime Kuma tile's dot sits red until the next page builds it. And one tile breaks the direct-address pattern: Vaultwarden's `href` is its proxy name because its login only works through `https://vault.example.com`, while its `siteMonitor` watches the plain HTTP (Hypertext Transfer Protocol) port 8000 the service actually listens on — both per the Vaultwarden page.
+Save, click the refresh icon, and the page is suddenly worth bookmarking. One exception on purpose: the Uptime Kuma tile's dot sits red until the next page builds it. And two tiles break the direct-address pattern deliberately: **Vaultwarden**'s `href` is its proxy name because its login only works through `https://vault.example.com` (its `siteMonitor` watches the plain HTTP (Hypertext Transfer Protocol) port 8000 the service actually listens on), and **Nextcloud**'s is `https://cloud.example.com` because that is the address its page standardises every client on — the raw address answers with a certificate warning. Both keep `siteMonitor` on the direct address, so the dots keep telling the truth.
 
 > [!NOTE]
 > The `siteMonitor` lines give each tile a live up/down dot with a response time — Homepage quietly sends each address a request and reports what came back. Two things to know: it is a glance, not an alarm — Uptime Kuma, built on the next page, is the thing that actually notifies you — and it skips certificate checking entirely, which is why the self-signed Proxmox and Nextcloud can be watched here without any ignore-certificate toggle. A green dot proves the service answers, not that its certificate is healthy.
