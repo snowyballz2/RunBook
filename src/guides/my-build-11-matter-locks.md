@@ -353,7 +353,16 @@ Two companions worth knowing. **Set a Matter lock user** creates a named user wi
 ### Temporary codes, with an expiry date
 Matter locks can hold date-restricted users in firmware, but **Home Assistant cannot set the schedule** — the `year_day_schedule_user` type exists with no action to define its dates, so a user created that way simply has no access. The workable pattern is to let Home Assistant do the expiring instead: create the code when the guest arrives, and revoke it on a date.
 
-Build two reusable scripts. **Grant** takes a name, a PIN and a slot as fields, so each use is a form rather than a YAML edit:
+This builds **four separate objects**, each created in its own place — two Scripts, one Helper, one Automation — not one long file:
+
+| What | Created under | Purpose |
+|---|---|---|
+| Grant temporary door access | **Scripts** | Run each time a guest arrives |
+| Revoke temporary door access | **Scripts** | Called by the automation, or by hand |
+| Guest access ends | **Helpers → Date and time** | Holds the expiry moment |
+| Revoke guest access when it expires | **Automations** | Fires the revoke on that date |
+
+**Grant** takes a name, a PIN and a slot as `fields:`, which is what makes it reusable — a script declaring fields shows a **form** when you run it (Scripts list → its **⋮** → **Run**) rather than needing a YAML edit per guest:
 
 ```yaml
 alias: Grant temporary door access
