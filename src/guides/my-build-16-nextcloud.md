@@ -141,6 +141,9 @@ Accounts that already exist keep what they were given — back in the browser at
 Click **Add new account**, then repeat for the second person.
 
 > [!NOTE]
+> **"App" means two different things from here on.** A **Nextcloud app** — Photos, External storage support, Duplicate Finder — is a *server* plugin: it installs from **Administration settings → Apps**, runs inside this container, and is used through a browser from any machine. Nothing installs on the Mac or the PC. The **desktop and mobile clients** later on this page are the other kind: real software on your own devices. (Home Assistant adds a third sense of the word — its own add-ons, renamed *Apps* in 2026.2.)
+
+> [!NOTE]
 > **Background, not a step — there is nothing for you to do on the Apps page here.** NCP arrives with the household set already switched on: Files, Activity, Photos, Calendar, Contacts, Notes, and Tasks all work at first login. The only app this build enables by hand is **External storage support**, and that happens further down this page at the step that needs it.
 
 Record each one as you create it — these are the logins that go into the phone and desktop sync clients later on this page, and a household account whose password only exists in somebody's head is the one that gets reset at the worst moment:
