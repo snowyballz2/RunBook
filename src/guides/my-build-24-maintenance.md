@@ -65,6 +65,8 @@ One sitting, roughly twenty minutes, the same order every time. Put a recurring 
 > The single page that tells you, at a glance, whether everything is still answering.
 
 ### The night shift — every scheduled job in one place
+*(For the matching address list — every guest, container ID, port, and camera — see **The addressing plan** on the Start Here page.)*
+
 Everything this collection put on a clock, in Eastern summer time. This is the answer to "why did the server feel slow at 2:45 a.m." and the map to consult before scheduling anything new:
 
 | Time | Job | Set on |

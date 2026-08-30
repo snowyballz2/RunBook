@@ -232,6 +232,44 @@ One map for the whole build: every physical device, how it is powered, and which
 
 *Reading it top to bottom: the wall feeds the UPS; its battery side carries the server, the Fios router, and the Caséta bridge — and because the server plugs straight into the router, an outage keeps Wi-Fi, Tailscale, the dashboards, and every Zigbee/Thread automation alive with no switch involved — and with the ONT riding the battery too, internet and push notifications stay up as well. The rack switches stay on wall power, so the cameras stop recording and the shades go dark until mains returns — adding the switches to battery later is what would close that gap. Everything else wired rides the daisy-chained rack switches to the router; everything wireless rides the router's Wi-Fi. Three radio meshes hang off their own hubs — Zigbee off one ZBT-2 on the server, Thread off Home Assistant's own OpenThread border router (a second ZBT-2 on the server), and Lutron's own RF off the Caséta bridge. A HomePod added later just joins the Thread mesh as an extra border router; the build does not need it.*
 
+### The addressing plan
+Every fixed address in the build, in one place. The rule underneath it: **`.2–.99` is reserved static territory** and the router's DHCP pool is shrunk to **`.100–.254`** (the warning at the end of this page), so nothing here can ever be handed to a phone.
+
+**The server and its guests** — all reachable by name once the Reverse Proxy page runs, and by address always:
+
+| Address | Guest | ID | Reach it at | Proxied name |
+|---|---|---|---|---|
+| `.50` | Proxmox host (`pve`) | — | `https://192.168.1.50:8006` | `proxmox.` |
+| `.20` | TrueNAS VM | 100 | `http://192.168.1.20` | `nas.` |
+| `.51` | Home Assistant OS VM | 101 | `http://192.168.1.51:8123` | `ha.` |
+| `.52` | Frigate LXC | 102 | `https://192.168.1.52:8971` | `frigate.` |
+| `.53` | AdGuard LXC | 103 | `http://192.168.1.53` | — |
+| `.54` | Nginx Proxy Manager LXC | 104 | `http://192.168.1.54:81` | — |
+| `.55` | Homepage LXC | 107 | `http://192.168.1.55:3000` | `home.` |
+| `.56` | Vaultwarden LXC | 106 | `http://192.168.1.56:8000` | `vault.` |
+| `.57` | Uptime Kuma LXC | 108 | `http://192.168.1.57:3001` | `status.` |
+| `.58` | Nextcloud (NCP) LXC | 105 | `https://192.168.1.58` | `cloud.` |
+| `.59` | Ollama LXC | — | port `11434`, no UI | — |
+| `.60` | faster-whisper LXC | — | port `10300`, no UI | — |
+
+Three of those ports are not web UIs and matter anyway: AdGuard answers **DNS on 53**, the proxy serves the house on **80 and 443** (81 is only its admin), and Frigate keeps an unauthenticated **5000** fenced to Home Assistant and Uptime Kuma alone. The last two rows arrive on the Voice page; every other guest is built by page 19.
+
+**Cameras and network gear:**
+
+| Address | Device |
+|---|---|
+| `.1` | Fios router — gateway and DHCP |
+| `.70` | Reolink Video Doorbell (Wi-Fi) |
+| `.71` | Reolink RLC-510WA (Wi-Fi, 2nd indoor) |
+| `.72` | `shed_turret` — EmpireTech PoE |
+| `.73` | `carport_turret` — EmpireTech PoE |
+| `.74` | `patio_turret` — EmpireTech PoE |
+| `.75` | `chimney_turret` — EmpireTech PoE |
+| `.76` | `kitchen_turret` — Color4K indoor PoE |
+| `.98` | *not a device* — the dead-end gateway every camera is given so it cannot reach the internet |
+
+**Boot order**, set on each guest's Options tab: **TrueNAS `1` → Home Assistant `2` → Frigate `3`**. Storage comes up first and shuts down last; Frigate follows Home Assistant because it publishes to the MQTT broker living there.
+
 ## Get ready
 
 Once Proxmox is installed, the machine you are building becomes a **headless server** and the NVMe that held Windows is erased. From that point on, the server downloads everything itself and you only need a browser to drive it. The steps here all happen first, on a **working computer with a web browser and a USB port** — get them out of the way before the install.
