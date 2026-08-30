@@ -88,7 +88,13 @@ A full disk fails loudly and at the worst time, so this glance is its own habit.
 - **TrueNAS ZFS pool** — on the **Storage** dashboard, keep the mirror under roughly **80%** full. Past that, ZFS slows down and snapshots have nowhere to grow. This pool also holds the nightly Proxmox backups, so it creeps up from two directions.
 - **Frigate's footage disk** — the third IronWolf on the motherboard SATA port. Check Frigate's own storage figures (its UI reports usage), or run `df -h /mnt/frigate-footage` in the node **Shell** — the node's **Disks** view shows the drive's health, not how full it is. Footage is replaceable, but a full disk still stops new recordings.
 - **Nextcloud storage** — its data lives in the service LXC; glance at the usage in its admin view.
-- **The host's own NVMe** — the one disk the three above quietly assume. The node's **Summary** shows root usage, and **local-lvm** in the left tree shows the thin pool every guest disk *and every snapshot* lives in. This is where the snapshot-before-update habit collects its tax: each pass leaves a snapshot behind, and a thin pool filled by stale ones ends with **every guest pausing on IO errors at once**. So close the loop each pass — once an updated guest has proven healthy, open its **Snapshots** tab and delete the pre-update snapshots it no longer needs.
+- **The host's own NVMe** — the one disk the three above quietly assume. The node's **Summary** shows root usage, and **local-lvm** in the left tree shows the thin pool every guest disk *and every snapshot* lives in. For which *guest* is tight rather than the pool as a whole, one command in the node shell prints every disk with its fill percentage:
+
+  ```bash
+  lvs
+  ```
+
+  Watch the `Data%` column — any guest crossing roughly **90%** starts failing in ways that do not name the disk as the cause. This is where the snapshot-before-update habit collects its tax: each pass leaves a snapshot behind, and a thin pool filled by stale ones ends with **every guest pausing on IO errors at once**. So close the loop each pass — once an updated guest has proven healthy, open its **Snapshots** tab and delete the pre-update snapshots it no longer needs.
 
 ### Glance at the card
 One command in the node **Shell** keeps two promises from earlier pages:
