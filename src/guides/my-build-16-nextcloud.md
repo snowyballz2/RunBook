@@ -309,6 +309,27 @@ Prove the sync works while you are here: drop any file into `~/Nextcloud` on the
 > [!WARNING]
 > Away from home, reach Nextcloud over the Tailscale tunnel — never a router port-forward. A personal cloud full of the household's files and photos is exactly what you don't expose to the public internet.
 
+### Import an existing library — deduplicate first
+Bringing years of photos over from a Windows PC or a Mac is the first real use of this server, and doing it in the wrong order costs hours.
+
+**Deduplicate on that computer before uploading anything.** Nextcloud's own **Duplicate Finder** app (installable later from Administration settings → Apps) matches only **byte-identical** files, while a real library is mostly *near*-duplicates: the same shot at two resolutions, an original beside its edit, a copy that came back through a messaging app resized. Desktop tools compare images perceptually and catch that class; the server never will. Local hashing is also far faster than making the server read everything back over SMB, and you skip uploading files you were about to delete.
+
+**Czkawka** (actively maintained, cross-platform, has a similar-images mode) and **dupeGuru** (older, its Picture mode does fuzzy matching) are both free and both do the job. Whichever you use: back the library up first, set the tool to **move to the Recycle Bin / Trash** rather than delete outright, and review its groups by hand — the tool cannot know which copy you care about, and "keep the largest" is wrong as often as it is right.
+
+**Then copy the cleaned library straight to the share**, not through Nextcloud's web UI or the sync client — same storage as `Pool`, without the round trip, and dramatically faster for tens of gigabytes:
+
+```
+\\192.168.1.20\files
+```
+
+Finally, tell Nextcloud what arrived behind its back. In **Proxmox → 105 (nextcloudpi) → Console**:
+
+```bash
+sudo -E -u www-data php /var/www/nextcloud/occ files:scan --all
+```
+
+The library then appears in the web UI and the phone app as though it had always been there.
+
 ## Keep it healthy
 
 ### Back up all five pieces at once
