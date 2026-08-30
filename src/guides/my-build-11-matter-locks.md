@@ -350,6 +350,97 @@ Omitting `credential_index` and `user_index` lets each lock choose a free slot a
 
 Two companions worth knowing. **Set a Matter lock user** creates a named user with an access type, including **one-time access** — the lock deletes that code itself after a single use, which is the honest answer for a contractor or a delivery. And if the U400 turns out not to support the cluster, fall back to **Aqara Home**, which this build keeps for Night Latch and firmware anyway; code management is its native ground.
 
+### Temporary codes, with an expiry date
+Matter locks can hold date-restricted users in firmware, but **Home Assistant cannot set the schedule** — the `year_day_schedule_user` type exists with no action to define its dates, so a user created that way simply has no access. The workable pattern is to let Home Assistant do the expiring instead: create the code when the guest arrives, and revoke it on a date.
+
+Build two reusable scripts. **Grant** takes a name, a PIN and a slot as fields, so each use is a form rather than a YAML edit:
+
+```yaml
+alias: Grant temporary door access
+fields:
+  guest_name:
+    name: Guest name
+    selector:
+      text:
+  pin:
+    name: PIN (4-8 digits)
+    selector:
+      text:
+  slot:
+    name: User slot
+    default: 7
+    selector:
+      number:
+        min: 7
+        max: 20
+        mode: box
+sequence:
+  - action: matter.set_lock_user
+    target:
+      entity_id:
+        - lock.carport_door
+        - lock.front_door
+        - lock.basement_door
+    data:
+      user_index: "{{ slot | int }}"
+      user_name: "{{ guest_name }}"
+      user_type: unrestricted_user
+      credential_rule: single
+  - action: matter.set_lock_credential
+    target:
+      entity_id:
+        - lock.carport_door
+        - lock.front_door
+        - lock.basement_door
+    data:
+      credential_type: pin
+      credential_data: "{{ pin }}"
+      user_index: "{{ slot | int }}"
+mode: single
+```
+
+And **Revoke**:
+
+```yaml
+alias: Revoke temporary door access
+fields:
+  slot:
+    name: User slot
+    default: 7
+    selector:
+      number:
+        min: 7
+        max: 20
+        mode: box
+sequence:
+  - action: matter.clear_lock_user
+    target:
+      entity_id:
+        - lock.carport_door
+        - lock.front_door
+        - lock.basement_door
+    data:
+      user_index: "{{ slot | int }}"
+mode: single
+```
+
+**Reserve slots 7–20 for guests** so the household's 1–6 can never be cleared by mistake. Then add a **Date and time** helper (Settings → Devices & services → Helpers) called *Guest access ends*, and one automation to fire the revoke:
+
+```yaml
+alias: Revoke guest access when it expires
+triggers:
+  - trigger: time
+    at: input_datetime.guest_access_ends
+actions:
+  - action: script.revoke_temporary_door_access
+    data:
+      slot: 7
+```
+
+Two limits worth stating plainly. The code works from the moment it is created, so run Grant on the day the guest arrives rather than a week ahead. And the revocation depends on Home Assistant being up at that moment — a server that is down when the timer fires leaves the code live until you notice. For a house sitter that is fine; for anything higher-stakes, check whether **Aqara Home** offers firmware-level timed passwords, since the lock enforces those itself.
+
+For a single visit — a delivery, a one-off contractor — skip all of this and use `user_type: disposable_user` on the Grant call: the lock deletes the credential itself after one use, with nothing to remember.
+
 ### These locks now feed the automations
 With all three U400s present as `lock.*` entities, they become raw material for the automation rules later in this build — auto-lock after a set time, an unlock notification to the household, and presence-based actions. Until the locks exist as entities, those rules have nothing to act on; now they do.
 
