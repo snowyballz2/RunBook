@@ -274,6 +274,13 @@ Prove the sync works while you are here: drop any file into `~/Nextcloud` on the
 
 **On each iPhone**, install Nextcloud from the App Store, sign in at the same address, then turn on **Auto upload** and point it at the camera roll — that is the Google-Photos replacement, and every photo lands on your server from then on.
 
+> [!NOTE]
+> **Auto upload lands in Nextcloud's own storage, not on the mirror** — and those are different disks. The container holds roughly 40 GB shared with the app and database; **Pool** is the 4 TB mirror. A household camera roll will exhaust the former, so treat this as a two-tier arrangement: Auto upload fills the container as a **recent-months buffer**, and you move older material onto **Pool** periodically — dragging it in the browser, or straight into the share in Finder at `smb://192.168.1.20`, which is faster for bulk because it never round-trips through Nextcloud. If the shuffling annoys you, deepen the buffer instead with `pct resize 105 rootfs +100G` from the node shell; the NVMe has room, shared with Proxmox and Frigate's cache.
+>
+> The tempting shortcut — pointing Auto upload straight at Pool — is **not reliable today**: Nextcloud's iOS tracker carries crashes when selecting an SMB external mount as the destination and 500 errors uploading into one. Revisit it, but do not build the photo pipeline on it.
+>
+> Both tiers are protected, by different machinery: Pool rides the ZFS mirror's snapshots, the weekly scrub, and the offsite copy; the container's own storage rides the nightly vzdump to the NAS.
+
 > [!WARNING]
 > If the desktop client ever offers **"Connect without TLS"**, choose **Cancel** — that sends the password in the clear against a server that has a working certificate. Confirm the certificate independently from the Mac's Terminal, where a `200` or `302` means the chain is healthy and the client is the odd one out:
 >
