@@ -275,11 +275,17 @@ Prove the sync works while you are here: drop any file into `~/Nextcloud` on the
 **On each iPhone**, install Nextcloud from the App Store, sign in at the same address, then turn on **Auto upload** and point it at the camera roll — that is the Google-Photos replacement, and every photo lands on your server from then on.
 
 > [!NOTE]
-> **Send Auto upload to `Pool`, not the default.** Nextcloud is one file tree with two disks beneath it: most folders keep their bytes on the container's ~40 GB disk on the NVMe, while everything inside **Pool** lives on the 4 TB ZFS mirror. Both look and behave identically in the web UI, the phone app and the desktop client — Pool is not an archive tier, just a folder on better storage. A household camera roll exhausts 40 GB quickly, and the mirror is where photos are protected by snapshots, the weekly scrub and the offsite copy, so that is where they belong from the first upload.
+> **Leave Auto upload on its default folder — do not point it at `Pool`.** Nextcloud is one file tree over two disks: most folders keep their bytes on the container's disk on the NVMe, while everything inside **Pool** lives on the 4 TB ZFS mirror. Pool is not a lesser tier — same UI, same apps — and photos ultimately belong there, on storage with snapshots, a weekly scrub and an offsite copy. But **the upload path into it is broken**: nextcloud/ios [#1788](https://github.com/nextcloud/ios/issues/1788) has been open since v4.1, and the failure is server-side, a parsing crash in the bundled SMB library (`Undefined array key "attributes"` in `files_external/3rdparty/icewind/smb/…/Parser.php`). Verified still unresolved as of this build.
 >
-> Create `Pool/Photos` in the browser first, then set it as the destination in the iOS app's **Auto upload** settings, and confirm a handful of photos arrive at full size. Older Nextcloud versions had crashes and 500 errors writing into SMB-backed external storage this way; if you hit that, upload to the default local folder and move batches into Pool afterwards — but test before assuming, because the reports predate this build's versions.
+> So run it in two tiers, deliberately:
 >
-> One quirk worth knowing: files written to the share **directly over SMB** (Finder at `smb://192.168.1.20`) may not appear in Nextcloud until it notices them. `sudo -E -u www-data php /var/www/nextcloud/occ files:scan --all`, in the container console, forces the sweep.
+> - **Auto upload** → the default local folder. This path is reliable.
+> - **Deepen the buffer** so emptying it is rare — `pct set 105 -protection 0 && pct resize 105 rootfs +100G && pct set 105 -protection 1` from the node shell, affordable against the thin pool's free space (check with `pvesm status` first).
+> - **Move batches into `Pool`** during the monthly pass — a drag in the browser, since both folders sit in the same tree.
+>
+> Photos are **not** unprotected while they wait: the nightly vzdump captures the whole container, so they are backed up from the first night. Moving them to Pool promotes them to the mirror's snapshots, scrub and offsite copy.
+>
+> Two quirks worth knowing. Files written to the share **directly over SMB** (Finder at `smb://192.168.1.20`) may not appear in Nextcloud until it notices them — `sudo -E -u www-data php /var/www/nextcloud/occ files:scan --all` in the container console forces the sweep. And on iOS 26 with app 7.2.2, [#3969](https://github.com/nextcloud/ios/issues/3969) reports Auto upload stamping modified dates a week in the future, which sorts photos oddly in timeline views; manual uploads are unaffected.
 
 > [!WARNING]
 > If the desktop client ever offers **"Connect without TLS"**, choose **Cancel** — that sends the password in the clear against a server that has a working certificate. Confirm the certificate independently from the Mac's Terminal, where a `200` or `302` means the chain is healthy and the client is the odd one out:
