@@ -330,7 +330,7 @@ A factory reset, and sometimes a re-commission, wipes the locks' keypad codes. D
 
 First confirm the lock implements it — user management is an optional Matter cluster, so the action fails outright rather than silently doing nothing. Open **Settings → Tools** ("Inspect and debug your system" — this is what older write-ups call *Developer tools*, renamed and moved off the sidebar). On its **Actions** tab, run **Get Matter lock info** against one lock. The U400 answers `supports_user_management: true` with **PIN only** (no RFID), **20 users**, and a **4–8 digit** PIN length — verified on this build's locks, so the route below is open.
 
-Grab the real entity IDs before writing the call: on the **States** tab, filter for `lock.`. Home Assistant prefixes the area onto the name, so they read `lock.carport_carport_door` rather than the `lock.carport_door` you would guess.
+Grab the real entity IDs before writing the call: on the **States** tab, filter for `lock.`. If you have just renamed anything, **hard-refresh the browser first** (Cmd/Ctrl+Shift+R) — the frontend caches the entity registry, so the Actions tab's target picker keeps offering the old names and finds nothing under the new ones until it reloads. Home Assistant prefixes the area onto the name, so they read `lock.carport_carport_door` rather than the `lock.carport_door` you would guess.
 
 Then set the code on every door in one go:
 
