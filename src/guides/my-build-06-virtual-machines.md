@@ -26,7 +26,12 @@ Log in to the Proxmox web UI and confirm the host is in the state the earlier pa
 > The password set during the Proxmox install. Record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build).
 
 ### Get the TrueNAS installer into Proxmox storage
-TrueNAS ships as a standard installer **ISO**, and the server fetches it itself — no upload from a laptop. First get the *direct file link*: on the official download page ([truenas.com/download-truenas-community-edition](https://www.truenas.com/download-truenas-community-edition/)), **right-click the stable release's Download button and Copy Link Address** — the link you want ends in **`.iso`**. Do not paste the download page's own address; that is a web page, not the file. Then in the left tree, click the **local** storage under your node, then **ISO Images → Download from URL**, paste the `.iso` link, and click **Query URL** — the **File name** field fills itself in and the size shows a couple of gigabytes. If instead the file name stays empty and **MIME type** says `text/html`, you pasted the page, not the file. Click **Download** and wait for `TASK OK`.
+TrueNAS ships as a standard installer **ISO**, and the server fetches it itself — no upload from a laptop:
+
+1. On the official download page ([truenas.com/download-truenas-community-edition](https://www.truenas.com/download-truenas-community-edition/)), **right-click the stable release's Download button → Copy Link Address**. The link you want ends in **`.iso`** — the download page's own address is a web page, not the file.
+2. In Proxmox's left tree, click the **local** storage under your node, then **ISO Images → Download from URL**.
+3. Paste the `.iso` link and click **Query URL**. The **File name** field fills itself in and the size shows a couple of gigabytes — if it stays empty and **MIME type** reads `text/html`, you pasted the page rather than the file.
+4. Click **Download** and wait for `TASK OK`.
 
 > [!TIP]
 > The download page lists a **SHA256** checksum next to the ISO. In the **Download from URL** dialog, click **Advanced** to reveal the **Checksum** and **Hash algorithm** fields — paste the checksum in, pick `SHA256`, and Proxmox confirms the file arrived intact before you boot it. Same habit you used for the Proxmox installer.

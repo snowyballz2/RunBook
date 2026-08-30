@@ -200,7 +200,14 @@ Once the Proxmox guest-backup job (set up on the Proxmox Backups page, in **Sele
 > The nightly container archive makes this optional, but it earns its keep just before a risky change — run it right before an `update`, for instance. Restoring from it is the one direction that requires the `vaultwarden` service stopped first.
 
 ### Export the vault, off the server
-Add one layer the server cannot take down with it: from the web vault, go to **Tools → Export**, format **.json (Encrypted)** — and one radio decides whether the file is worth anything: **Export type** defaults to **Account restricted**, which can only be re-imported into the *same* account, useless for disaster recovery. Switch it to **Password protected**, which reveals the **File password** field; the **Confirm vault export** dialog asks a final verification, then the file downloads. Save the file onto the TrueNAS mirror, in with the irreplaceable files that the nightly Backblaze B2 Cloud Sync task pushes offsite — a vault whose only copies sit in one house is not finished. Repeat after big additions; the export is a snapshot, not a feed.
+Add one layer the server cannot take down with it. From the web vault, go to **Tools → Export**:
+
+- **File format** → **.json (Encrypted)**
+- **Export type** → **Password protected**. This is the one that decides whether the file is worth anything: it defaults to **Account restricted**, which can only be re-imported into the *same* account and is useless for disaster recovery
+- **File password** → appears once Password protected is chosen; set one and record it in your password manager
+- **Confirm vault export** → the final verification dialog, then the file downloads
+
+Save the file onto the TrueNAS mirror, in with the irreplaceable files that the nightly Backblaze B2 Cloud Sync task pushes offsite — a vault whose only copies sit in one house is not finished. Repeat after big additions; the export is a snapshot, not a feed.
 
 > [!WARNING]
 > The encrypted-JSON export holds your logins and notes but **leaves out file attachments** — and Sends and trash with them. If you keep recovery-code images, scanned documents, or the like attached to vault items, that "complete copy" silently is not. To capture the attachments too, also take a **.zip export** (the export screen offers it), which packages the attached files alongside the data. Store the .zip beside the JSON on the NAS (network-attached storage), and treat it with the same care — it carries the unencrypted attachments inside.

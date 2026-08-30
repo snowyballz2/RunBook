@@ -89,7 +89,17 @@ Fix it once, at **Datacenter → Notifications**:
 The backup job needs no change after this — its "global settings" default now routes through a path that genuinely delivers. (Fields here that drift from your screen: true the guide against the screen, as always.)
 
 ### Know how to restore — and prove it
-Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's own **Backup** tab), select an archive, and click **Restore**. The dialog's fields: **Storage** (where the restored disks land — leave the default), **CT/VM ID** (editable only when you came in from the *storage's* Backups view, where it pre-fills the next free ID — from a guest's own tab it restores over that guest), **Bandwidth Limit** (empty), **Unique** (off), **Start after restore** (off for a practice run), a container-only **Privilege Level** (keep **From Backup**), and a collapsible **Override Settings** section (Hostname, Cores, Memory) to ignore. Restoring over an existing guest returns it to the archived state — everything since is discarded, behind the warning "This will permanently erase current VM data." Restoring into a different, unused ID makes a *copy* alongside the original — the gentlest way to do a practice run.
+Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's own **Backup** tab), select an archive, and click **Restore**. Every field in the dialog:
+
+- **Storage** → leave the default — this is where the restored disks land
+- **CT/VM ID** → editable only when you came in from the *storage's* Backups view, where it pre-fills the next free ID; from a guest's own tab it restores over that guest instead
+- **Bandwidth Limit** → empty
+- **Unique** → off
+- **Start after restore** → off for a practice run
+- **Privilege Level** (containers only) → keep **From Backup**
+- **Override Settings** (Hostname, Cores, Memory) → leave collapsed
+
+Restoring over an existing guest returns it to the archived state — everything since is discarded, behind the warning "This will permanently erase current VM data." Restoring into a different, unused ID makes a *copy* alongside the original — the gentlest way to do a practice run.
 
 > [!TIP]
 > A backup you have never restored is a hope, not a plan. Do one practice restore of a small service container — Uptime Kuma is a good victim — into a spare guest ID while nothing is on fire, just to watch the process work.

@@ -9,7 +9,18 @@ accent: azure
 ## Schedule the safety nets
 
 ### Schedule snapshots
-The two IronWolf drives in the ZFS (Zettabyte File System) mirror hold the data the household cares about; this page makes it hard to lose. Start with the cheapest protection ZFS offers. In the TrueNAS web UI, go to **Data Protection** and click **Add** on the **Periodic Snapshot Tasks** widget — pick the `tank/files` dataset (the `backups` dataset holds the build's safety copies and stays out of these snapshots, as planned when you created it), a schedule, and a **Snapshot Lifetime** (how long each one is kept). The **Naming Schema** field must include the time elements `%Y`, `%m`, `%d`, `%H` and `%M` — the prefilled default qualifies; keep it for the first task, and give the second task a distinct prefix (for example `daily-%Y-%m-%d_%H-%M`) so each task's snapshots stay distinguishable and each retention rule prunes only its own. Snapshots are nearly free in ZFS, so intervals as tight as every 15 minutes are normal. Run two tasks on the same dataset — one frequent and short-lived, one sparse and long-lived: every 15 minutes kept for two days, plus daily at midnight kept for two weeks.
+The two IronWolf drives in the ZFS (Zettabyte File System) mirror hold the data the household cares about; this page makes it hard to lose. Start with the cheapest protection ZFS offers. In the TrueNAS web UI, go to **Data Protection** and click **Add** on the **Periodic Snapshot Tasks** widget:
+
+- **Dataset** → `tank/files` — the `backups` dataset holds the build's own safety copies and stays out of these snapshots, as planned when you created it
+- **Schedule** and **Snapshot Lifetime** → one of the two pairs below
+- **Naming Schema** → must contain `%Y`, `%m`, `%d`, `%H` and `%M`; the prefilled default qualifies, so keep it for the first task and give the second a distinct prefix such as `daily-%Y-%m-%d_%H-%M`, so each task's retention prunes only its own snapshots
+
+Run **two** tasks against that same dataset — one frequent and short-lived, one sparse and long-lived:
+
+- every **15 minutes**, kept **2 days**
+- **daily at midnight**, kept **2 weeks**
+
+Snapshots are nearly free in ZFS, which is why intervals that tight are normal.
 
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
 
@@ -68,7 +79,16 @@ ls /dev/disk/by-id/ | grep ST4000VN006
 
 That prints one `ata-ST4000VN006-…_<serial>` name per drive (ignore any `-partN` entries) — the serials match the `mirror-a-serial`/`mirror-b-serial` fields. Keep those two names on screen; they get pasted into the jobs below. **The shell's job is now done** — everything else happens in the TrueNAS web UI.
 
-In the TrueNAS UI, go to **System → Advanced Settings**, find the **Cron Jobs** widget, and click **Add** three times — one job per block below. On every job: **Run As User `root`**, **Enabled** ticked, **Schedule → Custom** with the given five-field line, and the two hide toggles at their defaults — **Hide Standard Output ticked, Hide Standard Error unticked**. That keeps the weekly "testing has begun" chatter out of your inbox while letting command-level errors through; the signal that matters — a test that finds problems — arrives via the disk alert email below regardless, straight from the drive's SMART log. Each block is the **Command** field's exact content, with `<disk-A>`/`<disk-B>` swapped for the two names the shell just printed.
+In the TrueNAS UI, go to **System → Advanced Settings**, find the **Cron Jobs** widget, and click **Add** three times — one job per block below. Every job takes the same answers:
+
+- **Run As User** → `root`
+- **Enabled** → ticked
+- **Schedule** → **Custom**, with the five-field line given per job below
+- **Hide Standard Output** → ticked, its default
+- **Hide Standard Error** → unticked, its default
+- **Command** → the block's exact content, with `<disk-A>`/`<disk-B>` swapped for the two names the shell just printed
+
+The two hide toggles are what keep the weekly "testing has begun" chatter out of your inbox while letting command-level errors through. The signal that matters — a test that finds problems — arrives via the disk alert email below regardless, straight from the drive's SMART log.
 
 **Job 1 — weekly short, both drives.** Schedule `0 3 * * 1` (Mondays 3 a.m., clear of the Sunday scrub):
 
