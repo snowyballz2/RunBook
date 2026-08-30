@@ -364,39 +364,16 @@ This builds **four separate objects**, each created in its own place — two Scr
 | Guest access ends | **Helpers → Date and time** | Holds the expiry moment |
 | Revoke guest access when it expires | **Automations** | Fires the revoke on that date |
 
-**Grant** takes a name, a PIN and a slot as `fields:`, which is what makes it reusable — a script declaring fields shows a **form** when you run it (Scripts list → its **⋮** → **Run**) rather than needing a YAML edit per guest:
+**Grant** takes just a PIN as a `fields:` entry — a script declaring fields shows a **form** when you run it (Scripts list → its **⋮** → **Run**) rather than needing a YAML edit per guest. Deliberately absent: any `user_index`. When the credential call names no index, the lock allocates a slot and creates the user itself — and forcing an index is precisely what fails (the signatures below):
 
 ```yaml
 alias: Grant temporary door access
 fields:
-  guest_name:
-    name: Guest name
-    selector:
-      text:
   pin:
     name: PIN (4-8 digits)
     selector:
       text:
-  slot:
-    name: User slot
-    default: 7
-    selector:
-      number:
-        min: 7
-        max: 20
-        mode: box
 sequence:
-  - action: matter.set_lock_user
-    target:
-      entity_id:
-        - lock.carport_door
-        - lock.front_door
-        - lock.basement_door
-    data:
-      user_index: "{{ slot | int }}"
-      user_name: "{{ guest_name }}"
-      user_type: unrestricted_user
-      credential_rule: single
   - action: matter.set_lock_credential
     target:
       entity_id:
@@ -406,12 +383,20 @@ sequence:
     data:
       credential_type: pin
       credential_data: "{{ pin }}"
-      user_index: "{{ slot | int }}"
     response_variable: cred
 mode: single
 ```
 
-`matter.set_lock_credential` returns response data, and Home Assistant **refuses to run a script that ignores it** — omit `response_variable` and the run fails with *"Script requires 'response_variable' for response data."* It sits alongside `action`/`target`/`data`, not inside `data`, and nothing needs to read it; the line exists to satisfy that rule.
+`response_variable` is required — Home Assistant refuses to run a script that discards an action's response data — and here it also earns its keep: the run's **trace** shows the response, which names the **slot each lock allocated**. With the household occupying 1–6, expect **7**; that number is what Revoke and the expiry automation below act on. Prove the run on a keypad, not in the toast.
+
+> [!WARNING]
+> **Never pass `user_index` to `set_lock_credential`, and do not pre-create the user with `set_lock_user` first.** Both read as the more-correct order, and both fail — each with its own signature, all three met on this build's U400s:
+>
+> - *"Validation error: User slot N is empty"* — a passed `user_index` makes Home Assistant read that user back before writing, and Aqara firmware answers user reads unreliably ([core #167096](https://github.com/home-assistant/core/issues/167096): locks reporting "No users configured" while codes exist) — so the check fails even straight after a successful `set_lock_user`
+> - *"Failed to set credential: lock returned status `unknown(133)`"* — Matter's `INVALID_COMMAND`: the lock itself refusing a forced index/status/type combination
+> - *"Message malformed: extra keys not allowed @ data['action']"* — a different mistake: a bare action block pasted into the **script editor**, whose top level wants `alias:`/`sequence:`. Bare actions run in **Tools → Actions**
+>
+> Naming the allocated user afterwards with `set_lock_user` is best-effort on these locks for the same read-unreliability reason — keep the who-has-which-slot roster in the script's `description:` rather than trusting the lock to display it. And if even the minimal no-index call returns 133, the firmware is refusing Matter credential writes altogether: manage codes in **Aqara Home**, which this build keeps anyway.
 
 And **Revoke**:
 
@@ -438,7 +423,7 @@ sequence:
 mode: single
 ```
 
-**Reserve slots 7–20 for guests** so the household's 1–6 can never be cleared by mistake. Then add a **Date and time** helper (Settings → Devices & services → Helpers) called *Guest access ends*, and one automation to fire the revoke:
+The slot convention survives auto-allocation: the household's codes, created first, fill **1–6** in order, so the lock hands the first guest **slot 7** — confirm it in the Grant run's trace. Then add a **Date and time** helper (Settings → Devices & services → Helpers) called *Guest access ends*, and one automation to fire the revoke:
 
 ```yaml
 alias: Revoke guest access when it expires
