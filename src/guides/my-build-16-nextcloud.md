@@ -172,8 +172,6 @@ Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root dis
 The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated SMB user.
 
 > [!WARNING]
-> **Install `php-smbclient` first — this one is not cosmetic.** The External storage page shows a red notice recommending it, and without the PHP module Nextcloud falls back to spawning the `smbclient` binary, a path that **fails on downloads larger than roughly 512 MB**. Since the entire point here is parking the photo and video archive on the mirror, that limit lands precisely on the files you most want, and it surfaces weeks later as "large videos will not download" — a symptom almost impossible to trace back to this page. In the container console:
->
 > **Install the SMB module for NCP's pinned PHP — `php8.3-smbclient`, never the unversioned `php-smbclient`**, which targets the repo's default PHP instead of the **8.3** NCP actually runs (`systemctl list-units --type=service | grep fpm` confirms the version). Without the module, downloads over roughly 512 MB from the share fail. In the container console:
 >
 > ```bash
@@ -220,14 +218,19 @@ Now hang the share inside Nextcloud:
    - **Login / Password** (at the bottom, under Authentication) → the existing SMB credentials, per the share
 4. Click **Create**. A **green dot** at the new row's left edge means the mount works; red or yellow means Nextcloud could not connect — recheck host, share, and credentials.
 
-> [!DETAILS] The five setup warnings on Administration → Overview
-> A fresh NCP shows a short list under *Security & setup warnings*. Only one earns a command:
->
-> - **Maintenance window start** → set it. Heavy nightly jobs otherwise run during the day. The value is a **UTC hour**, so `5` puts them at 1 a.m. US Eastern: `sudo -E -u www-data php occ config:system:set maintenance_window_start --type=integer --value=5`
-> - **Errors in the log** → expect two, from background jobs left registered by the **disabled** `app_api` and `updatenotification` apps. Log noise, nothing broken.
-> - **Second factor configuration** → an informational ℹ, not a warning. On a household cloud reachable only across your own tailnet, enforcing 2FA is friction for little gain; leave it unless you want it.
-> - **Default phone region** → cosmetic. It only affects validating phone numbers typed without a country code.
-> - **PHP Imagick module** → cosmetic. It only affects favicon generation for the theming app.
+### Settle the setup warnings
+**Administration settings → Overview** greets every fresh NCP with the same five *Security & setup warnings* — standing furniture on this install, not a reaction to anything you did. One of them is a real step. Do it now, in the container console — it moves the heavy nightly background jobs to 1 a.m. Eastern (the value is a UTC hour):
+
+```bash
+sudo -E -u www-data php occ config:system:set maintenance_window_start --type=integer --value=5
+```
+
+The other four are read-and-ignore:
+
+- **Errors in the log** → two entries from background jobs of the disabled `app_api` and `updatenotification` apps — noise, nothing broken
+- **Second factor configuration** → informational; on a tailnet-only household cloud, enforced 2FA is friction for little gain
+- **Default phone region** → only affects validating phone numbers typed without a country code
+- **PHP Imagick module** → only affects favicon generation for the theming app
 
 The share appears as a folder in everyone's files. Photo archives and media sit on the ZFS pool with all its space and its snapshots, while the documents and photos people want everywhere keep syncing from the local disk.
 
