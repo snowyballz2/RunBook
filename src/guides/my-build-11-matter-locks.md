@@ -364,15 +364,27 @@ This builds **four separate objects**, each created in its own place — two Scr
 | Guest access ends | **Helpers → Date and time** | Holds the expiry moment |
 | Revoke guest access when it expires | **Automations** | Fires the revoke on that date |
 
-**Grant** takes just a PIN as a `fields:` entry — a script declaring fields shows a **form** when you run it (Scripts list → its **⋮** → **Run**) rather than needing a YAML edit per guest. Deliberately absent: any `user_index`. When the credential call names no index, the lock allocates a slot and creates the user itself — and forcing an index is precisely what fails (the signatures below):
+**Grant** takes a name, a PIN and a slot as `fields:` — a script declaring fields shows a **form** when you run it (Scripts list → its **⋮** → **Run**) rather than needing a YAML edit per guest. The order inside is the load-bearing part, proven on this build's locks: the **credential call carries no `user_index`** (the lock allocates a slot and creates the user itself — forcing an index is precisely what fails, per the signatures below), and the rename then attaches the guest's name to the slot the lock picked:
 
 ```yaml
 alias: Grant temporary door access
 fields:
+  guest_name:
+    name: Guest name
+    selector:
+      text:
   pin:
     name: PIN (4-8 digits)
     selector:
       text:
+  slot:
+    name: User slot (7 = first guest slot)
+    default: 7
+    selector:
+      number:
+        min: 7
+        max: 20
+        mode: box
 sequence:
   - action: matter.set_lock_credential
     target:
@@ -383,8 +395,22 @@ sequence:
     data: >
       {{ { 'credential_type': 'pin', 'credential_data': pin | string } }}
     response_variable: cred
+  - delay:
+      seconds: 2
+  - action: matter.set_lock_user
+    target:
+      entity_id:
+        - lock.carport_door
+        - lock.front_door
+        - lock.basement_door
+    data:
+      user_index: "{{ slot | int }}"
+      user_name: "{{ guest_name }}"
+      user_type: unrestricted_user
 mode: single
 ```
+
+With the household filling slots 1–6, the first guest lands at **7** — the field's default. A misfired rename is cosmetic (the PIN is already live; fix the name in Manage access). Two habits keep it honest: **make guest changes through the script, all three locks at once** — adding a guest via the dialog on one door desynchronises that lock's next free slot from the others — and **drill the full loop once** before it matters: Grant a test guest, see it at slot 7 on all three doors in Manage access, keypad it, Revoke it, see it gone.
 
 The odd-looking `data:` is load-bearing. A plain `credential_data: "{{ pin }}"` fails with *"expected str for dictionary value"* — the template engine re-parses a digit string into a number on the way out, and the action demands a string. Its typing is **not recursive**, though: a template returning a whole dict is left alone, so wrapping the entire `data` block in one dict template is the documented way to keep the PIN a string.
 
