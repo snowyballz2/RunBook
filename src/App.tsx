@@ -6,6 +6,7 @@ import type { Theme } from "./lib/storage";
 import type { Guide } from "./lib/types";
 import { CredentialsView } from "./components/CredentialsView";
 import { PortMapView } from "./components/PortMapView";
+import { NetworkMapView } from "./components/NetworkMapView";
 import { ImportPanel } from "./components/ImportPanel";
 import { LibraryView, type LibraryItem } from "./components/LibraryView";
 import { ReaderView } from "./components/ReaderView";
@@ -14,13 +15,15 @@ type Route =
   | { name: "library" }
   | { name: "reader"; id: string }
   | { name: "credentials"; scope?: string }
-  | { name: "ports" };
+  | { name: "ports" }
+  | { name: "network" };
 
 function parseHash(): Route {
   try {
     const m = location.hash.match(/^#\/g\/(.+)$/);
     if (m) return { name: "reader", id: decodeURIComponent(m[1]) };
     if (/^#\/ports$/.test(location.hash)) return { name: "ports" };
+    if (/^#\/network$/.test(location.hash)) return { name: "network" };
     const c = location.hash.match(/^#\/credentials(?:\/(.+))?$/);
     if (c) {
       return { name: "credentials", ...(c[1] ? { scope: decodeURIComponent(c[1]) } : {}) };
@@ -138,6 +141,8 @@ export function App() {
           onToggleTheme={toggleTheme}
           onBack={goLibrary}
         />
+      ) : route.name === "network" ? (
+        <NetworkMapView theme={theme} onToggleTheme={toggleTheme} onBack={goLibrary} />
       ) : route.name === "ports" ? (
         <PortMapView theme={theme} onToggleTheme={toggleTheme} onBack={goLibrary} />
       ) : route.name === "credentials" ? (
@@ -159,6 +164,9 @@ export function App() {
           }}
           onOpenPorts={() => {
             location.hash = "#/ports";
+          }}
+          onOpenNetwork={() => {
+            location.hash = "#/network";
           }}
           onAdd={() => setShowImport(true)}
           onReset={onReset}

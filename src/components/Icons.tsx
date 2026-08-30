@@ -217,3 +217,12 @@ export const BookOpen = (p: IconProps) => (
     <path d="M12 6.5C12 5 10.5 4 7.5 4S3 5 3 5v13s1.5-1 4.5-1 4.5 1 4.5 1m0-12.5C12 5 13.5 4 16.5 4S21 5 21 5v13s-1.5-1-4.5-1-4.5 1-4.5 1m0-12.5V19" />
   </Icon>
 );
+
+export const Sitemap = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="9" y="2" width="6" height="5" rx="1" />
+    <rect x="2" y="17" width="6" height="5" rx="1" />
+    <rect x="16" y="17" width="6" height="5" rx="1" />
+    <path d="M12 7v5M5 17v-2h14v2" />
+  </Icon>
+);

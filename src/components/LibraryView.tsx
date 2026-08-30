@@ -8,7 +8,7 @@ import {
 } from "../lib/credentials";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
-import { BookOpen, ChevronDown, Key, More, Plug, Plus, Search, Trash } from "./Icons";
+import { BookOpen, ChevronDown, Key, More, Plug, Plus, Search, Sitemap, Trash } from "./Icons";
 import { ProgressRing } from "./ProgressRing";
 import { ThemeToggle } from "./ThemeToggle";
 import type { Theme } from "../lib/storage";
@@ -28,6 +28,8 @@ type Props = {
   onOpenCredentials: (scope: string) => void;
   /** Open the Port Mapping view — the patch panel's own record. */
   onOpenPorts: () => void;
+  /** Open the Addressing Plan view — every guest, camera and port. */
+  onOpenNetwork: () => void;
   onAdd: () => void;
   onReset: (id: string) => void;
   onRemove: (id: string) => void;
@@ -40,6 +42,7 @@ export function LibraryView({
   onOpen,
   onOpenCredentials,
   onOpenPorts,
+  onOpenNetwork,
   onAdd,
   onReset,
   onRemove,
@@ -144,6 +147,7 @@ export function LibraryView({
                     />
                     {/* One physical panel, so one card — under the first
                         collection rather than repeated in every group. */}
+                    {colIndex === 0 && <NetworkMapCard onOpen={onOpenNetwork} />}
                     {colIndex === 0 && <PortMapCard onOpen={onOpenPorts} />}
                   </>
                 )}
@@ -248,6 +252,35 @@ function CredentialsCard({
         </span>
         <span className="mt-0.5 block text-[13px] leading-snug text-ink-soft">
           {filled} of {fields.length} filled in · stored only on this device
+        </span>
+      </span>
+      <ChevronDown size={17} className="shrink-0 -rotate-90 text-ink-faint" />
+    </button>
+  );
+}
+
+/**
+ * The build's addressing plan — read-only, unlike its two neighbours, because
+ * the guides declare these values rather than the house supplying them. It
+ * still reads recorded credentials, so a container that landed elsewhere shows
+ * its real address here.
+ */
+function NetworkMapCard({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="rb-card mt-3 flex w-full cursor-pointer items-center gap-3.5 px-4 py-3 text-left transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-lift focus-visible:-translate-y-0.5"
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
+        <Sitemap size={18} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-[1rem] font-semibold leading-snug text-ink">
+          Addressing Plan
+        </span>
+        <span className="mt-0.5 block text-[13px] leading-snug text-ink-soft">
+          every guest, camera and port · and the boot order
         </span>
       </span>
       <ChevronDown size={17} className="shrink-0 -rotate-90 text-ink-faint" />
