@@ -380,12 +380,13 @@ sequence:
         - lock.carport_door
         - lock.front_door
         - lock.basement_door
-    data:
-      credential_type: pin
-      credential_data: "{{ pin }}"
+    data: >
+      {{ { 'credential_type': 'pin', 'credential_data': pin | string } }}
     response_variable: cred
 mode: single
 ```
+
+The odd-looking `data:` is load-bearing. A plain `credential_data: "{{ pin }}"` fails with *"expected str for dictionary value"* — the template engine re-parses a digit string into a number on the way out, and the action demands a string. Its typing is **not recursive**, though: a template returning a whole dict is left alone, so wrapping the entire `data` block in one dict template is the documented way to keep the PIN a string.
 
 `response_variable` is required — Home Assistant refuses to run a script that discards an action's response data — and here it also earns its keep: the run's **trace** shows the response, which names the **slot each lock allocated**. With the household occupying 1–6, expect **7**; that number is what Revoke and the expiry automation below act on. Prove the run on a keypad, not in the toast.
 
