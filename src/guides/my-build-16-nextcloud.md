@@ -186,9 +186,7 @@ The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated
 
 Now hang the share inside Nextcloud:
 
-1. Under **Apps**, find **External storage support** and click **Enable** — it ships with the server and is simply switched off. (Apps from the store read **Download and enable** instead, fetching and installing in the same click, so a few seconds' pause on those is normal rather than a fault.)
-
-   Before opening that page, raise PHP's memory limit to Nextcloud's recommended **512 MB** — NCP ships 128 MB, which is too small for the Apps page. In the container console:
+1. First raise PHP's memory limit to Nextcloud's recommended **512 MB** — NCP ships 128 MB, too small for the Apps page you are about to open. In the container console:
 
    ```bash
    sed -i 's/^memory_limit = .*/memory_limit = 512M/' /etc/php/8.3/fpm/php.ini
@@ -197,6 +195,8 @@ Now hang the share inside Nextcloud:
    ```bash
    systemctl restart php8.3-fpm
    ```
+
+   Then under **Apps**, find **External storage support** and click **Enable** — it ships with the server and is simply switched off. (Apps from the store read **Download and enable** instead, fetching and installing in the same click, so a few seconds' pause on those is normal rather than a fault.)
 2. Go to **Administration settings → External storage**.
 3. Click **Add external storage** — an **Add storage** dialog opens. Every field, top to bottom:
    - **Folder name** → `Pool` — the folder name everyone sees in their Files
