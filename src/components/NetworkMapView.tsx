@@ -18,7 +18,11 @@ type Props = {
  * drift the moment a container lands on a different ID or address.
  */
 type Row = {
-  /** Canonical address from the guides; the fallback when nothing is recorded. */
+  /**
+   * Canonical address from the guides; the fallback when nothing is recorded.
+   * Empty means the value only exists once Tailscale issues it — there is no
+   * sensible default to show, so the row reads as pending instead.
+   */
   ip: string;
   name: string;
   /** Proxmox guest ID, where the thing is a guest. */
@@ -44,6 +48,21 @@ const GUESTS: Row[] = [
   { ip: "192.168.1.58", name: "Nextcloud (NCP)", id: "LXC 105", reach: "https://{ip}", proxied: "cloud.", credKey: "nextcloud-ip", note: "NCP panel on 4443" },
   { ip: "192.168.1.59", name: "Ollama", id: "LXC", reach: "port 11434", credKey: "ollama-ip", note: "Voice page — no web UI" },
   { ip: "192.168.1.60", name: "faster-whisper", id: "LXC", reach: "port 10300", credKey: "whisper-ip", note: "Voice page — no web UI" },
+];
+
+const TAILNET: Row[] = [
+  {
+    ip: "",
+    name: "Proxmox host, on the tailnet",
+    reach: "https://{ip}:8006",
+    credKey: "pve-tailscale-ip",
+    note: "the one address that does not depend on the subnet route",
+  },
+  {
+    ip: "100.100.100.100",
+    name: "MagicDNS resolver",
+    note: "Tailscale's own; answers .ts.net names even when AdGuard is down",
+  },
 ];
 
 const DEVICES: Row[] = [
@@ -74,7 +93,8 @@ function RowCard({
   domain: string;
 }) {
   const ip = addressOf(row, creds);
-  const drifted = ip !== row.ip;
+  const pending = ip === "";
+  const drifted = !pending && row.ip !== "" && ip !== row.ip;
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -89,18 +109,24 @@ function RowCard({
 
   return (
     <div className="rb-card flex items-center gap-3 px-3 py-2.5">
-      <button
-        type="button"
-        onClick={copy}
-        title={`Copy ${ip}`}
-        aria-label={`Copy ${ip}`}
-        className="group flex w-[9.5rem] shrink-0 items-center gap-1.5 text-left"
-      >
-        <span className="font-mono text-sm tabular-nums text-ink">{ip}</span>
-        <span className="text-ink-faint opacity-0 transition-opacity group-hover:opacity-100">
-          {copied ? <Check size={13} /> : <Copy size={13} />}
+      {pending ? (
+        <span className="w-[9.5rem] shrink-0 font-mono text-sm italic text-ink-faint">
+          not recorded
         </span>
-      </button>
+      ) : (
+        <button
+          type="button"
+          onClick={copy}
+          title={`Copy ${ip}`}
+          aria-label={`Copy ${ip}`}
+          className="group flex w-[9.5rem] shrink-0 items-center gap-1.5 text-left"
+        >
+          <span className="font-mono text-sm tabular-nums text-ink">{ip}</span>
+          <span className="text-ink-faint opacity-0 transition-opacity group-hover:opacity-100">
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+          </span>
+        </button>
+      )}
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2">
@@ -118,7 +144,7 @@ function RowCard({
         </div>
         {(row.reach || row.note || row.proxied) && (
           <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[12px] leading-snug text-ink-soft">
-            {row.reach && (
+            {row.reach && !pending && (
               <span className="font-mono">{row.reach.replace("{ip}", ip)}</span>
             )}
             {row.proxied && (
@@ -145,6 +171,7 @@ export function NetworkMapView({ theme, onToggleTheme, onBack }: Props) {
   );
 
   const domain = (creds["domain-name"] ?? "").trim() || "example.com";
+  const tailnet = (creds["tailnet-name"] ?? "").trim();
 
   return (
     <div className="mx-auto min-h-dvh max-w-3xl px-4 pb-24 pt-5 sm:px-6">
@@ -207,6 +234,44 @@ export function NetworkMapView({ theme, onToggleTheme, onBack }: Props) {
               <RowCard key={row.ip} row={row} creds={creds} domain={domain} />
             ))}
           </div>
+        </section>
+
+        <section aria-label="Remote access">
+          <h2 className="mb-1 px-1 font-display text-[1.05rem] font-semibold leading-none text-ink">
+            Remote access — Tailscale
+          </h2>
+          <p className="mb-3 px-1 text-[13px] leading-snug text-ink-faint">
+            Settings live only at{" "}
+            <a
+              href="https://login.tailscale.com/admin"
+              target="_blank"
+              rel="noreferrer"
+              className="text-accent underline underline-offset-2"
+            >
+              login.tailscale.com/admin
+            </a>
+            {tailnet && (
+              <>
+                {" "}
+                — this tailnet is{" "}
+                <span className="font-mono text-ink-soft">{tailnet}</span>, so
+                the host also answers at{" "}
+                <span className="font-mono text-ink-soft">pve.{tailnet}</span>
+              </>
+            )}
+            .
+          </p>
+          <div className="space-y-2">
+            {TAILNET.map((row) => (
+              <RowCard key={row.name} row={row} creds={creds} domain={domain} />
+            ))}
+          </div>
+          <p className="mt-3 px-1 text-[13px] leading-relaxed text-ink-soft">
+            Every <code>192.168.1.x</code> address above also works from away,
+            carried by the <strong className="text-ink">subnet route</strong> the
+            Proxmox host advertises — which is why nothing else on this page
+            needs a second, remote address.
+          </p>
         </section>
 
         <section aria-label="Boot order">

@@ -133,6 +133,7 @@ tailscale ip -4
 > Every tailnet device gets a stable address in the `100.x.y.z` range that stays the same no matter where the device physically moves. So the host now has two addresses: the `192.168.1.x` LAN IP you set during install, and a `100.x` address other tailnet devices reach from anywhere. The next phase extends that reach to every guest in the rack.
 
 > [!INPUT] pve-tailscale-ip | Proxmox host tailnet IP (100.x) | 100.101.102.103
+> Recording it here also fills the **Addressing Plan** view on the library screen, alongside the tailnet name and the admin console link.
 > Worth recording because it is the one address that does **not** depend on the subnet route: everything else in this build reaches the server at `192.168.1.50` *through* that route, so if the route is ever un-approved or a key expires, this is what still gets you a shell to fix it. Not a secret and never truly lost — `tailscale ip -4` on the host prints it, and the Machines page shows it from any browser — just something better recorded than hunted for mid-problem. It changes only if the machine is deleted and re-added.
 
 ### Keep the host's own DNS out of the tailnet
