@@ -105,6 +105,15 @@ Give it a few minutes on first boot — Home Assistant OS sets itself up unatten
 ### Sketch the Areas now
 Before any devices arrive, lay out your rooms under **Settings → Areas, labels & zones**. Add an Area per room — kitchen, laundry, garage, basement, baths — so that as each Zigbee device joins you can drop it straight into the right one. Two minutes that pays forever: dashboards group by Area automatically, and voice and automation targeting only works once Home Assistant knows what is *in* each room.
 
+### Set the entity ID format before anything is paired
+Two minutes here saves a rename campaign later. Home Assistant builds every new entity's ID from a **format** you control at **Settings → Entity ID format** (`/config/entity-id-format`), and the default is **Area + Device + Entity** — which produces `lock.carport_carport_door` and `sensor.living_room_thermostat_temperature`.
+
+Click the **×** on the **Area** chip, leaving **Device + Entity**, and **Save**. The preview shortens immediately, and everything paired from here — the Zigbee sensors, the locks, the shades — arrives with an ID you would willingly type into an automation.
+
+Nothing is lost: the area still lives on the *device*, so dashboard grouping, "turn off the basement" voice targeting, and area-targeted automations all behave the same. Area in the ID only earns its keep when two devices share a name across rooms, and this build's names are already distinct.
+
+**Do it now, before pairing.** The setting applies only to entities created *after* it is saved — existing ones keep their IDs and must be renamed individually, which is the tedious path this step exists to avoid.
+
 > [!TIP]
 > Name the Areas the way you would say them out loud ("Laundry Room", not "laundry_1"). Those names become the words a Cast announcement or a future voice command leans on.
 
