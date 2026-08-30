@@ -52,7 +52,7 @@ Still in the Proxmox web UI, go to **Datacenter → Backup** and click **Add**. 
 
 - **Node** → leave **-- All --**
 - **Storage** → `nas-backups` — never `local` (the warning below)
-- **Schedule** → a quiet daily hour; `02:30` works on this build
+- **Schedule** → a quiet daily hour; `02:30` works on this build — the Maintenance page's *night shift* table lists every other scheduled job if you ever want to move it
 - **Selection mode** → **All** — any guest you create later is covered without touching the job again; the guest grid beneath it becomes a review list (the other modes — Include selected, Exclude selected, Pool based — are the hand-picked variants the Maintenance page warns can silently drop a guest)
 - **Compression** → keep **ZSTD (fast and good)**
 - **Mode** → keep **Snapshot**
