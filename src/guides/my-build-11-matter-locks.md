@@ -346,6 +346,8 @@ data:
   credential_data: "1234"
 ```
 
+Run from **Tools → Actions** this works as written. Wrapped in a **script**, it needs one extra line — `response_variable: cred`, alongside `action`/`target`/`data` — because Home Assistant refuses to run a script that discards an action's response data.
+
 Omitting `credential_index` and `user_index` lets each lock choose a free slot and create the user itself — the right behaviour after a wipe. Substitute your real entity IDs and a real 4–8 digit code, then **test it on one physical keypad**: the action succeeding means the lock accepted the credential, not that the keypad behaves as you expect.
 
 Two companions worth knowing. **Set a Matter lock user** creates a named user with an access type, including **one-time access** — the lock deletes that code itself after a single use, which is the honest answer for a contractor or a delivery. And if the U400 turns out not to support the cluster, fall back to **Aqara Home**, which this build keeps for Night Latch and firmware anyway; code management is its native ground.
@@ -405,8 +407,11 @@ sequence:
       credential_type: pin
       credential_data: "{{ pin }}"
       user_index: "{{ slot | int }}"
+    response_variable: cred
 mode: single
 ```
+
+`matter.set_lock_credential` returns response data, and Home Assistant **refuses to run a script that ignores it** — omit `response_variable` and the run fails with *"Script requires 'response_variable' for response data."* It sits alongside `action`/`target`/`data`, not inside `data`, and nothing needs to read it; the line exists to satisfy that rule.
 
 And **Revoke**:
 
