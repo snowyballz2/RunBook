@@ -135,7 +135,16 @@ AdGuard's DNS (Domain Name System) rewrite for the wildcard already resolves the
 ## Make the household's accounts
 
 ### Create each account, and write the master password on paper
-At `https://vault.example.com`, the signup door is the **Create account** link under **"New to Bitwarden?"**. It wants **Email** and **Name**, then the master password twice plus an optional hint. Two things worth being precise about, because they read ambiguously on the form. The account this form creates exists only on your server — Bitwarden the company never learns of it, holds nothing of yours, and can never reset it; the paper sheet below is the recovery plan. The **email is the account's username** — type your real one, since it is what you enter at every login; no verification mail will ever arrive (this server cannot send mail), so the address is simply accepted as-is. And there is exactly **one master password per person, not per device**: yours unlocks your account on the iPhone, the Mac, and the browser extension alike, so this household ends up with two master passwords total — the single thing each person memorizes, since everything else goes inside the vault it opens. Make each one a long passphrase, and make the two different from each other — neither of you learns the other's. The only *shared* passwords in this system are the items inside the Household organization, and that difference is the safety net: if one of you ever forgets a master password, the other account still opens, and every Household item is still reachable from it.
+Once for each of you, at `https://vault.example.com`:
+
+1. Click **Create account** — the link under **"New to Bitwarden?"**.
+2. **Email** — the real address, typed exactly: it is the account's *username*, entered at every login. No verification mail will ever arrive (this server cannot send mail), so a typo is accepted silently — and becomes the username.
+3. **Name** — the person's name, as the apps will greet them.
+4. **Master password**, twice — a long passphrase, and a **different one for each of you**; neither of you learns the other's. Keep the optional hint vague, or skip it.
+5. Create the account, then log in once at the same address to see the empty vault.
+
+> [!NOTE]
+> The account this form creates exists only on your server — Bitwarden the company never learns of it, holds nothing of yours, and can never reset it. And it is one master password per *person*, not per device: yours unlocks your account on the iPhone, the Mac, and the browser extension alike, so the household ends up with exactly two — the single thing each person memorizes. The only *shared* passwords in this system are the items inside the Household organization below, and that split is the safety net: if one of you ever forgets a master password, the other account still opens, and every Household item is still reachable from it.
 
 > [!WARNING]
 > The master password is the single secret that does not go in any manager — not in the vault it protects, not in a browser, and not saved below; there is deliberately no field for it. Vaultwarden cannot reset it: encryption happens on your devices, and the server never sees the key. Write each master password on paper — an emergency sheet with the server address (`https://vault.example.com`), the account email, and the master password — and keep it where you keep passports. That sheet is also the answer to "what if something happens to me": the household can still reach what it needs.
@@ -143,7 +152,16 @@ At `https://vault.example.com`, the signup door is the **Create account** link u
 ### Share the household's common logins with an Organization
 Two separate vaults raise an immediate question: where do the *joint* logins live — streaming, Wi-Fi, utilities? Not duplicated into both vaults, where every password change has to be made twice. Bitwarden's mechanism is an **Organization**: a shared pool both accounts belong to, where an entry lives once and both people see, edit, and autofill it.
 
-In the web vault, the **+ New organization** option sits under the vault filter's organization heading (free — Vaultwarden imposes none of Bitwarden's paid seat limits). Create one — `Household` — and your account becomes its **Owner** automatically; an organization is not an account of its own, just a shared space your existing accounts belong to. Then invite the other account by its email from the organization's **Members** page, and set their role to **Owner as well** — a household of equals wants two owners, so the shared entries are never stranded behind one person's account. The role only governs managing the organization; daily use of its passwords is identical for everyone. None of this involves the `/admin` panel — organizations are managed from the web vault by your own accounts, so the panel stays disabled. With no mail server, the invite works like the admin panel's: no email goes out, so the other person accepts it from their own web vault's notification instead. Move the shared entries in by editing an item and changing its **Ownership** to the organization.
+From **your** web vault, with both accounts now existing:
+
+1. Click **+ New organization** — under the vault filter's organization heading. Name it `Household` and create it; your account becomes its **Owner** automatically (free — Vaultwarden imposes none of Bitwarden's paid seat limits).
+2. Open the organization's **Members** page and click **Invite member**. Enter the other account's email, set the role to **Owner**, and on the dialog's **Collections** tab tick the collection the fresh organization offers. Save.
+3. Nobody accepts anything: with no mail server, Vaultwarden marks the invite **Accepted** by itself, immediately — the other person does nothing, and no notification appears anywhere.
+4. Back on **Members**, the new member now shows **Accepted**: tick their row and use the **⋮ Options** menu → **Confirm selected**. Confirming is the step that actually hands their account the organization's key — until it happens, they see nothing shared.
+5. Move each joint login in: tick the item's checkbox in the vault view, choose **Assign to collections** on the action bar, and in the dialog set **Move to organization** to `Household` and pick its collection.
+
+> [!NOTE]
+> An organization is not an account of its own — nobody logs in "as" Household; it is a shared space your two existing accounts belong to. Both of you are Owners on purpose: a household of equals, so the shared entries are never stranded behind one person's account. The role only governs managing the organization — daily use of its passwords is identical for everyone. And none of this involves the `/admin` panel; organizations are managed from the web vault, so the panel stays disabled.
 
 The split that keeps it tidy: personal accounts, personal cards, anything one person uses → own vault. Anything the *house* uses → the organization. The build's infrastructure credentials can go either way — in the organization both of you can reach them, which is the better failure mode.
 
@@ -175,7 +193,25 @@ Existing accounts are untouched; the Create account door is closed.
 ## Point every device at it
 
 ### Connect the apps and extensions
-Install the official Bitwarden client on every device, each from its official source: on the iPhones and iPads, the **Bitwarden** app from the App Store; on the Mac and the Windows PC, the **browser extension** from the browser's own store — Chrome Web Store, Firefox Add-ons, or Edge Add-ons. For **Safari** the extension is packaged inside the Bitwarden desktop app from the Mac App Store: install that app, then switch the extension on in **Safari → Settings → Extensions**. The extension is the piece you use on a computer — it autofills inside web pages, and it only offers a fill on the exact domain an item was saved with, so a lookalike phishing domain gets silence instead of your password; that is protection copy-paste cannot give. On each login screen, *before* signing in, open the **Logging in on** dropdown (the desktop apps label the same dropdown **Accessing**), choose **Self-hosted**, and enter `https://vault.example.com` as the Server URL. Skipping this dropdown is the classic first-login failure: the client asks Bitwarden's cloud — where your account does not exist — and rejects your perfectly correct password with a misleading **"Username or password is incorrect."** The server a login screen is about to use is shown right on it; make it yours before typing anything. Already typed into the wrong one? No harm done: Bitwarden clients never transmit the master password — only a one-way hash derived on your device (600,000 key-stretching rounds) goes over the wire, useless to anyone without brute-forcing the passphrase itself. Then log in with the account's email and master password, import whatever the browser or old manager held, and turn on autofill. This is also the moment to move the build's credentials in for real — Proxmox, TrueNAS, the cameras and doorbell, the MQTT users, the Backblaze encryption password and salt — provided the backup gate at the top of this page is satisfied; on a first pass through the build, come back and do this after the Proxmox Backups page has produced its first proven archive.
+On each device, install the official Bitwarden client from its official source:
+
+- iPhones and iPads → the **Bitwarden** app from the App Store
+- The Mac and the Windows PC → the **browser extension** from the browser's own store: Chrome Web Store, Firefox Add-ons, or Edge Add-ons
+- Safari → the extension ships *inside* the Bitwarden desktop app from the Mac App Store: install that app, then turn the extension on in **Safari → Settings → Extensions**
+
+Then, on each client's login screen:
+
+1. *Before* signing in, open the **Logging in on** dropdown (the desktop apps label it **Accessing**) → **Self-hosted** → enter `https://vault.example.com` as the Server URL and save.
+2. Log in with the account's email and master password.
+3. Turn on autofill, and import whatever the browser or old manager held.
+
+> [!WARNING]
+> Skipping that dropdown is the classic first-login failure: the client asks Bitwarden's cloud — where your account does not exist — and rejects your perfectly correct password with a misleading **"Username or password is incorrect."** The server a login screen is about to use is shown right on it; make it yours before typing anything. Already typed into the wrong one? No harm done: Bitwarden clients never transmit the master password — only a one-way hash derived on your device (600,000 key-stretching rounds) goes over the wire, useless to anyone without brute-forcing the passphrase itself.
+
+> [!NOTE]
+> The extension is the piece you actually use on a computer: it autofills inside web pages, and it only offers a fill on the exact domain an item was saved with — a lookalike phishing domain gets silence instead of your password, protection copy-paste cannot give.
+
+Moving the build's real credentials in — Proxmox, TrueNAS, the cameras and doorbell, the MQTT users, the Backblaze encryption password and salt — waits for the backup gate at the top of this page; on a first pass through the build, come back and do it after the Proxmox Backups page has produced its first proven archive.
 
 > [!NOTE]
 > Every signed-in device keeps a complete encrypted copy of the vault. Server down? The apps keep working in read-only mode — reading, autofill, even TOTP codes, since the seeds live in the cached vault — so you can still look up the Proxmox root password to go fix the server holding it. The one rule: **lock, never log out.** Unlocking is local; logging back *in* needs the server.
