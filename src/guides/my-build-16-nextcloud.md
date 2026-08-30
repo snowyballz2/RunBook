@@ -124,13 +124,13 @@ Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. 
 ## Point the storage at the ZFS pool
 
 ### Add accounts for the household
-**First, turn off the demo content** — Nextcloud copies a *skeleton* folder into every new account's home on first login (Documents, Photos, Templates, a manual, an intro video: about 58 MB of it), plus a sample `leon.green@example.com` contact and calendar entries. Empty the skeleton before creating anyone, so nobody inherits it. In the container console:
+**First, turn off the demo content** — Nextcloud copies a *skeleton* folder into every new account's home on first login (Documents, Photos, Templates, a manual, an intro video: about 58 MB of it), plus a sample `leon.green@example.com` contact and calendar entries. Empty the skeleton before creating anyone, so nobody inherits it. In **Proxmox → 105 (nextcloudpi) → Console** — the container's own shell, where `occ` lives, not the `pve` node shell:
 
 ```bash
 sudo -E -u www-data php /var/www/nextcloud/occ config:system:set skeletondirectory --value=""
 ```
 
-Accounts that already exist keep what they were given — delete those files by hand, and remove the sample contact in the **Contacts** app (the auto-generated *Contact birthdays* calendar entry goes with it).
+Accounts that already exist keep what they were given — back in the browser at `https://cloud.example.com`, select those files in **Files** and delete them, and remove the sample contact in the **Contacts** app (the auto-generated *Contact birthdays* calendar entry goes with it).
 
 **Do not share the `ncp` login** — one account per person, so everyone gets their own files, photos, and password. Click your avatar (top right) → **Accounts** → **New account**, and fill the dialog:
 
