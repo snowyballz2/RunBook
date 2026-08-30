@@ -452,6 +452,31 @@ sequence:
 mode: single
 ```
 
+Revoke is deliberately a scalpel — one slot per run, so overlapping guests can leave independently. For checkout day there is also a broom, a third script that sweeps every guest slot and cannot touch the household's 1–6 (`repeat.index` counts 1–14, so `6 + repeat.index` walks exactly 7–20; `continue_on_error` keeps the loop alive across the empty slots it will mostly meet):
+
+```yaml
+alias: Revoke ALL guest access
+description: Clears every guest slot (7-20) on all three doors. Household 1-6 untouched.
+sequence:
+  - repeat:
+      count: 14
+      sequence:
+        - action: matter.clear_lock_user
+          target:
+            entity_id:
+              - lock.carport_door
+              - lock.front_door
+              - lock.basement_door
+          data:
+            user_index: "{{ 6 + repeat.index }}"
+          continue_on_error: true
+        - delay:
+            seconds: 1
+mode: single
+```
+
+Keep the expiry automation pointed at the single-slot Revoke, never the broom — an automation should remove the guest whose date passed, not sweep away a second guest mid-stay. And ignore any online suggestion of Matter's magic clear-all index (65534): it clears **everything, household included**; the broom exists so it is never needed.
+
 The slot convention survives auto-allocation: the household's codes, created first, fill **1–6** in order, so the lock hands the first guest **slot 7** — confirm it in the Grant run's trace. Then add a **Date and time** helper (Settings → Devices & services → Helpers) called *Guest access ends*, and one automation to fire the revoke:
 
 ```yaml
