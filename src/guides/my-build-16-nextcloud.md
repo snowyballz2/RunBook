@@ -214,6 +214,9 @@ Now hang the share inside Nextcloud:
    - **Host** → **`192.168.1.20`** — the TrueNAS VM
    - **Share** → **`files`** — its own field, separate from Host
    - **Remote subfolder** and **Domain** → blank
+   - **Show hidden files** → **off**, as shipped — on, every `.DS_Store` the Macs drop on the share surfaces in the family's Files view
+   - **Case sensitive file system** → **off**, as shipped — the `files` dataset's SMB preset made it case-insensitive on the TrueNAS Storage page, and this matches it
+   - **Verify ACL access when listing files** → **off**, as shipped — a per-file permission re-check built for shares with per-user denials; the single household SMB user has full access, so there is nothing to verify
    - **Login / Password** (at the bottom, under Authentication) → the existing SMB credentials, per the share
 4. Click **Create**. A **green dot** at the new row's left edge means the mount works; red or yellow means Nextcloud could not connect — recheck host, share, and credentials.
 
