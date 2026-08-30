@@ -251,10 +251,22 @@ The share appears as a folder in everyone's files. Photo archives and media sit 
 ## Make it yours
 
 ### Put it on every device
-Get the desktop client from [nextcloud.com/install](https://nextcloud.com/install/) — the macOS app for the Macs and the Windows app for the PC, since both get used equally here — and the mobile app from the App Store. The desktop wizard asks for the server address — enter **`https://cloud.example.com`**, the proxied name from the Reverse Proxy page, on every device without exception — then it opens the browser to log in, and after **Grant access** syncs into a local **Nextcloud** folder. The Google-Photos replacement is **Auto upload** in the iOS app: point it at the camera roll and every photo lands on your server from then on.
+**On each Mac and the Windows PC**, take the desktop client from [nextcloud.com/install](https://nextcloud.com/install/) — the macOS app for the Macs, the Windows app for the PC — then walk its first run:
 
-> [!NOTE]
-> No certificate objection should appear — the proxied name carries the real wildcard certificate. If a device does complain about a self-signed certificate, it was pointed at the raw address (`https://192.168.1.58`); re-enter the name. The raw address also stops working the moment the device leaves the house, while the name follows it over Tailscale — same login, couch or hotel.
+1. **Sign in to Nextcloud in your browser first, as the household account you want this device to sync** — not `ncp`. The client adopts whatever account the browser is already logged in as, and re-doing it later means unpicking a wrongly-bound device.
+2. **Server address** → **`https://cloud.example.com`** — the proxied name, on every device without exception. Never the raw `https://192.168.1.58`: it raises a certificate warning and stops working the moment the device leaves the house, while the name follows it over Tailscale.
+3. **"Allow Nextcloud to find devices on local networks?"** (macOS) → **Allow** — the server is a local address, and denying this blocks the client with an error that looks nothing like a permissions problem.
+4. **Grant access** in the browser tab it opens — check the *"Currently logged in as"* line names the right account before clicking. This issues the device its own app password, revocable later under **Settings → Security**.
+5. It syncs into a local **Nextcloud** folder, and lives in the **menu bar** from then on — closing the window does not quit it, and re-opening the app shows nothing because it is still running. Click the menu-bar logo instead.
+
+**On each iPhone**, install Nextcloud from the App Store, sign in at the same address, then turn on **Auto upload** and point it at the camera roll — that is the Google-Photos replacement, and every photo lands on your server from then on.
+
+> [!WARNING]
+> If the desktop client ever offers **"Connect without TLS"**, choose **Cancel** — that sends the password in the clear against a server that has a working certificate. Confirm the certificate independently from the Mac's Terminal, where a `200` or `302` means the chain is healthy and the client is the odd one out:
+>
+> ```bash
+> curl -sSI https://cloud.example.com | head -1
+> ```
 
 > [!WARNING]
 > **Remove the proxy's 2 GB upload cap.** NPM ships a global `client_max_body_size 2000m`, which fails any larger browser upload with a 413 (the sync clients chunk and never hit it). In **Nginx Proxy Manager** (`http://192.168.1.54:81`): edit the `cloud.example.com` proxy host → **Advanced** tab → paste the line below → **Save**.
