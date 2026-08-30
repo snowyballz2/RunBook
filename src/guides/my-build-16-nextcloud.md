@@ -316,6 +316,8 @@ Bringing years of photos over from a Windows PC or a Mac is the first real use o
 
 **Czkawka** (actively maintained, cross-platform, has a similar-images mode) and **dupeGuru** (older, its Picture mode does fuzzy matching) are both free and both do the job. Whichever you use: back the library up first, set the tool to **move to the Recycle Bin / Trash** rather than delete outright, and review its groups by hand — the tool cannot know which copy you care about, and "keep the largest" is wrong as often as it is right.
 
+**On the iPhone, use what iOS already has** rather than a third-party cleaner: **Photos → Albums → Utilities → Duplicates** finds exact and near-identical shots and offers **Merge**, which keeps the best-quality version and combines their metadata. With iCloud Photos on, that change propagates everywhere. While in Utilities, the **Screenshots** album is usually the bigger win — screenshots are a large slice of most camera rolls and rarely worth archiving.
+
 **Then copy the cleaned library straight to the share**, not through Nextcloud's web UI or the sync client — same storage as `Pool`, without the round trip, and dramatically faster for tens of gigabytes:
 
 ```
