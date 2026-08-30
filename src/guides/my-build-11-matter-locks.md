@@ -315,7 +315,7 @@ For each of the three U400s:
 ### Re-enter the keypad codes — all three at once
 A factory reset, and sometimes a re-commission, wipes the locks' keypad codes. Do not re-key them one door at a time: since **Home Assistant 2026.8.2** the Matter integration manages lock users natively, and the action takes multiple targets in a single call.
 
-First confirm the lock implements it — user management is an optional Matter cluster, so the action fails outright rather than silently doing nothing. In **Developer tools → Actions**, run **Get Matter lock info** against one lock and check it reports user/credential support.
+First confirm the lock implements it — user management is an optional Matter cluster, so the action fails outright rather than silently doing nothing. Open **Settings → Developer tools** — it sits at the very bottom of Settings, having been moved out of the sidebar in Home Assistant 2026.2; **Cmd/Ctrl+K** and typing `dev` is the quicker route. On its **Actions** tab, run **Get Matter lock info** against one lock and check it reports user/credential support.
 
 Then set the code on every door in one go:
 
