@@ -174,15 +174,21 @@ The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated
 > [!WARNING]
 > **Install `php-smbclient` first — this one is not cosmetic.** The External storage page shows a red notice recommending it, and without the PHP module Nextcloud falls back to spawning the `smbclient` binary, a path that **fails on downloads larger than roughly 512 MB**. Since the entire point here is parking the photo and video archive on the mirror, that limit lands precisely on the files you most want, and it surfaces weeks later as "large videos will not download" — a symptom almost impossible to trace back to this page. In the container console:
 >
+> **The package name must carry NCP's PHP version — the bare `php-smbclient` is a trap.** NCP pins its own PHP (currently **8.3**; the running `php8.3-fpm` service is the tell), while the unversioned package installs the module for the repo's *default* PHP — this build watched it drag in an entire unused PHP 8.5, put the module where nothing loads it, leave the red notice standing, **and flip the CLI `php` to 8.5**, which is what `occ` and NCP's cron run under and a version Nextcloud does not support. Confirm the version, then install to match:
+>
 > ```bash
-> apt update && apt install -y smbclient php-smbclient
+> systemctl list-units --type=service | grep fpm
 > ```
 >
 > ```bash
-> reboot
+> apt update && apt install -y smbclient php8.3-smbclient
 > ```
 >
-> Do it **before** creating the mount below, so the row uses the module from the start. The reboot is what makes PHP-FPM load the module — installed is not loaded — and the proof it took is the page itself: reload **Administration settings → External storage** and the red php-smbclient notice is gone.
+> ```bash
+> systemctl restart php8.3-fpm
+> ```
+>
+> Do it **before** creating the mount below, so the row uses the module from the start. The proof it took is the page itself: reload **Administration settings → External storage** and the red php-smbclient notice is gone. If the unversioned package already went in, back it out — `apt purge -y 'php8.5*' php-smbclient && apt autoremove -y`, then `update-alternatives --set php /usr/bin/php8.3` — or `occ` and the nightly cron inherit the wrong PHP.
 
 Now hang the share inside Nextcloud:
 
