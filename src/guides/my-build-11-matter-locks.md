@@ -315,7 +315,9 @@ For each of the three U400s:
 ### Re-enter the keypad codes — all three at once
 A factory reset, and sometimes a re-commission, wipes the locks' keypad codes. Do not re-key them one door at a time: since **Home Assistant 2026.8.2** the Matter integration manages lock users natively, and the action takes multiple targets in a single call.
 
-First confirm the lock implements it — user management is an optional Matter cluster, so the action fails outright rather than silently doing nothing. Open **Settings → Tools** ("Inspect and debug your system" — this is what older write-ups call *Developer tools*, renamed and moved off the sidebar). On its **Actions** tab, run **Get Matter lock info** against one lock and check it reports user/credential support.
+First confirm the lock implements it — user management is an optional Matter cluster, so the action fails outright rather than silently doing nothing. Open **Settings → Tools** ("Inspect and debug your system" — this is what older write-ups call *Developer tools*, renamed and moved off the sidebar). On its **Actions** tab, run **Get Matter lock info** against one lock. The U400 answers `supports_user_management: true` with **PIN only** (no RFID), **20 users**, and a **4–8 digit** PIN length — verified on this build's locks, so the route below is open.
+
+Grab the real entity IDs before writing the call: on the **States** tab, filter for `lock.`. Home Assistant prefixes the area onto the name, so they read `lock.carport_carport_door` rather than the `lock.carport_door` you would guess.
 
 Then set the code on every door in one go:
 
@@ -331,7 +333,7 @@ data:
   credential_data: "1234"
 ```
 
-Omitting `credential_index` and `user_index` lets each lock choose a free slot and create the user itself — the right behaviour after a wipe. Substitute your real entity IDs and a real code.
+Omitting `credential_index` and `user_index` lets each lock choose a free slot and create the user itself — the right behaviour after a wipe. Substitute your real entity IDs and a real 4–8 digit code, then **test it on one physical keypad**: the action succeeding means the lock accepted the credential, not that the keypad behaves as you expect.
 
 Two companions worth knowing. **Set a Matter lock user** creates a named user with an access type, including **one-time access** — the lock deletes that code itself after a single use, which is the honest answer for a contractor or a delivery. And if the U400 turns out not to support the cluster, fall back to **Aqara Home**, which this build keeps for Night Latch and firmware anyway; code management is its native ground.
 
