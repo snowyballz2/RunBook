@@ -219,7 +219,7 @@ reboot
 ```
 
 > [!TIP]
-> First time in **nano**: it is a plain text editor, nothing more. Arrow keys move, typing inserts, and **Enter just starts a new line** — inside an editor it never runs or saves anything, unlike at the shell prompt. Save with **Ctrl+O**, then **Enter** to confirm the filename, then **Ctrl+X** to exit. Exiting with unsaved changes asks Y/N — answering **N** abandons the edit, the escape hatch if something went sideways.
+> First time in **nano**: it is a plain text editor, nothing more. Arrow keys move, typing inserts, and **Enter just starts a new line** — inside an editor it never runs or saves anything, unlike at the shell prompt. Save with **Ctrl+O**, then **Enter** to confirm the filename, then **Ctrl+X** to exit. **Undo is Alt+U** (redo Alt+E) — and since a Mac's Option key often does not register as Alt in the web console, **Esc then U** does the same thing. Exiting with unsaved changes asks Y/N — answering **N** abandons the edit entirely, the escape hatch if something went sideways. The bar along nano's bottom edge lists these: `^` means Ctrl, `M-` means Alt/Esc.
 
 > [!NOTE]
 > Not sure which bootloader you have? Run `proxmox-boot-tool status`. The GRUB steps above match this build's ext4-on-LVM install. If you instead installed on **ZFS root** with Secure Boot off, Proxmox boots with systemd-boot — add the same `intel_iommu=on iommu=pt` to `/etc/kernel/cmdline`, then run `proxmox-boot-tool refresh` and reboot. (With Secure Boot **on**, even a ZFS install uses GRUB — follow the GRUB steps above.)
