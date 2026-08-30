@@ -312,6 +312,29 @@ For each of the three U400s:
 > [!TIP]
 > If a lock shows up but its state lags or goes *unavailable*, the Thread mesh is the usual cause — a sleepy battery device reaching a single border router. Move it closer to the ZBT-2 radio, reboot the OTBR app, or (the durable fix) add a mains-powered Thread router near it. Adding a HomePod later gives you a second border router, which generally clears this up.
 
+### Re-enter the keypad codes — all three at once
+A factory reset, and sometimes a re-commission, wipes the locks' keypad codes. Do not re-key them one door at a time: since **Home Assistant 2026.8.2** the Matter integration manages lock users natively, and the action takes multiple targets in a single call.
+
+First confirm the lock implements it — user management is an optional Matter cluster, so the action fails outright rather than silently doing nothing. In **Developer tools → Actions**, run **Get Matter lock info** against one lock and check it reports user/credential support.
+
+Then set the code on every door in one go:
+
+```yaml
+action: matter.set_lock_credential
+target:
+  entity_id:
+    - lock.carport_door
+    - lock.front_door
+    - lock.basement_door
+data:
+  credential_type: pin
+  credential_data: "1234"
+```
+
+Omitting `credential_index` and `user_index` lets each lock choose a free slot and create the user itself — the right behaviour after a wipe. Substitute your real entity IDs and a real code.
+
+Two companions worth knowing. **Set a Matter lock user** creates a named user with an access type, including **one-time access** — the lock deletes that code itself after a single use, which is the honest answer for a contractor or a delivery. And if the U400 turns out not to support the cluster, fall back to **Aqara Home**, which this build keeps for Night Latch and firmware anyway; code management is its native ground.
+
 ### These locks now feed the automations
 With all three U400s present as `lock.*` entities, they become raw material for the automation rules later in this build — auto-lock after a set time, an unlock notification to the household, and presence-based actions. Until the locks exist as entities, those rules have nothing to act on; now they do.
 
