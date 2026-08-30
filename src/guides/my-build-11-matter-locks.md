@@ -393,11 +393,13 @@ The odd-looking `data:` is load-bearing. A plain `credential_data: "{{ pin }}"` 
 > [!WARNING]
 > **Never pass `user_index` to `set_lock_credential`, and do not pre-create the user with `set_lock_user` first.** Both read as the more-correct order, and both fail — each with its own signature, all three met on this build's U400s:
 >
-> - *"Validation error: User slot N is empty"* — a passed `user_index` makes Home Assistant read that user back before writing, and Aqara firmware answers user reads unreliably ([core #167096](https://github.com/home-assistant/core/issues/167096): locks reporting "No users configured" while codes exist) — so the check fails even straight after a successful `set_lock_user`
+> - *"Validation error: User slot N is empty"* — a passed `user_index` makes Home Assistant read that user back before writing, and on this build that pre-check failed even straight after a successful `set_lock_user`
 > - *"Failed to set credential: lock returned status `unknown(133)`"* — Matter's `INVALID_COMMAND`: the lock itself refusing a forced index/status/type combination
 > - *"Message malformed: extra keys not allowed @ data['action']"* — a different mistake: a bare action block pasted into the **script editor**, whose top level wants `alias:`/`sequence:`. Bare actions run in **Tools → Actions**
 >
-> Naming the allocated user afterwards with `set_lock_user` is best-effort on these locks for the same read-unreliability reason — keep the who-has-which-slot roster in the script's `description:` rather than trusting the lock to display it. And if even the minimal no-index call returns 133, the firmware is refusing Matter credential writes altogether: manage codes in **Aqara Home**, which this build keeps anyway.
+> Naming works: after the no-index call allocates the slot, a follow-up `set_lock_user` with that index sets the display name. And the truth of what each lock holds is visible in the UI — the lock's **device page** carries a **Manage access** dialog listing every user with name and credential count, with **Add user** and per-user delete. Verify every run there, because **re-runs stack rather than replace**: a credential call without an index adds a *new* PIN each time, and a user showing "2 credentials" means two different codes open the door under one name — debris from a repeated run, deleted in that same dialog. If even the minimal no-index call returns 133, the firmware is refusing Matter credential writes altogether: manage codes in **Aqara Home**, which this build keeps anyway.
+
+**No-YAML alternative:** that **Manage access** dialog does the whole job one lock at a time — name, PIN, full or one-time access — so the household can be set up entirely by clicking, at the cost of repeating each user on each of the three doors. The scripts on this page exist to do all three doors in one run.
 
 And **Revoke**:
 
