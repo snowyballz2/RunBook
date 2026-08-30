@@ -200,16 +200,22 @@ Now hang the share inside Nextcloud:
    systemctl restart php8.3-fpm
    ```
 2. Go to **Administration settings → External storage**.
-3. Fill the new row, every field:
+3. Click **Add external storage** — an **Add storage** dialog opens. Every field, top to bottom:
    - **Folder name** → `Pool` — the folder name everyone sees in their Files
+   - **Mount options** (expand the collapsible):
+     - **Check filesystem changes** → keep **Once every direct access** — the Macs and the PC write this same share directly over SMB, and this setting is what makes their changes appear in Nextcloud
+     - **Read only** → **off** — the household adds files through Nextcloud too
+     - **Enable previews** → **on**, as shipped — thumbnails for the photo archive
+     - **Enable sharing** → **off**, as shipped — flip it later only if someone wants to share a Pool file by Nextcloud link
+     - **Compatibility with Mac NFD encoding (slow)** → **off** — revisit only if accented filenames written from a Mac ever display mangled or duplicated
+   - **Restrict to** → leave empty — empty means everyone
    - **External storage** (the backend dropdown) → **SMB/CIFS**
-   - **Authentication** → **Username and password**
+   - **Authentication** → **Login and password** — one admin-set login shared by every account, matching the single household SMB user; the "Log-in credentials" variants would reuse each person's Nextcloud password, which TrueNAS does not know
    - **Host** → **`192.168.1.20`** — the TrueNAS VM
    - **Share** → **`files`** — its own field, separate from Host
    - **Remote subfolder** and **Domain** → blank
-   - **Username / Password** → the existing SMB credentials, per the share
-   - **Available for** → leave empty — empty means everyone
-4. Save the row (the checkmark at its right). A **green dot** at the row's left edge means the mount works; red or yellow means Nextcloud could not connect — recheck host, share, and credentials.
+   - **Login / Password** (at the bottom, under Authentication) → the existing SMB credentials, per the share
+4. Click **Create**. A **green dot** at the new row's left edge means the mount works; red or yellow means Nextcloud could not connect — recheck host, share, and credentials.
 
 > [!DETAILS] The five setup warnings on Administration → Overview
 > A fresh NCP shows a short list under *Security & setup warnings*. Only one earns a command:
