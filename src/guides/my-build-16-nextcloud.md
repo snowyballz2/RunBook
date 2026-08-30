@@ -334,14 +334,14 @@ The library then appears in the web UI and the phone app as though it had always
 
 ## Keep it healthy
 
-### Back up all five pieces at once
-Nextcloud's docs list five things a backup must retain: the config folder, custom apps, the data folder, the theme folder, and the database — and insist on a fresh backup before every upgrade. Here all five live inside one container, so the Proxmox vzdump job (set up later in this build, on the Proxmox Backups page) will capture the lot in one pass, pointed at the `tank/backups` dataset on TrueNAS — storage that is not this same disk. That archive is the on-site, fast-restore tier; the off-property Backblaze B2 push is reserved for the irreplaceable files, not the guest archives.
+### What already backs this up — nothing to do here
+This section is coverage, not a step: no commands to run today. Nextcloud's docs list five things a backup must retain: the config folder, custom apps, the data folder, the theme folder, and the database — and insist on a fresh backup before every upgrade. Here all five live inside one container, so the Proxmox vzdump job (set up later in this build, on the Proxmox Backups page) will capture the lot in one pass, pointed at the `tank/backups` dataset on TrueNAS — storage that is not this same disk. That archive is the on-site, fast-restore tier; the off-property Backblaze B2 push is reserved for the irreplaceable files, not the guest archives.
 
 > [!NOTE]
 > The External Storage archive lives on the ZFS pool, so it is protected by the pool's own snapshots and the weekly scrub — not by the vzdump job, which only sees the container's local disk. That's the right split: the small, sync-critical data rides vzdump; the bulk archive rides the pool's protections. Photos you can't lose belong on the irreplaceable dataset that the Backblaze B2 push covers, so they also leave the property.
 
-> [!DETAILS] Backing up by hand, the documented way
-> Useful if you ever migrate off the container. From `/var/www/nextcloud` in the console: turn on maintenance mode (it locks logged-in sessions and blocks new logins so the database dump and folder copy stay consistent), dump the database, copy the folders, turn maintenance off.
+> [!DETAILS] Copying Nextcloud off the server by hand
+> **Only for moving Nextcloud to different hardware** — not part of the routine, and not how photos move from the container's disk onto the mirror (that is a drag from `Photos/` into `Pool/` in the browser, no commands at all). The `/somewhere-safe/` below means another machine entirely. From `/var/www/nextcloud` in the container console: turn on maintenance mode (it locks logged-in sessions and blocks new logins so the database dump and folder copy stay consistent), dump the database, copy the folders, turn maintenance off.
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ maintenance:mode --on
