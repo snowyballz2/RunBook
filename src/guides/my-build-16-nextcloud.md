@@ -252,7 +252,7 @@ Get the desktop client from [nextcloud.com/install](https://nextcloud.com/instal
 > client_max_body_size 0;
 > ```
 >
-> `0` removes the proxy-side cap entirely — fine on a LAN-only host behind Tailscale. PHP keeps its own upload ceiling on the container itself; if a giant web upload still stops after this, that ceiling is the remaining one, adjustable in the NCP panel's `nc-limits`.
+> `0` removes the proxy-side cap entirely — fine on a LAN-only host behind Tailscale. PHP keeps its own upload ceiling on the container itself; if a giant web upload still stops after this, that ceiling is the remaining one, adjustable in the NCP panel's `nc-limits`. And this is the **only proxy host in the whole collection that needs an Advanced-tab line**: the cap counts only *inbound* bodies, and Nextcloud is the one service whose normal job is a person pushing multi-gigabyte files in through a browser — Vaultwarden attachments stay under 500 MB, Proxmox ISOs arrive by Download-from-URL rather than browser upload, and everything big elsewhere (Frigate video, file downloads, vault sync) flows as responses, which the cap never touches.
 
 > [!WARNING]
 > Away from home, reach Nextcloud over the Tailscale tunnel — never a router port-forward. A personal cloud full of the household's files and photos is exactly what you don't expose to the public internet.
