@@ -140,6 +140,13 @@ At `https://vault.example.com`, the signup door is the **Create account** link u
 > [!WARNING]
 > The master password is the single secret that does not go in any manager — not in the vault it protects, not in a browser, and not saved below; there is deliberately no field for it. Vaultwarden cannot reset it: encryption happens on your devices, and the server never sees the key. Write each master password on paper — an emergency sheet with the server address (`https://vault.example.com`), the account email, and the master password — and keep it where you keep passports. That sheet is also the answer to "what if something happens to me": the household can still reach what it needs.
 
+### Share the household's common logins with an Organization
+Two separate vaults raise an immediate question: where do the *joint* logins live — streaming, Wi-Fi, utilities? Not duplicated into both vaults, where every password change has to be made twice. Bitwarden's mechanism is an **Organization**: a shared pool both accounts belong to, where an entry lives once and both people see, edit, and autofill it.
+
+In the web vault, the **+ New organization** option sits under the vault filter's organization heading (free — Vaultwarden imposes none of Bitwarden's paid seat limits). Create one — `Household` — then invite the other account by its email from the organization's **Members** page. With no mail server, the invite works like the admin panel's: no email goes out, so the other person accepts it from their own web vault's notification instead. Move the shared entries in by editing an item and changing its **Ownership** to the organization.
+
+The split that keeps it tidy: personal accounts, personal cards, anything one person uses → own vault. Anything the *house* uses → the organization. The build's infrastructure credentials can go either way — in the organization both of you can reach them, which is the better failure mode.
+
 ### Close the doors behind you
 Out of the box, anyone who can reach the page can register an account. On this LAN that is family — but a vault does not run on "probably fine". One more `.env` edit in the container's console, then restart:
 
