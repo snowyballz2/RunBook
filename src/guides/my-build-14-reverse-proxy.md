@@ -216,7 +216,12 @@ It will show an expiry roughly **90 days** out, which is normal rather than a pr
 ## Teach the LAN the names
 
 ### Point the wildcard at the proxy
-In the AdGuard dashboard, open **Filters → DNS rewrites** and click **Add DNS rewrite**. Domain: `*.example.com`. Answer: your `proxy-ip`. With the wildcard, every name under your domain now answers with the proxy's address for every device that asks AdGuard.
+In the AdGuard dashboard, open **Filters → DNS rewrites** and click **Add DNS rewrite**:
+
+- **Domain** → `*.example.com`
+- **Answer** → your `proxy-ip`
+
+With the wildcard, every name under your domain now answers with the proxy's address for every device that asks AdGuard.
 
 A wildcard covers subdomains only, never the bare domain, so **add a second rewrite** — domain `example.com`, same answer — if you included the bare name on the certificate. Two entries, one for `*.example.com` and one for `example.com`.
 

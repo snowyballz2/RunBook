@@ -121,7 +121,16 @@ systemctl restart vaultwarden
 > With that line gone, Vaultwarden serves plain HTTP on port 8000 — which sounds like a downgrade until you see who is calling: only Nginx Proxy Manager, from inside the LAN (local area network), which re-wraps every byte in the real certificate before it reaches a browser. The side effect to know about: browsing straight to `http://192.168.1.56:8000` afterwards shows the login but cannot actually log in — the web vault's encryption needs the secure context only the proxied name provides. The name is the front door now.
 
 ### Add the proxy host
-In Nginx Proxy Manager, go to **Hosts → Proxy Hosts → Add Proxy Host** — domain `vault.example.com`, Scheme `http`, forward to `192.168.1.56` port `8000`, **Websockets Support** on (Vaultwarden's live-sync notifications ride the same port and need the WebSocket headers passed through), then attach the wildcard certificate and turn on **Force SSL** on the SSL tab. AdGuard's DNS (Domain Name System) rewrite for the wildcard already resolves the new name on the LAN. Browse to `https://vault.example.com`: the web vault, with a padlock, no warnings.
+In Nginx Proxy Manager, go to **Hosts → Proxy Hosts → Add Proxy Host**:
+
+- **Domain Names** → `vault.example.com`
+- **Scheme** → `http`
+- **Forward Hostname / IP** → `192.168.1.56`
+- **Forward Port** → `8000`
+- **Websockets Support** → **on** — Vaultwarden's live-sync notifications ride the same port and need the WebSocket headers passed through
+- **SSL tab → SSL Certificate** → the `*.example.com` wildcard, and **Force SSL** → **on**
+
+AdGuard's DNS (Domain Name System) rewrite for the wildcard already resolves the new name on the LAN. Browse to `https://vault.example.com`: the web vault, with a padlock, no warnings.
 
 ## Make the household's accounts
 

@@ -153,7 +153,14 @@ Your dashboard sits behind your login; a status page is the version everyone els
 > Slugs accept lowercase letters, digits, and dashes — starting and ending alphanumeric, no doubled dashes. The slug `default` is special — `/status` with no slug points to it. Status pages lag the live dashboard slightly: the server caches them for five minutes, and each viewer's page re-fetches on the editor's Refresh Interval (the 300-second default). For "is it down, or is it just me", that is plenty.
 
 ### Give it a name behind the proxy
-If the Reverse Proxy page's eight hosts went in as one sitting, `status.example.com` already exists and forwards here — skip straight to the toggle below. Otherwise add it now in **Nginx Proxy Manager** (`http://192.168.1.54:81`): **Hosts → Proxy Hosts → Add Proxy Host** — domain `status.example.com`, Scheme `http`, forward to `192.168.1.57` port `3001`, **Websockets Support** on, then the wildcard certificate and **Force SSL** on the SSL tab.
+If the Reverse Proxy page's eight hosts went in as one sitting, `status.example.com` already exists and forwards here — skip straight to the toggle below. Otherwise add it now in **Nginx Proxy Manager** (`http://192.168.1.54:81`) — **Hosts → Proxy Hosts → Add Proxy Host**:
+
+- **Domain Names** → `status.example.com`
+- **Scheme** → `http`
+- **Forward Hostname / IP** → `192.168.1.57`
+- **Forward Port** → `3001`
+- **Websockets Support** → **on**
+- **SSL tab → SSL Certificate** → the `*.example.com` wildcard, and **Force SSL** → **on**
 
 Then the one step unique to Kuma, in the **Uptime Kuma UI** (`http://192.168.1.57:3001`): open **Settings → Reverse Proxy**, and under **HTTP Headers** switch **Trust Proxy** to **on** — without it every visitor arriving through the proxy is logged and rate-limited as the proxy's own `.54` address; with it, Kuma believes the real client address the proxy forwards. This is the step the Reverse Proxy page's service-side table points here for.
 

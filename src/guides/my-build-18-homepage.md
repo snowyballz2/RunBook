@@ -211,7 +211,16 @@ Save, click the refresh icon, done.
 ## Wire it into the build
 
 ### Give it a name behind the proxy
-Add one more proxy host in Nginx Proxy Manager, the same routine used for the other services: **Hosts → Proxy Hosts → Add Proxy Host**, domain `home.example.com`, Scheme `http`, forwarding to the Homepage IP on port `3000`, **Websockets Support** on, then the wildcard certificate and **Force SSL** on the SSL tab. The wildcard `*.example.com` DNS rewrite in AdGuard already answers for any new name, so there is nothing to add there. But there *is* one step unique to Homepage — teaching it to answer to the new name. In the container's console, edit `/opt/homepage/.env`:
+Add one more proxy host in Nginx Proxy Manager, the same routine used for the other services — **Hosts → Proxy Hosts → Add Proxy Host**:
+
+- **Domain Names** → `home.example.com`
+- **Scheme** → `http`
+- **Forward Hostname / IP** → `192.168.1.55`
+- **Forward Port** → `3000`
+- **Websockets Support** → **on**
+- **SSL tab → SSL Certificate** → the `*.example.com` wildcard, and **Force SSL** → **on**
+
+The wildcard `*.example.com` DNS rewrite in AdGuard already answers for any new name, so there is nothing to add there. But there *is* one step unique to Homepage — teaching it to answer to the new name. In the container's console, edit `/opt/homepage/.env`:
 
 The allow-list is comma-separated with no spaces — add the new name to the end:
 
