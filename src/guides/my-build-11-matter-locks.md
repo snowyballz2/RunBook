@@ -312,6 +312,13 @@ For each of the three U400s:
 > [!TIP]
 > If a lock shows up but its state lags or goes *unavailable*, the Thread mesh is the usual cause — a sleepy battery device reaching a single border router. Move it closer to the ZBT-2 radio, reboot the OTBR app, or (the durable fix) add a mains-powered Thread router near it. Adding a HomePod later gives you a second border router, which generally clears this up.
 
+### Do not delete a stale Matter device to tidy up
+After a re-commission you will often see a device twice — one live, one offline. **Deleting the offline one can un-commission the live lock**, because in Home Assistant a Matter device entry *is* the fabric binding: removing it tells the Matter Server to drop that node, and duplicates frequently point at the same underlying node. This build did exactly that and lost a working lock to a tidy-up.
+
+Leave stale entries alone. They are cosmetic, and they disappear on their own when the Matter Server next reconciles. If one genuinely must go, take a Home Assistant backup first.
+
+Recovering from it is not a disaster — the keypad and key never depended on Home Assistant, and because HA was the lock's only Matter fabric the sticker QR code inside the battery compartment becomes live again, so re-commissioning through the companion app is the fix. A *refused* code means some other fabric survived; work the *Find every fabric* section above.
+
 ### Re-enter the keypad codes — all three at once
 A factory reset, and sometimes a re-commission, wipes the locks' keypad codes. Do not re-key them one door at a time: since **Home Assistant 2026.8.2** the Matter integration manages lock users natively, and the action takes multiple targets in a single call.
 
