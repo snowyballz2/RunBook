@@ -317,7 +317,13 @@ After a re-commission you will often see a device twice — one live, one offlin
 
 Leave stale entries alone. They are cosmetic, and they disappear on their own when the Matter Server next reconciles. If one genuinely must go, take a Home Assistant backup first.
 
-Recovering from it is not a disaster — the keypad and key never depended on Home Assistant, and because HA was the lock's only Matter fabric the sticker QR code inside the battery compartment becomes live again, so re-commissioning through the companion app is the fix. A *refused* code means some other fabric survived; work the *Find every fabric* section above.
+Recovering from it is usually easy, and the keypad and key never depended on Home Assistant anyway. **First check the Matter Server panel in the sidebar and count the nodes.** If it still lists one node per lock while Devices shows fewer, the commissioning survived — only Home Assistant's device entry went — and the fix is to make HA rebuild it rather than to re-pair anything:
+
+1. **Settings → Devices & services → Matter → ⋮ → Reload** — re-reads the fabric, and an orphaned node normally returns as a device.
+2. **Settings → Apps → Matter Server → Restart**, if that alone does not do it.
+3. **Restart Home Assistant** from Settings → System.
+
+Only if the node itself is *missing* from that panel is the lock genuinely out of the fabric. Then re-commission through the companion app: because HA was its only Matter fabric, the sticker QR inside the battery compartment is live again. A *refused* code means some other fabric survived — work the *Find every fabric* section above.
 
 ### Re-enter the keypad codes — all three at once
 A factory reset, and sometimes a re-commission, wipes the locks' keypad codes. Do not re-key them one door at a time: since **Home Assistant 2026.8.2** the Matter integration manages lock users natively, and the action takes multiple targets in a single call.
