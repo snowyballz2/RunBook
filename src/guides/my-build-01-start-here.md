@@ -370,6 +370,7 @@ The pages are numbered in the exact sequence to build in. Do not skip ahead — 
 >
 > - **Each page is complete on its own.** The full steps for that stage are written inline and specialized to this exact hardware. You do not need any other reference.
 > - **Sensitive values are credential fields, not plain text.** Anything secret — IP addresses, drive serials, usernames, passwords, tokens — is captured in a fill-in field that stays on this device and is never committed or synced. Plain hardware and choices are written out normally. Your real synced secret store is your password manager (you will build Vaultwarden for this role later in the build); these fields are just a convenience as you follow along.
+> - **Your ad-blocker may flag the copy buttons.** uBlock Origin's ClickFix protection warns when any page offers a `bash -c "$(curl …)"` command to the clipboard — the mechanics of a real attack class, so the warning is earned, but here it is this guide's own install one-liners. Check the flagged domain is the one the page prints (the community-scripts repo on `raw.githubusercontent.com`), then dismiss or allowlist this site. The download-read-run habit below is the real protection either way.
 > - **The order is the plan.** Build top to bottom. When a later page says "after the GPU is shared in" or "once the mirror exists," it is pointing back at a stage you have already finished.
 
 1. **Start Here** — this page: the map and parts list.
