@@ -174,11 +174,7 @@ The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated
 > [!WARNING]
 > **Install `php-smbclient` first — this one is not cosmetic.** The External storage page shows a red notice recommending it, and without the PHP module Nextcloud falls back to spawning the `smbclient` binary, a path that **fails on downloads larger than roughly 512 MB**. Since the entire point here is parking the photo and video archive on the mirror, that limit lands precisely on the files you most want, and it surfaces weeks later as "large videos will not download" — a symptom almost impossible to trace back to this page. In the container console:
 >
-> **The package name must carry NCP's PHP version — the bare `php-smbclient` is a trap.** NCP pins its own PHP (currently **8.3**; the running `php8.3-fpm` service is the tell), while the unversioned package installs the module for the repo's *default* PHP — this build watched it drag in an entire unused PHP 8.5, put the module where nothing loads it, leave the red notice standing, **and flip the CLI `php` to 8.5**, which is what `occ` and NCP's cron run under and a version Nextcloud does not support. Confirm the version, then install to match:
->
-> ```bash
-> systemctl list-units --type=service | grep fpm
-> ```
+> **Install the SMB module for NCP's pinned PHP — `php8.3-smbclient`, never the unversioned `php-smbclient`**, which targets the repo's default PHP instead of the **8.3** NCP actually runs (`systemctl list-units --type=service | grep fpm` confirms the version). Without the module, downloads over roughly 512 MB from the share fail. In the container console:
 >
 > ```bash
 > apt update && apt install -y smbclient php8.3-smbclient
@@ -188,7 +184,7 @@ The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated
 > systemctl restart php8.3-fpm
 > ```
 >
-> Do it **before** creating the mount below, so the row uses the module from the start. The proof it took is the page itself: reload **Administration settings → External storage** and the red php-smbclient notice is gone. If the unversioned package already went in, back it out — `apt purge -y 'php8.5*' php-smbclient && apt autoremove -y`, then `update-alternatives --set php /usr/bin/php8.3` — or `occ` and the nightly cron inherit the wrong PHP.
+> Do it **before** creating the mount below. Proof: reload **Administration settings → External storage** and the red php-smbclient notice is gone.
 
 Now hang the share inside Nextcloud:
 
@@ -245,13 +241,13 @@ Get the desktop client from [nextcloud.com/install](https://nextcloud.com/instal
 > No certificate objection should appear — the proxied name carries the real wildcard certificate. If a device does complain about a self-signed certificate, it was pointed at the raw address (`https://192.168.1.58`); re-enter the name. The raw address also stops working the moment the device leaves the house, while the name follows it over Tailscale — same login, couch or hotel.
 
 > [!WARNING]
-> **Web uploads over 2 GB fail through the proxy until you raise one limit.** Nginx Proxy Manager ships a global `client_max_body_size 2000m` in its `nginx.conf`, so dragging anything bigger into the browser at `cloud.example.com` dies with **413 Request Entity Too Large**. The sync clients never hit it — they upload in small chunks — which is exactly what makes this a months-later bug: everything works until the first big video goes in through the web page. Close it now, in **Nginx Proxy Manager** (`http://192.168.1.54:81`): edit the `cloud.example.com` proxy host → **Advanced** tab → paste the line below → **Save**.
+> **Remove the proxy's 2 GB upload cap.** NPM ships a global `client_max_body_size 2000m`, which fails any larger browser upload with a 413 (the sync clients chunk and never hit it). In **Nginx Proxy Manager** (`http://192.168.1.54:81`): edit the `cloud.example.com` proxy host → **Advanced** tab → paste the line below → **Save**.
 >
 > ```
 > client_max_body_size 0;
 > ```
 >
-> `0` removes the proxy-side cap entirely — fine on a LAN-only host behind Tailscale. PHP keeps its own upload ceiling on the container itself; if a giant web upload still stops after this, that ceiling is the remaining one, adjustable in the NCP panel's `nc-limits`. And this is the **only proxy host in the whole collection that needs an Advanced-tab line**: the cap counts only *inbound* bodies, and Nextcloud is the one service whose normal job is a person pushing multi-gigabyte files in through a browser — Vaultwarden attachments stay under 500 MB, Proxmox ISOs arrive by Download-from-URL rather than browser upload, and everything big elsewhere (Frigate video, file downloads, vault sync) flows as responses, which the cap never touches.
+> `0` removes the cap — fine on a LAN-only host behind Tailscale; PHP's own ceiling (the NCP panel's `nc-limits`) is the remaining one if a giant upload still stops. This is the only proxy host in the collection that needs an Advanced-tab line: the cap counts only *inbound* bodies, and Nextcloud is the one service pushing multi-gigabyte files in through a browser.
 
 > [!WARNING]
 > Away from home, reach Nextcloud over the Tailscale tunnel — never a router port-forward. A personal cloud full of the household's files and photos is exactly what you don't expose to the public internet.
