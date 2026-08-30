@@ -257,7 +257,7 @@ The share appears as a folder in everyone's files. Photo archives and media sit 
 2. **Server address** → **`https://cloud.example.com`** — the proxied name, on every device without exception. Never the raw `https://192.168.1.58`: it raises a certificate warning and stops working the moment the device leaves the house, while the name follows it over Tailscale.
 3. **"Allow Nextcloud to find devices on local networks?"** (macOS) → **Allow** — the server is a local address, and denying this blocks the client with an error that looks nothing like a permissions problem.
 4. **Grant access** in the browser tab it opens — check the *"Currently logged in as"* line names the right account before clicking. This issues the device its own app password, revocable later under **Settings → Security**.
-5. It syncs into a local **Nextcloud** folder, and lives in the **menu bar** from then on — closing the window does not quit it, and re-opening the app shows nothing because it is still running. Click the menu-bar logo instead.
+5. It syncs into a local **Nextcloud** folder, and lives in the **menu bar** from then on — closing the window does not quit it, and re-opening the app shows nothing because it is still running. Click the menu-bar logo instead. On a notched MacBook that logo may never appear: macOS silently drops menu-bar icons that do not fit rather than collapsing them, so trim an item or two (or run an overflow manager) if it is missing. `killall Nextcloud && open -a Nextcloud` forces the window back meanwhile.
 
 **On each iPhone**, install Nextcloud from the App Store, sign in at the same address, then turn on **Auto upload** and point it at the camera roll — that is the Google-Photos replacement, and every photo lands on your server from then on.
 
