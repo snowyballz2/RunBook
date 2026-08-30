@@ -117,5 +117,21 @@ Once a quarter, look at the machine, not just its dashboards:
 - **UPS battery** — in the node Shell, `upsc cyberpower@localhost` with the UPS at full charge; compare `battery.runtime` against the number from the UPS page's timed drill. Batteries live three to five years — a big slide in runtime, or `RB` appearing in `ups.status`, means a replacement pack, on your schedule rather than mid-outage.
 - **BIOS keepsakes** — if a BIOS update happened this quarter, re-save the `PVE-BASE` profile (ASUS version-locks profiles). And remember the board's coin cell is a consumable: a clock that resets or settings that vanish after an outage means a fresh CR2032 and a profile load, per the Hardware & BIOS page — cheaper found here than the morning TrueNAS refuses to start because VT-d silently reverted.
 
+> [!DETAILS] The night shift — every scheduled job in one place
+> Everything this collection put on a clock, in Eastern summer time (the Nextcloud window is pinned to UTC, so it alone shifts an hour earlier in winter):
+>
+> | Time | Job |
+> |---|---|
+> | every 15 min | ZFS snapshots |
+> | 12:00 a.m. Sunday | ZFS scrub |
+> | 1–5 a.m. daily | Nextcloud maintenance window (UTC hour 5 opens a 4-hour window) |
+> | 2:30 a.m. daily | Proxmox vzdump of every guest → NAS |
+> | 3:00 a.m. Sunday | host-config tarball to the NAS |
+> | 3:00 a.m. Monday | SMART short test, both mirror drives |
+> | 4:00 a.m. on the 7th & 21st | SMART long test, one mirror drive each |
+> | overnight daily | Home Assistant's own backup ("System optimal" picks its slot) |
+>
+> The overlaps are deliberate losses: vzdump runs inside Nextcloud's window and the scrub's tail can brush it on Sundays, but every job here is either a point-in-time snapshot or an ordinary transaction — simultaneous ones just run slower, at hours nobody is awake. If the server ever feels sluggish between 2 and 4 a.m., this table is the reason, not a fault.
+
 ### Let the rest come to you
 Everything not on these two lists is event-driven, and you already built the events. Uptime Kuma shouts when a service dies, TrueNAS emails when a disk or scrub complains, and the NUT (Network UPS Tools) shutdown drill on the CyberPower UPS (uninterruptible power supply) proved a power cut handles itself. The Home Assistant leak automations already make the Third Reality sensors announce a wet floor on the Nest speakers. If no alert fires between passes, the server needs exactly none of your attention — which is the entire point of the build.
