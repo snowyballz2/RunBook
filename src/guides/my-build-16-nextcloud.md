@@ -109,12 +109,16 @@ On the panel's first load, an overlay offers its own wizard — **"Click to star
 Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. NCP already created the account and the stack behind it, so there is no setup to do — but two small first-login moments remain: you land on the **Dashboard**, not Files (**Files** sits one click away in the top bar), and a **welcome pop-up** offers the desktop and mobile client downloads — close it; the clients get installed properly later on this page. Every new account created below meets the same pop-up on its own first login.
 
 > [!DETAILS] Fixing "Access through untrusted domain"
-> Reach Nextcloud by any name or address it doesn't already know and it stops with that heading. It's a security check, not breakage: the `trusted_domains` setting in `config/config.php` lists the names and addresses this instance will answer to, and specifying them prevents host-header poisoning. From the container's console, list what it trusts, then add the new name at the next free index:
+> Reach Nextcloud by any name or address it doesn't already know and it stops with that heading. It's a security check, not breakage: the `trusted_domains` setting lists the names and addresses this instance answers to, which prevents host-header poisoning. From the container's console, list what it trusts:
 >
 > ```bash
-> cd /var/www/nextcloud
-> sudo -E -u www-data php occ config:system:get trusted_domains
-> sudo -E -u www-data php occ config:system:set trusted_domains 3 --value=cloud.example.com
+> sudo -E -u www-data php /var/www/nextcloud/occ config:system:get trusted_domains
+> ```
+>
+> Count the entries — the list indexes from **0**, and reusing a taken number silently **overwrites** that entry instead of adding. NCP ships roughly eight, so the next free index is usually **8**:
+>
+> ```bash
+> sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_domains 8 --value=cloud.example.com
 > ```
 
 ## Point the storage at the ZFS pool
@@ -222,7 +226,7 @@ Now hang the share inside Nextcloud:
 **Administration settings → Overview** greets every fresh NCP with the same five *Security & setup warnings* — standing furniture on this install, not a reaction to anything you did. One of them is a real step. Do it now, in the container console — it moves the heavy nightly background jobs to 1 a.m. Eastern (the value is a UTC hour):
 
 ```bash
-sudo -E -u www-data php occ config:system:set maintenance_window_start --type=integer --value=5
+sudo -E -u www-data php /var/www/nextcloud/occ config:system:set maintenance_window_start --type=integer --value=5
 ```
 
 The other four are read-and-ignore:
@@ -276,10 +280,10 @@ Nextcloud's docs list five things a backup must retain: the config folder, custo
 > Useful if you ever migrate off the container. From `/var/www/nextcloud` in the console: turn on maintenance mode (it locks logged-in sessions and blocks new logins so the database dump and folder copy stay consistent), dump the database, copy the folders, turn maintenance off.
 >
 > ```bash
-> sudo -E -u www-data php occ maintenance:mode --on
+> sudo -E -u www-data php /var/www/nextcloud/occ maintenance:mode --on
 > mariadb-dump --single-transaction -h localhost -u [user] -p[password] [db] > nextcloud-sqlbkp_$(date +"%Y%m%d").bak
 > rsync -Aavx /var/www/nextcloud/ /somewhere-safe/nextcloud-dirbkp_$(date +"%Y%m%d")/
-> sudo -E -u www-data php occ maintenance:mode --off
+> sudo -E -u www-data php /var/www/nextcloud/occ maintenance:mode --off
 > ```
 >
 > Remember the data directory here is `/opt/ncdata/data`, outside the web root, so copy it too.
