@@ -135,7 +135,7 @@ AdGuard's DNS (Domain Name System) rewrite for the wildcard already resolves the
 ## Make the household's accounts
 
 ### Create each account, and write the master password on paper
-Once for each of you, at `https://vault.example.com`:
+Once for each of you, at `https://vault.example.com` — **in a browser**, not in the Bitwarden apps. The phone and desktop apps offer a Create account flow of their own, but their signup against Vaultwarden hits an open upstream bug (**"Error decoding JWT"**, `InvalidByte(0, 34)` — [vaultwarden #6592](https://github.com/dani-garcia/vaultwarden/issues/6592)); the apps are for logging in *after* the account exists. From the browser:
 
 1. Click **Create account** — the link under **"New to Bitwarden?"**.
 2. **Email** — the real address, typed exactly: it is the account's *username*, entered at every login. No verification mail will ever arrive (this server cannot send mail), so a typo is accepted silently — and becomes the username.
