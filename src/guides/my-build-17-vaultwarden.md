@@ -144,7 +144,7 @@ Once for each of you, at `https://vault.example.com`:
 5. Create the account, then log in once at the same address to see the empty vault.
 
 > [!NOTE]
-> The account this form creates exists only on your server — Bitwarden the company never learns of it, holds nothing of yours, and can never reset it. And it is one master password per *person*, not per device: yours unlocks your account on the iPhone, the Mac, and the browser extension alike, so the household ends up with exactly two — the single thing each person memorizes. The only *shared* passwords in this system are the items inside the Household organization below, and that split is the safety net: if one of you ever forgets a master password, the other account still opens, and every Household item is still reachable from it.
+> The account this form creates exists only on your server — Bitwarden the company never learns of it, holds nothing of yours, and can never reset it. And it is one master password per *person*, not per device: yours unlocks your account on the iPhone, the Mac, and the browser extension alike, so the household ends up with exactly two — the single thing each person memorizes. The only *shared* passwords in this system are the items inside the `Kuzco's House` organization below, and that split is the safety net: if one of you ever forgets a master password, the other account still opens, and every shared item is still reachable from it.
 
 > [!WARNING]
 > The master password is the single secret that does not go in any manager — not in the vault it protects, not in a browser, and not saved below; there is deliberately no field for it. Vaultwarden cannot reset it: encryption happens on your devices, and the server never sees the key. Write each master password on paper — an emergency sheet with the server address (`https://vault.example.com`), the account email, and the master password — and keep it where you keep passports. That sheet is also the answer to "what if something happens to me": the household can still reach what it needs.
@@ -154,14 +154,14 @@ Two separate vaults raise an immediate question: where do the *joint* logins liv
 
 From **your** web vault, with both accounts now existing:
 
-1. Click **+ New organization** — under the vault filter's organization heading. Name it `Household` and create it; your account becomes its **Owner** automatically (free — Vaultwarden imposes none of Bitwarden's paid seat limits).
-2. Open the organization's **Members** page and click **Invite member**. Enter the other account's email, set the role to **Owner**, and on the dialog's **Collections** tab tick the collection the fresh organization offers. Save.
+1. Click **+ New organization** — under the vault filter's organization heading. Name it `Kuzco's House` and create it; your account becomes its **Owner** automatically (free — Vaultwarden imposes none of Bitwarden's paid seat limits).
+2. Click **Admin Console** at the bottom of the left sidebar — despite the name, this is the organization's management area *inside the web vault*, unlocked by your Owner role; no relation to the server's `/admin` panel. In its navigation click **Members**, then the **Invite member** button. Enter the other account's email, set the role to **Owner**, and on the dialog's **Collections** tab tick the collection the fresh organization offers. Save.
 3. Nobody accepts anything: with no mail server, Vaultwarden marks the invite **Accepted** by itself, immediately — the other person does nothing, and no notification appears anywhere.
 4. Back on **Members**, the new member now shows **Accepted**: tick their row and use the **⋮ Options** menu → **Confirm selected**. Confirming is the step that actually hands their account the organization's key — until it happens, they see nothing shared.
-5. Move each joint login in: tick the item's checkbox in the vault view, choose **Assign to collections** on the action bar, and in the dialog set **Move to organization** to `Household` and pick its collection.
+5. Move each joint login in: tick the item's checkbox in the vault view, choose **Assign to collections** on the action bar, and in the dialog set **Move to organization** to `Kuzco's House` and pick its collection.
 
 > [!NOTE]
-> An organization is not an account of its own — nobody logs in "as" Household; it is a shared space your two existing accounts belong to. Both of you are Owners on purpose: a household of equals, so the shared entries are never stranded behind one person's account. The role only governs managing the organization — daily use of its passwords is identical for everyone. And none of this involves the `/admin` panel; organizations are managed from the web vault, so the panel stays disabled.
+> An organization is not an account of its own — nobody logs in "as" Kuzco's House; it is a shared space your two existing accounts belong to. Both of you are Owners on purpose: a household of equals, so the shared entries are never stranded behind one person's account. The role only governs managing the organization — daily use of its passwords is identical for everyone. And none of this involves the `/admin` panel; organizations are managed from the web vault, so the panel stays disabled.
 
 The split that keeps it tidy: personal accounts, personal cards, anything one person uses → own vault. Anything the *house* uses → the organization. The build's infrastructure credentials can go either way — in the organization both of you can reach them, which is the better failure mode.
 
