@@ -82,33 +82,41 @@ Then walk away. This script *compiles* Vaultwarden from source — it is a Rust 
 > Keep the first three octets identical to the rest of the LAN (matching the Proxmox host at `192.168.1.50`, AdGuard at `192.168.1.53`), and choose a final number **outside** the router's DHCP range so it can never be handed to another device. The `.56` used here just continues the run of service containers.
 
 ### Confirm it is alive, then set it to start at boot
-After a half-hour compile, prove it actually came up before going further. Browse to `https://192.168.1.56:8000` — the `https://` is load-bearing, since the script ships Vaultwarden speaking only TLS until the proxy handover, so a plain `http://` fails outright. Click through the self-signed certificate warning (expected — the install script's own certificate, replaced by a real one two steps from now) and the Bitwarden web vault login screen should appear. **`vault.example.com` does not work yet either**, if the Reverse Proxy page's eight hosts went in as one sitting: that host forwards plain HTTP to a port currently answering HTTPS, a mismatch that resolves itself at the handover step below — check aliveness by the direct address only. Do **not** create an account yet: in two steps this container gets its proper proxied address, and accounts made before that point are born with the wrong links.
+After the half-hour compile:
 
-Once you have seen the login, make it permanent. A password manager that does not survive a power cut is a household incident — you would be locked out of the very credentials needed to fix the server. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell (`106` is this build's next free ID after Nextcloud's `105`; confirm against the left tree):
+1. Browse to `https://192.168.1.56:8000` — the `https://` is load-bearing; plain `http://` fails outright until the proxy handover below.
+2. Click through the self-signed certificate warning — expected; it is the install script's own certificate, replaced by a real one two steps from now.
+3. The Bitwarden web vault login screen appears. **Stop there — do not create an account yet.** Accounts made before the proxy handover are born with the wrong links.
+4. In the Proxmox left tree select the container, open **Options**, set **Start at boot** → **Yes**, and confirm **Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
+
+> [!NOTE]
+> `vault.example.com` does not work yet either, if the Reverse Proxy page's eight hosts went in as one sitting: that host forwards plain HTTP to a port currently answering HTTPS — a mismatch the handover below resolves. Check aliveness by the direct address only.
+
+The same start-at-boot setting from the node Shell instead, if you prefer (`106` is this build's next free ID after Nextcloud's `105`; confirm against the left tree):
 
 ```bash
 pct set 106 -onboot 1
 ```
 
-In the same **Options** panel, confirm **Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
-
 > [!NOTE]
-> This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief blips never reach the container. Start-at-boot covers the longer outages that drain the battery and force a clean shutdown.
+> A password manager that does not survive a power cut is a household incident — you would be locked out of the very credentials needed to fix the server. This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief blips never reach the container; start-at-boot covers the longer outages that drain the battery and force a clean shutdown.
 
 ## Give it its real address
 
 ### Hand the certificate job to the proxy
-Vaultwarden's own wiki calls its built-in TLS (Transport Layer Security) "not recommended" and points at exactly what Nginx Proxy Manager already does on this build: terminate HTTPS with a real wildcard certificate. Two edits in the container's **Console** make the handover — tell Vaultwarden its public name, and stop it from doing its own self-signed HTTPS:
+Vaultwarden's own wiki calls its built-in TLS (Transport Layer Security) "not recommended" and points at exactly what Nginx Proxy Manager already does on this build: terminate HTTPS with a real wildcard certificate. In the container's **Console**, open the settings file:
 
 ```bash
 nano /opt/vaultwarden/.env
 ```
 
-Open `/opt/vaultwarden/.env` in the container's console (`nano /opt/vaultwarden/.env`), add the `DOMAIN` line, and delete any `ROCKET_TLS` line:
+Add this line, and delete any `ROCKET_TLS` line — then save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`):
 
 ```ini
 DOMAIN=https://vault.example.com
 ```
+
+Restart:
 
 ```bash
 systemctl restart vaultwarden
@@ -135,13 +143,16 @@ AdGuard's DNS (Domain Name System) rewrite for the wildcard already resolves the
 ## Make the household's accounts
 
 ### Create each account, and write the master password on paper
-Once for each of you, at `https://vault.example.com` — **in a browser**, not in the Bitwarden apps. The phone and desktop apps offer a Create account flow of their own, but their signup against Vaultwarden hits an open upstream bug (**"Error decoding JWT"**, `InvalidByte(0, 34)` — [vaultwarden #6592](https://github.com/dani-garcia/vaultwarden/issues/6592)); the apps are for logging in *after* the account exists. From the browser:
+Once for each of you, at `https://vault.example.com` — **in a browser**, not in the Bitwarden apps (see the warning below):
 
 1. Click **Create account** — the link under **"New to Bitwarden?"**.
 2. **Email** — the real address, typed exactly: it is the account's *username*, entered at every login. No verification mail will ever arrive (this server cannot send mail), so a typo is accepted silently — and becomes the username.
 3. **Name** — the person's name, as the apps will greet them.
 4. **Master password**, twice — a long passphrase, and a **different one for each of you**; neither of you learns the other's. Keep the optional hint vague, or skip it.
 5. Create the account, then log in once at the same address to see the empty vault.
+
+> [!WARNING]
+> Do not use the apps' own Create account flow: signup from the phone or desktop apps against Vaultwarden trips an open upstream bug — **"Error decoding JWT"**, `InvalidByte(0, 34)` ([vaultwarden #6592](https://github.com/dani-garcia/vaultwarden/issues/6592)). Accounts are born in the browser; the apps log into them afterwards.
 
 > [!NOTE]
 > The account this form creates exists only on your server — Bitwarden the company never learns of it, holds nothing of yours, and can never reset it. And it is one master password per *person*, not per device: yours unlocks your account on the iPhone, the Mac, and the browser extension alike, so the household ends up with exactly two — the single thing each person memorizes. The only *shared* passwords in this system are the items inside the `Kuzco's House` organization below, and that split is the safety net: if one of you ever forgets a master password, the other account still opens, and every shared item is still reachable from it.
@@ -154,25 +165,30 @@ Two separate vaults raise an immediate question: where do the *joint* logins liv
 
 From **your** web vault, with both accounts now existing:
 
-1. Click **+ New organization** — under the vault filter's organization heading. Name it `Kuzco's House` and create it; your account becomes its **Owner** automatically (free — Vaultwarden imposes none of Bitwarden's paid seat limits).
-2. Click **Admin Console** at the bottom of the left sidebar — despite the name, this is the organization's management area *inside the web vault*, unlocked by your Owner role; no relation to the server's `/admin` panel. In its navigation click **Members**, then the **Invite member** button. On the **Role** tab enter the other account's email and set the role to **Owner**. On the **Collections** tab, make sure the **Default collection** row is listed with its permission set to **Manage collection** — the top Permission dropdown is only a default for collections added later; the row is what counts, and a household of equals takes the top permission (the lesser ones are read-only or hide passwords). **Save**.
-3. Nobody accepts anything: with no mail server, Vaultwarden marks the invite **Accepted** by itself, immediately — the other person does nothing, and no notification appears anywhere. If the row instead lingers under **Invited**, showing a bare email with no name, no account with that exact email exists yet — the earlier account-creation step was skipped or the address differs by a letter. Do not register into a pending invite — that trips an upstream bug (**"Error decoding JWT"**, [vaultwarden #6049](https://github.com/dani-garcia/vaultwarden/issues/6049)): the signup reaches for an invite token no mail ever carried. Instead: **Remove** the invite (the row's **⋮** → Remove), create the account in a browser with exactly that email, then invite again — landing on an existing account, it auto-accepts instantly.
-4. Back on **Members**, the new member appears under the **Needs confirmation** tab (auto-accepted, as expected): tick their row and use the **⋮ Options** menu → **Confirm selected**. Confirming is the step that actually hands their account the organization's key — until it happens, they see nothing shared.
-5. Move each joint login in: tick the item's checkbox in the vault view, choose **Assign to collections** on the action bar, and in the dialog set **Move to organization** to `Kuzco's House` and pick its collection.
+1. Click **+ New organization** — under the vault filter's organization heading. Name it `Kuzco's House` and create it; your account becomes its **Owner** automatically.
+2. Click **Admin Console** at the bottom of the left sidebar, then **Members** in its navigation, then the **Invite member** button.
+3. On the **Role** tab: the other account's email, role **Owner**.
+4. On the **Collections** tab: the **Default collection** row, its permission set to **Manage collection**. **Save**.
+5. Nobody accepts anything: with no mail server, the invite goes straight to accepted — the other person does nothing, and no notification appears anywhere.
+6. Back on **Members**, the new member appears under the **Needs confirmation** tab: tick their row → **⋮ Options** → **Confirm selected**. Confirming hands their account the organization's key — until then, they see nothing shared.
+7. Move each joint login in: tick the item's checkbox in the vault view → **Assign to collections** on the action bar → set **Move to organization** to `Kuzco's House` and pick its collection.
 
 > [!NOTE]
-> An organization is not an account of its own — nobody logs in "as" Kuzco's House; it is a shared space your two existing accounts belong to. Both of you are Owners on purpose: a household of equals, so the shared entries are never stranded behind one person's account. The role only governs managing the organization — daily use of its passwords is identical for everyone. And none of this involves the `/admin` panel; organizations are managed from the web vault, so the panel stays disabled.
+> An organization is not an account of its own — nobody logs in "as" Kuzco's House; it is a shared space your two existing accounts belong to, free of Bitwarden's paid seat limits. Both of you are Owners on purpose: a household of equals, so the shared entries are never stranded behind one person's account — the role only governs managing the organization. **Admin Console** here is the organization's management area *inside the web vault*, unlocked by that Owner role; no relation to the server's `/admin` panel, which stays off. And in the invite dialog, the top Permission dropdown is only a default for collections added later — the per-row permission is what counts, and equals take the top one (the lesser ones are read-only or hide passwords).
+
+> [!WARNING]
+> A row lingering under **Invited** — bare email, no name — means no account with that exact email exists: the account step above was skipped, or the address differs by a letter. Do not register into a pending invite; that trips an upstream bug (**"Error decoding JWT"**, [vaultwarden #6049](https://github.com/dani-garcia/vaultwarden/issues/6049)). Instead **Remove** the invite (the row's **⋮** → Remove), create the account in a browser, then invite again — landing on an existing account, it accepts instantly.
 
 The split that keeps it tidy: personal accounts, personal cards, anything one person uses → own vault. Anything the *house* uses → the organization. The build's infrastructure credentials can go either way — in the organization both of you can reach them, which is the better failure mode.
 
 ### Close the doors behind you
-Out of the box, anyone who can reach the page can register an account. On this LAN that is family — but a vault does not run on "probably fine". One more `.env` edit in the container's console, then restart:
-
-Append to `/opt/vaultwarden/.env`:
+Out of the box, anyone who can reach the page can register an account. On this LAN that is family — but a vault does not run on "probably fine". In the container's console, open `/opt/vaultwarden/.env` (`nano`, as before) and append:
 
 ```ini
 SIGNUPS_ALLOWED=false
 ```
+
+Then restart:
 
 ```bash
 systemctl restart vaultwarden
@@ -243,7 +259,13 @@ The Remote Access page left a plan half-finished on purpose: the tailnet's break
 ## Run it like a vault
 
 ### Make sure the backups already cover it
-Once the Proxmox guest-backup job (set up on the Proxmox Backups page, in **Selection mode: All**) is running, each night's vzdump archives this container — data, settings, everything — to the TrueNAS share. What actually matters lives in `/opt/vaultwarden/data`: the wiki ranks `db.sqlite3` and `attachments/` as required, `config.json` and the `rsa_key*` files as recommended (losing the keys just signs everyone out once). Restoring is the standard Proxmox drill: restore the container, the vault returns as of the backup. For *this* container, run that drill for real once, into a spare ID you delete afterwards — the vault is the one guest where "probably restorable" is not good enough. If that backup job is not in place yet, set it up before trusting real credentials to the vault.
+Once the Proxmox guest-backup job (set up on the Proxmox Backups page, in **Selection mode: All**) is running, each night's vzdump archives this container — data, settings, everything — to the TrueNAS share. Restoring is the standard Proxmox drill: restore the container, the vault returns as of the backup. Two things to actually do:
+
+- If that job is not in place yet, set it up **before** trusting real credentials to the vault.
+- Run the restore drill for real once, into a spare container ID you delete afterwards — the vault is the one guest where "probably restorable" is not good enough.
+
+> [!DETAILS] What inside the container actually matters
+> Everything lives in `/opt/vaultwarden/data`: the wiki ranks `db.sqlite3` and `attachments/` as required, `config.json` and the `rsa_key*` files as recommended — losing the keys just signs everyone out once.
 
 > [!DETAILS] A purist's database backup
 > The wiki's gold-standard copy uses SQLite's own backup command, which is safe to run while the service is up:
@@ -271,7 +293,11 @@ Save the file onto the TrueNAS mirror, in with the irreplaceable files that the 
 When you build Uptime Kuma later in this build, give it an HTTP(s) monitor pointed at the direct address `http://192.168.1.56:8000` rather than the proxied name — the login may live behind the proxy, but the dot should not. If the vault ever stops answering, that is how you find out before a family member does.
 
 ### Update on purpose
-Snapshot the container first (the standard habit before any change), then type `update` in the container's console and pick **1 Update VaultWarden + Web-Vault** from the small menu it opens — the same menu whose option 2 set the admin token. It recompiles the new release (patience, again), refreshes the bundled web vault to match, and leaves your data and settings alone. Vaultwarden's releases sometimes carry security fixes, so when the project says update, take it promptly.
+1. Snapshot the container — the standard habit before any change.
+2. Type `update` in the container's console and pick **1 Update VaultWarden + Web-Vault** — the same menu whose option 2 set the admin token.
+3. Wait out the recompile (patience, again). Data and settings stay put; the bundled web vault refreshes to match.
+
+Vaultwarden's releases sometimes carry security fixes — when the project says update, take it promptly.
 
 ### Put it on the front door
 When you build the Homepage dashboard on the next page, its services config already carries the vault's tile — `icon: vaultwarden.png`, `href: https://vault.example.com` — the vault, one click from the page the household will start at, and the place every secret on this build now lives.
