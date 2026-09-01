@@ -288,6 +288,9 @@ The Remote Access page left a plan half-finished on purpose: the tailnet's break
 5. Sign out, then sign in to the admin console **once with the stored passkey** — untested custody is no custody.
 6. Back on **Users**, confirm the new admin's role — and keep the Apple-ID user as the spare key, not the daily door: with the passkey holding equal or higher rank, an Apple lockout no longer reaches the tailnet.
 
+> [!NOTE]
+> Either login can do everything — Tailscale gives a role the same powers regardless of how it signs in. Use the passkey as the daily console door so the break-glass never rusts, and let the Apple ID rest. But the Apple-ID user never gets *deleted*: the enrolled devices — the Mac, the phones, the server — belong to it, and removing a Tailscale user removes their devices with them.
+
 ## Run it like a vault
 
 ### Make sure the backups already cover it
