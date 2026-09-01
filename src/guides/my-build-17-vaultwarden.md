@@ -182,7 +182,13 @@ From **your** web vault, with both accounts now existing:
 The split that keeps it tidy: personal accounts, personal cards, anything one person uses → own vault. Anything the *house* uses → the organization. The build's infrastructure credentials can go either way — in the organization both of you can reach them, which is the better failure mode.
 
 ### Close the doors behind you
-Out of the box, anyone who can reach the page can register an account. On this LAN that is family — but a vault does not run on "probably fine". In the container's console, open `/opt/vaultwarden/.env` (`nano`, as before) and append:
+Out of the box, anyone who can reach the page can register an account. On this LAN that is family — but a vault does not run on "probably fine". In the container's console, open the settings file:
+
+```bash
+nano /opt/vaultwarden/.env
+```
+
+Append this line, then save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`):
 
 ```ini
 SIGNUPS_ALLOWED=false
