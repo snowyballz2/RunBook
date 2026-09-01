@@ -236,7 +236,7 @@ Then, on each client's login screen:
 ### Import what the browser already holds
 Each account brings its existing passwords over once, from the web vault's **Tools → Import data** (the apps and extension offer the same screen):
 
-1. Export the source to CSV first — Apple's Passwords app, Chrome, and Firefox all offer a CSV export in their password settings, as does any password manager.
+1. Export the source to CSV first. This household's source is Apple's **Passwords** app: **File → Export All Passwords to File** → **Export Passwords** → save. (Chrome, Firefox, and any password manager offer an equivalent CSV export.) Passkeys never export — they keep working from where they are; only passwords and codes make the trip.
 2. **Vault** → **My vault** — personal logins stay personal; move any joint ones into `Kuzco's House` afterwards, with the same Assign-to-collections move as above.
 3. **Folder** → leave unselected.
 4. **File format** → the entry matching the source: **Safari and macOS (csv)** for Apple's export, **Chrome (csv)**, **Firefox (csv)**, or the old manager's own entry.
