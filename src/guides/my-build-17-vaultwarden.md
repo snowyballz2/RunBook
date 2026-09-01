@@ -234,14 +234,19 @@ Then, on each client's login screen:
 > The extension is the piece you actually use on a computer: it autofills inside web pages, and it only offers a fill on the exact domain an item was saved with — a lookalike phishing domain gets silence instead of your password, protection copy-paste cannot give.
 
 ### Import what the browser already holds
-Each account brings its existing passwords over once, from the web vault's **Tools → Import data** (the apps and extension offer the same screen):
+Each account brings its existing passwords over once. First, export the source to CSV — this household's source is Apple's **Passwords** app:
 
-1. Export the source to CSV first. This household's source is Apple's **Passwords** app: **File → Export All Passwords to File** → **Export Passwords** → save. (Chrome, Firefox, and any password manager offer an equivalent CSV export.) Passkeys never export — they keep working from where they are; only passwords and codes make the trip.
-2. **Vault** → **My vault** — personal logins stay personal; move any joint ones into `Kuzco's House` afterwards, with the same Assign-to-collections move as above.
-3. **Folder** → leave unselected.
-4. **File format** → the entry matching the source: **Safari and macOS (csv)** for Apple's export, **Chrome (csv)**, **Firefox (csv)**, or the old manager's own entry.
-5. **Choose File** → the exported CSV → **Import**.
-6. **Delete the CSV and empty the Trash** — that file is every password in plaintext, the most dangerous thing on the machine while it exists.
+- **On the Mac**: open **Passwords** → **File → Export All Passwords to File** → **Export Passwords** → save; it lands as `Passwords.csv`.
+- **On an iPhone** (no Mac needed, iOS 18+): **Settings → Apps → Safari** → under History and Website Data, **Export** → select only **Passwords** → **Save to Downloads**. It arrives as `Safari Export.zip` — tap it in **Files** to unzip; `Passwords.CSV` sits inside the `Safari Export` folder.
+- Chrome, Firefox, and any password manager offer equivalent CSV exports. Passkeys never export — they keep working where they are; only passwords and codes make the trip.
+
+Then run the import from the web vault's **Tools → Import data** — on an iPhone that means Safari at `https://vault.example.com`, since the phone apps have no import screen (the browser extension does):
+
+1. **Vault** → **My vault** — personal logins stay personal; move any joint ones into `Kuzco's House` afterwards, with the same Assign-to-collections move as above.
+2. **Folder** → leave unselected.
+3. **File format** → the entry matching the source: **Safari and macOS (csv)** for Apple's export, **Chrome (csv)**, **Firefox (csv)**, or the old manager's own entry.
+4. **Choose File** → the exported CSV → **Import**.
+5. **Delete the export and empty the Trash** — on the iPhone: the zip, the folder, and the CSV in **Files**, then **Browse → Recently Deleted → Delete All**. That file is every password in plaintext, the most dangerous thing on the device while it exists.
 
 > [!NOTE]
 > Importing before the backup gate is fine: an import *copies*, the browser keeps everything it had, and nothing becomes vault-exclusive. The gate below is about the build's infrastructure secrets, whose only home will be the vault.
