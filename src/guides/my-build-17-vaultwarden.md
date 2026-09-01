@@ -225,13 +225,26 @@ Then, on each client's login screen:
 
 1. *Before* signing in, open the **Logging in on** dropdown (the desktop apps label it **Accessing**) → **Self-hosted** → enter `https://vault.example.com` as the Server URL and save.
 2. Log in with the account's email and master password.
-3. Turn on autofill, and import whatever the browser or old manager held.
+3. Turn on autofill.
 
 > [!WARNING]
 > Skipping that dropdown is the classic first-login failure: the client asks Bitwarden's cloud — where your account does not exist — and rejects your perfectly correct password with a misleading **"Username or password is incorrect."** The server a login screen is about to use is shown right on it; make it yours before typing anything. Already typed into the wrong one? No harm done: Bitwarden clients never transmit the master password — only a one-way hash derived on your device (600,000 key-stretching rounds) goes over the wire, useless to anyone without brute-forcing the passphrase itself.
 
 > [!NOTE]
 > The extension is the piece you actually use on a computer: it autofills inside web pages, and it only offers a fill on the exact domain an item was saved with — a lookalike phishing domain gets silence instead of your password, protection copy-paste cannot give.
+
+### Import what the browser already holds
+Each account brings its existing passwords over once, from the web vault's **Tools → Import data** (the apps and extension offer the same screen):
+
+1. Export the source to CSV first — Apple's Passwords app, Chrome, and Firefox all offer a CSV export in their password settings, as does any password manager.
+2. **Vault** → **My vault** — personal logins stay personal; move any joint ones into `Kuzco's House` afterwards, with the same Assign-to-collections move as above.
+3. **Folder** → leave unselected.
+4. **File format** → the entry matching the source: **Safari and macOS (csv)** for Apple's export, **Chrome (csv)**, **Firefox (csv)**, or the old manager's own entry.
+5. **Choose File** → the exported CSV → **Import**.
+6. **Delete the CSV and empty the Trash** — that file is every password in plaintext, the most dangerous thing on the machine while it exists.
+
+> [!NOTE]
+> Importing before the backup gate is fine: an import *copies*, the browser keeps everything it had, and nothing becomes vault-exclusive. The gate below is about the build's infrastructure secrets, whose only home will be the vault.
 
 Moving the build's real credentials in — Proxmox, TrueNAS, the cameras and doorbell, the MQTT users, the Backblaze encryption password and salt — waits for the backup gate at the top of this page; on a first pass through the build, come back and do it after the Proxmox Backups page has produced its first proven archive.
 
