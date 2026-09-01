@@ -252,6 +252,12 @@ Moving the build's real credentials in — Proxmox, TrueNAS, the cameras and doo
 > PUSH_INSTALLATION_KEY=
 > ```
 >
+> > [!INPUT] vaultwarden-push-id | Push relay installation id
+> > Only if you enable the relay — issued at bitwarden.com/host, tied to your email.
+>
+> > [!SECRET] vaultwarden-push-key | Push relay installation key
+> > Issued alongside the id; both go into `/opt/vaultwarden/.env`.
+>
 > The honest trade: notification events now route through Bitwarden's servers (the vault contents stay end-to-end encrypted). The one documented downside — F-Droid app builds do not support it — is moot here, since the household's phones run the official App Store Bitwarden apps. Skipping the relay costs nothing but immediacy.
 
 ### Demote the tailnet's Apple login
