@@ -245,7 +245,7 @@ Expect the proxy's IP. The names resolve; nothing answers on them yet — that i
 ## Put every service behind it
 
 ### Give Proxmox the first name
-The pattern you repeat for everything: in NPM, open **Hosts → Proxy Hosts** and click **Add Proxy Host**. The dialog has four tabs — **Details**, **Custom Locations**, **SSL**, and an **Advanced** gear at the right end of the tab bar; only Details and SSL get touched, for every host on this page. On the **Details** tab:
+The pattern you repeat for everything — in NPM, **Hosts → Proxy Hosts → Add Proxy Host**, then on the **Details** tab:
 
 - **Domain Names**: `proxmox.kuzco.org`
 - **Scheme**: `https` — Proxmox speaks HTTPS on its own port
@@ -266,23 +266,40 @@ Then the **SSL** tab, every field:
 Save, then browse to `https://proxmox.kuzco.org`: the familiar login, a real padlock, nothing to click through.
 
 > [!NOTE]
+> The dialog has four tabs — **Details**, **Custom Locations**, **SSL**, and an **Advanced** gear at the right end of the tab bar. Only Details and SSL get touched, for every host on this page.
+
+> [!NOTE]
 > The proxy now talks to Proxmox's self-signed certificate and does not verify upstream certificates by default, so this just works. The warning you have clicked past since install was not fixed so much as moved to an encrypted-but-unverified hop inside your own LAN — a fair trade at home, and the browsers in your house never see it again.
 
 ### Tell Home Assistant to trust the proxy
-Add the next host the same way — `ha.kuzco.org`, Scheme `http`, Forward to your `ha-ip`, port `8123`, **Websockets Support** on, then the same SSL tab (wildcard certificate, **Force SSL**). Browse to `https://ha.kuzco.org` and meet a deliberate roadblock: a bare **400: Bad Request**. Home Assistant OS refuses proxied requests until you name your proxy.
+Add the next host the same way — **Hosts → Proxy Hosts → Add Proxy Host**:
 
-The fix lives in the **Home Assistant UI** (`192.168.1.51:8123`), not NPM — as of Home Assistant 2026.8 it is a settings screen, not a YAML edit. Go to **Settings → System → Network**, scroll to the **HTTP server** section — **not there? your Home Assistant predates it; see the callout below** — and set two things:
+- **Domain Names** → `ha.kuzco.org`
+- **Scheme** → `http`
+- **Forward Hostname / IP** → `192.168.1.51`
+- **Forward Port** → `8123`
+- **Websockets Support** → **on**
+- **SSL tab** → the `*.kuzco.org` wildcard, **Force SSL** → **on**
 
-- **Trust X-Forwarded-For** → **on** — lets HA read the real client address the proxy passes along
-- **Trusted proxies** → add **`192.168.1.54`** — the only machine allowed to speak for clients; it saves back as **`192.168.1.54/32`**, which is the same single address written as a one-address network, not a sign anything went wrong. Leave it that narrow — and if you ever do mean a whole subnet, Home Assistant wants the *network* address there (`192.168.1.0/24`), never a host address wearing a broad mask (`192.168.1.54/24`)
+Save and browse to `https://ha.kuzco.org` — a deliberate roadblock: a bare **400: Bad Request**. Home Assistant OS refuses proxied requests until you name your proxy.
+
+The fix lives in the **Home Assistant UI** at `http://192.168.1.51:8123`, not in NPM — since Home Assistant 2026.8 it is a settings screen, not a YAML edit:
+
+1. **Settings → System → Network**, then scroll to the **HTTP server** section. Not there? Your Home Assistant predates it — see the callout below.
+2. **Trust X-Forwarded-For** → **on** — lets HA read the real client address the proxy passes along.
+3. **Trusted proxies** → add `192.168.1.54` — the only machine allowed to speak for clients.
+4. **Save** — Home Assistant restarts itself.
+5. After the restart, HA asks an administrator to **confirm the new network settings within five minutes** — confirm, or it reverts them (a guard against locking yourself out with a bad proxy config).
+6. Reload `https://ha.kuzco.org` — the normal dashboard, behind a real lock.
+
+> [!NOTE]
+> The trusted proxy saves back as `192.168.1.54/32` — the same single address written as a one-address network, not a sign anything went wrong. Leave it that narrow; if you ever do mean a whole subnet, Home Assistant wants the *network* address there (`192.168.1.0/24`), never a host address wearing a broad mask (`192.168.1.54/24`).
 
 > [!IMPORTANT]
 > **No HTTP server section on that page? Update Home Assistant first.** That screen arrived in **2026.8** (5 August 2026); on anything older these two settings exist only as an `http:` block in `configuration.yaml`, which on HAOS means installing a file-editor app purely to write four lines the next upgrade deprecates. Skip that: **Settings → System → Updates → Home Assistant Core**, then come back and the section is there. Two reassurances before you press it, since this build otherwise defers updates until the collection is finished:
 >
 > - **Your port does not move.** 2026.8 changed the HAOS default to **80**, but only for brand-new installs — the release notes are explicit that ["If you are already running Home Assistant, nothing changes and there is nothing you need to do."](https://www.home-assistant.io/blog/2026/08/05/release-20268/) This VM keeps `8123`, so the proxy host you just built stays correct.
 > - **Nothing else in the collection depends on the older version.** Zigbee2MQTT, Mosquitto, Matter Server and the Frigate integration are apps and HACS components with their own versions; a Core update does not disturb them.
-
-Saving **restarts Home Assistant by itself** — and then comes the step people miss: after the restart, HA asks an administrator to **confirm the new network settings within five minutes**, or it reverts them (a guard against locking yourself out with a bad proxy config). Confirm, then reload `https://ha.kuzco.org` — the normal dashboard, behind a real lock.
 
 > [!DETAILS] Reading the 400 if it persists
 > The browser only shows the bare 400; the explanation is in Home Assistant's log (**Settings → System → Logs**). "Not set-up for reverse proxies" means the settings have not applied — check they survived the five-minute confirmation. "Received X-Forwarded-For header from an untrusted proxy" means the address under Trusted proxies does not match the proxy's. A history note, because old write-ups still show it: this used to be an `http:` block in `configuration.yaml`. On 2026.8 and later that YAML was imported once, at migration, and is **ignored afterwards** — adding it fresh does nothing but raise a Repairs issue — so make the change in the UI. And one forward-looking quirk: a *fresh* HAOS install now serves port **80** by default; existing installs like this one keep `8123`, but if HA is ever rebuilt, this proxy host's Forward Port follows it. The pattern generalizes — if a service errors through its new name but works by IP, hunt its settings for a "trusted proxy" or "allowed hosts" option.
@@ -316,9 +333,10 @@ Every remaining host is the **same dialog with four fields changed**. Nothing el
 | `home.kuzco.org` | http | `192.168.1.55` | `3000` | Homepage page |
 | `status.kuzco.org` | http | `192.168.1.57` | `3001` | Uptime Kuma page |
 
-Add the first four now, and come back for the others as their pages build them — or **create all eight in one sitting**, which is the better use of the time. Forwarding is by IP, so nginx has nothing to resolve and reloads cleanly whether or not the container exists; a name whose service is not built yet simply returns **502 Bad Gateway** until it is. Doing them together while the pattern is fresh also avoids the classic omission — one host added alone weeks later, missing Websockets or the certificate.
+**Create all eight in one sitting**, while the pattern is fresh — the better use of the time than the first four now and the rest as their pages arrive.
 
-Two things to bank if you pre-create them: a **502 means "not built yet", not "broken"**, which is worth remembering before you debug a proxy that is behaving perfectly; and pre-creating the host does **not** do the service-side configuration in the table below, which still happens on each service's own page.
+> [!NOTE]
+> Forwarding is by IP, so nginx has nothing to resolve and reloads cleanly whether or not the container exists yet; a name whose service is not built simply returns **502 Bad Gateway** until it is — **502 means "not built yet", not "broken"**, worth remembering before you debug a proxy that is behaving perfectly. Doing them together also avoids the classic omission: one host added alone weeks later, missing Websockets or the certificate. And pre-creating a host does **not** do the service-side configuration in the table below — that still happens on each service's own page.
 
 **Three services also need telling, on their own side** — the proxy host alone is not enough, and each fails in its own way through the new name while working fine by IP:
 

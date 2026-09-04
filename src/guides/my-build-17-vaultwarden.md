@@ -319,7 +319,8 @@ Add one layer the server cannot take down with it. From the web vault, go to **T
 - **File password** → appears once Password protected is chosen; set one and record it in your password manager
 - **Confirm vault export** → the final verification dialog, then the file downloads
 
-Save the file onto the TrueNAS mirror, in with the irreplaceable files that the nightly Backblaze B2 Cloud Sync task pushes offsite — a vault whose only copies sit in one house is not finished. Repeat after big additions; the export is a snapshot, not a feed.
+- Save the file onto the TrueNAS mirror, in with the irreplaceable files the nightly Backblaze B2 Cloud Sync task pushes offsite — a vault whose only copies sit in one house is not finished.
+- Repeat after big additions; the export is a snapshot, not a feed.
 
 > [!WARNING]
 > The encrypted-JSON export holds your logins and notes but **leaves out file attachments** — and Sends and trash with them. If you keep recovery-code images, scanned documents, or the like attached to vault items, that "complete copy" silently is not. To capture the attachments too, also take a **.zip export** (the export screen offers it), which packages the attached files alongside the data. Store the .zip beside the JSON on the NAS (network-attached storage), and treat it with the same care — it carries the unencrypted attachments inside.
