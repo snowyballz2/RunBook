@@ -173,6 +173,50 @@ Repeat the patterns you want for `lock.carport_door` and `lock.basement_door` to
 > [!TIP]
 > If you later add a door/window **contact sensor** and pair it (the same way you joined the leak sensors), you can swap the auto-lock trigger to fire on the *door* closing and holding (`binary_sensor.front_door_contact` reading `off` `for: "00:05:00"`) for a more natural "lock after the door is shut" behaviour. An Aqara contact on the **Zigbee** mesh is the safe choice, since Zigbee already has mains-powered routers here; IKEA's **MYGGBETT** at $8 is the cheaper option once the Thread mesh has routers of its own. The build does not ship one, so the lock-state version above is the default.
 
+### Watch the locks the way the storm taught
+A power blip has a lock-specific aftermath this build has now lived through: Home Assistant comes back, the Matter subscription does not, and a lock sits there showing **connected** while commands time out — invisible until someone tries the door from an airport. Two watchdogs cover both shapes of the failure.
+
+The restart watchdog fires whenever Home Assistant starts — which is exactly when subscriptions go stale — and lands the nudge when a thirty-second check is actually worth doing:
+
+```yaml
+alias: Restart watchdog — check the locks
+triggers:
+  - trigger: homeassistant
+    event: start
+actions:
+  - delay: "00:03:00"
+  - action: notify.mobile_app_chris_iphone
+    data:
+      title: Home Assistant restarted
+      message: >-
+        If this follows a power blip, open each lock in the app and confirm a
+        live status — a stale lock still shows connected but times out.
+        Fix: Settings → Devices & Services → Matter → Reload.
+mode: single
+```
+
+The offline watchdog covers the honest failure, where a lock drops off outright:
+
+```yaml
+alias: Lock offline for 10 minutes
+triggers:
+  - trigger: state
+    entity_id:
+      - lock.front_door
+      - lock.carport_door
+      - lock.basement_door
+    to: unavailable
+    for: "00:10:00"
+actions:
+  - action: notify.mobile_app_chris_iphone
+    data:
+      title: "Lock offline: {{ trigger.to_state.attributes.friendly_name }}"
+      message: Unavailable for 10 minutes. Matter → Reload usually revives it; the keypad works regardless.
+mode: parallel
+```
+
+`mode: parallel` lets two doors alert independently instead of the second swallowing the first. The honest limit, stated plainly: the offline watchdog cannot see the connected-but-stale mode — that entity never reads unavailable — which is why the restart watchdog exists; power events are that mode's known trigger. The outage itself already has a voice from the UPS & Safe Shutdown page; these two cover its aftermath. And through all of it, the keypads never depended on Home Assistant — the codes live in the locks.
+
 ### Onboard the thermostats
 The presence rules below reach for `climate.*` and `light.*` entities. The Caséta `light.*` entities already exist — you added the Lutron Caséta bridge back on the Home Assistant & Zigbee2MQTT page. The one integration still missing is the **ecobee thermostats**, so add it here — **Settings → Devices & services → Add integration → ecobee**, then its dialog field by field:
 
