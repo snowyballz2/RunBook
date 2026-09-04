@@ -143,7 +143,7 @@ One command now prevents a boot-order trap later. On the Reverse Proxy page, thi
 tailscale set --accept-dns=false
 ```
 
-Every phone and laptop keeps the override — that is what carries the `*.example.com` names off-LAN — but the machine underneath them all keeps its boring, self-sufficient DNS.
+Every phone and laptop keeps the override — that is what carries the `*.kuzco.org` names off-LAN — but the machine underneath them all keeps its boring, self-sufficient DNS.
 
 ### Stop the host's key from expiring
 By default a tailnet device must re-authenticate every 180 days, and a server that silently drops off the network while you are travelling defeats the entire point. On the [Machines page](https://login.tailscale.com/admin/machines) of the admin console, find the **pve** row, open the **…** menu at the far right, and select **Disable Key Expiry**.
@@ -196,10 +196,10 @@ Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app 
 - **Home Assistant** — `http://192.168.1.51:8123`.
 - **TrueNAS** — `http://192.168.1.20`.
 - **Frigate and AdGuard** — `https://192.168.1.52:8971` and `http://192.168.1.53`, exactly as on the couch.
-- **Nginx Proxy Manager** — its admin UI at `http://192.168.1.54:81`. The `*.example.com` hostnames it serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System): on the admin console's [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers** open **Add nameserver** and choose **Custom…** — every preset in that list (Google, Cloudflare, Quad9, Mullvad, NextDNS, Control D) is a public resolver, and you want your own. Enter AdGuard's LAN IP, `192.168.1.53`, and save; the **Override DNS servers** toggle stays greyed until a nameserver exists, then turn it **on**. After that, `https://proxmox.example.com` and the rest work from anywhere too.
+- **Nginx Proxy Manager** — its admin UI at `http://192.168.1.54:81`. The `*.kuzco.org` hostnames it serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System): on the admin console's [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers** open **Add nameserver** and choose **Custom…** — every preset in that list (Google, Cloudflare, Quad9, Mullvad, NextDNS, Control D) is a public resolver, and you want your own. Enter AdGuard's LAN IP, `192.168.1.53`, and save; the **Override DNS servers** toggle stays greyed until a nameserver exists, then turn it **on**. After that, `https://proxmox.kuzco.org` and the rest work from anywhere too.
 
 > [!DETAILS] What the override actually changed, followed one query at a time
-> `proxmox.example.com` does not exist on the internet — it is a rewrite living only inside AdGuard. At home that is invisible, because the router hands AdGuard out as the resolver. On cellular the phone uses the carrier's resolver, which has never heard of the name and never will.
+> `proxmox.kuzco.org` does not exist on the internet — it is a rewrite living only inside AdGuard. At home that is invisible, because the router hands AdGuard out as the resolver. On cellular the phone uses the carrier's resolver, which has never heard of the name and never will.
 >
 > The two fields do different jobs. **Global nameservers** names *which* resolver tailnet devices use. **Override DNS servers** decides *when*: off, Tailscale handles only `.ts.net` names and defers everything else to the local network; on, the device ignores whatever resolver it was handed and sends **all** DNS to AdGuard.
 >
@@ -220,7 +220,7 @@ Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app 
 > [!WARNING]
 > **Add exactly one nameserver here — do not pair AdGuard with a public resolver as a fallback.** Tailscale queries every global nameserver **in parallel and takes the fastest answer**, rather than trying them in order the way AdGuard's own upstream list does. Add `1.1.1.1` alongside AdGuard and the public resolver wins most races, so ads resolve and the filtering silently stops working — Tailscale's own documentation warns that multiple nameservers "can bypass explicit content restrictions if they aren't the same." The fallback instinct is right on the AdGuard page and wrong here, because the two behave differently.
 >
-> The cost of the single entry, stated plainly: with **Override DNS servers** on, a tailnet device's DNS depends on the house being up, so if the server is down while you are travelling, name resolution fails for everything rather than just for your own domains. Recovery is one tap — switch Tailscale off on the phone and it falls straight back to the carrier's resolver. If you would rather not carry that risk at all, the gentler alternative is **split DNS**: scope the nameserver to `example.com` only, so AdGuard answers for your own names and everything else uses the phone's normal DNS. That trades away AdGuard's ad-blocking while you are away, which on iOS is the one place it is hardest to replace.
+> The cost of the single entry, stated plainly: with **Override DNS servers** on, a tailnet device's DNS depends on the house being up, so if the server is down while you are travelling, name resolution fails for everything rather than just for your own domains. Recovery is one tap — switch Tailscale off on the phone and it falls straight back to the carrier's resolver. If you would rather not carry that risk at all, the gentler alternative is **split DNS**: scope the nameserver to `kuzco.org` only, so AdGuard answers for your own names and everything else uses the phone's normal DNS. That trades away AdGuard's ad-blocking while you are away, which on iOS is the one place it is hardest to replace.
 
 > [!DETAILS] If the phone reaches nothing — bisect before you change settings
 > Three different failures look identical from the phone, and the iOS app's own toggles are a tempting wrong turn: **VPN On Demand** only decides whether iOS raises the tunnel automatically, and **Detect MagicDNS hostnames** only auto-connects for names ending in `.ts.net`. Neither affects reaching a raw `192.168.1.x` address, so leave both alone while diagnosing.
@@ -249,7 +249,7 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 >
 > **Do not confuse it with the Tailnet ID**, which is a different value on a different page. **Settings → General** carries a *Unique IDs* card holding a **Tailnet ID**, described as identifying the tailnet *in API calls* — an opaque handle for scripting against Tailscale's API, which nothing in this collection does. Both look like hex; only the DNS-page one belongs in the field above or in a `pve.<tailnet>.ts.net` URL.
 >
-> That page also offers **Rename tailnet**, which trades the hex for a generated word pair like `cat-crocodile.ts.net`, and you can switch back and forth between the two. **Do it now if you are going to.** Renaming breaks every MagicDNS name, any Tailscale-issued HTTPS certificate, and any device-sharing link built on the old one — costless today because nothing depends on it yet, and not costless once `tailscale serve` or a Tailscale certificate is in play (a randomized name already used for certificates cannot be regenerated). For this build it is cosmetic either way, since the Reverse Proxy page gives every service a real `*.example.com` name.
+> That page also offers **Rename tailnet**, which trades the hex for a generated word pair like `cat-crocodile.ts.net`, and you can switch back and forth between the two. **Do it now if you are going to.** Renaming breaks every MagicDNS name, any Tailscale-issued HTTPS certificate, and any device-sharing link built on the old one — costless today because nothing depends on it yet, and not costless once `tailscale serve` or a Tailscale certificate is in play (a randomized name already used for certificates cannot be regenerated). For this build it is cosmetic either way, since the Reverse Proxy page gives every service a real `*.kuzco.org` name.
 >
 > Day to day, keep using the LAN IPs: thanks to the subnet route, they are the addresses that reach the host *and* every guest, both at home and away, with nothing to remember per service.
 
@@ -267,7 +267,7 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 >
 >   Enabling it publishes your **machine names** to the public Certificate Transparency ledger, as `pve.<tailnet>.ts.net` — the same ledger discussed when picking a domain on the Reverse Proxy page. Tailscale's own caution is simply not to enable it if machine names contain sensitive information; `pve` on a randomly generated tailnet string carries nothing worth hiding.
 >
->   **Worth doing even though the Reverse Proxy page already gives Proxmox a valid certificate**, because the two fail independently. `proxmox.example.com` is a DNS rewrite inside AdGuard, and with **Override DNS servers** on, every lookup depends on AdGuard being alive. `pve.<tailnet>.ts.net` resolves through **MagicDNS**, handled by Tailscale itself, and Serve runs on the host rather than in a container. So on the day AdGuard or NPM is the broken thing — precisely when you need a shell — this name still opens Proxmox cleanly. Keep it bookmarked as the break-glass route.
+>   **Worth doing even though the Reverse Proxy page already gives Proxmox a valid certificate**, because the two fail independently. `proxmox.kuzco.org` is a DNS rewrite inside AdGuard, and with **Override DNS servers** on, every lookup depends on AdGuard being alive. `pve.<tailnet>.ts.net` resolves through **MagicDNS**, handled by Tailscale itself, and Serve runs on the host rather than in a container. So on the day AdGuard or NPM is the broken thing — precisely when you need a shell — this name still opens Proxmox cleanly. Keep it bookmarked as the break-glass route.
 >
 >   Tailscale's "on a Proxmox host" guide also documents a second route — installing a Tailscale-issued HTTPS certificate directly into Proxmox, kept current with a cron job. Serve is the simpler, self-contained option and is plenty here.
 
@@ -288,7 +288,7 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 >
 > One new cost too: an exit node caps mobile speed at your home *upload* bandwidth, adds a hop of latency, and dies with the server.
 >
-> **Either way, disconnect it while at home.** On your own LAN a consumer VPN buys only ISP opacity, and it costs you real things: it bypasses AdGuard's filtering, it stops the `*.example.com` names from the Reverse Proxy page resolving on the machine you administer from, and it fights Tailscale for control of routing and DNS on macOS. Run one at a time.
+> **Either way, disconnect it while at home.** On your own LAN a consumer VPN buys only ISP opacity, and it costs you real things: it bypasses AdGuard's filtering, it stops the `*.kuzco.org` names from the Reverse Proxy page resolving on the machine you administer from, and it fights Tailscale for control of routing and DNS on macOS. Run one at a time.
 
 ## Put Tailscale on the Mac you administer from
 
@@ -316,7 +316,7 @@ Onboarding's last screen offers **start at login**. Take it. Idle Tailscale cost
 Strictly, this Mac needs it in only two situations, and neither happens at home:
 
 - **You are away from home** — it is the only path back to the rack.
-- **You want the `*.example.com` names to resolve while away** — those exist only in AdGuard, and the tailnet DNS override is what carries them off the LAN.
+- **You want the `*.kuzco.org` names to resolve while away** — those exist only in AdGuard, and the tailnet DNS override is what carries them off the LAN.
 
 Leaving it connected at home changes nothing, which is exactly why start-at-login is the right default: nothing to remember on the way out the door.
 

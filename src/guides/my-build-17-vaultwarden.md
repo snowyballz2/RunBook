@@ -90,7 +90,7 @@ After the half-hour compile:
 4. In the Proxmox left tree select the container, open **Options**, set **Start at boot** → **Yes**, and confirm **Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
 
 > [!NOTE]
-> `vault.example.com` does not work yet either, if the Reverse Proxy page's eight hosts went in as one sitting: that host forwards plain HTTP to a port currently answering HTTPS — a mismatch the handover below resolves. Check aliveness by the direct address only.
+> `vault.kuzco.org` does not work yet either, if the Reverse Proxy page's eight hosts went in as one sitting: that host forwards plain HTTP to a port currently answering HTTPS — a mismatch the handover below resolves. Check aliveness by the direct address only.
 
 The same start-at-boot setting from the node Shell instead, if you prefer (`106` is this build's next free ID after Nextcloud's `105`; confirm against the left tree):
 
@@ -113,7 +113,7 @@ nano /opt/vaultwarden/.env
 Add this line, and delete any `ROCKET_TLS` line — then save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`):
 
 ```ini
-DOMAIN=https://vault.example.com
+DOMAIN=https://vault.kuzco.org
 ```
 
 Restart:
@@ -131,19 +131,19 @@ systemctl restart vaultwarden
 ### Add the proxy host
 In Nginx Proxy Manager, go to **Hosts → Proxy Hosts → Add Proxy Host**:
 
-- **Domain Names** → `vault.example.com`
+- **Domain Names** → `vault.kuzco.org`
 - **Scheme** → `http`
 - **Forward Hostname / IP** → `192.168.1.56`
 - **Forward Port** → `8000`
 - **Websockets Support** → **on** — Vaultwarden's live-sync notifications ride the same port and need the WebSocket headers passed through
-- **SSL tab → SSL Certificate** → the `*.example.com` wildcard, and **Force SSL** → **on**
+- **SSL tab → SSL Certificate** → the `*.kuzco.org` wildcard, and **Force SSL** → **on**
 
-AdGuard's DNS (Domain Name System) rewrite for the wildcard already resolves the new name on the LAN. Browse to `https://vault.example.com`: the web vault, with a padlock, no warnings.
+AdGuard's DNS (Domain Name System) rewrite for the wildcard already resolves the new name on the LAN. Browse to `https://vault.kuzco.org`: the web vault, with a padlock, no warnings.
 
 ## Make the household's accounts
 
 ### Create each account, and write the master password on paper
-Once for each of you, at `https://vault.example.com` — **in a browser**, not in the Bitwarden apps (see the warning below):
+Once for each of you, at `https://vault.kuzco.org` — **in a browser**, not in the Bitwarden apps (see the warning below):
 
 1. Click **Create account** — the link under **"New to Bitwarden?"**.
 2. **Email** — the real address, typed exactly: it is the account's *username*, entered at every login. No verification mail will ever arrive (this server cannot send mail), so a typo is accepted silently — and becomes the username.
@@ -158,7 +158,7 @@ Once for each of you, at `https://vault.example.com` — **in a browser**, not i
 > The account this form creates exists only on your server — Bitwarden the company never learns of it, holds nothing of yours, and can never reset it. And it is one master password per *person*, not per device: yours unlocks your account on the iPhone, the Mac, and the browser extension alike, so the household ends up with exactly two — the single thing each person memorizes. The only *shared* passwords in this system are the items inside the `Kuzco's House` organization below, and that split is the safety net: if one of you ever forgets a master password, the other account still opens, and every shared item is still reachable from it.
 
 > [!WARNING]
-> The master password is the single secret that does not go in any manager — not in the vault it protects, not in a browser, and not saved below; there is deliberately no field for it. Vaultwarden cannot reset it: encryption happens on your devices, and the server never sees the key. Write each master password on paper — an emergency sheet with the server address (`https://vault.example.com`), the account email, and the master password — and keep it where you keep passports. That sheet is also the answer to "what if something happens to me": the household can still reach what it needs.
+> The master password is the single secret that does not go in any manager — not in the vault it protects, not in a browser, and not saved below; there is deliberately no field for it. Vaultwarden cannot reset it: encryption happens on your devices, and the server never sees the key. Write each master password on paper — an emergency sheet with the server address (`https://vault.kuzco.org`), the account email, and the master password — and keep it where you keep passports. That sheet is also the answer to "what if something happens to me": the household can still reach what it needs.
 
 ### Share the household's common logins with an Organization
 Two separate vaults raise an immediate question: where do the *joint* logins live — streaming, Wi-Fi, utilities? Not duplicated into both vaults, where every password change has to be made twice. Bitwarden's mechanism is an **Organization**: a shared pool both accounts belong to, where an entry lives once and both people see, edit, and autofill it.
@@ -207,7 +207,7 @@ Existing accounts are untouched; the Create account door is closed.
 
 > [!DETAILS] The admin panel — this build's answer is to leave it off
 > Every job the panel does already has a home here: signups toggle via `.env`, member management via the Organization, server settings via `.env` — and an account removal, the rare leftover, justifies enabling the panel for ten minutes that day. Off means one less privileged login on the network and no `config.json` override risk. The mechanics, for that day:
-> Vaultwarden ships a server-admin page at `/admin` — view and remove accounts, invite users, change settings from the browser. It is disabled until a token exists, and the install script left the token empty on purpose. To enable it, type `update` in the container's console and choose **Set Admin Token**: you type a passphrase, the script stores only an argon2 hash of it, and `https://vault.example.com/admin` starts accepting that passphrase. Treat it like the root password it is — and if you never need the panel, leave it off; an empty token *is* the off switch. One caution if you do enable it: the moment any setting is **saved in the panel**, Vaultwarden writes a `config.json` that **overrides the matching `.env` lines from then on** — including `SIGNUPS_ALLOWED` (the panel calls it **Allow new signups**, under General settings) and the push-relay lines. Pick one place to manage settings; on this build that place is `.env`.
+> Vaultwarden ships a server-admin page at `/admin` — view and remove accounts, invite users, change settings from the browser. It is disabled until a token exists, and the install script left the token empty on purpose. To enable it, type `update` in the container's console and choose **Set Admin Token**: you type a passphrase, the script stores only an argon2 hash of it, and `https://vault.kuzco.org/admin` starts accepting that passphrase. Treat it like the root password it is — and if you never need the panel, leave it off; an empty token *is* the off switch. One caution if you do enable it: the moment any setting is **saved in the panel**, Vaultwarden writes a `config.json` that **overrides the matching `.env` lines from then on** — including `SIGNUPS_ALLOWED` (the panel calls it **Allow new signups**, under General settings) and the push-relay lines. Pick one place to manage settings; on this build that place is `.env`.
 >
 > > [!SECRET] vaultwarden-admin-token | Vaultwarden admin token
 > > Only if you enabled the `/admin` panel — the passphrase you typed into Set Admin Token.
@@ -223,7 +223,7 @@ On each device, install the official Bitwarden client from its official source:
 
 Then, on each client's login screen:
 
-1. *Before* signing in, open the **Logging in on** dropdown (the desktop apps label it **Accessing**) → **Self-hosted** → enter `https://vault.example.com` as the Server URL and save.
+1. *Before* signing in, open the **Logging in on** dropdown (the desktop apps label it **Accessing**) → **Self-hosted** → enter `https://vault.kuzco.org` as the Server URL and save.
 2. Log in with the account's email and master password.
 3. Turn on autofill.
 
@@ -240,7 +240,7 @@ Each account brings its existing passwords over once. First, export the source t
 - **On an iPhone** (no Mac needed, iOS 18+): **Settings → Apps → Safari** → under History and Website Data, **Export** → select only **Passwords** → **Save to Downloads**. It arrives as `Safari Export.zip` — tap it in **Files** to unzip; `Passwords.CSV` sits inside the `Safari Export` folder.
 - Chrome, Firefox, and any password manager offer equivalent CSV exports. Passkeys never export — they keep working where they are; only passwords and codes make the trip.
 
-Then run the import from the web vault's **Tools → Import data** — on an iPhone that means Safari at `https://vault.example.com`, since the phone apps have no import screen (the browser extension does):
+Then run the import from the web vault's **Tools → Import data** — on an iPhone that means Safari at `https://vault.kuzco.org`, since the phone apps have no import screen (the browser extension does):
 
 1. **Vault** → **My vault** — personal logins stay personal; move any joint ones into `Kuzco's House` afterwards, with the same Assign-to-collections move as above.
 2. **Folder** → leave unselected.
@@ -259,7 +259,7 @@ Moving the build's real credentials in — Proxmox, TrueNAS, the cameras and doo
 > One setting can quietly break that rule for you: each app's **vault timeout action** (Settings → Account security) either **locks** after the timeout or **logs out**. It ships as Lock — confirm it in every app *and* every browser extension (each install has its own copy of the setting) and leave it there, because a device set to log out will do so on its own during an outage, exactly when it cannot get back in.
 
 > [!NOTE]
-> Away from home, the vault syncs through the same Tailscale tunnel as everything else on this build — never a port-forward; a password server has no business being reachable from the internet. One wrinkle: `vault.example.com` only resolves where AdGuard answers DNS, so remote syncing needs the Tailscale-DNS wiring covered on the Reverse Proxy page (AdGuard's LAN IP entered on the Tailscale admin console's DNS page). Skip even that and nothing is lost day-to-day — the offline copies above carry you until you are home.
+> Away from home, the vault syncs through the same Tailscale tunnel as everything else on this build — never a port-forward; a password server has no business being reachable from the internet. One wrinkle: `vault.kuzco.org` only resolves where AdGuard answers DNS, so remote syncing needs the Tailscale-DNS wiring covered on the Reverse Proxy page (AdGuard's LAN IP entered on the Tailscale admin console's DNS page). Skip even that and nothing is lost day-to-day — the offline copies above carry you until you are home.
 
 > [!DETAILS] Instant sync between phones — the optional push relay
 > By default the apps sync on login, periodically while unlocked, and on demand — fine for a household. If you want an edit on one iPhone to appear on another within seconds, Vaultwarden can use Bitwarden's push relay: request a free installation id and key at [bitwarden.com/host](https://bitwarden.com/host/), then add three lines to `/opt/vaultwarden/.env` in the container's console and restart:
@@ -335,4 +335,4 @@ When you build Uptime Kuma later in this build, give it an HTTP(s) monitor point
 Vaultwarden's releases sometimes carry security fixes — when the project says update, take it promptly.
 
 ### Put it on the front door
-When you build the Homepage dashboard on the next page, its services config already carries the vault's tile — `icon: vaultwarden.png`, `href: https://vault.example.com` — the vault, one click from the page the household will start at, and the place every secret on this build now lives.
+When you build the Homepage dashboard on the next page, its services config already carries the vault's tile — `icon: vaultwarden.png`, `href: https://vault.kuzco.org` — the vault, one click from the page the household will start at, and the place every secret on this build now lives.

@@ -6,7 +6,7 @@ order: 14
 accent: amber
 ---
 
-By now your bookmarks bar is a wall of IPs and certificate warnings: `https://192.168.1.50:8006` for Proxmox, an HTTP address for Home Assistant, the TrueNAS IP, a Frigate port, an AdGuard dashboard on its own port. A **reverse proxy** ends that. It is one small LXC (Linux Container) that becomes the single address you browse to — you ask for `https://proxmox.example.com`, it forwards the request to `192.168.1.50:8006` behind the scenes, and hands back the answer over a connection covered by one real, browser-trusted certificate that serves every name at once.
+By now your bookmarks bar is a wall of IPs and certificate warnings: `https://192.168.1.50:8006` for Proxmox, an HTTP address for Home Assistant, the TrueNAS IP, a Frigate port, an AdGuard dashboard on its own port. A **reverse proxy** ends that. It is one small LXC (Linux Container) that becomes the single address you browse to — you ask for `https://proxmox.kuzco.org`, it forwards the request to `192.168.1.50:8006` behind the scenes, and hands back the answer over a connection covered by one real, browser-trusted certificate that serves every name at once.
 
 The tool here is **Nginx Proxy Manager** (NPM): nginx doing the proxying, with a web interface instead of config files. It runs as another service container on this Proxmox host, alongside AdGuard, Frigate, and the services still to come. Two rules hold throughout: the proxy serves only your LAN (and your tailnet, once remote access is in) — **no router port-forwards, not for this, ever** — and the certificate arrives without exposing anything to the internet.
 
@@ -108,7 +108,7 @@ Two concrete picks, since "somewhere on that list" is not much help:
 **Avoid GoDaddy**: heavy upsells, renewals well above the hook price, and API access gated behind account conditions a single-domain owner will not meet. Whatever you choose, judge by the **renewal** price — the $1-first-year endings routinely renew near $40.
 
 > [!NOTE]
-> **Pick a name you do not mind being public.** Every Let's Encrypt certificate is published to public **Certificate Transparency** logs, so the domain itself becomes discoverable even though nothing about it resolves or points anywhere near your house. Avoid anything that pins your address or identity. Using a **wildcard** helps: the log records `*.example.com` rather than `frigate.example.com` and `vault.example.com`, so which services you run stays private — a quiet argument for the wildcard beyond convenience. Beyond that the only criteria are short and typeable, since somebody else in the house will eventually type it on a phone. One quirk if you are choosing an ending: **`.dev` and `.app` are HSTS-preloaded**, so browsers force HTTPS on them permanently — fine here, except you could never drop to plain `http://` to troubleshoot. `.com`, `.net`, `.org` and `.xyz` carry no such constraint.
+> **Pick a name you do not mind being public.** Every Let's Encrypt certificate is published to public **Certificate Transparency** logs, so the domain itself becomes discoverable even though nothing about it resolves or points anywhere near your house. Avoid anything that pins your address or identity. Using a **wildcard** helps: the log records `*.kuzco.org` rather than `frigate.kuzco.org` and `vault.kuzco.org`, so which services you run stays private — a quiet argument for the wildcard beyond convenience. Beyond that the only criteria are short and typeable, since somebody else in the house will eventually type it on a phone. One quirk if you are choosing an ending: **`.dev` and `.app` are HSTS-preloaded**, so browsers force HTTPS on them permanently — fine here, except you could never drop to plain `http://` to troubleshoot. `.com`, `.net`, `.org` and `.xyz` carry no such constraint.
 
 > [!WARNING]
 > **Two reasons not to grab the cheapest ending on the list.** Most of the usual objections do not apply to a domain that hosts nothing and sends no mail — but these two do:
@@ -118,7 +118,7 @@ Two concrete picks, since "somewhere on that list" is not much help:
 >
 > `.com`, `.net` or `.org` at roughly $10–15 avoid both, and `.xyz` is a legitimate cheap option these days. The saving on a bargain ending is a few dollars a year on a build with seven cameras in it.
 
-> [!INPUT] domain-name | Your domain | example.com
+> [!INPUT] domain-name | Your domain | kuzco.org
 
 Buy it, and stop there — the token and the certificate are separate steps below. Create no records of your own: no A record with your home IP, nothing pointing at your house. From outside your LAN these names will simply not resolve, and that is the design working.
 
@@ -182,12 +182,12 @@ On **Cloudflare**, this build's registrar:
 > **One DuckDNS drawback that bites this build in particular:** `duckdns.org` is a shared parent domain used heavily for malware and phishing, so it turns up periodically on reputation blocklists — potentially including lists **your own AdGuard subscribes to**. Watching your own DNS filter block your own services is a memorable way to spend an evening. A purchased domain or deSEC avoids the issue entirely.
 
 > [!DETAILS] The free path with DuckDNS
-> DuckDNS hands out free subdomains of `duckdns.org`. Claim one, copy the token from its dashboard, and your services become `proxmox.yourname.duckdns.org` and friends — NPM's provider list includes **DuckDNS**, credentials a single line: `dns_duckdns_token=your-token`. The trade: longer, visibly borrowed names, and DuckDNS allows only one TXT record at a time, so request exactly one certificate — the wildcard `*.yourname.duckdns.org`, which covers every service anyway. Everywhere below you see `*.example.com`, read your DuckDNS name instead.
+> DuckDNS hands out free subdomains of `duckdns.org`. Claim one, copy the token from its dashboard, and your services become `proxmox.yourname.duckdns.org` and friends — NPM's provider list includes **DuckDNS**, credentials a single line: `dns_duckdns_token=your-token`. The trade: longer, visibly borrowed names, and DuckDNS allows only one TXT record at a time, so request exactly one certificate — the wildcard `*.yourname.duckdns.org`, which covers every service anyway. Everywhere below you see `*.kuzco.org`, read your DuckDNS name instead.
 
 ### Request the wildcard certificate
 In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Encrypt via DNS** from the dropdown (its siblings are **Let's Encrypt via HTTP** and **Custom Certificate** — neither is for this build) — a wildcard can only be issued over DNS, and in the current interface you pick that route here, up front, rather than with a toggle inside the dialog. Then:
 
-- **Domain Names** — `*.example.com`, your own domain swapped in.
+- **Domain Names** — `*.kuzco.org`, your own domain swapped in.
 - **Key Type** — leave the default.
 - **DNS Provider** — pick yours from the searchable list; the two fields below only appear once a provider is chosen.
 - **Credentials File Content** — the box pre-fills a template for the chosen provider; replace it entirely with your real token in Certbot's Cloudflare format:
@@ -208,27 +208,27 @@ It will show an expiry roughly **90 days** out, which is normal rather than a pr
 > The dialog warns that these credentials are stored as plaintext in NPM's database and in a file. That is the trade for hands-off issuance and renewal: the proxy keeps your DNS token. A tightly scoped token and a strong NPM admin password are the mitigations.
 
 > [!DETAILS] Covering the bare domain too
-> A wildcard covers `anything.example.com` but not plain `example.com`. Every service on this page lives on a subdomain, so you may never care — but if you want the bare name to work, add `example.com` alongside `*.example.com` in the same certificate's Domain Names, and add a second, exact DNS rewrite for it in AdGuard (the next phase). Skip this on DuckDNS, where the one-TXT-record limit makes the combined request unreliable.
+> A wildcard covers `anything.kuzco.org` but not plain `kuzco.org`. Every service on this page lives on a subdomain, so you may never care — but if you want the bare name to work, add `kuzco.org` alongside `*.kuzco.org` in the same certificate's Domain Names, and add a second, exact DNS rewrite for it in AdGuard (the next phase). Skip this on DuckDNS, where the one-TXT-record limit makes the combined request unreliable.
 
 > [!DETAILS] Why no ports opened for this
-> What ran was a **DNS-01 challenge**: Certbot used your token to publish a temporary TXT record at `_acme-challenge.example.com`, Let's Encrypt looked it up in public DNS, confirmed you control the domain, and issued. No connection to your network was ever attempted. DNS-01 is also the only challenge that can issue wildcards — and the only one that needs no inbound port, which is exactly why this build uses it. Renewals repeat the dance with the stored token, untouched by you.
+> What ran was a **DNS-01 challenge**: Certbot used your token to publish a temporary TXT record at `_acme-challenge.kuzco.org`, Let's Encrypt looked it up in public DNS, confirmed you control the domain, and issued. No connection to your network was ever attempted. DNS-01 is also the only challenge that can issue wildcards — and the only one that needs no inbound port, which is exactly why this build uses it. Renewals repeat the dance with the stored token, untouched by you.
 
 ## Teach the LAN the names
 
 ### Point the wildcard at the proxy
 In the AdGuard dashboard, open **Filters → DNS rewrites** and click **Add DNS rewrite**:
 
-- **Domain** → `*.example.com`
+- **Domain** → `*.kuzco.org`
 - **Answer** → your `proxy-ip`
 
 With the wildcard, every name under your domain now answers with the proxy's address for every device that asks AdGuard.
 
-A wildcard covers subdomains only, never the bare domain, so **add a second rewrite** — domain `example.com`, same answer — if you included the bare name on the certificate. Two entries, one for `*.example.com` and one for `example.com`.
+A wildcard covers subdomains only, never the bare domain, so **add a second rewrite** — domain `kuzco.org`, same answer — if you included the bare name on the certificate. Two entries, one for `*.kuzco.org` and one for `kuzco.org`.
 
 Verify from the **Mac**, in **Terminal**:
 
 ```bash
-nslookup proxmox.example.com
+nslookup proxmox.kuzco.org
 ```
 
 Expect the proxy's IP. The names resolve; nothing answers on them yet — that is the next phase.
@@ -240,14 +240,14 @@ Expect the proxy's IP. The names resolve; nothing answers on them yet — that i
 > **A name that failed once can keep failing after you fix it.** Resolvers cache negative answers as well as positive ones, so any lookup you tried *before* the rewrite existed — or through a VPN's resolver — leaves the router holding a "does not exist" result for minutes afterwards. It will serve that cached failure back to you while a direct query to AdGuard answers perfectly, which looks exactly like a broken configuration. Two ways to tell them apart: query a **name you have never asked for before** (if a fresh name resolves and the old one does not, it is the cache), or reboot the router to clear it outright.
 
 > [!DETAILS] Carrying the names with you over Tailscale
-> These names exist only inside AdGuard, so a phone off the LAN will not find them on its own. Once remote access is set up on the next page, the names can travel: on the Tailscale admin console's DNS page, add AdGuard's LAN IP under **Global nameservers** and enable **Override DNS servers** — tailnet devices then resolve through AdGuard, and `https://proxmox.example.com` works from anywhere the subnet route reaches. The trade: with Override on, the phone's DNS depends on the server being up. The gentler variant is split DNS — send only `example.com` lookups to AdGuard and leave the rest of the phone alone.
+> These names exist only inside AdGuard, so a phone off the LAN will not find them on its own. Once remote access is set up on the next page, the names can travel: on the Tailscale admin console's DNS page, add AdGuard's LAN IP under **Global nameservers** and enable **Override DNS servers** — tailnet devices then resolve through AdGuard, and `https://proxmox.kuzco.org` works from anywhere the subnet route reaches. The trade: with Override on, the phone's DNS depends on the server being up. The gentler variant is split DNS — send only `kuzco.org` lookups to AdGuard and leave the rest of the phone alone.
 
 ## Put every service behind it
 
 ### Give Proxmox the first name
 The pattern you repeat for everything: in NPM, open **Hosts → Proxy Hosts** and click **Add Proxy Host**. The dialog has four tabs — **Details**, **Custom Locations**, **SSL**, and an **Advanced** gear at the right end of the tab bar; only Details and SSL get touched, for every host on this page. On the **Details** tab:
 
-- **Domain Names**: `proxmox.example.com`
+- **Domain Names**: `proxmox.kuzco.org`
 - **Scheme**: `https` — Proxmox speaks HTTPS on its own port
 - **Forward Hostname / IP**: your `proxmox-ip`
 - **Forward Port**: `8006`
@@ -258,18 +258,18 @@ The pattern you repeat for everything: in NPM, open **Hosts → Proxy Hosts** an
 
 Then the **SSL** tab, every field:
 
-- **SSL Certificate** → the `*.example.com` certificate — not the dropdown's tempting **Request a new Certificate** entry (the wildcard already exists; **None** is the do-nothing default you are replacing)
+- **SSL Certificate** → the `*.kuzco.org` certificate — not the dropdown's tempting **Request a new Certificate** entry (the wildcard already exists; **None** is the do-nothing default you are replacing)
 - **Force SSL** → **on** — any plain-HTTP request redirects to HTTPS; it unlocks once a certificate is selected
 - **HTTP/2 Support**, **HSTS Enabled**, **HSTS Sub-domains** → off, the defaults — none earns its keep on a LAN
 - the tab's **Advanced** collapsible (Trust Upstream Forwarded Proto Headers) → leave collapsed
 
-Save, then browse to `https://proxmox.example.com`: the familiar login, a real padlock, nothing to click through.
+Save, then browse to `https://proxmox.kuzco.org`: the familiar login, a real padlock, nothing to click through.
 
 > [!NOTE]
 > The proxy now talks to Proxmox's self-signed certificate and does not verify upstream certificates by default, so this just works. The warning you have clicked past since install was not fixed so much as moved to an encrypted-but-unverified hop inside your own LAN — a fair trade at home, and the browsers in your house never see it again.
 
 ### Tell Home Assistant to trust the proxy
-Add the next host the same way — `ha.example.com`, Scheme `http`, Forward to your `ha-ip`, port `8123`, **Websockets Support** on, then the same SSL tab (wildcard certificate, **Force SSL**). Browse to `https://ha.example.com` and meet a deliberate roadblock: a bare **400: Bad Request**. Home Assistant OS refuses proxied requests until you name your proxy.
+Add the next host the same way — `ha.kuzco.org`, Scheme `http`, Forward to your `ha-ip`, port `8123`, **Websockets Support** on, then the same SSL tab (wildcard certificate, **Force SSL**). Browse to `https://ha.kuzco.org` and meet a deliberate roadblock: a bare **400: Bad Request**. Home Assistant OS refuses proxied requests until you name your proxy.
 
 The fix lives in the **Home Assistant UI** (`192.168.1.51:8123`), not NPM — as of Home Assistant 2026.8 it is a settings screen, not a YAML edit. Go to **Settings → System → Network**, scroll to the **HTTP server** section — **not there? your Home Assistant predates it; see the callout below** — and set two things:
 
@@ -282,7 +282,7 @@ The fix lives in the **Home Assistant UI** (`192.168.1.51:8123`), not NPM — as
 > - **Your port does not move.** 2026.8 changed the HAOS default to **80**, but only for brand-new installs — the release notes are explicit that ["If you are already running Home Assistant, nothing changes and there is nothing you need to do."](https://www.home-assistant.io/blog/2026/08/05/release-20268/) This VM keeps `8123`, so the proxy host you just built stays correct.
 > - **Nothing else in the collection depends on the older version.** Zigbee2MQTT, Mosquitto, Matter Server and the Frigate integration are apps and HACS components with their own versions; a Core update does not disturb them.
 
-Saving **restarts Home Assistant by itself** — and then comes the step people miss: after the restart, HA asks an administrator to **confirm the new network settings within five minutes**, or it reverts them (a guard against locking yourself out with a bad proxy config). Confirm, then reload `https://ha.example.com` — the normal dashboard, behind a real lock.
+Saving **restarts Home Assistant by itself** — and then comes the step people miss: after the restart, HA asks an administrator to **confirm the new network settings within five minutes**, or it reverts them (a guard against locking yourself out with a bad proxy config). Confirm, then reload `https://ha.kuzco.org` — the normal dashboard, behind a real lock.
 
 > [!DETAILS] Reading the 400 if it persists
 > The browser only shows the bare 400; the explanation is in Home Assistant's log (**Settings → System → Logs**). "Not set-up for reverse proxies" means the settings have not applied — check they survived the five-minute confirmation. "Received X-Forwarded-For header from an untrusted proxy" means the address under Trusted proxies does not match the proxy's. A history note, because old write-ups still show it: this used to be an `http:` block in `configuration.yaml`. On 2026.8 and later that YAML was imported once, at migration, and is **ignored afterwards** — adding it fresh does nothing but raise a Repairs issue — so make the change in the UI. And one forward-looking quirk: a *fresh* HAOS install now serves port **80** by default; existing installs like this one keep `8123`, but if HA is ever rebuilt, this proxy host's Forward Port follows it. The pattern generalizes — if a service errors through its new name but works by IP, hunt its settings for a "trusted proxy" or "allowed hosts" option.
@@ -298,7 +298,7 @@ Every remaining host is the **same dialog with four fields changed**. Nothing el
 | Access List | Publicly Accessible |
 | Cache Assets | off |
 | Block Common Exploits | off |
-| SSL Certificate | the `*.example.com` wildcard |
+| SSL Certificate | the `*.kuzco.org` wildcard |
 | Force SSL | **on** |
 | HTTP/2, HSTS, HSTS Sub-domains | off |
 | Custom Locations, Advanced tab | untouched |
@@ -307,14 +307,14 @@ Every remaining host is the **same dialog with four fields changed**. Nothing el
 
 | Domain Names | Scheme | Forward Hostname / IP | Forward Port | Built on |
 |---|---|---|---|---|
-| `proxmox.example.com` | **https** | `192.168.1.50` | `8006` | done above |
-| `ha.example.com` | http | `192.168.1.51` | `8123` | done above |
-| `nas.example.com` | http | `192.168.1.20` | `80` | now |
-| `frigate.example.com` | **https** | `192.168.1.52` | `8971` | now |
-| `cloud.example.com` | **https** | `192.168.1.58` | `443` | Nextcloud page |
-| `vault.example.com` | http | `192.168.1.56` | `8000` | Vaultwarden page |
-| `home.example.com` | http | `192.168.1.55` | `3000` | Homepage page |
-| `status.example.com` | http | `192.168.1.57` | `3001` | Uptime Kuma page |
+| `proxmox.kuzco.org` | **https** | `192.168.1.50` | `8006` | done above |
+| `ha.kuzco.org` | http | `192.168.1.51` | `8123` | done above |
+| `nas.kuzco.org` | http | `192.168.1.20` | `80` | now |
+| `frigate.kuzco.org` | **https** | `192.168.1.52` | `8971` | now |
+| `cloud.kuzco.org` | **https** | `192.168.1.58` | `443` | Nextcloud page |
+| `vault.kuzco.org` | http | `192.168.1.56` | `8000` | Vaultwarden page |
+| `home.kuzco.org` | http | `192.168.1.55` | `3000` | Homepage page |
+| `status.kuzco.org` | http | `192.168.1.57` | `3001` | Uptime Kuma page |
 
 Add the first four now, and come back for the others as their pages build them — or **create all eight in one sitting**, which is the better use of the time. Forwarding is by IP, so nginx has nothing to resolve and reloads cleanly whether or not the container exists; a name whose service is not built yet simply returns **502 Bad Gateway** until it is. Doing them together while the pattern is fresh also avoids the classic omission — one host added alone weeks later, missing Websockets or the certificate.
 
@@ -335,12 +335,12 @@ Two things to bank if you pre-create them: a **502 means "not built yet", not "b
 > Frigate splits its two ports: **8971** is the authenticated UI and API that reverse proxies should use, while **5000** is internal, unauthenticated access treated as admin regardless of login. Proxying 5000 would hand admin to anything that can resolve the name. Use 8971, and leave 5000 as the internal address the Home Assistant integration talks to.
 
 > [!DETAILS] Frigate's "plain HTTP request was sent to HTTPS port"
-> If `frigate.example.com` answers with a 400 carrying that phrase, the proxy host's **Scheme** got set to `http` while Frigate's own TLS sits on at 8971 — its default. Fix it in NPM: edit the proxy host, flip Scheme to `https`, save; Frigate itself needs no change. (Old write-ups instead disable Frigate's TLS with a `tls: enabled: false` config block. That works, but this build keeps Frigate's TLS on — the admin login then never crosses the LAN in the clear, and every page here points at `https://192.168.1.52:8971` consistently.)
+> If `frigate.kuzco.org` answers with a 400 carrying that phrase, the proxy host's **Scheme** got set to `http` while Frigate's own TLS sits on at 8971 — its default. Fix it in NPM: edit the proxy host, flip Scheme to `https`, save; Frigate itself needs no change. (Old write-ups instead disable Frigate's TLS with a `tls: enabled: false` config block. That works, but this build keeps Frigate's TLS on — the admin login then never crosses the LAN in the clear, and every page here points at `https://192.168.1.52:8971` consistently.)
 
 > [!DETAILS] Telling Nextcloud about its new name (for when you build it)
 > Nextcloud comes later in this build; keep this for then. Two settings, both from the Nextcloud container's console at `/var/www/nextcloud` via the `occ` tool.
 >
-> **Every `example.com` below is a placeholder** — substitute the real domain recorded in the *Your domain* field above before running anything. And the index is **not** a fixed number: run the `get` on its own first, count the entries it prints starting at **0**, and use the next number after the last one. A NextcloudPi install ships with roughly **eight** already (`localhost`, several `nextcloudpi` variants, the container IP, the detected public IP), so the next free index is usually **8** — reusing a number that is already listed silently overwrites that entry instead of adding yours.
+> Every hostname below is this build's real one, `kuzco.org` — the same value the *Your domain* field above records. The index is **not** a fixed number: run the `get` on its own first, count the entries it prints starting at **0**, and use the next number after the last one. A NextcloudPi install ships with roughly **eight** already (`localhost`, several `nextcloudpi` variants, the container IP, the detected public IP), so the next free index is usually **8** — reusing a number that is already listed silently overwrites that entry instead of adding yours.
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:get trusted_domains
@@ -349,7 +349,7 @@ Two things to bank if you pre-create them: a **502 means "not built yet", not "b
 > Then, with the real domain and the index you just counted:
 >
 > ```bash
-> sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_domains 8 --value=cloud.example.com
+> sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_domains 8 --value=cloud.kuzco.org
 > ```
 >
 > Second, the reverse-proxy settings. **`trusted_proxies` is indexed the same way, and on NextcloudPi index `0` is already taken** — a fresh NCP install ships `127.0.0.1` at `0` and `::1` at `1`, both used by its own local plumbing, so the proxy goes at **`2`**. Confirm with a read first; if your list differs, use whatever number comes after the last one:
@@ -361,7 +361,7 @@ Two things to bank if you pre-create them: a **502 means "not built yet", not "b
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_proxies 2 --value=192.168.1.54
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:set overwriteprotocol --value=https
-> sudo -E -u www-data php /var/www/nextcloud/occ config:system:set overwrite.cli.url --value=https://cloud.example.com
+> sudo -E -u www-data php /var/www/nextcloud/occ config:system:set overwrite.cli.url --value=https://cloud.kuzco.org
 > ```
 >
 > Position does not matter for `trusted_domains` — Nextcloud tests membership of that list, not where an entry sits — so if a name lands at a different index than planned, nothing needs correcting.

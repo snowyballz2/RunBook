@@ -170,7 +170,7 @@ export function NetworkMapView({ theme, onToggleTheme, onBack }: Props) {
     [],
   );
 
-  const domain = (creds["domain-name"] ?? "").trim() || "example.com";
+  const domain = (creds["domain-name"] ?? "").trim() || "kuzco.org";
   const tailnet = (creds["tailnet-name"] ?? "").trim();
 
   return (

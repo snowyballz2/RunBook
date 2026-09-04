@@ -111,18 +111,18 @@ Empty and open the services file:
 : > /opt/homepage/config/services.yaml && nano /opt/homepage/config/services.yaml
 ```
 
-Paste the build itself — two groups, one tile per service. Swap in your own addresses:
+Paste the build itself — two groups, one tile per service:
 
 ```yaml
 - Infrastructure:
     - Proxmox:
         icon: proxmox.png
-        href: https://192.168.1.50:8006
+        href: https://proxmox.kuzco.org
         description: The hypervisor itself
         siteMonitor: https://192.168.1.50:8006
     - TrueNAS:
         icon: truenas-scale.png
-        href: http://192.168.1.20
+        href: https://nas.kuzco.org
         description: ZFS mirror and SMB shares
         siteMonitor: http://192.168.1.20
     - AdGuard Home:
@@ -137,29 +137,29 @@ Paste the build itself — two groups, one tile per service. Swap in your own ad
         siteMonitor: http://192.168.1.54:81
     - Uptime Kuma:
         icon: uptime-kuma.png
-        href: http://192.168.1.57:3001
+        href: https://status.kuzco.org
         description: The monitor of record (built on the next page)
         siteMonitor: http://192.168.1.57:3001
 
 - Apps:
     - Home Assistant:
         icon: home-assistant.png
-        href: http://192.168.1.51:8123
+        href: https://ha.kuzco.org
         description: Automations, locks, sensors
         siteMonitor: http://192.168.1.51:8123
     - Frigate:
         icon: frigate.png
-        href: https://192.168.1.52:8971
+        href: https://frigate.kuzco.org
         description: Cameras and recordings
         siteMonitor: https://192.168.1.52:8971
     - Nextcloud:
         icon: nextcloud.png
-        href: https://cloud.example.com
+        href: https://cloud.kuzco.org
         description: Files and photo backup
         siteMonitor: https://192.168.1.58
     - Vaultwarden:
         icon: vaultwarden.png
-        href: https://vault.example.com
+        href: https://vault.kuzco.org
         description: The synced secret store
         siteMonitor: http://192.168.1.56:8000
 ```
@@ -167,7 +167,7 @@ Paste the build itself — two groups, one tile per service. Swap in your own ad
 Save and exit, then click the refresh icon — the page is suddenly worth bookmarking.
 
 > [!NOTE]
-> One dot stays red on purpose: Uptime Kuma's, until the next page builds it. And two tiles break the direct-address pattern deliberately. **Vaultwarden**'s `href` is its proxy name, because its login only works through `https://vault.example.com`; its `siteMonitor` watches the plain HTTP (Hypertext Transfer Protocol) port 8000 the service actually listens on. **Nextcloud**'s is `https://cloud.example.com`, the address its page standardises every client on — the raw address answers with a certificate warning. Both keep `siteMonitor` on the direct address, so the dots keep telling the truth.
+> One rule decides every `href`: the proxy name wherever the Reverse Proxy page made one — a padlock and no port number for the household — and the plain address only where no name exists (AdGuard Home and Nginx Proxy Manager). Vaultwarden could never take its address anyway: its login needs the secure context only the proxied name provides. Home Assistant's name works once the Reverse Proxy page's trusted-proxy step is done (Home Assistant 2026.8 or newer); until then `http://192.168.1.51:8123` is the link. Every `siteMonitor` stays on the direct address, so the dots keep telling the truth even when the proxy itself is what broke. And one dot stays red on purpose: Uptime Kuma's, until the next page builds it.
 
 > [!NOTE]
 > The `siteMonitor` lines give each tile a live up/down dot with a response time — Homepage quietly sends each address a request and reports what came back. Two things to know: it is a glance, not an alarm — Uptime Kuma, built on the next page, is the thing that actually notifies you — and it skips certificate checking entirely, which is why the self-signed Proxmox and Nextcloud can be watched here without any ignore-certificate toggle. A green dot proves the service answers, not that its certificate is healthy.
@@ -175,8 +175,8 @@ Save and exit, then click the refresh icon — the page is suddenly worth bookma
 > [!DETAILS] How the icons work
 > Bare names like `proxmox.png` come from the community **Dashboard Icons** set, which has an icon for nearly everything self-hosted (`.png`, `.svg`, and `.webp` all work). No icon there? Prefix `mdi-` for any Material Design icon (`mdi-flask-outline`) or `si-` for a brand logo from Simple Icons (`si-github`), optionally with a color suffix like `mdi-flask-#5b8f7a`. A full URL to any image works too.
 
-> [!DETAILS] Pointing at the pretty names instead
-> Once Nginx Proxy Manager gives your services real names, the `href` lines can use `https://proxmox.example.com` and friends — every click lands on a padlock instead of a certificate warning, and nobody has to remember a port number. The trade-off: every tile then depends on the proxy and the AdGuard DNS (Domain Name System) rewrite staying healthy, so the dashboard's links break precisely when the proxy is the thing that broke. Direct addresses keep it honest; pretty names make it friendlier. Either way, keep the `siteMonitor` lines on direct addresses so the dots keep telling the truth.
+> [!DETAILS] Pointing at the raw addresses instead
+> The trade-off in the names: every link depends on Nginx Proxy Manager and the AdGuard DNS (Domain Name System) rewrite staying healthy, so the links break precisely when the proxy is the thing that broke — while the dashboard itself stays reachable at `http://192.168.1.55:3000`, and the dots still tell the truth, because `siteMonitor` never left the direct addresses. If you would rather the links survive a proxy outage too, swap each `href` for its tile's `siteMonitor` value; Vaultwarden is the one tile that cannot, since its login needs the secure context only the proxied name provides.
 
 ### The strip across the top
 `widgets.yaml` fills the page header. Empty and open it:
@@ -257,14 +257,14 @@ Save, click the refresh icon, done.
 ### Give it a name behind the proxy
 Add one more proxy host in Nginx Proxy Manager, the same routine used for the other services — **Hosts → Proxy Hosts → Add Proxy Host**:
 
-- **Domain Names** → `home.example.com`
+- **Domain Names** → `home.kuzco.org`
 - **Scheme** → `http`
 - **Forward Hostname / IP** → `192.168.1.55`
 - **Forward Port** → `3000`
 - **Websockets Support** → **on**
-- **SSL tab → SSL Certificate** → the `*.example.com` wildcard, and **Force SSL** → **on**
+- **SSL tab → SSL Certificate** → the `*.kuzco.org` wildcard, and **Force SSL** → **on**
 
-The wildcard `*.example.com` DNS rewrite in AdGuard already answers for any new name, so there is nothing to add there. One step is unique to Homepage — teaching it to answer to the new name. In the container's console, open its environment file:
+The wildcard `*.kuzco.org` DNS rewrite in AdGuard already answers for any new name, so there is nothing to add there. One step is unique to Homepage — teaching it to answer to the new name. In the container's console, open its environment file:
 
 ```bash
 nano /opt/homepage/.env
@@ -273,7 +273,7 @@ nano /opt/homepage/.env
 The allow-list is comma-separated with no spaces — add the new name to the end of the line, then save and exit:
 
 ```ini
-HOMEPAGE_ALLOWED_HOSTS=localhost:3000,192.168.1.55:3000,home.example.com
+HOMEPAGE_ALLOWED_HOSTS=localhost:3000,192.168.1.55:3000,home.kuzco.org
 ```
 
 Restart:
@@ -282,7 +282,7 @@ Restart:
 systemctl restart homepage
 ```
 
-Then `https://home.example.com` greets you with a padlock and your tiles.
+Then `https://home.kuzco.org` greets you with a padlock and your tiles.
 
 > [!WARNING]
 > Skip the `.env` edit and the new name answers with "Host validation failed. See logs for more details." That is not the proxy misbehaving — it is Homepage checking the browser's Host header against its allow-list, a deliberate safety feature. Add the host exactly as the error logs it, restart the service, done.
@@ -296,7 +296,7 @@ Uptime Kuma is built on the next page. Once it exists, give it an HTTP monitor p
 3. Expect one artifact: if `.env` carried no auth lines, the updater appends a few **commented-out `HOMEPAGE_AUTH_*` template lines**. Leave them commented — they belong to Homepage v2's optional login gate, which stays off unless deliberately filled in; the no-accounts design of this page holds.
 
 ### Make it the start page
-The actual point: on the family's devices, set `https://home.example.com` — or the plain `http://192.168.1.55:3000` — as the browser's start page, or at least the first bookmark on the bar. The build now opens like an appliance.
+The actual point: on the family's devices, set `https://home.kuzco.org` — or the plain `http://192.168.1.55:3000` — as the browser's start page, or at least the first bookmark on the bar. The build now opens like an appliance.
 
 > [!NOTE]
 > Away from home, the dashboard works through the Tailscale tunnel exactly as-is: subnet routing delivers you to `192.168.1.55:3000`, which the allow-list already admits. The tiles' direct-address links just work; the pretty names also need your phone's DNS pointed back at AdGuard over the tunnel, which the remote-access setup already covers.
