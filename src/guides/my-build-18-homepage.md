@@ -23,6 +23,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > The host these containers live on. Open the web UI at `https://`-this-ip-`:8006` and log in as **root@pam** to reach the node Shell.
 
 > [!NOTE]
+> Installing from afar, over Tailscale on a flaky link? A dropped session kills the script with it. Stalled during the settings dialogs, nothing was created — `pct list` to confirm, then simply re-run. But a drop during the long build phase leaves a half-made container (`pct destroy` its ID, re-run). On an unreliable connection, run the whole install inside tmux (`apt install tmux -y`, then `tmux`, then the script) — after a disconnect, reopen the Shell and `tmux attach` resumes as if nothing happened.
+
+> [!NOTE]
 > Read any script before piping it into a root shell — the same download-read-run habit used throughout this build. These are the well-regarded successor to the tteck scripts, but the habit stands regardless of source.
 
 ### Choose Advanced and pin a static IP
