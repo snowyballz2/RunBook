@@ -121,18 +121,29 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
   }, []);
 
   const toggleStep = (phase: Phase, step: Step) => {
+    const willComplete = !done.has(step.id);
+    const completesPhase =
+      willComplete && phase.steps.every((s) => s.id === step.id || done.has(s.id));
+
     setDone((prev) => {
       const nextDone = new Set(prev);
-      const willComplete = !nextDone.has(step.id);
       if (willComplete) nextDone.add(step.id);
       else nextDone.delete(step.id);
-
-      // Auto-collapse a phase the moment its last step is checked.
-      if (willComplete && phase.steps.every((s) => nextDone.has(s.id))) {
-        setCollapsed((c) => new Set(c).add(phase.id));
-      }
       return nextDone;
     });
+
+    // Auto-collapse a phase the moment its last step is checked — and anchor
+    // the view on its header. The last step sits at the bottom of the phase,
+    // so the content folding away is above the viewport; Safari has no scroll
+    // anchoring, and would otherwise land the reader well past the next phase.
+    // The header sits above the fold, so its position is already final.
+    if (completesPhase) {
+      setCollapsed((c) => new Set(c).add(phase.id));
+      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document
+        .getElementById(`phase-${phase.id}`)
+        ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    }
   };
 
   const togglePhase = (phaseId: string) => {
@@ -246,7 +257,7 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
           onBack={onBack}
         />
       ) : (
-        <main className="mx-auto max-w-3xl px-4 pb-28 pt-6">
+        <main className="mx-auto max-w-3xl px-4 pb-28 pt-6 [overflow-anchor:none]">
           {guide.subtitle && (
             <p className="mb-6 text-[15px] leading-relaxed text-ink-soft">
               {guide.subtitle}
@@ -308,7 +319,7 @@ function PhaseSection({
   const total = phase.steps.length;
 
   return (
-    <section className={isFirst ? "" : "mt-2"}>
+    <section id={`phase-${phase.id}`} className={`scroll-mt-20 ${isFirst ? "" : "mt-2"}`}>
       {/* Phase header row */}
       <div className="spine-grid">
         <SpineCell
