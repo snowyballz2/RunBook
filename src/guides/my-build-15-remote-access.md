@@ -117,7 +117,11 @@ In the same shell, bring Tailscale up:
 tailscale up
 ```
 
-The output prints a URL. Open it in a browser on the Mac or the PC (the server has no desktop of its own), sign in with the account from the first step, and the host joins your tailnet. Confirm it, still in the host shell — it prints the host's new `100.x` Tailscale address:
+The output prints a URL:
+
+1. Open it in a browser on the Mac or the PC — the server has no desktop of its own.
+2. Sign in with the account from the first step; the host joins your tailnet.
+3. Back in the host shell, confirm it — the command prints the host's new `100.x` Tailscale address:
 
 ```bash
 tailscale ip -4
@@ -179,7 +183,11 @@ tailscale set --advertise-routes=192.168.1.0/24
 > On a kernel this new, Tailscale may print **"UDP GRO forwarding is suboptimally configured"** in `tailscale status` or its logs once routes are advertised. It is a throughput hint for the subnet-router path, not an error — phones and laptops reaching this build remotely will never notice. Tailscale's performance best-practices doc carries the fix (an `ethtool` setting on the interface that holds the default route, plus a small unit to persist it) — worth doing only if the tunnel ever moves serious data, like a large restore. Safe to ignore today.
 
 ### Approve the route in the admin console
-Advertised routes do nothing until an admin — you — approves them, so a stray device can never quietly announce itself as a gateway. Open the [Machines page](https://login.tailscale.com/admin/machines), select **pve** (its row now shows a **Subnets** badge), go to the **Subnets** section and select **Edit**; in the panel, tick `192.168.1.0/24` under **Subnet routes** and select **Save**.
+Advertised routes do nothing until an admin — you — approves them, so a stray device can never quietly announce itself as a gateway.
+
+1. Open the [Machines page](https://login.tailscale.com/admin/machines) and select **pve** — its row now shows a **Subnets** badge.
+2. In the **Subnets** section, select **Edit**.
+3. Tick `192.168.1.0/24` under **Subnet routes**, then **Save**.
 
 > [!NOTE]
 > The household's other devices need nothing extra: macOS, iOS, tvOS, and Windows all pick up new subnet routes automatically. Only Linux clients opt in manually, with `tailscale set --accept-routes` — relevant only if you later run a Linux laptop on the tailnet.
@@ -187,7 +195,13 @@ Advertised routes do nothing until an admin — you — approves them, so a stra
 ## Prove it from your iPhone
 
 ### Put Tailscale on your phone
-A phone on cellular data is the cleanest test: a device that is definitely not on your network, reaching addresses that should only exist on your network. Install Tailscale from the App Store (iOS 15 or later), open it, and take its first-run prompts in order: **Get Started**; then iOS asks permission to add a **VPN configuration** — accepting that is what switches the connection on; then allow **notifications**, which is how a future re-authentication asks for you instead of silently dropping; and finally **Log in** with the same account you used for the host.
+A phone on cellular data is the cleanest test: a device that is definitely not on your network, reaching addresses that should only exist on your network. Its first-run prompts, in order:
+
+1. Install Tailscale from the App Store (iOS 15 or later) and open it.
+2. **Get Started**.
+3. iOS asks permission to add a **VPN configuration** — accept; that is what switches the connection on.
+4. Allow **notifications** — how a future re-authentication asks for you instead of silently dropping.
+5. **Log in** with the same account you used for the host.
 
 ### Reach every service from anywhere
 Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app shows connected, then browse to each service on its normal LAN address — no Tailscale install needed on any of them, because the subnet route carries them all:
