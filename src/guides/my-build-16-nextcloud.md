@@ -67,9 +67,19 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 > The plain **Nextcloud** entry in the catalog is a TurnKey **VM**, not a container — the repo's two LXC options are this NextCloudPi one and a lighter Alpine variant. NCP is the relaxed household choice; take it.
 
 ### Start it at boot
-Two things on the way past that look like problems and are not. The build report marks **IPv6 Internet Not Connected** with a red ✗ a couple of lines below its own **Disabled IPv6** ✓ — it is testing connectivity you deliberately turned off in the walk above, so ignore it. Then a **`Do you want to continue? [y/N]`** prompt appears under a warning that the script runs an external installer from a third-party source that the repo does not audit. **Answer `y`.** The wrapper only builds the LXC; Nextcloud itself is installed by NextcloudPi's own `install.sh`, and the URL printed above the prompt is `github.com/nextcloud/nextcloudpi` — **Nextcloud's own GitHub organisation**, not an unrelated third party. The warning is community-scripts being honest about the handoff, not a signal about the code.
+> [!NOTE]
+> Two things on the way past look like problems and are not:
+>
+> - The build report marks **IPv6 Internet Not Connected** with a red ✗ a couple of lines below its own **Disabled IPv6** ✓ — it is testing connectivity you deliberately turned off in the walk above. Ignore it.
+> - A **`Do you want to continue? [y/N]`** prompt appears under a warning that the script runs an external installer the repo does not audit. **Answer `y`.** The wrapper only builds the LXC; Nextcloud itself is installed by NextcloudPi's own `install.sh`, and the URL printed above the prompt is `github.com/nextcloud/nextcloudpi` — **Nextcloud's own GitHub organisation**, not an unrelated third party. The warning is community-scripts being honest about the handoff, not a signal about the code.
 
-The script finishes by printing the container's address as `http://192.168.1.58` — no port, no passwords yet; those come in the browser. The address was set statically in the Advanced walk (it is about to be baked into every device's sync client, so it must never move — nothing to reserve at the router). Before opening it, enable **Options → Start at boot** in Proxmox so the family cloud survives a power cut, and confirm **Options → Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
+The script finishes by printing the container's address as `http://192.168.1.58` — no port, no passwords yet; those come in the browser. Before opening it, in Proxmox:
+
+1. Select the container in the left tree → **Options** → **Start at boot** → **Yes**, so the family cloud survives a power cut.
+2. Confirm **Options → Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
+
+> [!NOTE]
+> The address was set statically in the Advanced walk: it is about to be baked into every device's sync client, so it must never move — and there is nothing to reserve at the router.
 
 > [!INPUT] nextcloud-ip | Nextcloud container IP | 192.168.1.58
 
@@ -82,7 +92,11 @@ Browse to the printed address. Plain `http://` redirects to HTTPS, and the brows
 > NCP's docs mention `https://nextcloudpi.local`, an mDNS name that may not resolve to this unprivileged container from another Mac. The IP always works, and lives on the container's **Network** tab if you lose it (Proxmox does not show an LXC's address on the Summary tab — only VMs with the guest agent get that).
 
 ### Save both passwords, then Activate
-The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once. Save both below (the **Print** button captures them too), recording them in your password manager for now — you will consolidate these into Vaultwarden when you set it up later in this build. Then click **Activate**: the page flashes **ACTIVATION SUCCESSFUL** and opens `https://192.168.1.58:4443` **in a new tab** a few seconds later — if a pop-up blocker eats it, type the address yourself. Two prompts stand between you and the panel:
+The activation page generates two random passwords for a user named **ncp** — one for the NCP admin panel on port 4443, one for Nextcloud itself — and shows them once.
+
+1. Save both in the fields below (the **Print** button captures them too). They move into Vaultwarden when that page is built later in this build.
+2. Click **Activate** — the page flashes **ACTIVATION SUCCESSFUL** and opens `https://192.168.1.58:4443` in a new tab a few seconds later. If a pop-up blocker eats it, type the address yourself.
+3. Two prompts stand between you and the panel:
 
 - the second self-signed **certificate warning** — proceed, as before
 - a **browser login popup** titled **"ncp-web login"** — the browser's own gray Basic-auth dialog, not a web page. User **`ncp`**, password the **panel** password just saved
@@ -106,7 +120,9 @@ On the panel's first load, an overlay offers its own wizard — **"Click to star
 > `https://192.168.1.58:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. It can run Let's Encrypt to get a real certificate if you ever give this box a public name — but this is a local-first household, so living with the self-signed warning is a legitimate choice. The router blocks unsolicited inbound traffic and nothing here needs a port-forward; don't create one. Remote access rides the Tailscale tunnel set up on the previous page.
 
 ### Sign in to Nextcloud itself
-Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. NCP already created the account and the stack behind it, so there is no setup to do — but two small first-login moments remain: you land on the **Dashboard**, not Files (**Files** sits one click away in the top bar), and a **welcome pop-up** offers the desktop and mobile client downloads — close it; the clients get installed properly later on this page. Every new account created below meets the same pop-up on its own first login.
+1. Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. NCP already created the account and the stack behind it — there is no setup to do.
+2. You land on the **Dashboard**, not Files — **Files** sits one click away in the top bar.
+3. A **welcome pop-up** offers the desktop and mobile client downloads — close it; the clients get installed properly later on this page. Every new account created below meets the same pop-up on its own first login.
 
 > [!DETAILS] Fixing "Access through untrusted domain"
 > Reach Nextcloud by any name or address it doesn't already know and it stops with that heading. It's a security check, not breakage: the `trusted_domains` setting lists the names and addresses this instance answers to, which prevents host-header poisoning. From the container's console, list what it trusts:
@@ -124,13 +140,19 @@ Back at `https://192.168.1.58/`, log in as **ncp** with the Nextcloud password. 
 ## Point the storage at the ZFS pool
 
 ### Add accounts for the household
-**First, turn off the demo content** — Nextcloud copies a *skeleton* folder into every new account's home on first login (Documents, Photos, Templates, a manual, an intro video: about 58 MB of it), plus a sample `leon.green@example.com` contact and calendar entries. Empty the skeleton before creating anyone, so nobody inherits it. In **Proxmox → 105 (nextcloudpi) → Console** — the container's own shell, where `occ` lives, not the `pve` node shell:
+**First, turn off the demo content**, before creating anyone. In **Proxmox → 105 (nextcloudpi) → Console** — the container's own shell, where `occ` lives, not the `pve` node shell:
 
 ```bash
 sudo -E -u www-data php /var/www/nextcloud/occ config:system:set skeletondirectory --value=""
 ```
 
-Accounts that already exist keep what they were given — back in the browser at `https://cloud.kuzco.org`, select those files in **Files** and delete them, and remove the sample contact in the **Contacts** app (the auto-generated *Contact birthdays* calendar entry goes with it).
+> [!NOTE]
+> Nextcloud copies a *skeleton* folder into every new account's home on first login — Documents, Photos, Templates, a manual, an intro video, about 58 MB of it — plus a sample `leon.green@example.com` contact and calendar entries. Emptying the skeleton means nobody inherits it.
+
+Accounts that already exist keep what they were given. To clean one, in the browser at `https://cloud.kuzco.org`:
+
+- **Files** → select the sample files → delete
+- **Contacts** app → remove the sample contact; the auto-generated *Contact birthdays* calendar entry goes with it
 
 **Do not share the `ncp` login** — one account per person, so everyone gets their own files, photos, and password. Click your avatar (top right) → **Accounts** → **New account**, and fill the dialog:
 
@@ -314,9 +336,17 @@ Bringing years of photos over from a Windows PC or a Mac is the first real use o
 
 **Deduplicate on that computer before uploading anything.** Nextcloud's own **Duplicate Finder** app (installable later from Administration settings → Apps) matches only **byte-identical** files, while a real library is mostly *near*-duplicates: the same shot at two resolutions, an original beside its edit, a copy that came back through a messaging app resized. Desktop tools compare images perceptually and catch that class; the server never will. Local hashing is also far faster than making the server read everything back over SMB, and you skip uploading files you were about to delete.
 
-**Czkawka** (actively maintained, cross-platform, has a similar-images mode) and **dupeGuru** (older, its Picture mode does fuzzy matching) are both free and both do the job. Both run fully offline — no telemetry, nothing uploaded. **Download Czkawka only from [github.com/qarmin/czkawka](https://github.com/qarmin/czkawka) → Releases**: the lookalike domains (`czkawka.net`/`.com`/`.org`) are not the project and distribute tampered builds — the [official repo warns about them](https://github.com/qarmin/czkawka/issues/1921), and a trojaned tool pointed at a whole photo library is the exact leak the offline design prevents. Whichever you use: back the library up first, set the tool to **move to the Recycle Bin / Trash** rather than delete outright, and review its groups by hand — the tool cannot know which copy you care about, and "keep the largest" is wrong as often as it is right.
+**Czkawka** (actively maintained, cross-platform, has a similar-images mode) and **dupeGuru** (older, its Picture mode does fuzzy matching) are both free and both do the job. Both run fully offline — no telemetry, nothing uploaded. **Download Czkawka only from [github.com/qarmin/czkawka](https://github.com/qarmin/czkawka) → Releases**: the lookalike domains (`czkawka.net`/`.com`/`.org`) are not the project and distribute tampered builds — the [official repo warns about them](https://github.com/qarmin/czkawka/issues/1921), and a trojaned tool pointed at a whole photo library is the exact leak the offline design prevents. Whichever you use:
 
-**On the iPhone, use what iOS already has** rather than a third-party cleaner: **Photos → Albums → Utilities → Duplicates** finds exact and near-identical shots and offers **Merge**, which keeps the best-quality version and combines their metadata. With iCloud Photos on, that change propagates everywhere. While in Utilities, the **Screenshots** album is usually the bigger win — screenshots are a large slice of most camera rolls and rarely worth archiving.
+- Back the library up first.
+- Set the tool to **move to the Recycle Bin / Trash** rather than delete outright.
+- Review its groups by hand — the tool cannot know which copy you care about, and "keep the largest" is wrong as often as it is right.
+
+**On the iPhone, use what iOS already has** rather than a third-party cleaner:
+
+1. **Photos → Albums → Utilities → Duplicates** — finds exact and near-identical shots.
+2. **Merge** — keeps the best-quality version and combines their metadata; with iCloud Photos on, the change propagates everywhere.
+3. While in Utilities, clear the **Screenshots** album too — usually the bigger win, since screenshots are a large slice of most camera rolls and rarely worth archiving.
 
 **Then copy the cleaned library straight to the share**, not through Nextcloud's web UI or the sync client — same storage as `Pool`, without the round trip, and dramatically faster for tens of gigabytes:
 
