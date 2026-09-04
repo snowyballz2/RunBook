@@ -89,14 +89,16 @@ pct set 107 -onboot 1
 ## Make it yours
 
 ### Meet the config files
-All configuration lives in `/opt/homepage/config/` inside the container — open the container's **Console** in Proxmox and edit with `nano`. Four files matter: `services.yaml` (the tiles), `widgets.yaml` (the strip across the top), `bookmarks.yaml` (plain links), and `settings.yaml` (title and theme). After saving, reload the page in the browser; `settings.yaml` changes specifically want the small **refresh icon** in the page's bottom-right corner, which regenerates the page. No service restart either way.
-
-```bash
-nano /opt/homepage/config/services.yaml
-```
+All configuration lives in `/opt/homepage/config/` inside the container — open the container's **Console** in Proxmox and edit with `nano`. Four files matter: `services.yaml` (the tiles), `widgets.yaml` (the strip across the top), `bookmarks.yaml` (plain links), and `settings.yaml` (title and theme). After saving, reload the page in the browser; `settings.yaml` changes specifically want the small **refresh icon** in the page's bottom-right corner, which regenerates the page. No service restart either way. Each file below opens with a one-liner that first empties the shipped sample, so the paste lands in a clean file; save and exit each time with `Ctrl+O`, `Enter`, `Ctrl+X`.
 
 ### Lay out your services
-Replace the sample content of `services.yaml` with the build itself — two groups, one tile per service. Swap in your own addresses:
+Empty and open the services file:
+
+```bash
+: > /opt/homepage/config/services.yaml && nano /opt/homepage/config/services.yaml
+```
+
+Paste the build itself — two groups, one tile per service. Swap in your own addresses:
 
 ```yaml
 - Infrastructure:
@@ -161,7 +163,13 @@ Save, click the refresh icon, and the page is suddenly worth bookmarking. One ex
 > Once Nginx Proxy Manager gives your services real names, the `href` lines can use `https://proxmox.example.com` and friends — every click lands on a padlock instead of a certificate warning, and nobody has to remember a port number. The trade-off: every tile then depends on the proxy and the AdGuard DNS (Domain Name System) rewrite staying healthy, so the dashboard's links break precisely when the proxy is the thing that broke. Direct addresses keep it honest; pretty names make it friendlier. Either way, keep the `siteMonitor` lines on direct addresses so the dots keep telling the truth.
 
 ### The strip across the top
-`widgets.yaml` fills the page header. A search box and a clock are the two that earn their place:
+`widgets.yaml` fills the page header. Empty and open it:
+
+```bash
+: > /opt/homepage/config/widgets.yaml && nano /opt/homepage/config/widgets.yaml
+```
+
+A search box and a clock are the two that earn their place:
 
 ```yaml
 - search:
@@ -193,7 +201,13 @@ Save, click the refresh icon, and the page is suddenly worth bookmarking. One ex
 > [!SECRET] homepage-proxmox-token | Proxmox API token secret (api@pam!homepage)
 
 ### Bookmarks and the name on the door
-Two small files finish the job. `bookmarks.yaml` holds plain links — the router's admin page is the classic, the thing nobody can ever find when they need it:
+Two small files finish the job. `bookmarks.yaml` holds plain links — the router's admin page is the classic, the thing nobody can ever find when they need it. Empty and open it:
+
+```bash
+: > /opt/homepage/config/bookmarks.yaml && nano /opt/homepage/config/bookmarks.yaml
+```
+
+Then paste:
 
 ```yaml
 - Household:
@@ -202,7 +216,13 @@ Two small files finish the job. `bookmarks.yaml` holds plain links — the route
           href: http://192.168.1.1
 ```
 
-And `settings.yaml` names the page:
+And `settings.yaml` names the page. Empty and open it:
+
+```bash
+: > /opt/homepage/config/settings.yaml && nano /opt/homepage/config/settings.yaml
+```
+
+Then paste:
 
 ```yaml
 title: Home
