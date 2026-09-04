@@ -75,21 +75,34 @@ The static address matters doubly here: the installer bakes it into Homepage's s
 > Node.js and the pnpm package manager; the source of the latest Homepage release unpacked to `/opt/homepage`; then a full `pnpm install` and `pnpm build` — the compile step is why the RAM default is a generous 4 GB and the install is slow. It runs as a systemd service named `homepage` on port 3000, seeds starter config into `/opt/homepage/config/`, and writes one more file worth remembering: `/opt/homepage/.env`, containing `HOMEPAGE_ALLOWED_HOSTS=localhost:3000,`-your-IP-`:3000`. That is the allow-list from the warning above, and it comes back when you wire in a proxy name.
 
 ### Confirm it loaded, then set it to start at boot
-First, browse to `http://192.168.1.55:3000` and confirm the default page with its sample tiles loads — that proves the install succeeded, and everything below is editing that into your own page. Then make it permanent: a front door that vanishes after a power cut teaches the family to stop using it. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
+1. Browse to `http://192.168.1.55:3000`. The default page with its sample tiles proves the install succeeded — everything below edits that into your own page.
+2. In the Proxmox left tree select the container, open **Options**, and set **Start at boot** → **Yes**.
+
+The same setting from the node Shell instead, if you prefer (`107` is this build's next free ID after Vaultwarden's `106`; confirm against the left tree):
 
 ```bash
 pct set 107 -onboot 1
 ```
 
-(`107` is this build's next free ID after Vaultwarden's `106`; confirm against the left tree.)
-
 > [!NOTE]
-> This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief power blips never reach the container. Start-at-boot covers the longer outages that drain the battery and force a clean shutdown.
+> A front door that vanishes after a power cut teaches the family to stop using it. This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief blips never reach the container; start-at-boot covers the longer outages that drain the battery and force a clean shutdown.
 
 ## Make it yours
 
 ### Meet the config files
-All configuration lives in `/opt/homepage/config/` inside the container — open the container's **Console** in Proxmox and edit with `nano`. Four files matter: `services.yaml` (the tiles), `widgets.yaml` (the strip across the top), `bookmarks.yaml` (plain links), and `settings.yaml` (title and theme). After saving, reload the page in the browser; `settings.yaml` changes specifically want the small **refresh icon** in the page's bottom-right corner, which regenerates the page. No service restart either way. Each file below opens with a one-liner that first empties the shipped sample, so the paste lands in a clean file; save and exit each time with `Ctrl+O`, `Enter`, `Ctrl+X`.
+All configuration lives in `/opt/homepage/config/` inside the container, edited from the container's **Console** in Proxmox. Four files matter:
+
+- `services.yaml` — the tiles
+- `widgets.yaml` — the strip across the top
+- `bookmarks.yaml` — plain links
+- `settings.yaml` — title and theme
+
+How every edit below lands:
+
+- The step's one-liner empties the shipped sample and opens the file, so the paste lands clean
+- Save and exit with `Ctrl+O`, `Enter`, `Ctrl+X`
+- Reload the page in the browser — no service restart, ever
+- `settings.yaml` changes specifically want the small **refresh icon** in the page's bottom-right corner, which regenerates the page
 
 ### Lay out your services
 Empty and open the services file:
@@ -151,7 +164,10 @@ Paste the build itself — two groups, one tile per service. Swap in your own ad
         siteMonitor: http://192.168.1.56:8000
 ```
 
-Save, click the refresh icon, and the page is suddenly worth bookmarking. One exception on purpose: the Uptime Kuma tile's dot sits red until the next page builds it. And two tiles break the direct-address pattern deliberately: **Vaultwarden**'s `href` is its proxy name because its login only works through `https://vault.example.com` (its `siteMonitor` watches the plain HTTP (Hypertext Transfer Protocol) port 8000 the service actually listens on), and **Nextcloud**'s is `https://cloud.example.com` because that is the address its page standardises every client on — the raw address answers with a certificate warning. Both keep `siteMonitor` on the direct address, so the dots keep telling the truth.
+Save and exit, then click the refresh icon — the page is suddenly worth bookmarking.
+
+> [!NOTE]
+> One dot stays red on purpose: Uptime Kuma's, until the next page builds it. And two tiles break the direct-address pattern deliberately. **Vaultwarden**'s `href` is its proxy name, because its login only works through `https://vault.example.com`; its `siteMonitor` watches the plain HTTP (Hypertext Transfer Protocol) port 8000 the service actually listens on. **Nextcloud**'s is `https://cloud.example.com`, the address its page standardises every client on — the raw address answers with a certificate warning. Both keep `siteMonitor` on the direct address, so the dots keep telling the truth.
 
 > [!NOTE]
 > The `siteMonitor` lines give each tile a live up/down dot with a response time — Homepage quietly sends each address a request and reports what came back. Two things to know: it is a glance, not an alarm — Uptime Kuma, built on the next page, is the thing that actually notifies you — and it skips certificate checking entirely, which is why the self-signed Proxmox and Nextcloud can be watched here without any ignore-certificate toggle. A green dot proves the service answers, not that its certificate is healthy.
@@ -186,7 +202,12 @@ A search box and a clock are the two that earn their place:
 > You will also see a `resources` widget in the samples — skip it. It reports the CPU and memory of the Homepage container itself, not the server. The real host numbers come from the Proxmox tile widget in the expandable below.
 
 > [!DETAILS] Live stats inside the tiles
-> Any tile can grow a `widget:` block showing live numbers — at the cost of pasting a credential into `services.yaml`. The most rewarding one is Proxmox: VM and container counts plus real host CPU and RAM. Create a dedicated **read-only API (application programming interface) token** first, never the root password — in the Proxmox UI: **Datacenter → Permissions → Users → Add** (user `api`, realm Linux PAM), then **API Tokens → Add** (user `api@pam`, Token ID `homepage`, Privilege Separation checked), then under **Permissions → Add** grant the **PVEAuditor** role at path `/` with Propagate checked — once for the user *and* once for the token. Copy the secret the token dialog shows, store it in Vaultwarden, and extend the Proxmox tile:
+> Any tile can grow a `widget:` block showing live numbers — at the cost of pasting a credential into `services.yaml`. The most rewarding one is Proxmox: VM and container counts plus real host CPU and RAM. It needs a dedicated **read-only API (application programming interface) token**, never the root password. In the Proxmox UI:
+>
+> 1. **Datacenter → Permissions → Users → Add** — user `api`, realm Linux PAM.
+> 2. **API Tokens → Add** — user `api@pam`, Token ID `homepage`, Privilege Separation ticked. Copy the secret the dialog shows — it appears once — into Vaultwarden and the field below.
+> 3. **Permissions → Add** — the **PVEAuditor** role at path `/`, Propagate ticked — once for the user *and* once for the token.
+> 4. Extend the Proxmox tile in `services.yaml`:
 >
 > ```yaml
 >         widget:
@@ -243,13 +264,19 @@ Add one more proxy host in Nginx Proxy Manager, the same routine used for the ot
 - **Websockets Support** → **on**
 - **SSL tab → SSL Certificate** → the `*.example.com` wildcard, and **Force SSL** → **on**
 
-The wildcard `*.example.com` DNS rewrite in AdGuard already answers for any new name, so there is nothing to add there. But there *is* one step unique to Homepage — teaching it to answer to the new name. In the container's console, edit `/opt/homepage/.env`:
+The wildcard `*.example.com` DNS rewrite in AdGuard already answers for any new name, so there is nothing to add there. One step is unique to Homepage — teaching it to answer to the new name. In the container's console, open its environment file:
 
-The allow-list is comma-separated with no spaces — add the new name to the end:
+```bash
+nano /opt/homepage/.env
+```
+
+The allow-list is comma-separated with no spaces — add the new name to the end of the line, then save and exit:
 
 ```ini
 HOMEPAGE_ALLOWED_HOSTS=localhost:3000,192.168.1.55:3000,home.example.com
 ```
+
+Restart:
 
 ```bash
 systemctl restart homepage
@@ -264,7 +291,9 @@ Then `https://home.example.com` greets you with a padlock and your tiles.
 Uptime Kuma is built on the next page. Once it exists, give it an HTTP monitor pointed at the direct address `http://192.168.1.55:3000` — the install's allow-list already admits that address, so the monitor works untouched, and the page that watches everything is itself watched. The next page's monitor list includes exactly this entry, so working in order covers it.
 
 ### Update on purpose
-When you choose to take a new release, type `update` in the container's console. It fetches the newest source, rebuilds (patience again), and preserves your config files and `.env` — with one artifact to expect: if `.env` carries no auth lines, the updater appends a few **commented-out `HOMEPAGE_AUTH_*` template lines** to it. Leave them commented. They belong to Homepage v2's optional login gate, which stays off unless deliberately filled in — the no-accounts design of this page holds. Take a Proxmox snapshot first — the same habit used for the rest of these containers — so rollback is instant if a release misbehaves.
+1. Take a Proxmox snapshot first — the same habit as the rest of these containers, so rollback is instant if a release misbehaves.
+2. Type `update` in the container's console. It fetches the newest source and rebuilds (patience again), preserving your config files and `.env`.
+3. Expect one artifact: if `.env` carried no auth lines, the updater appends a few **commented-out `HOMEPAGE_AUTH_*` template lines**. Leave them commented — they belong to Homepage v2's optional login gate, which stays off unless deliberately filled in; the no-accounts design of this page holds.
 
 ### Make it the start page
 The actual point: on the family's devices, set `https://home.example.com` — or the plain `http://192.168.1.55:3000` — as the browser's start page, or at least the first bookmark on the bar. The build now opens like an appliance.
