@@ -36,7 +36,7 @@ This happens *while the script runs*. On the **Community-Scripts Options** menu 
 - **Set Root Password** → set one, recorded in the fields below — blank means a password-less automatic console login; a **Verify Root Password** box repeats a non-blank entry
 - **Container ID** → accept the offered next-free number; it is the ID later `pct` commands and Options steps refer to
 - **Hostname** → keep the offered name
-- **Disk / CPU / RAM** → keep the prefills as offered — currently **2 cores, 6 GB RAM** (older script versions offered 4 GB; the number tracks what `pnpm build` needs, so the script's current prefill wins over any figure printed here)
+- **Disk / CPU / RAM** → keep the prefills: **2 cores, 4 GB RAM, 6 GB disk** — the RAM serves `pnpm build`, the disk holds its node_modules and build output; if a future script offers different numbers, its prefill wins
 - **Network bridge** → **`vmbr0`**
 - **IPv4** → **Static (manual entry)**: **`192.168.1.55/24`**, gateway **`192.168.1.1`** — never DHCP
 - **IPv6** → **Fully Disabled** — this LAN runs IPv4
@@ -72,7 +72,7 @@ The static address matters doubly here: the installer bakes it into Homepage's s
 > The static IP matters more than usual here. Homepage ships a safety feature called **host validation**, and the installer writes this exact address into the allow-list. If the container's IP ever wandered, the page would answer every visit with "Host validation failed" instead of your dashboard. The `.55` static sits in the `.2–.99` zone the router's pool can never touch — exactly why the zone exists.
 
 > [!DETAILS] What the script actually builds
-> Node.js and the pnpm package manager; the source of the latest Homepage release unpacked to `/opt/homepage`; then a full `pnpm install` and `pnpm build` — the compile step is why the RAM prefill is generous (6 GB at this writing) and the install is slow. It runs as a systemd service named `homepage` on port 3000, seeds starter config into `/opt/homepage/config/`, and writes one more file worth remembering: `/opt/homepage/.env`, containing `HOMEPAGE_ALLOWED_HOSTS=localhost:3000,`-your-IP-`:3000`. That is the allow-list from the warning above, and it comes back when you wire in a proxy name.
+> Node.js and the pnpm package manager; the source of the latest Homepage release unpacked to `/opt/homepage`; then a full `pnpm install` and `pnpm build` — the compile step is why the RAM default is a generous 4 GB and the install is slow. It runs as a systemd service named `homepage` on port 3000, seeds starter config into `/opt/homepage/config/`, and writes one more file worth remembering: `/opt/homepage/.env`, containing `HOMEPAGE_ALLOWED_HOSTS=localhost:3000,`-your-IP-`:3000`. That is the allow-list from the warning above, and it comes back when you wire in a proxy name.
 
 ### Confirm it loaded, then set it to start at boot
 First, browse to `http://192.168.1.55:3000` and confirm the default page with its sample tiles loads — that proves the install succeeded, and everything below is editing that into your own page. Then make it permanent: a front door that vanishes after a power cut teaches the family to stop using it. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
