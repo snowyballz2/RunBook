@@ -317,7 +317,7 @@ After a re-commission you will often see a device twice — one live, one offlin
 
 Leave stale entries alone. They are cosmetic, and they disappear on their own when the Matter Server next reconciles. If one genuinely must go, take a Home Assistant backup first.
 
-Recovering from it is usually easy, and the keypad and key never depended on Home Assistant anyway. **First check the Matter Server panel in the sidebar and count the nodes.** If it still lists one node per lock while Devices shows fewer, the commissioning survived — only Home Assistant's device entry went — and the fix is to make HA rebuild it rather than to re-pair anything:
+Recovering from it is usually easy, and the keypad and key never depended on Home Assistant anyway. **First check the Matter Server panel in the sidebar and count the nodes.** If it still lists one node per lock while Devices shows fewer, the commissioning survived — only Home Assistant's device entry went — and the fix is to make HA rebuild it rather than to re-pair anything. The same ladder also cures a second, quieter failure: a lock that still shows **connected** but reports a stale state and **times out** on lock and unlock — that is a stale subscription, not a lost node, and step 1 alone usually revives it (check the battery entity on the device page too; a dying lock wears its last-known face while it stops answering). All three steps are safe from anywhere:
 
 1. **Settings → Devices & services → Matter → ⋮ → Reload** — re-reads the fabric, and an orphaned node normally returns as a device.
 2. **Settings → Apps → Matter Server → Restart**, if that alone does not do it.
