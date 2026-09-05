@@ -388,6 +388,9 @@ You unplug them once Proxmox is up and drive everything from a browser after tha
 > [!NOTE]
 > After the install there is nothing more to download on a PC. The server pulls the rest over its own network connection — the TrueNAS installer, the Home Assistant image, every service container, the GPU driver — so from then on any device with a browser (a laptop, an iPad, even a phone) is enough to reach `https://192.168.1.50:8006` and keep building. The two USB sticks above are the only things that strictly need a full PC, because you cannot write them from a phone.
 
+> [!NOTE]
+> **The cost of `192.168.1.x`, stated plainly.** It is the most common home range in the world, and that bites exactly once: away from home, on any Wi-Fi that also uses `192.168.1.x`, the network you are standing in beats the Tailscale subnet route and the house is unreachable — while cellular works perfectly (the Remote Access page has the check and the workaround: Wi-Fi off for the visit). Tailscale's own advice is an uncommon range, something like `10.27.4.0/24`. This build kept `192.168.1.x` because every device, camera, allow-list, and page assumes it; renumbering later means touching all of them. If the collision bites you often, that migration is the real fix — decide it deliberately, not page by page.
+
 ### Set the server's address
 The whole collection starts from one number — the static address you give the Proxmox host. Set it now and every later page reuses it.
 

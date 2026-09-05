@@ -288,6 +288,15 @@ After that, `https://proxmox.kuzco.org` and the rest work from anywhere too.
 > - **Neither address works** → Tailscale itself is not connected. Confirm the app shows connected, and that the phone signed in with the **same account as the host** — signing in with a different identity silently creates a second, empty tailnet, which looks like a broken network rather than the wrong one.
 > - **Both work** → nothing is wrong; you were testing while still on Wi-Fi.
 
+> [!NOTE]
+> **Works on cellular, fails on someone else's Wi-Fi?** Their network is almost certainly `192.168.1.x` too — the most common home range there is — and a network you are directly connected to always beats a Tailscale subnet route, so every `192.168.1.x` packet goes to their router instead of home. The tunnel itself is fine.
+>
+> 1. On the phone, open **Settings → Wi-Fi → (i)** next to that network and read its IP address — `192.168.1.something` confirms the collision.
+> 2. Prove the tunnel is healthy by browsing to the host's tailnet address, `https://100.x.y.z:8006` (recorded further up this page).
+> 3. Turn Wi-Fi off for the visit — cellular has no competing network, which is why it always works.
+>
+> The only complete fix is a home range nobody else uses, which is a renumbering of every page in this collection; the Start Here page's addressing plan names that trade-off. Until then, Wi-Fi off is the move.
+
 Served to a phone nowhere near the house, through zero opened ports. Nextcloud, Vaultwarden, Homepage, and Uptime Kuma join this same list automatically as you build them in the pages ahead — no extra remote-access setup per service.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
