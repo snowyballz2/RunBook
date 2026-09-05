@@ -297,6 +297,43 @@ mode: parallel
 
 `mode: parallel` lets two doors alert independently instead of the second swallowing the first. The honest limit, stated plainly: the offline watchdog cannot see the connected-but-stale mode — that entity never reads unavailable — which is why the restart watchdog exists; power events are that mode's known trigger. The outage itself already has a voice from the UPS & Safe Shutdown page; these two cover its aftermath. And through all of it, the keypads never depended on Home Assistant — the codes live in the locks.
 
+### Give the power outage a voice
+The UPS & Safe Shutdown page taught NUT to shut the server down cleanly; this tells your phone the moment the house loses power, and again when it comes back.
+
+1. Open **Settings → Devices & services → NUT** and find the **Status Data** entity — its ID should read `sensor.cyberpower_status_data`; if yours differs, use that name below.
+2. Paste the rule:
+
+```yaml
+alias: Power — on battery and restored
+triggers:
+  - trigger: template
+    value_template: "{{ 'OB' in states('sensor.cyberpower_status_data') }}"
+    id: on_battery
+  - trigger: template
+    value_template: "{{ 'OL' in states('sensor.cyberpower_status_data') }}"
+    id: restored
+actions:
+  - choose:
+      - conditions: "{{ trigger.id == 'on_battery' }}"
+        sequence:
+          - action: notify.mobile_app_chris_iphone
+            data:
+              title: "⚡ Power out"
+              message: "The UPS is on battery. NUT shuts the server down cleanly if it runs low."
+              data:
+                push:
+                  interruption-level: time-sensitive
+      - conditions: "{{ trigger.id == 'restored' }}"
+        sequence:
+          - action: notify.mobile_app_chris_iphone
+            data:
+              message: "Power restored — the UPS is back on line power."
+mode: queued
+```
+
+> [!NOTE]
+> A short blip sends both messages a few seconds apart, which is exactly the record you want. If an outage runs long enough for NUT to shut the server down, "restored" never sends — Home Assistant boots back up already on line power, so there is no transition to catch; the restart watchdog above is the nudge that arrives instead.
+
 ### Onboard the thermostats
 The presence rules below reach for `climate.*` and `light.*` entities. The Caséta `light.*` entities already exist — you added the Lutron Caséta bridge back on the Home Assistant & Zigbee2MQTT page. The one integration still missing is the **ecobee thermostats**, so add it here — **Settings → Devices & services → Add integration → ecobee**, then its dialog field by field:
 
