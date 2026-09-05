@@ -31,7 +31,9 @@ for d in /sys/bus/usb/devices/*; do
 done
 ```
 
-Match the serial already in Z2M's port setting to its port — that is the Zigbee radio, and the *other* port is the one to pass through now. Then reboot the VM. While here, switch the **first** stick's entry to port-based too if it is still bound by Vendor/Device ID (`grep usb /etc/pve/qemu-server/101.conf`), so a reboot can never shuffle which is which.
+4. Match the serial already in Z2M's port setting to its port — that is the Zigbee radio, and the *other* port is the one to pass through now.
+5. Reboot the VM.
+6. While here, switch the **first** stick's entry to port-based too if it is still bound by Vendor/Device ID (`grep usb /etc/pve/qemu-server/101.conf`), so a reboot can never shuffle which is which.
 
 > [!NOTE]
 > Inside Home Assistant the two sort themselves out regardless: each appears as its own `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_<serial>-if00` path, so Z2M keeps the radio it was configured against and OTBR takes the other. The serial in that path is the whole reason the guide insists on by-id rather than `ttyACM0`.
@@ -62,7 +64,13 @@ The *Pick your protocol* dialog names no serial and no port, and both discovery 
 It takes a few minutes to flash and configure.
 
 > [!WARNING]
-> **Confirm the serial before you start.** This writes Thread-only firmware, and that adapter can never run Zigbee again. Two identical ZBT-2s are plugged in and **both discovery cards carry the same name with nothing to tell them apart** — flashing the Zigbee one destroys your coordinator, and every plug, leak sensor, and the valve drops off and needs re-pairing from scratch. Open the dialog and stop at the first screen: nothing is flashed until you pick Thread and confirm, so reading it is safe. Compare what it identifies against the `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_…` path already in **Settings → Apps → Zigbee2MQTT → Configuration** — that serial is the Zigbee radio and is the one you must **not** touch. If the dialog does not name the device clearly, back out and map the ports from the **Proxmox host shell** with the loop earlier on this page, which is unambiguous. Zigbee2MQTT holding its serial port open may block a wrong choice, but that is luck, not a safeguard.
+> **Confirm the serial before you start.** This writes Thread-only firmware, and that adapter can never run Zigbee again. Two identical ZBT-2s are plugged in and **both discovery cards carry the same name with nothing to tell them apart** — flashing the Zigbee one destroys your coordinator, and every plug, leak sensor, and the valve drops off and needs re-pairing from scratch.
+>
+> 1. Open the dialog and stop at the first screen — nothing is flashed until you pick Thread and confirm, so reading it is safe.
+> 2. Compare what it identifies against the `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_…` path already in **Settings → Apps → Zigbee2MQTT → Configuration** — that serial is the Zigbee radio and is the one you must **not** touch.
+> 3. If the dialog does not name the device clearly, back out and map the ports from the **Proxmox host shell** with the loop earlier on this page, which is unambiguous.
+>
+> Zigbee2MQTT holding its serial port open may block a wrong choice, but that is luck, not a safeguard.
 
 Once it finishes, **Settings → Devices & services** shows both the **OpenThread Border Router** and **Thread** integrations. The app's options are already correct — one per line, with the why:
 
@@ -97,7 +105,9 @@ So the case for joining someone else's mesh was never about control — it was a
 Work in the **browser** at `192.168.1.51:8123`, **Settings → Devices & services → Thread**.
 
 1. Check where your border router landed. Flashed through the **Use as Thread adapter** wizard it usually forms its own network and marks it preferred unasked — look for a **`ha-thread-…`** card sitting *above* the **Other networks** heading, holding a router named **Home Assistant OpenThread Border Router** at `homeassistant-otbr.local`. If that is what you see, steps 1 and 2 are already done; go to step 3.
-2. Otherwise, on your own OTBR's row open the **⋮** menu and select **Reset border router** — this erases the radio's configuration and forms a **brand-new** Thread network, which is what you want here — then select **Make preferred network** on the `ha-thread-…` card that appears and wait 30–60 seconds. Do not assume the automatic case: the ZBT-2's network is [not always auto-selected as preferred](https://github.com/home-assistant/core/issues/165279).
+2. Otherwise:
+   - On your own OTBR's row, open the **⋮** menu and select **Reset border router** — this erases the radio's configuration and forms a **brand-new** Thread network, which is what you want here.
+   - Select **Make preferred network** on the `ha-thread-…` card that appears, and wait 30–60 seconds. Do not assume the automatic case: the ZBT-2's network is [not always auto-selected as preferred](https://github.com/home-assistant/core/issues/165279).
 3. Hand the network to your phone, so it stops defaulting to a neighbouring one. **This cannot be done from a desktop browser** — **Send credentials to phone** is gated on a keychain capability only the companion app exposes, and simply does not render anywhere else. Open the same **Thread** panel in the **Home Assistant companion app** on your phone; the button sits at the foot of the preferred network's card, below its border router.
 
 > [!NOTE]
@@ -149,10 +159,19 @@ The exit, if you ever want one, is a factory reset of each U400 and a re-commiss
 Six things need to be true before you touch a lock:
 
 - The **Home Assistant OS VM** is up, with the **Matter** integration available (it ships with Home Assistant) and the **OTBR** running from the step above.
-- **IPv6 is still enabled on that VM.** Matter and Thread are IPv6-only, and this is the one place the collection's IPv4-only rule does not apply — the AdGuard page disables IPv6 at the router and every LXC is built with it off, but **Settings → System → Network → IPv6** on the Home Assistant VM stays **Automatic**. Set it to *Disabled* and commissioning fails and every Matter device already added goes unavailable.
-- The **Matter Server** app is **up to date**. Check **Settings → Apps** for an *Update available* badge on it and clear it before you commission anything — the Matter integration refuses to add devices when the server is behind the version it expects, and the failure names the version rather than the cause. Updating is cheap while no devices are commissioned yet.
-- You have an **iPhone or Android phone with Bluetooth on**, signed in to the **Home Assistant companion app**. Commissioning a Matter device happens over Bluetooth from a phone — the HA web UI alone cannot do it, which surprises people running HA in a VM with no Bluetooth. The phone bridges that gap and hands the device HA's Thread credentials.
-- **Five mains-powered Matter-over-Thread plugs are commissioned and placed**, forming a mesh that reaches every door. This is a prerequisite, not an upgrade — see the warning under *Add the first U400*. The Thread Group's own guidance is one router-capable device per **300–400 sq ft**, or three to four for a typical 1,500 sq ft home; a basement door needs its own, since floor assemblies eat 2.4 GHz. The **IKEA GRILLPLATS plug** at **$7.99** is the buy, and it is not close. IKEA's own page states *"This product uses Matter over Thread, which means that you need a Thread Border Router"* — you have one, so the DIRIGERA hub it suggests is irrelevant here — and it includes **energy metering**, which was the main thing justifying pricier plugs. **Five** covers this house for about $40 — one near the rack, one on the path toward the carport, one by the front door, one at the top of the basement stairs, and one near the sliding glass door so the contact sensor there has a hop of its own. A $14.99 variant adds a physical remote; skip it, since these are driven from Home Assistant.
+- **IPv6 stays enabled (Automatic)** on that VM, at **Settings → System → Network → IPv6**.
+- The **Matter Server** app is **up to date** — check **Settings → Apps** for an *Update available* badge and clear it before you commission anything.
+- You have an **iPhone or Android phone with Bluetooth on**, signed in to the **Home Assistant companion app**.
+- **Five mains-powered Matter-over-Thread plugs are commissioned and placed**, forming a mesh that reaches every door — a prerequisite, not an upgrade (see the warning under *Add the first U400*).
+
+> [!NOTE]
+> **IPv6** is the one place the collection's IPv4-only rule does not apply — Matter and Thread are IPv6-only. The AdGuard page disables IPv6 at the router and every LXC is built with it off, but this VM is the exception: set it to *Disabled* and commissioning fails and every Matter device already added goes unavailable.
+>
+> The **Matter Server** check matters because the integration refuses to add devices when the server is behind the version it expects, and the failure names the version rather than the cause. Updating is cheap while no devices are commissioned yet.
+>
+> The **phone** is required because commissioning a Matter device happens over Bluetooth from a phone — the HA web UI alone cannot do it, which surprises people running HA in a VM with no Bluetooth. The phone bridges that gap and hands the device HA's Thread credentials.
+>
+> On the **five plugs**: the Thread Group's own guidance is one router-capable device per **300–400 sq ft**, or three to four for a typical 1,500 sq ft home; a basement door needs its own, since floor assemblies eat 2.4 GHz. The **IKEA GRILLPLATS plug** at **$7.99** is the buy, and it is not close. IKEA's own page states *"This product uses Matter over Thread, which means that you need a Thread Border Router"* — you have one, so the DIRIGERA hub it suggests is irrelevant here — and it includes **energy metering**, which was the main thing justifying pricier plugs. **Five** covers this house for about $40 — one near the rack, one on the path toward the carport, one by the front door, one at the top of the basement stairs, and one near the sliding glass door so the contact sensor there has a hop of its own. A $14.99 variant adds a physical remote; skip it, since these are driven from Home Assistant.
 
 **Eve Energy (Matter)** at roughly $40 remains the fallback if IKEA is out of stock or inconvenient — reliably carried by Amazon and the Apple Store, sold by Apple as a 2-pack, and unambiguous on the box, with per-device power logging and a Thread mesh diagnostics view in its app. Nanoleaf's Smart Outlet and Wemo's Thread plug look cheaper on paper but stock is erratic, and a plug you cannot buy saves nothing.
 
@@ -163,7 +182,6 @@ Three rules matter more than any product list, which will be stale within a year
 - **Per-device energy monitoring is a bonus, not a reason to buy.** Rack-level draw already arrives free over **NUT** from the CyberPower UPS on the *UPS & Safe Shutdown* page.
 - Each lock is **physically installed and powered** — the U400's rechargeable lithium pack charged (it takes USB-C, not disposable cells) and seated, the door able to throw the bolt.
 
-> [!NOTE]
 > [!WARNING]
 > Battery-powered Thread devices are **end devices**, never routers — they consume mesh capacity and depend on routers without extending anything. That covers every sensor in IKEA's cheap Matter line (**MYGGBETT** door/window, **MYGGSPRAY** motion, **KLIPPBOK** leak, **TIMMERFLOTTE** climate) as well as the battery shades and the locks themselves. Buy the **GRILLPLATS plugs first**; add battery sensors to a mesh that already has routers, never before.
 
@@ -196,7 +214,11 @@ For each plug, in turn:
 > The 11-digit numeric code under each plug's QR, labelled by placement. Re-commissioning a plug after a reset needs these.
 
 > [!WARNING]
-> **Check the first plug's network before commissioning the other four.** Plugs join whatever mesh they can hear exactly as the locks do — and a plug that lands on **NEST-PAN** or **ST-TIZEN** is routing for the neighbours, not for you, while looking perfectly healthy in the device list. Open **Matter Server** in the sidebar, select the new node, scroll to **Endpoints**, and open **Endpoint 0** — the root endpoint (*Ota Requestor*); its siblings are the plug's switch and energy meter, and the network clusters live only on 0. Inside it, expand **Thread Network Diagnostics** (cluster `0x0035`) and read **NetworkName**: it must be your **`ha-thread-…`** network.
+> **Check the first plug's network before commissioning the other four.** Plugs join whatever mesh they can hear exactly as the locks do — and a plug that lands on **NEST-PAN** or **ST-TIZEN** is routing for the neighbours, not for you, while looking perfectly healthy in the device list.
+>
+> 1. Open **Matter Server** in the sidebar and select the new node.
+> 2. Scroll to **Endpoints** and open **Endpoint 0** — the root endpoint (*Ota Requestor*); its siblings are the plug's switch and energy meter, and the network clusters live only on 0.
+> 3. Expand **Thread Network Diagnostics** (cluster `0x0035`) and read **NetworkName**: it must be your **`ha-thread-…`** network.
 
 Two neighbours of that attribute explain themselves badly, so read them together:
 
@@ -211,7 +233,12 @@ Two neighbours of that attribute explain themselves badly, so read them together
 >
 > The **commissioning event** is the part that cares. A plug commissioned far from every router has three outcomes: it fails to attach (harmless — retry once the nearer ones are up), it joins your network on a thin link (fine, and self-healing), or it **joins a neighbour's network** — because the device reports the networks it can actually hear and the commissioner picks from that list, so a plug that hears NEST-PAN clearly and yours not at all lands on Google's mesh with your credentials sitting unused on the phone. That third case is the expensive one: **a device keeps the network it joined**, so adding closer plugs afterwards cannot rescue it — only deleting and re-commissioning will.
 >
-> Fallback when a plug will not take at its intended outlet: commission it **beside the ZBT-2**, where your network is unmistakably the loudest, then carry it to its real outlet. It keeps your network and re-attaches — and if it goes dark there instead, that is clean information rather than a mystery: the gap is real, and that outlet needs a hop before it.
+> Fallback when a plug will not take at its intended outlet:
+>
+> 1. Commission it **beside the ZBT-2**, where your network is unmistakably the loudest.
+> 2. Carry it to its real outlet.
+>
+> It keeps your network and re-attaches — and if it goes dark there instead, that is clean information rather than a mystery: the gap is real, and that outlet needs a hop before it.
 
 > [!TIP]
 > **The blunt instrument that ends the argument: unplug the competition.** Power off the **Nest Hub Max** and the **Family Hub** for the duration of the commissioning session and their Thread networks simply are not there to be chosen — every device hears exactly one network and joins it. This build did that and put the whole fleet on `ha-thread-…` in a single pass, after an earlier attempt scattered locks across two neighbouring meshes.
@@ -221,7 +248,13 @@ Two neighbours of that attribute explain themselves badly, so read them together
 > Verify while the air is still clean, though: with the neighbours dark, walk every node's **NetworkName** in one pass — locks, plugs, sensor. And know the risk that survives: the phone still holds their credentials, so the *next* Matter-over-Thread device can still land on their mesh. Either check NetworkName after every future commissioning, or pull the plugs again for the session.
 
 > [!TIP]
-> **A plug that commissioned fine but then stops updating** has almost always hit that same edge from the other side: commissioning ran over **Bluetooth from the phone standing beside it**, while everything afterwards runs over **Thread from the ZBT-2 in the rack** — so a join can succeed on a radio that is not the one doing the work. Confirm it with the companion app's **Ping** on the device page: *"Ping device complete"* only means the operation finished, and a **red `!`** beside the address means that address never answered. Then work the ladder — power-cycle the plug (ten seconds unplugged; a REED re-attaches on power-up), re-ping; if it still fails, move it to an outlet near the ZBT-2 and ping there, which separates range from routing; if it fails even beside the radio, restart the **OpenThread Border Router** app and confirm **Settings → Thread** still shows your `ha-thread-…` card with `homeassistant-otbr.local` under it.
+> **A plug that commissioned fine but then stops updating** has almost always hit that same edge from the other side: commissioning ran over **Bluetooth from the phone standing beside it**, while everything afterwards runs over **Thread from the ZBT-2 in the rack** — so a join can succeed on a radio that is not the one doing the work. Confirm it with the companion app's **Ping** on the device page: *"Ping device complete"* only means the operation finished, and a **red `!`** beside the address means that address never answered.
+>
+> Then work the ladder:
+>
+> 1. Power-cycle the plug (ten seconds unplugged; a REED re-attaches on power-up), then re-ping.
+> 2. If it still fails, move it to an outlet near the ZBT-2 and ping there — this separates range from routing.
+> 3. If it fails even beside the radio, restart the **OpenThread Border Router** app and confirm **Settings → Thread** still shows your `ha-thread-…` card with `homeassistant-otbr.local` under it.
 
 Once all five are up and verified, the battery **MYGGBETT** contact sensor for the sliding glass door commissions the same way — end devices belong on a mesh that already has routers, never before it. The Automations page expects it renamed to `binary_sensor.sliding_door`.
 
@@ -250,7 +283,9 @@ These locks may already be commissioned — to **Aqara Home**, **SmartThings**, 
 > [!NOTE]
 > On this build the locks turned out to be spread across **Google/Nest** and **SmartThings**, some in both. Note also what is *absent*: Aqara Home itself holds no Matter fabric, so its binding, your keypad codes, and the calibration are never at risk here.
 
-Work through the list app by app — the **SmartThings app** for SmartThings entries, the **Google Home app** for Nest ones — then come back to the Aqara **Matter** screen and confirm **nothing remains listed**. That empty list is the gate to commissioning.
+1. Work through the **SmartThings app**, removing SmartThings entries.
+2. Work through the **Google Home app**, removing Nest entries.
+3. Come back to the Aqara **Matter** screen and confirm **nothing remains listed** — that empty list is the gate to commissioning.
 
 A full factory reset is the certain fix, but **try dropping just the Matter fabrics first** — it keeps the lock's calibration, its keypad codes, and its Aqara Home binding. Removing the lock from **SmartThings** removes SmartThings' fabric alone, and once a Matter device leaves its *last* fabric its network credentials become unusable and it returns to a commissionable state. Aqara Home is untouched by that, because Aqara's binding is its own thing over Bluetooth/UWB rather than a Matter fabric.
 
@@ -286,10 +321,13 @@ If Aqara Home proves awkward, the direct route is to press **Set** once to enter
 With the OTBR up and the companion app open on a Bluetooth phone:
 
 1. In the **Home Assistant companion app**, go to **Settings → Matter** and select **Add device**. (Matter and Thread moved out of *Devices & services* to their own top-level Settings entry in Home Assistant 2026.2.)
-2. **Press the lock's Set button once** to put it into pairing mode — a single press, in the battery compartment above Reset. A lock that is not factory-fresh does *not* advertise on its own, and removing it from another ecosystem does not start it advertising either. Skip this and the phone reports **"Unable to Add Accessory — you may need to restart your accessory"**, which names the symptom rather than the cause.
+2. **Press the lock's Set button once** to put it into pairing mode — a single press, in the battery compartment above Reset.
 3. Scan the lock's **Matter Pairing Code** — the lower of the two QR codes in the battery compartment, *not* the Magicpair code above it — or tap to enter the numeric setup code by hand. Do it promptly: the commissioning window is time-limited. Keep the phone within a couple of feet of the lock with Bluetooth on, since commissioning runs over BLE before Thread is involved.
 4. The phone commissions the lock over **Bluetooth**, hands it Home Assistant's **Thread credentials**, and the lock joins HA's Thread network. After a moment it appears in Home Assistant as a `lock.*` entity.
 5. Assign it to the matching **Area** — **Carport Door**, **Front Door**, or **Basement Door** — and give it a clear name.
+
+> [!NOTE]
+> Step 2: a lock that is not factory-fresh does *not* advertise on its own, and removing it from another ecosystem does not start it advertising either. Skip this step and the phone reports **"Unable to Add Accessory — you may need to restart your accessory"**, which names the symptom rather than the cause.
 
 > [!WARNING]
 > Do this from the **companion app**, not the desktop browser — the Matter add flow needs the phone's Bluetooth radio to reach the lock, and the Home Assistant VM has none.
@@ -298,7 +336,13 @@ With the OTBR up and the companion app open on a Bluetooth phone:
 > **Check Settings → Devices & services → Devices before retrying a failed add.** The phone can report **"Unable to Add Accessory"** *after* commissioning has already succeeded, and blindly retrying risks commissioning the same lock twice. If the lock is listed there under the **Matter** integration, it worked — close the dialog and move on.
 
 > [!TIP]
-> **"Unable to Add Accessory"** usually means the lock is not advertising. Press **Set** once and rescan immediately. If that fails, pull a battery for ten seconds, reseat it, press **Set**, and try again. If it still refuses, a Matter fabric survived somewhere and the sticker code is dead — generate a fresh one from **Aqara Home → the lock → Matter → Matter Pairing Code**. A factory reset is the last resort, not the first.
+> **"Unable to Add Accessory"** usually means the lock is not advertising.
+>
+> 1. Press **Set** once and rescan immediately.
+> 2. If that fails, pull a battery for ten seconds, reseat it, press **Set**, and try again.
+> 3. If it still refuses, a Matter fabric survived somewhere and the sticker code is dead — generate a fresh one from **Aqara Home → the lock → Matter → Matter Pairing Code**.
+>
+> A factory reset is the last resort, not the first.
 
 > [!WARNING]
 > **Mesh coverage must exist at the door before you commission, or the lock joins a neighbour's network instead.** During commissioning the device scans and reports the Thread networks it can actually *hear*, and the commissioner picks from that list — so credentials are not enough. On this build the first attempt put the Carport lock on **NEST-PAN** and the Basement lock on **ST-TIZEN**, with the right credentials on the phone the whole time, purely because a single radio in the server rack was inaudible at both doors while the Nest Hub Max and the Family Hub were not. Published guidance puts the border router within roughly **30 feet** of the device for a reliable join. Do not try to force the issue either: a lock that cannot hear your border router goes *unavailable*, so you would trade a working lock on someone else's mesh for a dead one on yours. Commission the mains-powered Thread routers **first**, working outward from the radio, and only then the locks. Moving a lock after commissioning does not help — it keeps the network it joined.
@@ -323,7 +367,13 @@ For each lock:
 
 ### Confirm they landed on your Thread network
 > [!WARNING]
-> A lock that commissioned onto a neighbouring mesh looks identical in the device list, so check rather than assume — this is the one thing the whole border-router exercise was for. Open **Matter Server** in the sidebar and select the lock's node, then scroll past Node Info to **Endpoints** and open **Endpoint 0** — the root endpoint, where every network cluster lives (the higher-numbered endpoints are the device's own functions, the lock itself among them). Expand **Thread Network Diagnostics** (cluster `0x0035`): its **NetworkName** attribute names the mesh the lock actually joined. The **Show in graph** button beside the node title draws the same relationship visually if you prefer it.
+> A lock that commissioned onto a neighbouring mesh looks identical in the device list, so check rather than assume — this is the one thing the whole border-router exercise was for.
+>
+> 1. Open **Matter Server** in the sidebar and select the lock's node.
+> 2. Scroll past Node Info to **Endpoints** and open **Endpoint 0** — the root endpoint, where every network cluster lives (the higher-numbered endpoints are the device's own functions, the lock itself among them).
+> 3. Expand **Thread Network Diagnostics** (cluster `0x0035`): its **NetworkName** attribute names the mesh the lock actually joined.
+>
+> The **Show in graph** button beside the node title draws the same relationship visually if you prefer it.
 >
 > Do not confuse this with the gear-icon **Settings** dialog on that page: its *Network credentials* section, showing WiFi and Thread as **Not configured / DEFAULT**, is what the server hands *out* when commissioning future devices — DEFAULT there means "use Home Assistant's own Thread network", which is exactly right, and it says nothing about where an existing device landed. It should read your **`ha-thread-…`** network. If it reads a neighbouring network instead, the phone's preferred network won during commissioning — fix the phone's credentials and re-commission that lock.
 
@@ -367,7 +417,7 @@ First confirm the lock implements it — user management is an optional Matter c
 > [!NOTE]
 > The U400 answers `supports_user_management: true` with **PIN only** (no RFID), **20 users**, and a **4–8 digit** PIN length — verified on this build's locks, so the route below is open.
 
-Grab the real entity IDs before writing the call: on the **States** tab, filter for `lock.`. If you have just renamed anything, **hard-refresh the browser first** (Cmd/Ctrl+Shift+R) — the frontend caches the entity registry, so the Actions tab's target picker keeps offering the old names and finds nothing under the new ones until it reloads. Home Assistant prefixes the area onto the name, so they read `lock.carport_carport_door` rather than the `lock.carport_door` you would guess.
+Grab the real entity IDs before writing the call: on the **States** tab, filter for `lock.`. If you have just renamed anything, **hard-refresh the browser first** (Cmd/Ctrl+Shift+R) — the frontend caches the entity registry, so the Actions tab's target picker keeps offering the old names and finds nothing under the new ones until it reloads. With the entity ID format set to Device + Entity on the Home Assistant page, they read `lock.carport_door`; an area prefix in the ID (`lock.carport_carport_door`) means that format was never changed.
 
 Then set the code on every door in one go:
 
@@ -447,7 +497,13 @@ sequence:
 mode: single
 ```
 
-With the household filling slots 1–6, the first guest lands at **7** — the field's default. A misfired rename is cosmetic (the PIN is already live; fix the name in Manage access). Two habits keep it honest: **make guest changes through the script, all three locks at once** — adding a guest via the dialog on one door desynchronises that lock's next free slot from the others — and **drill the full loop once** before it matters: Grant a test guest, see it at slot 7 on all three doors in Manage access, keypad it, Revoke it, see it gone.
+With the household filling slots 1–6, the first guest lands at **7** — the field's default. A misfired rename is cosmetic (the PIN is already live; fix the name in Manage access). Two habits keep it honest: **make guest changes through the script, all three locks at once** — adding a guest via the dialog on one door desynchronises that lock's next free slot from the others — and **drill the full loop once** before it matters:
+
+1. Grant a test guest.
+2. See it at slot 7 on all three doors in Manage access.
+3. Keypad it.
+4. Revoke it.
+5. See it gone.
 
 The odd-looking `data:` is load-bearing. A plain `credential_data: "{{ pin }}"` fails with *"expected str for dictionary value"* — the template engine re-parses a digit string into a number on the way out, and the action demands a string. Its typing is **not recursive**, though: a template returning a whole dict is left alone, so wrapping the entire `data` block in one dict template is the documented way to keep the PIN a string.
 

@@ -251,7 +251,18 @@ scutil --dns | grep 'nameserver\[0\]' | head -3
 >
 > **One household where this is not free: gaming.** Many multiplayer titles connect players peer-to-peer, which over IPv4 means punching through NAT — the thing behind every *NAT Type: Moderate/Strict* warning. Native IPv6 sidesteps it, and Xbox in particular prefers it (falling back to Teredo tunnelling without). The bigger factor is actually **UPnP off**, since that is how a console asks the router to open the ports it needs. Expect **PC gaming to be unaffected** — client-server over outbound connections — while a **console may report a worse NAT type**, which is usually harmless at Moderate and breaks matchmaking and party chat at Strict.
 >
-> If a console does complain, in order of what to try: **re-enable UPnP** (pragmatic, and the risk it guarded against is already handled at each camera's own settings); **manually forward just that console's ports** to its reserved address; or turn IPv6 back on — but only after AdGuard can answer IPv6 queries, or the bypass above reopens. Two more while you are in there: **UPnP off** if your model offers it — on the **CR1000A** it is at **Advanced → Devices → Universal Plug & Play**, a *Devices* section separate from Network Settings, while the **G3100** does not expose a UPnP toggle at all in current firmware. If there is no such entry, leave it: this was the router half of the camera lockdown, and the half that matters is already done at each camera's own settings, so nothing here is exposed by UPnP staying on (and console gaming keeps its automatic port opening — see the gaming note below). And **audit port forwarding** at **Security & Firewall → Port Forwarding** — the security model of this build is that nothing inside the house answers the internet, and a forwarding rule is the one thing that breaks it. Nothing in this collection ever needs one: **Tailscale is outbound-only**, which is exactly why the house stays sealed and still answers your phone from anywhere. Two things to know before you start deleting:
+> If a console does complain, try these in order:
+>
+> 1. **Re-enable UPnP** — pragmatic, and the risk it guarded against is already handled at each camera's own settings.
+> 2. **Manually forward just that console's ports** to its reserved address.
+> 3. Turn IPv6 back on — but only after AdGuard can answer IPv6 queries, or the bypass above reopens.
+>
+> Two more while you are in there:
+>
+> - **UPnP off**, if your model offers it — on the **CR1000A** it is at **Advanced → Devices → Universal Plug & Play**, a *Devices* section separate from Network Settings, while the **G3100** does not expose a UPnP toggle at all in current firmware. If there is no such entry, leave it: this was the router half of the camera lockdown, and the half that matters is already done at each camera's own settings, so nothing here is exposed by UPnP staying on (and console gaming keeps its automatic port opening — see the gaming note below).
+> - **Audit port forwarding** at **Security & Firewall → Port Forwarding** — the security model of this build is that nothing inside the house answers the internet, and a forwarding rule is the one thing that breaks it. Nothing in this collection ever needs one: **Tailscale is outbound-only**, which is exactly why the house stays sealed and still answers your phone from anywhere.
+>
+> Two things to know before you start deleting:
 
 - **Security & Firewall → Port Forwarding *Rules*** (the neighbouring menu entry) is **not** a list of open ports — it is the router's library of protocol *definitions* (FTP = 21, HTTP = 80, and so on) offered when you build a rule. Its own text says "Protocols that are implemented in the router". Leave it entirely alone
 - A Fios router **ships with real forwards of Verizon's own**, so an empty list is not the expected state. Typically: **4567/4577 → `127.0.0.1`**, Verizon's documented technician access *to the router itself* (loopback, so no household device is exposed — leave them; Verizon provisions this router regardless), and **35000 → a `192.168.1.1xx` address on port 4567**, which is **Fios TV set-top-box remote DVR**. Keep that one if you program the DVR from the Fios app while out; remove it if you never do, which closes a genuine inbound path to a set-top box at no cost
@@ -321,7 +332,11 @@ This is not hypothetical — it was **measured on this build**: ~43 MB/day of en
 - **Query logs rotation** → **24 hours** — the log then idles under ~90 MB across its two rotation files, and every DNS diagnosis this collection has ever needed used entries from the same hour
 - **Statistics retention** → leave at its default — the aggregate counters are tiny compared to the per-query log
 
-Want a week or more of per-query history instead? Size it honestly first: retention holds **two** intervals' worth, so at this house's measured rate 7 days steady-states near 600 MB — grow the disk before choosing it (`pct resize 103 rootfs +2G` in the host shell), never trust the default to fit.
+Want a week or more of per-query history instead? Size it honestly first: retention holds **two** intervals' worth, so at this house's measured rate 7 days steady-states near 600 MB — never trust the default to fit. Grow the disk before choosing it, in the host shell:
+
+```bash
+pct resize 103 rootfs +2G
+```
 
 ### Confirm it is actually blocking
 First from the **Mac**, in the **Terminal** app — this one is not a browser step. Check that a known tracker domain gets blocked. A blocked domain comes back answered, with `0.0.0.0` as its address:
@@ -338,7 +353,13 @@ Address:  0.0.0.0
 ```
 
 > [!WARNING]
-> **`connection timed out; no servers could be reached` is not a block — it is silence.** The query got no reply at all, which means AdGuard's DNS service is not answering; and since the router now forwards there, the whole house has no DNS while that is true. Work down: does **`http://192.168.1.53`** still load? If yes the container is fine and the DNS listener specifically is not — check the dashboard shows protection on and the server running, since a setting that failed to apply can leave the web UI up while the DNS server stays down. Then in the container's **Console**, confirm something holds the port with `ss -tulnp | grep ':53'` and check `systemctl status AdGuardHome --no-pager`. If the dashboard does not load either, the container itself is stopped.
+> **`connection timed out; no servers could be reached` is not a block — it is silence.** The query got no reply at all, which means AdGuard's DNS service is not answering; and since the router now forwards there, the whole house has no DNS while that is true.
+>
+> Work down:
+>
+> 1. Does **`http://192.168.1.53`** still load? If not, the container itself is stopped.
+> 2. If it loads, the container is fine and the DNS listener specifically is not — check the dashboard shows protection on and the server running, since a setting that failed to apply can leave the web UI up while the DNS server stays down.
+> 3. In the container's **Console**, confirm something holds the port with `ss -tulnp | grep ':53'` and check `systemctl status AdGuardHome --no-pager`.
 
 Then run it again without naming a server, which uses whatever resolver the Mac actually received — the real end-to-end test:
 
@@ -349,12 +370,29 @@ nslookup doubleclick.net
 > [!TIP]
 > **If that second lookup reports a `Server:` in the `100.64.x` range** — or anything that is neither your router nor AdGuard — the machine has a **VPN or DNS-filtering app intercepting all DNS**, and it will bypass AdGuard permanently. That also explains a direct query to `192.168.1.53` timing out from that machine while the same query answers fine from the Proxmox host: the interception swallows it. Find it with `ifconfig | grep '^utun'` (active tunnels) and in **System Settings → VPN** plus **General → Login Items & Extensions → DNS Proxy**, where a filtering app registers even with no menu-bar icon. Cloudflare WARP, NextDNS, Mullvad and work VPNs are the usual ones. Verify from a second device before blaming the server — one machine bypassing proves nothing about the rest of the house.
 >
-> **On this build it was NordVPN**, and note this is a *different* symptom from the one the Install Proxmox page documents. There, Nord blocked the LAN outright and the fix was its **Local Network Discovery** toggle. Here that toggle is already on — the web UI loads fine — but Nord's separate **DNS leak protection** still forces every query into the tunnel, so AdGuard never sees them. Three ways out: **disconnect the VPN while at home** (the recommendation — you now run your own filtered resolver, and the Remote Access page gives you your own encrypted path in, which is what a consumer VPN was standing in for); point Nord's **Custom DNS** at `192.168.1.53` (works at home, breaks away from it); or accept that this one machine bypasses the house filter. Two forward-looking notes: the **Reverse Proxy** page's `*.kuzco.org` names exist only inside AdGuard, so they will not resolve on a machine whose DNS is tunnelled — on the very machine you administer from — and **Tailscale and a consumer VPN fight on macOS**, so expect to run one at a time from the Remote Access page onward.
+> **On this build it was NordVPN**, and note this is a *different* symptom from the one the Install Proxmox page documents. There, Nord blocked the LAN outright and the fix was its **Local Network Discovery** toggle. Here that toggle is already on — the web UI loads fine — but Nord's separate **DNS leak protection** still forces every query into the tunnel, so AdGuard never sees them. Three ways out:
+>
+> - **Disconnect the VPN while at home** (the recommendation — you now run your own filtered resolver, and the Remote Access page gives you your own encrypted path in, which is what a consumer VPN was standing in for).
+> - Point Nord's **Custom DNS** at `192.168.1.53` (works at home, breaks away from it).
+> - Accept that this one machine bypasses the house filter.
+>
+> Two forward-looking notes: the **Reverse Proxy** page's `*.kuzco.org` names exist only inside AdGuard, so they will not resolve on a machine whose DNS is tunnelled — on the very machine you administer from — and **Tailscale and a consumer VPN fight on macOS**, so expect to run one at a time from the Remote Access page onward.
 
 > [!TIP]
-> **Through the router you may see `No answer` rather than `0.0.0.0`.** Either is a successful block — the domain does not resolve to anything real — but the difference matters: it means the router **stripped** AdGuard's `0.0.0.0` on the way back, which is the signature of **DNS rebinding protection** dropping responses that carry private or invalid addresses. That is worth settling now, because the Reverse Proxy page has AdGuard answering `*.kuzco.org → 192.168.1.54`, an equally private address, for every device in the house. Test it in two minutes: in **Filters → DNS rewrites** add `test.home.arpa` → `192.168.1.54`, then from Terminal run `nslookup test.home.arpa 192.168.1.53` (expect `192.168.1.54`) and `nslookup test.home.arpa` (through the router). If the second returns the address too, the proxy names will work. If it returns `No answer`, the router is filtering private-IP responses and needs relaxing before the next page — far better to learn that here than halfway through building a reverse proxy. Delete the test rewrite afterwards.
+> **Through the router you may see `No answer` rather than `0.0.0.0`.** Either is a successful block — the domain does not resolve to anything real — but the difference matters: it means the router **stripped** AdGuard's `0.0.0.0` on the way back, which is the signature of **DNS rebinding protection** dropping responses that carry private or invalid addresses. That is worth settling now, because the Reverse Proxy page has AdGuard answering `*.kuzco.org → 192.168.1.54`, an equally private address, for every device in the house. Test it in two minutes:
 >
-> **The fix, on this hardware:** **Advanced → Network Settings → DNS Server**, where a **"Enable DNS Rebind Protection"** checkbox sits below the DNS entry list, ticked by default. Try the surgical route first — the **Exceptions to DNS Rebind Protection** field below it takes an **IP/Netmask**; enter **`192.168.1.0/24`** (your LAN is both the client range and the answer range, so that covers either meaning of the ambiguous wording) and **Apply Changes**, then re-run the lookup. If it still comes back empty, untick the checkbox itself.
+> 1. In **Filters → DNS rewrites**, add `test.home.arpa` → `192.168.1.54`.
+> 2. From Terminal, run `nslookup test.home.arpa 192.168.1.53` (expect `192.168.1.54`).
+> 3. Run `nslookup test.home.arpa` (through the router).
+> 4. Delete the test rewrite.
+>
+> If the second lookup returns the address too, the proxy names will work. If it returns `No answer`, the router is filtering private-IP responses and needs relaxing before the next page — far better to learn that here than halfway through building a reverse proxy.
+>
+> **The fix, on this hardware:** **Advanced → Network Settings → DNS Server**, where a **"Enable DNS Rebind Protection"** checkbox sits below the DNS entry list, ticked by default.
+>
+> 1. Try the surgical route first: in the **Exceptions to DNS Rebind Protection** field below it (takes an **IP/Netmask**), enter **`192.168.1.0/24`** (your LAN is both the client range and the answer range, so that covers either meaning of the ambiguous wording) and **Apply Changes**.
+> 2. Re-run the lookup.
+> 3. If it still comes back empty, untick the checkbox itself.
 >
 > Know what that trades away: DNS rebinding is a genuine attack class — a hostile page whose domain re-resolves to a private address, letting its scripts reach LAN devices from inside your browser — and this filter blocks it. Relaxing it is nevertheless the standard move for anyone running local DNS rewrites, and it is defensible on this build because every service it exposes sits behind a login: Proxmox, Home Assistant, Frigate's 8971, AdGuard, the proxy, and the cameras all authenticate. Prefer the exception over the global untick, so the protection survives everywhere except your own subnet. On this build the **`192.168.1.0/24`** exception was enough — the rewrites resolved through the router immediately after applying it.
 >

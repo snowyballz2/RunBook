@@ -40,7 +40,7 @@ Home Assistant OS ships as a ready-made disk image, **not** an installer ISO —
 > [!DETAILS] The manual way — no scripts
 > Four moves in the host shell, official sources only. The two values you may need to adjust before pasting: the version (`17.3` — check the [HA OS releases page](https://github.com/home-assistant/operating-system/releases) for current) and the VM ID (`101` is the next free on this build after TrueNAS's 100; `qm list` confirms).
 >
-> Download and unpack the official image:
+> 1. Download and unpack the official image:
 >
 > ```bash
 > cd /tmp
@@ -48,7 +48,7 @@ Home Assistant OS ships as a ready-made disk image, **not** an installer ISO —
 > unxz haos_ova-17.3.qcow2.xz
 > ```
 >
-> Create the VM — HA OS needs UEFI boot (`ovmf`) with secure boot off (`pre-enrolled-keys=0`):
+> 2. Create the VM — HA OS needs UEFI boot (`ovmf`) with secure boot off (`pre-enrolled-keys=0`):
 >
 > ```bash
 > qm create 101 --name haos --ostype l26 --bios ovmf \
@@ -57,11 +57,16 @@ Home Assistant OS ships as a ready-made disk image, **not** an installer ISO —
 >   --net0 virtio,bridge=vmbr0 --agent enabled=1
 > ```
 >
-> Import the image as the boot disk, then start it:
+> 3. Import the image as the boot disk:
 >
 > ```bash
 > qm set 101 --scsi0 local-lvm:0,import-from=/tmp/haos_ova-17.3.qcow2
 > qm set 101 --boot order=scsi0
+> ```
+>
+> 4. Start it:
+>
+> ```bash
 > qm start 101
 > ```
 
@@ -85,7 +90,15 @@ Save. Phone apps, dashboards, and the MQTT links all use this address — `homea
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
 > [!WARNING]
-> **Wrong app = hijacked host.** Proxmox has a nearly identically named screen — `pve` **→ System → Network** — that sets the *host's* address, and typing `.51` there moves the hypervisor itself on the next apply or reboot (this build did exactly that: Proxmox vanished from `.50` and turned up at `.51`). This step happens **inside Home Assistant** at port `8123`, nowhere in the Proxmox UI. If the host does get moved by mistake: the web UI is still alive at the new address — log in there, `pve` → **System → Network** → `vmbr0` → set **IPv4/CIDR** back to `192.168.1.50/24` → **Apply Configuration**, and reconnect at `.50`.
+> **Wrong app = hijacked host.** Proxmox has a nearly identically named screen — `pve` **→ System → Network** — that sets the *host's* address, and typing `.51` there moves the hypervisor itself on the next apply or reboot (this build did exactly that: Proxmox vanished from `.50` and turned up at `.51`). This step happens **inside Home Assistant** at port `8123`, nowhere in the Proxmox UI.
+>
+> If the host does get moved by mistake, the web UI is still alive at the new address:
+>
+> 1. Log in there.
+> 2. Go to `pve` → **System → Network** → `vmbr0`.
+> 3. Set **IPv4/CIDR** back to `192.168.1.50/24`.
+> 4. **Apply Configuration**.
+> 5. Reconnect at `.50`.
 
 ## First boot
 
@@ -93,7 +106,11 @@ Save. Phone apps, dashboards, and the MQTT links all use this address — `homea
 1. Wait a few minutes on first boot — Home Assistant OS sets itself up unattended.
 2. Browse to `http://homeassistant.local:8123` (or the pinned IP).
 3. Let **Preparing Home Assistant** finish downloading the latest version (roughly 700 MB) — this can take twenty minutes.
-4. Choose **Create my smart home**, then walk the wizard: owner account, home location (time zone, units, currency), analytics choice, and **Finish**.
+4. Choose **Create my smart home**, then walk the wizard:
+   - Owner account
+   - Home location — time zone, units, currency
+   - Analytics choice
+   - **Finish**
 
 > [!NOTE]
 > Home Assistant can show high RAM use right after boot — that is normal; it uses free memory for caching, not a sign the 8 GB is too small.
@@ -139,7 +156,10 @@ This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broa
 > Proxmox does not hand USB devices to a guest automatically. If Z2M cannot see the coordinator, this missed passthrough step is almost always why. (Passing it through also means the **host** stops showing it under `/dev/serial/by-id/` — QEMU detaches the host driver, so that path now exists *inside* the VM. Find it at **Settings → System → Hardware → All Hardware** in the Home Assistant UI, which is the same list Z2M's port dropdown reads.)
 
 > [!DANGER]
-> Once the stick is passed through, Home Assistant discovers it and offers a **Home Assistant Connect ZBT-2** card under **Settings → Devices & services**. **Ignore that card — never click Add.** It starts HA's built-in **ZHA** (or Thread) setup, which seizes the coordinator this build needs for Zigbee2MQTT; Z2M reaches the radio through its own add-on config, not through an HA integration. One click there costs you the whole Zigbee setup. The same page also lists the **Lutron Smart Bridge Pro 2 as a "HomeKit Device"** — ignore that too, and add the bridge through its **native Lutron Caséta** card instead: the HomeKit route exposes only a subset (no Pico remotes as triggers) and consumes the bridge's HomeKit pairing.
+> Once the stick is passed through, Home Assistant discovers it and offers cards under **Settings → Devices & services** that look helpful and are not:
+>
+> 1. **Home Assistant Connect ZBT-2** — ignore it, never click Add. It starts HA's built-in **ZHA** (or Thread) setup, which seizes the coordinator this build needs for Zigbee2MQTT; Z2M reaches the radio through its own add-on config, not through an HA integration. One click there costs you the whole Zigbee setup.
+> 2. **Lutron Smart Bridge Pro 2**, listed as a "HomeKit Device" — ignore this too. Add the bridge through its native **Lutron Caséta** card instead; the HomeKit route exposes only a subset (no Pico remotes as triggers) and consumes the bridge's HomeKit pairing.
 
 ### Stand up the Mosquitto broker and its logins
 The whole build talks over one **Mosquitto** broker, and it lives here on the Home Assistant VM.
@@ -156,7 +176,14 @@ The whole build talks over one **Mosquitto** broker, and it lives here on the Ho
 > Do not stand up a second broker anywhere else. Home Assistant renamed *Add-ons* to *Apps* in 2026.2, so older write-ups say "add-on store".
 
 > [!WARNING]
-> **Restart the Mosquitto app after adding logins.** It writes its password file at startup, so credentials added to the Logins list do not exist to the broker until it restarts — and every client that tries meanwhile is refused with a bare **"Connection refused: Not authorized"**, which reads like a wrong password rather than a not-yet-loaded one. Restart Mosquitto, then whatever was rejected. If it persists, Mosquitto's own **Log** names the username it turned away, which tells you whether the client is sending the wrong name or the wrong password. Then create the build's two broker logins — the broker rejects unknown credentials by default, so a username nobody created just gets "not authorised". Add both under the app's **Configuration → Logins** list (or create dedicated non-admin Home Assistant users with these names): **`zigbee2mqtt`** for Z2M, used below, and **`mqtt-user`** for Frigate, used on the Cameras, Doorbell & Frigate page. Same broker, distinct logins — the broker's logs make it obvious who is talking.
+> **Restart the Mosquitto app after adding logins.** It writes its password file at startup, so credentials added to the Logins list do not exist to the broker until it restarts — and every client that tries meanwhile is refused with a bare **"Connection refused: Not authorized"**, which reads like a wrong password rather than a not-yet-loaded one.
+>
+> 1. Add both of the build's broker logins under the app's **Configuration → Logins** list (or create dedicated non-admin Home Assistant users with these names): **`zigbee2mqtt`** for Z2M, used below, and **`mqtt-user`** for Frigate, used on the Cameras, Doorbell & Frigate page.
+> 2. Restart Mosquitto.
+> 3. Retry whatever was rejected.
+> 4. If it still fails, check Mosquitto's own **Log** — it names the username it turned away, telling you whether the client is sending the wrong name or the wrong password.
+>
+> The broker rejects unknown credentials by default, so a username nobody created just gets "not authorised". Same broker, distinct logins — the broker's logs make it obvious who is talking.
 
 > [!INPUT] z2m-mqtt-user | Zigbee2MQTT's own MQTT username | | zigbee2mqtt
 > Created in the broker's Logins a moment ago. Separate from Frigate's `mqtt-user` — same broker, distinct login.
@@ -182,17 +209,31 @@ Install Z2M as a Home Assistant app — its apps live in a separate repository:
 
 Opening it the first time gives you the **Zigbee2MQTT Onboarding** wizard, not the normal frontend — so there is no **Permit join** button yet; that appears only after this wizard is submitted and Z2M is running. The wizard is one page with a **Coordinator/Adapter** picker, a **Network** panel, and a row of tabs (Main, Frontend, MQTT, Serial…). Work it in this order, and note that **nothing commits until you submit at the bottom** — tab-hopping is safe, closing the page is not.
 
-**1. Skip the coordinator dropdown.** It is tempting to select the ZBT-2 under **Devices found**, and its help text calls it optional for good reason: it pre-fills the Serial tab *incorrectly* (raw `/dev/ttyACM0` for the port), and worse, it **re-applies that auto-fill later** — re-selecting it or reloading the page silently reverts the corrections you make below. Leave it on **`-`** and fill the Serial tab by hand.
+1. **Skip the coordinator dropdown.** Leave it on **`-`** and fill the Serial tab by hand (next).
+2. **Fix the Serial tab.** Four fields, all load-bearing; wrong values here are the usual reason a ZBT-2 looks configured and then never connects or keeps dropping:
+   - **adapter** → `ember` — the dropdown's auto-fill usually gets this right already
+   - **baudrate** → **`460800`**. It defaults to `115200`, and the field's own hint says that is "most common" — ignore it. That advice is for older sticks; the ZBT-2 runs at four times the ZBT-1's rate and Z2M does not negotiate it.
+   - **rtscts** → **ticked**. Defaults off.
+   - **port** → the full **`/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_<serial>-if00…`** path, copied verbatim from **Settings → System → Hardware → All Hardware**. Never the raw `/dev/ttyACM0`: that is assigned in plug order, so once the second ZBT-2 arrives for Thread it can silently point Z2M at the wrong radio after a reboot, while the by-id path carries the stick's serial and cannot be confused.
+3. **Fill the MQTT tab.**
+   - **server** → **`mqtt://core-mosquitto:1883`** — the broker's *internal* name, not the VM's LAN address, since both are add-ons on this same Home Assistant
+   - **user** / **password** → the `zigbee2mqtt` pair created in Mosquitto
+   - **ca / key / cert** → blank — TLS, unnecessary internally
+   - **base_topic** → `zigbee2mqtt` — everything Z2M publishes namespaces under `zigbee2mqtt/…` and stays out of Frigate's way
+4. **Leave the Network panel alone**, but write down its auto-generated **PAN ID**, **Extended PAN ID**, and **Network key** first.
+5. Submit. Z2M starts, and the sidebar entry now opens the real frontend with **Permit join** in its top-right nav.
 
-**2. Fix the Serial tab.** Four fields, all load-bearing; wrong values here are the usual reason a ZBT-2 looks configured and then never connects or keeps dropping:
-
-- **adapter** → `ember` — the dropdown's auto-fill usually gets this right already
-- **baudrate** → **`460800`**. It defaults to `115200`, and the field's own hint says that is "most common" — ignore it. That advice is for older sticks; the ZBT-2 runs at four times the ZBT-1's rate and Z2M does not negotiate it.
-- **rtscts** → **ticked**. Defaults off.
-- **port** → the full **`/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_<serial>-if00…`** path, copied verbatim from **Settings → System → Hardware → All Hardware**. Never the raw `/dev/ttyACM0`: that is assigned in plug order, so once the second ZBT-2 arrives for Thread it can silently point Z2M at the wrong radio after a reboot, while the by-id path carries the stick's serial and cannot be confused.
+> [!NOTE]
+> Step 1: it is tempting to select the ZBT-2 under **Devices found** — its help text calls it optional for good reason. It pre-fills the Serial tab *incorrectly* (raw `/dev/ttyACM0` for the port), and worse, it **re-applies that auto-fill later**: re-selecting it or reloading the page silently reverts the corrections from step 2.
 
 > [!WARNING]
-> If any of these revert on you, the coordinator dropdown is re-applying its auto-fill — set it back to `-`, redo the four fields, and submit without reloading. Failing that, bypass the form entirely: **Settings → Apps → Zigbee2MQTT → Configuration → ⋮ → Edit in YAML** writes the same values where autodetect cannot overwrite them:
+> If any of the step 2 Serial tab fields revert on you, the coordinator dropdown is re-applying its auto-fill:
+>
+> 1. Set it back to `-`.
+> 2. Redo the four fields.
+> 3. Submit without reloading.
+>
+> Failing that, bypass the form entirely: **Settings → Apps → Zigbee2MQTT → Configuration → ⋮ → Edit in YAML** writes the same values where autodetect cannot overwrite them:
 
 ```yaml
 serial:
@@ -202,16 +243,8 @@ serial:
   rtscts: true
 ```
 
-**3. Fill the MQTT tab.**
-
-- **server** → **`mqtt://core-mosquitto:1883`** — the broker's *internal* name, not the VM's LAN address, since both are add-ons on this same Home Assistant
-- **user** / **password** → the `zigbee2mqtt` pair created in Mosquitto
-- **ca / key / cert** → blank — TLS, unnecessary internally
-- **base_topic** → `zigbee2mqtt` — everything Z2M publishes namespaces under `zigbee2mqtt/…` and stays out of Frigate's way
-
-**4. Leave the Network panel alone.** Its **PAN ID**, **Extended PAN ID**, and **Network key** are auto-generated; the shuffle buttons beside them would force re-pairing every device. Do **write all three down** first, though — they are what lets a rebuilt Z2M (new container, restored backup, migration) have all thirteen devices rejoin without walking to each sensor and valve.
-
-Then submit. Z2M starts, and the sidebar entry now opens the real frontend with **Permit join** in its top-right nav.
+> [!NOTE]
+> Step 4: the shuffle buttons beside the Network panel's fields would force re-pairing every device — write the three values down anyway, since they are what lets a rebuilt Z2M (new container, restored backup, migration) have all thirteen devices rejoin without walking to each sensor and valve.
 
 > [!SECRET] z2m-network-values | Zigbee network identity — PAN ID, Extended PAN ID, Network key
 > From the onboarding wizard's **Network** panel. These are also inside Home Assistant's own backups and the Proxmox vzdump, so this field is belt-and-braces — but recreating a Zigbee network without them means re-pairing every device by hand.
@@ -226,7 +259,12 @@ In **Settings → Devices & services**, confirm the discovered **MQTT** integrat
 > Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT integration**. Home Assistant auto-discovers the local Mosquitto app. Accepting it connects with the app's own internal login, so there are no credentials to type. With both Z2M and Home Assistant on the broker, every device Z2M reports shows up as an ordinary Home Assistant entity automatically — no per-device wiring.
 
 > [!NOTE]
-> The non-Zigbee devices on this build — the Lutron Caséta bridge, the ecobee thermostats, the cameras, and the rest — arrive the same way, under **Settings → Devices & services** after onboarding (many auto-detected in the **Discovered** section). An empty Discovered list right after setup is normal. The cameras and locks get their integrations on their own pages, and the ecobee thermostats are onboarded on the Automations page. The Lutron Caséta bridge has no page of its own, so add it now: **Settings → Devices & services → Add integration → Lutron Caséta**, then press the button on the back of the bridge when prompted — the lights surface as entities for the scenes and scripts later in the build. **Adding Caséta switches later never means re-adding the integration:** pair the new switch in the *Lutron app* (the bridge owns the device list), then **Settings → Devices & services → Lutron Caséta → ⋮ → Reload** in Home Assistant and the new entities appear. That is the pattern for every hub-based integration — pair at the hub, reload in HA; only hub-less devices (the Zigbee ones through Z2M, the Matter locks) get paired inside Home Assistant itself.
+> The non-Zigbee devices on this build — the Lutron Caséta bridge, the ecobee thermostats, the cameras, and the rest — arrive the same way, under **Settings → Devices & services** after onboarding (many auto-detected in the **Discovered** section). An empty Discovered list right after setup is normal. The cameras and locks get their integrations on their own pages, and the ecobee thermostats are onboarded on the Automations page. The Lutron Caséta bridge has no page of its own, so add it now:
+>
+> 1. **Settings → Devices & services → Add integration → Lutron Caséta**.
+> 2. Press the button on the back of the bridge when prompted.
+>
+> The lights surface as entities for the scenes and scripts later in the build. **Adding Caséta switches later never means re-adding the integration:** pair the new switch in the *Lutron app* (the bridge owns the device list), then **Settings → Devices & services → Lutron Caséta → ⋮ → Reload** in Home Assistant and the new entities appear. That is the pattern for every hub-based integration — pair at the hub, reload in HA; only hub-less devices (the Zigbee ones through Z2M, the Matter locks) get paired inside Home Assistant itself.
 
 ## Pair the mesh
 

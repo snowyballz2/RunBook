@@ -127,14 +127,18 @@ Record it below.
 > The password you set in **Settings → Users** — not the throwaway one from the log.
 
 > [!TIP]
-> **No password line?** Frigate prints it once, at admin creation on the very first boot — the safe-mode escape's restarts can leave the current log without it. First widen the search to rotated files: `grep -ri password /dev/shm/logs/`. Still nothing? Have Frigate mint a fresh one — in the config editor on **port 5000** (the one that needs no login, which is the point while you are locked out of 8971), paste at the end:
+> **No password line?** Frigate prints it once, at admin creation on the very first boot — the safe-mode escape's restarts can leave the current log without it.
+>
+> 1. Widen the search to rotated files: `grep -ri password /dev/shm/logs/`.
+> 2. Still nothing? Have Frigate mint a fresh one — in the config editor on **port 5000** (the one that needs no login, which is the point while you are locked out of 8971), paste at the end:
 >
 > ```yaml
 > auth:
 >   reset_admin_password: true
 > ```
 >
-> **Save & Restart**, grep again, log in — then **delete those two lines and Save & Restart once more** (in the same 5000 editor, or 8971's now that you can log in; both edit the same file), or the password resets on every boot.
+> 3. **Save & Restart**, then grep again and log in.
+> 4. **Delete those two lines and Save & Restart once more** (in the same 5000 editor, or 8971's now that you can log in; both edit the same file), or the password resets on every boot.
 
 ### Fence the open port
 Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and the login on 8971 protects nothing while it stays LAN-open: the same config editor you just used to reset the admin password is sitting there for anyone on the network, cameras included, and disabling auth outright is one edit away. Frigate's official Docker deployment never exposes 5000 beyond the container's private network; this LXC does, so build the fence Docker would have provided. Proxmox's per-guest firewall is the tool, and the order below stages everything before the master switch flips, so nothing breaks partway.
@@ -838,13 +842,31 @@ Each camera sits in a concave 90° corner, so the two walls block everything but
 Routing into the wall cavity means the cable and its waterproof connector tuck **inside the wall**, so you can skip the junction box entirely — it exists for solid-masonry runs with nowhere to hide the connector. Per camera:
 
 1. **Drill about a 1-inch hole** behind the base, big enough to pass the camera's moulded waterproof RJ45 pigtail into the cavity. Position it so the base covers the hole.
-2. **Deal with the unused pigtails before anything goes in the wall.** Running PoE leaves the 12 V barrel, alarm in/out, and audio leads doing nothing. Tape each unused end closed — quality electrical tape is fine in a dry cavity; self-amalgamating tape is the upgrade — with a dab of **dielectric grease** inside any connector shell first. (Dahua's own guides actually sanction cutting unused leads and taping the stubs; taping without cutting preserves the options and is the default here.) An open connector is a wick: moisture corrodes the pins and can travel the conductors back into the camera body. Coil the capped leads, tuck them to the side of the cavity rather than against the drywall's back face where condensation forms, and zip-tie the bundle so nothing hangs on the camera's cable gland.
-3. **Seal the wall, not the camera** — the verified picture, from Dahua's own install guide and installer practice: the turret body is the waterproof (IP67) unit, its pedestal is purely mechanical (Dahua's procedure is template → expansion bolts → screws, with no gasket and no caulk called for — the missing base gasket is by design), and the thing that actually needs sealing is the **hole in your wall**. Pack the gap around the cable with **duct seal putty** — the gray electrician's putty from any hardware store's electrical aisle (~$5 a brick, does all five cameras); it never hardens, so a future cable re-run means pulling putty out, not cutting sealant. Give the cable a small **drip loop** inside the cavity so anything tracking the jacket drips off before the connector, and assemble the **waterproof connector kit from the camera's bag** onto the RJ45 (rubber ring into the port, cable through the collet body and locking cover, twist to lock).
-4. **Optional insurance on wind-driven walls:** a bead of exterior-grade sealant across the **top and sides only** of the base, keeping water from tracking behind it — the **bottom edge stays open as the drain**. On **Hardie/fiber-cement**, sealant choice matters. **GE Supreme Silicone Window & Door (clear)** is verified right for this: its data sheet lists **cement board** among recommended substrates, it is **neutral cure** (not the acetoxy/vinegar-smelling kind, which adheres poorly to cement board), and it meets **ASTM C-920 Class 50** — double the *Class 25* minimum James Hardie specifies. Polyurethane/hybrid sealants (Quad, Dynaflex Ultra, OSI) are the paintable alternative, since the GE is **not paintable**. Whatever you use: surfaces must be clean and dry, and **never prep with soap and water** — silicone will not stick to soap residue (isopropyl alcohol is the right cleaner). Mind the weather window too: that GE is rain-ready in 30 minutes only with a thin bead above 65 °F and 50% humidity — otherwise it wants **8 dry hours**. While drilling Hardie: carbide bit, gentle through the face (it chips), and pilot-drill the screw holes — it cracks near edges under self-tappers. Do **not** caulk the camera's own housing seams, lens ring, or base-to-body joint: the IP67 sealing is internal, and trapping moisture inside is how cameras fog.
-4. The RJ45 connection now lives in the dry cavity — protected, no weatherproofing tape needed on that joint.
+2. **Deal with the unused pigtails before anything goes in the wall.** Running PoE leaves the 12 V barrel, alarm in/out, and audio leads doing nothing.
+   - Tape each unused end closed — quality electrical tape is fine in a dry cavity; self-amalgamating tape is the upgrade — with a dab of **dielectric grease** inside any connector shell first. (Dahua's own guides actually sanction cutting unused leads and taping the stubs; taping without cutting preserves the options and is the default here.)
+   - Coil the capped leads, tuck them to the side of the cavity rather than against the drywall's back face where condensation forms, and zip-tie the bundle so nothing hangs on the camera's cable gland.
+
+   An open connector is a wick: moisture corrodes the pins and can travel the conductors back into the camera body.
+3. **Seal the wall, not the camera** — the verified picture, from Dahua's own install guide and installer practice: the turret body is the waterproof (IP67) unit, its pedestal is purely mechanical (Dahua's procedure is template → expansion bolts → screws, with no gasket and no caulk called for — the missing base gasket is by design), and the thing that actually needs sealing is the **hole in your wall**.
+   - Pack the gap around the cable with **duct seal putty** — the gray electrician's putty from any hardware store's electrical aisle (~$5 a brick, does all five cameras); it never hardens, so a future cable re-run means pulling putty out, not cutting sealant.
+   - Give the cable a small **drip loop** inside the cavity so anything tracking the jacket drips off before the connector.
+   - Assemble the **waterproof connector kit from the camera's bag** onto the RJ45 (rubber ring into the port, cable through the collet body and locking cover, twist to lock).
+4. **Optional insurance on wind-driven walls:** a bead of exterior-grade sealant across the **top and sides only** of the base, keeping water from tracking behind it — the **bottom edge stays open as the drain**.
+   - On **Hardie/fiber-cement**, sealant choice matters: **GE Supreme Silicone Window & Door (clear)** is verified right for this — its data sheet lists **cement board** among recommended substrates, it is **neutral cure** (not the acetoxy/vinegar-smelling kind, which adheres poorly to cement board), and it meets **ASTM C-920 Class 50**, double the *Class 25* minimum James Hardie specifies. Polyurethane/hybrid sealants (Quad, Dynaflex Ultra, OSI) are the paintable alternative, since the GE is **not paintable**.
+   - Surfaces must be clean and dry, and **never prep with soap and water** — silicone will not stick to soap residue (isopropyl alcohol is the right cleaner).
+   - Mind the weather window too: that GE is rain-ready in 30 minutes only with a thin bead above 65 °F and 50% humidity — otherwise it wants **8 dry hours**.
+   - While drilling Hardie: carbide bit, gentle through the face (it chips), and pilot-drill the screw holes — it cracks near edges under self-tappers.
+   - Do **not** caulk the camera's own housing seams, lens ring, or base-to-body joint: the IP67 sealing is internal, and trapping moisture inside is how cameras fog.
+5. The RJ45 connection now lives in the dry cavity — protected, no weatherproofing tape needed on that joint.
 
 > [!DANGER]
-> **Know what is already in the cavity before the bit goes in.** Exterior walls carry mains wiring, and a drill bit, a screw, or a fish tape dragged across existing cable does not have to sever it to matter — a nick in the insulation or a pinched conductor arcs *intermittently*, sometimes for weeks, at any hour and under any load. That is precisely the fault an **AFCI breaker** exists to catch, so a circuit that starts tripping after wall work should be treated as a damaged cable until proven otherwise, not as a nuisance to reset. Scan with a stud finder in AC-detect mode first, kill the breakers feeding that wall while drilling, and keep low-voltage runs from resting against Romex on the way through. If a circuit does start tripping afterwards, stop resetting it and get an electrician to open the wall — most modern AFCIs blink a diagnostic code after a trip that tells them whether it saw an arc, a ground fault, or an overload.
+> **Know what is already in the cavity before the bit goes in.** Exterior walls carry mains wiring, and a drill bit, a screw, or a fish tape dragged across existing cable does not have to sever it to matter — a nick in the insulation or a pinched conductor arcs *intermittently*, sometimes for weeks, at any hour and under any load. That is precisely the fault an **AFCI breaker** exists to catch, so a circuit that starts tripping after wall work should be treated as a damaged cable until proven otherwise, not as a nuisance to reset.
+>
+> 1. Scan with a stud finder in AC-detect mode first.
+> 2. Kill the breakers feeding that wall while drilling.
+> 3. Keep low-voltage runs from resting against Romex on the way through.
+>
+> If a circuit does start tripping afterwards, stop resetting it and get an electrician to open the wall — most modern AFCIs blink a diagnostic code after a trip that tells them whether it saw an arc, a ground fault, or an overload.
 
 > [!NOTE]
 > The one exception is a corner that turns out to be **solid brick or stucco with no cavity** behind it — there you would want EmpireTech's **`PFA130-E`** junction box (about $20) to hold the connector, since you cannot fish into the wall. For framed walls with a cavity, buy no boxes.
@@ -987,8 +1009,23 @@ The datacenter firewall from the fence step is live, so the host also needs the 
 
 Then point every camera at the host:
 
-- **Turrets** → **System → General → Date & Time** tab: switch the radio from **Manual Settings** to **NTP**, **Server** → **`192.168.1.50`**, **Port** → `123`, keep the sync interval, confirm the **Time Zone** (UTC-05:00 Eastern), and set **DST**: **Enable → on**, **Type → Week** (US DST floats — never the Date type), **Start → Mar / 2nd week / Sun / 02:00**, **End → Nov / 1st week / Sun / 02:00**. DST off is the classic exactly-one-hour-slow clock: NTP is working, the camera is just rendering hard standard time — Dahua's manual documents a LAN time source as first-class
-- **Reolink pair** → web UI **Network → Advanced → NTP Settings → Set Up** — the dialog is two fields: **NTP Server** → **`192.168.1.50`**, typed over the prefilled `pool.ntp.org`; **NTP Port** → `123`; then **Save**. The proof is at **System → Date & Time**: the clock holding correct means the camera is syncing off the host
+- **Turrets** → **System → General → Date & Time** tab, switch the radio from **Manual Settings** to **NTP**:
+  - **Server** → **`192.168.1.50`**
+  - **Port** → `123`
+  - **Sync interval** → keep as offered
+  - **Time Zone** → confirm **UTC-05:00 Eastern**
+  - **DST → Enable** → **on**
+  - **DST → Type** → **Week** (US DST floats — never the Date type)
+  - **DST → Start** → **Mar / 2nd week / Sun / 02:00**
+  - **DST → End** → **Nov / 1st week / Sun / 02:00**
+
+  DST off is the classic exactly-one-hour-slow clock: NTP is working, the camera is just rendering hard standard time — Dahua's manual documents a LAN time source as first-class.
+- **Reolink pair** → web UI **Network → Advanced → NTP Settings → Set Up**:
+  - **NTP Server** → **`192.168.1.50`**, typed over the prefilled `pool.ntp.org`
+  - **NTP Port** → `123`
+  - **Save**
+
+  The proof is at **System → Date & Time**: the clock holding correct means the camera is syncing off the host.
 
 > [!TIP]
 > If a camera's firmware flat-out refuses to work without a real gateway (a few do), give it the gateway back and **block it at the router instead**: the Fios router's **Access Control** can deny that one device internet access. Same outcome, enforced upstream.
@@ -1101,7 +1138,7 @@ ffmpeg:
         - person
 ```
 
-**Save & Restart** — and mind the restreamer rule: if step 4 added the `rlc510` pair to the `go2rtc:` block, that block changed, so restart both from the container's **Console** (`systemctl restart go2rtc frigate`); if your file already had the pair, plain Save & Restart is enough — go2rtc untouched, no bounce.
+5. **Save & Restart** — and mind the restreamer rule: if step 4 added the `rlc510` pair to the `go2rtc:` block, that block changed, so restart both from the container's **Console** (`systemctl restart go2rtc frigate`); if your file already had the pair, plain Save & Restart is enough — go2rtc untouched, no bounce.
 
 A few minutes later, prove recording is real — from the **host** Shell:
 
@@ -1517,8 +1554,16 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 > 1. **Settings → Apps → App store** → the **⋮ menu (top right) → Repositories** → paste `https://github.com/hacs/addons` → **Add**, close the dialog
 > 2. The **Get HACS** card now exists — search for it, **Install**, then **Start** it once: it downloads HACS into the config folder and stops; its **Log** tab should end in success
 > 3. **Restart Home Assistant** — Settings → System → the power menu → Restart
-> 4. **Settings → Devices & services → Add integration → HACS** — tick the acknowledgement boxes, then sign in to **GitHub** with the device code it shows, entered at `github.com/login/device` (a GitHub account is required). A **`could_not_register`** error here means HA's own call to GitHub failed before a code existed — usually a transient hiccup: retry once; if it persists, the real cause is in **Settings → System → Logs** (search `hacs`), and AdGuard's Query Log confirms `github.com` resolves. Success ends on the standard **Name and assign** dialog — no Area; **Skip and finish**. (The GitHub link is low-stakes: HACS requests **no scopes** — a public-read token for rate limits only, revocable at GitHub → Settings → Applications. And while on the Integrations screen: **Ignore** the discovered **UPnP — Verizon Router** card — nothing in this build should drive router port-mappings)
-> 5. The **HACS** panel joins the sidebar — open it, search **Frigate**, **Download**, and **restart Home Assistant again**
+> 4. **Settings → Devices & services → Add integration → HACS**:
+>    - Tick the acknowledgement boxes.
+>    - Sign in to **GitHub** with the device code it shows, entered at `github.com/login/device` (a GitHub account is required).
+>    - On the standard **Name and assign** dialog — no Area — **Skip and finish**.
+>
+>    A **`could_not_register`** error here means HA's own call to GitHub failed before a code existed — usually a transient hiccup: retry once; if it persists, the real cause is in **Settings → System → Logs** (search `hacs`), and AdGuard's Query Log confirms `github.com` resolves. The GitHub link is low-stakes: HACS requests **no scopes** — a public-read token for rate limits only, revocable at GitHub → Settings → Applications. And while on the Integrations screen: **Ignore** the discovered **UPnP — Verizon Router** card — nothing in this build should drive router port-mappings.
+> 5. The **HACS** panel joins the sidebar:
+>    - Open it and search **Frigate**.
+>    - **Download** it.
+>    - **Restart Home Assistant again**.
 > 6. **Settings → Devices & services → Add integration → Frigate** — the dialog's four fields:
 >    - **URL** → **`http://192.168.1.52:5000`** — the internal port; HA's `.51` is one of the two addresses the firewall fence admits there
 >    - **Validate SSL** → leave as offered — inert on a plain-`http://` URL; there is no certificate to validate
