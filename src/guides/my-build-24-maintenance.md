@@ -14,14 +14,31 @@ A home server earns its keep by being forgettable. The drives in this box — th
 ## Stay current
 
 ### Update the Proxmox host first
-Update the host (the i7-8700K / Z370 machine, Proxmox VE) before touching anything else, and before installing anything new. In the Proxmox web interface, select the node in the left tree, open **Updates**, click **Refresh** to pull the package list, then **Upgrade**. The same thing happens from the node **Shell** if you prefer:
+Update the host (the i7-8700K / Z370 machine, Proxmox VE) before touching anything else, and before installing anything new.
+
+1. In the Proxmox web interface, select the node in the left tree.
+2. Open **Updates**.
+3. Click **Refresh** to pull the package list.
+4. Click **Upgrade**.
+
+The same thing happens from the node **Shell** if you prefer:
 
 ```bash
 apt update
 apt full-upgrade
 ```
 
-One deliberate wrinkle on this host: the kernel is **pinned** (to the version recorded on the GPU/HBA Passthrough page) because the **550-branch** NVIDIA driver it was installed with stops building on newer kernels — it already fails on 6.17, and on the kernel 7.0 that Proxmox 9.2 made its default. Upgrades will keep installing newer kernels — that is fine and expected — but the host keeps booting the pinned one, so "the upgrade pulled a new kernel" does **not** mean a reboot switches to it. Leave the pin alone during routine updates. Lifting it is a planned window, not a wait: the **580 branch** builds on kernel 7.0 and is the last branch supporting the Pascal 1080 Ti — and the Voice page already moves the host onto it (Ollama demands ≥570). Once the host driver is 580: `proxmox-boot-tool kernel unpin`, reboot onto the current default kernel, confirm `nvidia-smi` still answers — and since the driver version changed, reinstall the matching userspace inside the Frigate, Ollama, and faster-whisper containers in the same sitting, per the note below. When you do reboot the host for any reason, pick a kind moment — it takes every guest down and back up, and the startup order reasserts itself on the way back: the Home Assistant VM (virtual machine) before the Frigate LXC (Linux Container), since Frigate publishes to the Mosquitto broker that lives with HA.
+One deliberate wrinkle on this host: the kernel is **pinned** (to the version recorded on the GPU/HBA Passthrough page) because the **550-branch** NVIDIA driver it was installed with stops building on newer kernels — it already fails on 6.17, and on the kernel 7.0 that Proxmox 9.2 made its default. Upgrades will keep installing newer kernels — that is fine and expected — but the host keeps booting the pinned one, so "the upgrade pulled a new kernel" does **not** mean a reboot switches to it. Leave the pin alone during routine updates.
+
+Lifting it is a planned window, not a wait: the **580 branch** builds on kernel 7.0 and is the last branch supporting the Pascal 1080 Ti — and the Voice page already moves the host onto it (Ollama demands ≥570). Once the host driver is 580:
+
+1. Run `proxmox-boot-tool kernel unpin`.
+2. Reboot onto the current default kernel.
+3. Confirm `nvidia-smi` still answers.
+4. Reinstall the matching userspace driver inside the Frigate, Ollama, and faster-whisper containers, in the same sitting (per the note below) — the driver version changed.
+
+> [!NOTE]
+> When you do reboot the host for any reason, pick a kind moment — it takes every guest down and back up, and the startup order reasserts itself on the way back: the Home Assistant VM (virtual machine) before the Frigate LXC (Linux Container), since Frigate publishes to the Mosquitto broker that lives with HA.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > Open the web UI at `https://`-this-ip-`:8006` and log in as **root@pam** to reach **Updates** and the node Shell.
@@ -109,7 +126,14 @@ The **temperature** is the early-warning line the Cooling page set up — a slow
 > On the same pass, open **Datacenter → Backup** and check the job — the **Job Detail** button opens a "Backup Details" window listing exactly what the job covers — confirming **AdGuard** and **Nginx Proxy Manager (NPM)** are in the selection. Selection mode **All** includes them automatically, but a hand-picked list is one careless edit from dropping the two guests you can least afford to lose: AdGuard is the household's DNS (Domain Name System), and NPM holds every reverse-proxy route and certificate. Restore everything *except* those two and the rest is unreachable until you rebuild them by hand. While the job is open, glance at its **Retention** settings too — **Keep Daily 7** and **Keep Weekly 4** (set when the backup job was created) are what prune old archives so the share does not fill forever. If the ZFS pool keeps climbing, confirm retention is still set on the job and has not drifted to "keep all."
 
 ### Confirm last night's backup actually ran
-A backup job you assume is running is not a backup. The run history is **not** on the Datacenter → Backup screen (its **Job Detail** button shows the job's settings and included disks, no runs). Read last night's run in the node's **Task History**: select the node in the left tree, open **Task History**, find last night's **VZDump** entry, and double-click it — the log should end **TASK OK**. And the archive should be sitting on the TrueNAS share where vzdump writes it. Green-on-the-schedule is not enough; an archive can fail to write while the schedule still shows it "ran." Confirm a fresh `vzdump-...` archive with last night's date actually exists (`.vma.zst` for the VMs, `.tar.zst` for the containers).
+A backup job you assume is running is not a backup. The run history is **not** on the Datacenter → Backup screen (its **Job Detail** button shows the job's settings and included disks, no runs).
+
+1. Select the node in the left tree.
+2. Open **Task History**.
+3. Find last night's **VZDump** entry and double-click it — the log should end **TASK OK**.
+4. Confirm a fresh `vzdump-...` archive with last night's date actually exists on the TrueNAS share where vzdump writes it (`.vma.zst` for the VMs, `.tar.zst` for the containers).
+
+Green-on-the-schedule is not enough; an archive can fail to write while the schedule still shows it "ran."
 
 > [!WARNING]
 > Vaultwarden is the guest where "probably backed up" is unacceptable — it holds every secret this build runs on. If its container is in the nightly job and last night's run is TASK OK, the vault is covered. If the backup glance ever shows a gap, fix that before anything else on the list.
@@ -117,7 +141,14 @@ A backup job you assume is running is not a backup. The run history is **not** o
 ## Drill what you cannot see
 
 ### Run the quarterly restore drill
-Four times a year, exercise the things that only matter when they are needed — starting with the one nobody tests until it is too late: can you actually restore a backup? In the Proxmox web UI, pick a recent archive from the backup storage and **Restore** it into a *spare, unused* VM/LXC ID. Boot it, confirm it comes up as expected, then delete it. The point is not the spare guest; it is proving the archives on the NAS (network-attached storage) are real and restorable, on a calm afternoon rather than a bad one.
+Four times a year, exercise the things that only matter when they are needed — starting with the one nobody tests until it is too late: can you actually restore a backup?
+
+1. In the Proxmox web UI, pick a recent archive from the backup storage.
+2. **Restore** it into a *spare, unused* VM/LXC ID.
+3. Boot it and confirm it comes up as expected.
+4. Delete it.
+
+The point is not the spare guest; it is proving the archives on the NAS (network-attached storage) are real and restorable, on a calm afternoon rather than a bad one.
 
 > [!TIP]
 > Pin the restore drill to a guest that would genuinely hurt to lose — rotate through Vaultwarden, Home Assistant, and Nginx Proxy Manager across the year, so each gets proven restorable at least annually.

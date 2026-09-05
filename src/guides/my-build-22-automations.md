@@ -14,7 +14,16 @@ The infrastructure is finished, and this is where the house starts doing things 
 ## Learn the editor
 
 ### Open the automation editor
-In Home Assistant at the pinned address, go to **Settings → Automations & scenes**, click **Create automation** (lower right), then **Create new automation**. An empty automation is three sections that read like the sentence they are: **When** (the trigger — the event that starts things), **And if** (optional conditions — extra tests that must also be true), and **Then do** (the actions). Build visually if you like; this page shows each finished rule as text, which is what the top-right menu's **Edit in YAML** displays. Finishing any rule is the same two clicks: **Save**, then the name dialog (that name is the YAML's `alias`), then **Save** again.
+1. In Home Assistant at the pinned address, go to **Settings → Automations & scenes**.
+2. Click **Create automation** (lower right).
+3. Click **Create new automation**.
+
+An empty automation is three sections that read like the sentence they are: **When** (the trigger — the event that starts things), **And if** (optional conditions — extra tests that must also be true), and **Then do** (the actions). Build visually if you like; this page shows each finished rule as text, which is what the top-right menu's **Edit in YAML** displays.
+
+Finishing any rule is the same two clicks:
+1. Click **Save**.
+2. Name it in the dialog that appears — that name becomes the YAML's `alias`.
+3. Click **Save** again.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
@@ -24,7 +33,10 @@ In Home Assistant at the pinned address, go to **Settings → Automations & scen
 ## The one that matters
 
 ### Water leak — shut off the main and shout
-The twelve **Third Reality 3RWS18BZ** leak sensors and the **Aqara Valve Controller T1** came online through Zigbee2MQTT, so they already exist as entities. This rule wires them together: any sensor goes wet, the valve closes the quarter-turn lever main, and you find out on every channel at once. Open **Settings → Devices & services → Entities** and substitute your real `binary_sensor.*_leak` names — list **all twelve**.
+The twelve **Third Reality 3RWS18BZ** leak sensors and the **Aqara Valve Controller T1** came online through Zigbee2MQTT, so they already exist as entities. This rule wires them together: any sensor goes wet, the valve closes the quarter-turn lever main, and you find out on every channel at once.
+
+1. Open **Settings → Devices & services → Entities**.
+2. Substitute your real `binary_sensor.*_leak` names — list **all twelve**.
 
 ```yaml
 alias: Water leak — shut off the main and alert
@@ -227,7 +239,13 @@ The presence rules below reach for `climate.*` and `light.*` entities. The Casé
 Then note the two `climate.*` entity names it creates (the rules below use `climate.downstairs`; substitute your real names). The Caséta dimmers are already `light.*` entities from that earlier step, ready for the presence rules here and the scenes at the end of this page.
 
 ### Presence — everybody left, somebody home
-The companion app on each iPhone hands you a **device tracker** for free. So far only one phone has the app — the iPhone from the Matter Locks page — so have the second person install the **Home Assistant companion app** on their iPhone now and sign in, ideally as their own user created under **Settings → People**, and their tracker appears too. Find both under **Entities** (search "tracker"); each reads `home` or `not_home` and is the most reliable presence signal a home network has. Build two mirror-image rules. Everybody-left triggers when *either* phone leaves, but the **conditions require both** to read `not_home` before acting, so the house only goes to away-mode when it is actually empty:
+The companion app on each iPhone hands you a **device tracker** for free. So far only one phone has the app — the iPhone from the Matter Locks page.
+
+1. Have the second person install the **Home Assistant companion app** on their iPhone.
+2. Have them sign in — ideally as their own user, created under **Settings → People** — and their tracker appears too.
+3. Find both trackers under **Entities** (search "tracker"); each reads `home` or `not_home` and is the most reliable presence signal a home network has.
+
+Build two mirror-image rules. Everybody-left triggers when *either* phone leaves, but the **conditions require both** to read `not_home` before acting, so the house only goes to away-mode when it is actually empty:
 
 ```yaml
 alias: Everybody left
@@ -370,7 +388,15 @@ PoE shades and PoE cameras both pull from the switch, so divide them by what eac
 A motor draws almost nothing idle and only a modest amount while moving, so 320 W covers a whole house of shades. The one time you near the budget is a scene that moves *every* shade at once — with many shades, stagger the close-all below into small groups a second apart so the motors never all peak together.
 
 ### Run one Cat6 to each PoE shade
-Every PoE shade needs its **own Cat6 run** back to the switch. The motor ships with a short **7.5-inch (19 cm) Ethernet pigtail** — join it to the in-wall cable with a **Cat6A inline coupler**. The motor is **802.3af/at** and draws about **5 W** (120–150 µA idle) over runs up to **100 m (328 ft)**, which is why a whole house of them barely dents the 320 W budget. Plan the **cable exit before the drywall closes**: **inside-mount** shades bring it out at the **head jamb**, **outside-mount** shades out the **rear of the motor cover**. Give each shade a dedicated run (a dual shade needs two); two motors *can* share one run through an Ethernet splitter, but a run per shade is cleaner. Terminate every run on the 48-port patch panel and patch across to the 24-port switch. (SmartWings ships a full PoE wiring guide with the shades; this matches it.)
+Every PoE shade needs its **own Cat6 run** back to the switch.
+
+1. Join the motor's short **7.5-inch (19 cm) Ethernet pigtail** to the in-wall cable with a **Cat6A inline coupler**.
+2. Plan the **cable exit before the drywall closes**: **inside-mount** shades bring it out at the **head jamb**, **outside-mount** shades out the **rear of the motor cover**.
+3. Give each shade a dedicated run (a dual shade needs two); two motors *can* share one run through an Ethernet splitter, but a run per shade is cleaner.
+4. Terminate every run on the 48-port patch panel and patch across to the 24-port switch.
+
+> [!NOTE]
+> The motor is **802.3af/at** and draws about **5 W** (120–150 µA idle) over runs up to **100 m (328 ft)**, which is why a whole house of them barely dents the 320 W budget. SmartWings ships a full PoE wiring guide with the shades; this matches it.
 
 ### Onboard the shades
 Both kinds land as `cover.*` entities, commissioned straight into Home Assistant's Matter controller — no Apple Home, no vendor app:
@@ -379,7 +405,13 @@ Both kinds land as `cover.*` entities, commissioned straight into Home Assistant
 - Give each PoE shade a **DHCP reservation** so its address never moves.
 
 ### Group them and drive them as one
-Make one group so PoE-vs-battery stops mattering, then automate the group. In **Settings → Devices & services → Helpers → Create helper → Group → Cover group**, add every shade entity and name it `cover.all_shades`. Now a single rule closes the whole house at sunset:
+Make one group so PoE-vs-battery stops mattering, then automate the group.
+
+1. Go to **Settings → Devices & services → Helpers → Create helper → Group → Cover group**.
+2. Add every shade entity.
+3. Name it `cover.all_shades`.
+
+Now a single rule closes the whole house at sunset:
 
 ```yaml
 alias: Shades — close at sunset
@@ -399,7 +431,15 @@ actions:
 ## Make it yours
 
 ### Scenes — set the room, not the devices
-A **scene** is a saved room state — these lights at these brightnesses, the Lutron Caseta dimmers just so — that any automation can recall by name. On **Settings → Automations & scenes**, the scenes view's **Add scene** button (lower right) opens an editor: add the devices, set them how "movie night" should look, and save. Then any automation's **Then do** can activate it with the `scene.turn_on` action — so a single trigger paints a whole room instead of switching one light.
+A **scene** is a saved room state — these lights at these brightnesses, the Lutron Caseta dimmers just so — that any automation can recall by name.
+
+1. Go to **Settings → Automations & scenes**.
+2. Click the scenes view's **Add scene** button (lower right) to open the editor.
+3. Add the devices.
+4. Set them how "movie night" should look.
+5. Save.
+
+Then any automation's **Then do** can activate the scene with the `scene.turn_on` action — so a single trigger paints a whole room instead of switching one light.
 
 > [!WARNING]
 > The scene editor is **live**: while you edit, it actually drives the real devices to the scene's states so you can see what you are building, and restores them when you leave. Do not panic when the room changes around you — that is the editor showing its work, not an automation firing.
@@ -411,4 +451,11 @@ Two tools live in each automation's three-dot menu. **Run actions** executes the
 > **Run actions** on the leak rule will physically close the main water valve — that is the point of the test, but do it on purpose, not by accident, and re-open the valve afterward.
 
 ### An off-switch for exceptions, never for safety
-The house acting on its own is great until the evening it should not. Make a toggle for that: **Settings → Devices & services → Helpers → Create helper → Toggle**, named "Guest mode". Add a **State** condition to the **Frigate person alert and the doorbell announcement** requiring Guest mode be off, and visitor alerts hush while guests come and go. Gate convenience behind it freely — but **never** the leak valve, the auto-lock, or any safety action. Same rule, one last time so it sticks: a safety automation answers to the raw sensor and nothing else.
+The house acting on its own is great until the evening it should not. Make a toggle for that.
+
+1. Go to **Settings → Devices & services → Helpers → Create helper → Toggle**.
+2. Name it "Guest mode".
+3. Add a **State** condition to the **Frigate person alert and the doorbell announcement** requiring Guest mode be off — visitor alerts hush while guests come and go.
+
+> [!WARNING]
+> Gate convenience behind Guest mode freely — but **never** the leak valve, the auto-lock, or any safety action. Same rule, one last time so it sticks: a safety automation answers to the raw sensor and nothing else.

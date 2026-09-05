@@ -14,19 +14,35 @@ Voice is the convenience layer over everything the earlier pages built — the l
 ## The Apple path: "Hey Siri"
 
 ### Connect the companion app to home
-Install the **Home Assistant** app from the App Store on each iPhone and sign in with the server's pinned address — the same `ha-ip` from the Home Assistant page, on port `8123`. Because the remote-access work put the Proxmox host on Tailscale as a **subnet router**, the Home Assistant OS **VM (virtual machine)**'s one LAN address answers whether you are home or out — no Tailscale runs inside the VM itself. Under **Settings → Companion app → (your server)**, point both the **Internal URL** and the **External URL** at that single Tailscale-reachable address so there is no separate away-URL to maintain.
+1. Install the **Home Assistant** app from the App Store on each iPhone.
+2. Sign in with the server's pinned address — the same `ha-ip` from the Home Assistant page, on port `8123`.
+3. Under **Settings → Companion app → (your server)**, point both the **Internal URL** and the **External URL** at that same address, so there is no separate away-URL to maintain.
+
+Because the remote-access work put the Proxmox host on Tailscale as a **subnet router**, the Home Assistant OS **VM (virtual machine)**'s one LAN address answers whether you are home or out — no Tailscale runs inside the VM itself.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 > The address the companion app, Shortcuts, and the HomeKit Bridge all reach. Pinned on the Home Assistant page.
 
 ### Make a script for what you want to say
-A script is the clean target for a spoken command. In Home Assistant go to **Settings → Automations & scenes → Scripts → Add script**, give it a friendly, sayable name like "Movie night" or "Goodnight", add the actions (dim the Lutron Caséta lights, lower the shades, lock the three Aqara U400 doors, set the ecobee thermostats back), and save. The locks, the shades, the Caséta lights, and the ecobee are all already in Home Assistant from the earlier pages — the Caséta bridge came online on the Home Assistant & Zigbee2MQTT page — so the script just references them.
+A script is the clean target for a spoken command.
+
+1. In Home Assistant go to **Settings → Automations & scenes → Scripts → Add script**.
+2. Give it a friendly, sayable name like "Movie night" or "Goodnight".
+3. Add the actions (dim the Lutron Caséta lights, lower the shades, lock the three Aqara U400 doors, set the ecobee thermostats back).
+4. Save.
+
+The locks, the shades, the Caséta lights, and the ecobee are all already in Home Assistant from the earlier pages — the Caséta bridge came online on the Home Assistant & Zigbee2MQTT page — so the script just references them.
 
 > [!DETAILS] Already built the automation? Two honest options
 > If the thing you want to say out loud is the *actions* of an automation you already wrote, you have two clean choices. Either lift those actions into a script and have the automation call the script too (one set of actions, two ways to fire it) — or skip the script and point Siri straight at the automation with the `automation.trigger` action below, which runs its actions on demand regardless of the normal trigger. The script route is tidier when a human says it often; `automation.trigger` is fine for a one-off.
 
 ### Build the Siri Shortcut
-Open Apple's **Shortcuts** app, create a new shortcut, and add one of the Home Assistant App Intents actions. The purpose-built ones are simplest: **Run Script** (pick your script), **Trigger Automation** (pick your automation), or **Activate Scene**. For anything they do not cover, **Perform Action** calls *any* Home Assistant action directly — the generic action that replaced the old "Call Service". Then name the shortcut exactly what you intend to say. Because Perform Action can reach any action, a single Shortcut can drive every script, scene, and automation in the house.
+1. Open Apple's **Shortcuts** app and create a new shortcut.
+2. Add one of the Home Assistant App Intents actions.
+3. Name the shortcut exactly what you intend to say.
+
+> [!NOTE]
+> The purpose-built ones are simplest: **Run Script** (pick your script), **Trigger Automation** (pick your automation), or **Activate Scene**. For anything they do not cover, **Perform Action** calls *any* Home Assistant action directly — the generic action that replaced the old "Call Service". Because Perform Action can reach any action, a single Shortcut can drive every script, scene, and automation in the house.
 
 > [!DETAILS] The other building blocks Shortcuts gains
 > Installing the Home Assistant app adds more App Intents to the Shortcuts app: **Render Template** (pull a live value out of Home Assistant — "what's the house temperature?"), **Get Camera Snapshot**, **Update Sensors**, and **Update Location**. Perform Action is the workhorse, but these are how you build richer spoken interactions later. (The old **Call Service** and **Fire Event** actions still appear tagged **(Deprecated)** — skip them; Fire Event has no direct App Intents replacement, so use Perform Action or a Home Assistant automation instead.)
@@ -42,7 +58,16 @@ That is the whole trick: **"Hey Siri, Movie night."** The Shortcut fires, Perfor
 Everything above uses your *phone* as the microphone and needs no Apple hub. The moment you want to talk to the *room* — "Hey Siri, movie night" said to a **HomePod** on the shelf — you need that speaker, which this build treats as a **later addition**. When you have one, it needs your scripts and scenes to exist as native **Apple Home** accessories, and that is the one job of Home Assistant's **HomeKit Bridge**: a free, fully-local integration that publishes chosen entities into Apple Home. (Set the bridge up whenever; it only earns its keep once a HomePod is listening.)
 
 ### Add and pair the bridge
-In Home Assistant go to **Settings → Devices & services → Add Integration → HomeKit Bridge**. Setup asks one thing: **domains to include** — pick **script** and **scene**. Entity-level pruning is a *second* screen that only exists after setup, under the integration's **Configure**: set the **inclusion mode**, then pick the individual entities to include or exclude. Home Assistant shows a **pairing card with a QR code and PIN**; open Apple's **Home** app, choose **Add Accessory**, and scan it. Your scripts and scenes now appear as switches you can tap or speak to.
+1. In Home Assistant go to **Settings → Devices & services → Add Integration → HomeKit Bridge**.
+2. When setup asks for **domains to include**, pick **script** and **scene**.
+3. Open Apple's **Home** app.
+4. Choose **Add Accessory**.
+5. Scan the QR code on the **pairing card** Home Assistant shows (it also displays a PIN).
+
+Your scripts and scenes now appear as switches you can tap or speak to.
+
+> [!NOTE]
+> Entity-level pruning is a *second* screen that only exists after setup, under the integration's **Configure**: set the **inclusion mode**, then pick the individual entities to include or exclude.
 
 > [!NOTE]
 > Expose **scripts and scenes**, not raw automations. An automation *can* be published, but it lands in Apple Home as a switch that only enables or disables it — it will not *run* it. Scripts and scenes, flipped "on" by Siri, do the thing. Same watch-versus-run distinction as the top of the page.
@@ -194,13 +219,23 @@ You should see the GTX 1080 Ti listed with a driver version. If it is missing, t
 > The 1080 Ti is **shared**, not handed to one guest — Frigate detection, faster-whisper STT, and the Ollama LLM all borrow it at once. Keep `nvidia-persistenced` running on the host and the host and in-container driver versions matched. **VFIO (Virtual Function I/O)** is reserved for the **HBA (host bus adapter)** feeding the TrueNAS VM and nothing else; the moment the GPU is VFIO-bound, Frigate *and* voice lose the card together.
 
 ### Install Piper for the spoken voice
-**Piper** is the text-to-speech engine — it turns Home Assistant's replies (and the leak-alert announcement the Automations page writes) into spoken words, surfacing as the **`tts.piper`** entity. On the Home Assistant OS VM it installs as an app, not as a container: go to **Settings → Apps → Install app**, find **Piper**, install it, and **start** it. Then one click remains: under **Settings → Devices & services**, the **Wyoming** integration shows Piper as a **Discovered** card — press **Add** and confirm. No host or port is typed (that is what discovery saved you), but the card does need the click; `tts.piper` appears once it is confirmed.
+**Piper** is the text-to-speech engine — it turns Home Assistant's replies (and the leak-alert announcement the Automations page writes) into spoken words, surfacing as the **`tts.piper`** entity. On the Home Assistant OS VM it installs as an app, not as a container.
+
+1. Go to **Settings → Apps → Install app**.
+2. Find **Piper**, install it, and **start** it.
+3. Under **Settings → Devices & services**, the **Wyoming** integration shows Piper as a **Discovered** card — press **Add** and confirm.
+
+No host or port is typed (that is what discovery saved you), but the card does need the click; `tts.piper` appears once it is confirmed.
 
 > [!NOTE]
 > This is the `tts.piper` entity the leak-alert spoken announcement on the Automations page points at. That rule cannot speak until Piper exists — so before you rely on it, confirm `tts.piper` shows up under **Settings → Devices & services → Entities** (or that it autocompletes in a `tts.speak` action). The Automations page deferred this step here; this is where it is delivered.
 
 ### Add the Google/Nest speakers as announce targets
-Piper makes the *words*; a speaker has to *play* them. The leak-alert announcement (and any other spoken `tts.speak` action) needs a `media_player.*` target, and on this build that target is a **Google/Nest Cast speaker**. Add them in Home Assistant under **Settings → Devices & services → Add integration → Google Cast**; each speaker then surfaces as a `media_player.*` entity you can aim audio at. Close the loop while you are here: the Automations page's leak rule speaks through `media_player.kitchen_speaker` — check the new entity's actual id under **Entities** and either rename it to match or update the rule's target to the real name.
+Piper makes the *words*; a speaker has to *play* them. The leak-alert announcement (and any other spoken `tts.speak` action) needs a `media_player.*` target, and on this build that target is a **Google/Nest Cast speaker**.
+
+1. Add them in Home Assistant under **Settings → Devices & services → Add integration → Google Cast** — each speaker then surfaces as a `media_player.*` entity you can aim audio at.
+2. Close the loop while you are here: check the new entity's actual id under **Entities**.
+3. Either rename it to match `media_player.kitchen_speaker` — the id the Automations page's leak rule already speaks through — or update that rule's target to the real name.
 
 > [!NOTE]
 > A **HomePod mini is not a `tts.speak` target on this build** — core Home Assistant cannot push audio to it, so it never appears as a usable `media_player.*` for spoken announcements. (The one path that can — Music Assistant's AirPlay provider — is an extra stack this build does not run.) That is why the Cast speaker exists in this stack: it is what the Automations page's leak announcement speaks through. The HomePod stays the Apple-path microphone and Siri target; the Cast speaker is the local path's mouth.
