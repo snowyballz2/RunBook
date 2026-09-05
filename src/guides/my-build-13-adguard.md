@@ -19,8 +19,9 @@ The quickest path is the Proxmox community helper script, which builds a ready-t
 > [!NOTE]
 > The script shows its **Community-Scripts Options** menu almost as soon as it starts, so read the **Choose Advanced and pin a static IP** section below before you paste — the same Advanced-and-static-IP move every container in this build makes.
 
-1. In the Proxmox web interface at `https://192.168.1.50:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine).
-2. Paste this and press Return:
+1. In the Proxmox web interface at `https://192.168.1.50:8006`, click the node (the Maximus X Hero server) in the left tree.
+2. Click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine).
+3. Paste this and press Return:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"
@@ -97,7 +98,10 @@ Let the script finish — it prints the setup URL when done.
 ### Set it to start at boot
 DNS for the entire house cannot depend on you remembering to start a container after a power cut.
 
-- **GUI** → select the container in the left tree, open **Options**, and set **Start at boot** to **Yes**.
+- **GUI**:
+  1. Select the container in the left tree.
+  2. Open **Options**.
+  3. Set **Start at boot** to **Yes**.
 - **Shell** → run this on the node (`103` is the container ID the script assigns here; swap it if yours differs):
 
 ```bash
@@ -359,7 +363,17 @@ Address:  0.0.0.0
 >
 > 1. Does **`http://192.168.1.53`** still load? If not, the container itself is stopped.
 > 2. If it loads, the container is fine and the DNS listener specifically is not — check the dashboard shows protection on and the server running, since a setting that failed to apply can leave the web UI up while the DNS server stays down.
-> 3. In the container's **Console**, confirm something holds the port with `ss -tulnp | grep ':53'` and check `systemctl status AdGuardHome --no-pager`.
+> 3. In the container's **Console**, confirm something holds the port:
+>
+> ```bash
+> ss -tulnp | grep ':53'
+> ```
+>
+> 4. Check the service status:
+>
+> ```bash
+> systemctl status AdGuardHome --no-pager
+> ```
 
 Then run it again without naming a server, which uses whatever resolver the Mac actually received — the real end-to-end test:
 
@@ -368,7 +382,13 @@ nslookup doubleclick.net
 ```
 
 > [!TIP]
-> **If that second lookup reports a `Server:` in the `100.64.x` range** — or anything that is neither your router nor AdGuard — the machine has a **VPN or DNS-filtering app intercepting all DNS**, and it will bypass AdGuard permanently. That also explains a direct query to `192.168.1.53` timing out from that machine while the same query answers fine from the Proxmox host: the interception swallows it. Find it with `ifconfig | grep '^utun'` (active tunnels) and in **System Settings → VPN** plus **General → Login Items & Extensions → DNS Proxy**, where a filtering app registers even with no menu-bar icon. Cloudflare WARP, NextDNS, Mullvad and work VPNs are the usual ones. Verify from a second device before blaming the server — one machine bypassing proves nothing about the rest of the house.
+> **If that second lookup reports a `Server:` in the `100.64.x` range** — or anything that is neither your router nor AdGuard — the machine has a **VPN or DNS-filtering app intercepting all DNS**, and it will bypass AdGuard permanently. That also explains a direct query to `192.168.1.53` timing out from that machine while the same query answers fine from the Proxmox host: the interception swallows it. Find it:
+>
+> ```bash
+> ifconfig | grep '^utun'
+> ```
+>
+> That lists active tunnels. Also check **System Settings → VPN** and **General → Login Items & Extensions → DNS Proxy**, where a filtering app registers even with no menu-bar icon. Cloudflare WARP, NextDNS, Mullvad and work VPNs are the usual ones. Verify from a second device before blaming the server — one machine bypassing proves nothing about the rest of the house.
 >
 > **On this build it was NordVPN**, and note this is a *different* symptom from the one the Install Proxmox page documents. There, Nord blocked the LAN outright and the fix was its **Local Network Discovery** toggle. Here that toggle is already on — the web UI loads fine — but Nord's separate **DNS leak protection** still forces every query into the tunnel, so AdGuard never sees them. Three ways out:
 >
@@ -382,8 +402,19 @@ nslookup doubleclick.net
 > **Through the router you may see `No answer` rather than `0.0.0.0`.** Either is a successful block — the domain does not resolve to anything real — but the difference matters: it means the router **stripped** AdGuard's `0.0.0.0` on the way back, which is the signature of **DNS rebinding protection** dropping responses that carry private or invalid addresses. That is worth settling now, because the Reverse Proxy page has AdGuard answering `*.kuzco.org → 192.168.1.54`, an equally private address, for every device in the house. Test it in two minutes:
 >
 > 1. In **Filters → DNS rewrites**, add `test.home.arpa` → `192.168.1.54`.
-> 2. From Terminal, run `nslookup test.home.arpa 192.168.1.53` (expect `192.168.1.54`).
-> 3. Run `nslookup test.home.arpa` (through the router).
+> 2. From Terminal, run:
+>
+> ```bash
+> nslookup test.home.arpa 192.168.1.53
+> ```
+>
+>    Expect `192.168.1.54`.
+> 3. Run the same lookup through the router:
+>
+> ```bash
+> nslookup test.home.arpa
+> ```
+>
 > 4. Delete the test rewrite.
 >
 > If the second lookup returns the address too, the proxy names will work. If it returns `No answer`, the router is filtering private-IP responses and needs relaxing before the next page — far better to learn that here than halfway through building a reverse proxy.
@@ -401,7 +432,13 @@ nslookup doubleclick.net
 Then back in the **AdGuard dashboard** (`http://192.168.1.53`), open the **Query Log**. You should see live queries from the house flowing in, with blocked ones flagged.
 
 > [!TIP]
-> If a site you trust breaks, open the Query Log, find the blocked domain, and click to allow it. That is the normal way to fix the occasional false block — far better than disabling a whole list.
+> If a site you trust breaks:
+>
+> 1. Open the Query Log.
+> 2. Find the blocked domain.
+> 3. Click to allow it.
+>
+> That is the normal way to fix the occasional false block — far better than disabling a whole list.
 
 > [!NOTE]
 > **YouTube ads will still play, and that is not a fault.** DNS filtering works by refusing to resolve *ad-serving domains* — `doubleclick.net` and its cousins, which is what the test above proved. YouTube serves its ads from **the same domains as the video itself**, so there is no separate name to refuse; blocking it would break YouTube outright. Google does this deliberately, and Facebook, Instagram, Twitch and Spotify all serve their ads first-party for the same reason.

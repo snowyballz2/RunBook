@@ -11,7 +11,11 @@ Frigate is the camera recorder (an NVR — network video recorder) that turns yo
 ## Create the Frigate container
 
 ### Run the install script
-Frigate runs as a privileged **LXC (Linux Container)** here. The community-scripts helper builds one in a single pass. In the Proxmox web interface, click the node, then **Shell**, and run:
+Frigate runs as a privileged **LXC (Linux Container)** here. The community-scripts helper builds one in a single pass.
+
+1. In the Proxmox web interface, click the node.
+2. Click **Shell**.
+3. Run:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/frigate.sh)"
@@ -57,7 +61,17 @@ Then let it work — it compiles Frigate from source, so expect a long run. Read
 > Set at the install script's **Set Root Password** prompt. Pairs with the `root` username above at the container's **Console** in Proxmox; SSH stays off.
 
 > [!TIP]
-> The console's `login:` prompt **echoes what you type**; only the `Password:` prompt hides it. Type the password at the wrong prompt and it sits in cleartext in the scrollback — if that happens, rotate it on the spot: `passwd` at the root prompt, then update the field above.
+> The console's `login:` prompt **echoes what you type**; only the `Password:` prompt hides it. Type the password at the wrong prompt and it sits in cleartext in the scrollback.
+>
+> If that happens:
+>
+> 1. Rotate it on the spot, at the root prompt:
+>
+> ```bash
+> passwd
+> ```
+>
+> 2. Update the field above.
 
 > [!TIP]
 > This is the fussiest script in the build — it pulls large AI components and occasionally stumbles partway. If it errors, just re-run it; a second attempt is normal.
@@ -69,8 +83,10 @@ Then let it work — it compiles Frigate from source, so expect a long run. Read
 The script prints the container's address when it finishes.
 
 1. Browse to **`http://192.168.1.52:5000`**.
-2. Select everything in the editor, delete it, and paste the complete file below, swapping any password tokens it names.
-3. **Save & Restart**.
+2. Select everything in the editor.
+3. Delete it.
+4. Paste the complete file below, swapping any password tokens it names.
+5. **Save & Restart**.
 
 > [!NOTE]
 > Expect the **Config Editor (Safe Mode)**, not a dashboard: Frigate 0.17 requires the `mqtt` and `cameras` fields, the generated config has neither, and validation fails with *"mqtt - Field required… cameras - Field required."* That is the install working, not broken — 0.17 also ships no sample camera, so there is no test clip to look for. Escape safe mode with Frigate's own documented minimal blocks. The config is **YAML** — an indentation-based text format where the leading spaces are meaningful — and this page treats it one way throughout: **every config step gives the complete file as it should exist at that moment.** No merging, no hunting for changed lines.
@@ -129,7 +145,12 @@ Record it below.
 > [!TIP]
 > **No password line?** Frigate prints it once, at admin creation on the very first boot — the safe-mode escape's restarts can leave the current log without it.
 >
-> 1. Widen the search to rotated files: `grep -ri password /dev/shm/logs/`.
+> 1. Widen the search to rotated files:
+>
+> ```bash
+> grep -ri password /dev/shm/logs/
+> ```
+>
 > 2. Still nothing? Have Frigate mint a fresh one — in the config editor on **port 5000** (the one that needs no login, which is the point while you are locked out of 8971), paste at the end:
 >
 > ```yaml
@@ -137,8 +158,16 @@ Record it below.
 >   reset_admin_password: true
 > ```
 >
-> 3. **Save & Restart**, then grep again and log in.
-> 4. **Delete those two lines and Save & Restart once more** (in the same 5000 editor, or 8971's now that you can log in; both edit the same file), or the password resets on every boot.
+> 3. **Save & Restart.**
+> 4. Grep again:
+>
+> ```bash
+> grep -ri password /dev/shm/logs/
+> ```
+>
+> 5. Log in.
+> 6. Delete those two lines (in the same 5000 editor, or 8971's now that you can log in; both edit the same file).
+> 7. **Save & Restart** once more, or the password resets on every boot.
 
 ### Fence the open port
 Port **5000** never gets a login — it is Frigate's internal unauthenticated port, and the login on 8971 protects nothing while it stays LAN-open: the same config editor you just used to reset the admin password is sitting there for anyone on the network, cameras included, and disabling auth outright is one edit away. Frigate's official Docker deployment never exposes 5000 beyond the container's private network; this LXC does, so build the fence Docker would have provided. Proxmox's per-guest firewall is the tool, and the order below stages everything before the master switch flips, so nothing breaks partway.
@@ -167,16 +196,40 @@ Line by line: `8971` stays open to the LAN — the authenticated UI, for you. `5
 The file sits inert until the master switch flips. The rest is clicks:
 
 1. **CT 102 → Firewall** — the six rules now show in the list. That is the file being read, and your check that the paste took.
-2. Select container **102** in the left tree and open **Network** in its menu (between Resources and DNS). The panel lists one row, **`net0`** — the container's network card. Double-click it, tick **Firewall**, **OK**.
-3. **Node `pve` → Firewall → Add** — Direction `in`, Action `ACCEPT`, Protocol `icmp`, everything else blank — and **tick Enable** before clicking Add: the dialog adds rules *disabled* by default, and an unticked rule exists but does nothing. This keeps the host answering pings under the datacenter policy. (The container's six rules have no such problem — file-written rules arrive enabled.)
-4. **Datacenter** — the very top of the left-hand tree, above the `pve` node — **→ Firewall → Options**, double-click the **Firewall** row and set it to **Yes**. This is the master switch. Proxmox auto-allows the web UI (8006) and SSH from the local network even under DROP, so this cannot lock you out; TrueNAS and Home Assistant are untouched because their own guest firewalls stay off.
-5. Prove it: `https://192.168.1.52:8971` still loads; `http://192.168.1.52:5000` from your Mac now **times out**. That timeout is the fence working — the unauthenticated editor now answers only to Home Assistant, Kuma, and the console.
+2. Select container **102** in the left tree.
+3. Open **Network** in its menu (between Resources and DNS). The panel lists one row, **`net0`** — the container's network card.
+4. Double-click **`net0`**.
+5. Tick **Firewall**.
+6. Click **OK**.
+7. **Node `pve` → Firewall → Add**, filling in:
+   - **Direction** → `in`
+   - **Action** → `ACCEPT`
+   - **Protocol** → `icmp`
+   - Everything else → blank
+   - **Enable** → ticked — the dialog adds rules *disabled* by default, and an unticked rule exists but does nothing
+   - Click **Add**
+
+   This keeps the host answering pings under the datacenter policy. (The container's six rules have no such problem — file-written rules arrive enabled.)
+8. **Datacenter** (the very top of the left-hand tree, above the `pve` node) **→ Firewall → Options**. Double-click the **Firewall** row and set it to **Yes** — the master switch. Proxmox auto-allows the web UI (8006) and SSH from the local network even under DROP, so this cannot lock you out; TrueNAS and Home Assistant are untouched because their own guest firewalls stay off.
+9. Prove it: `https://192.168.1.52:8971` still loads; `http://192.168.1.52:5000` from your Mac now **times out**. That timeout is the fence working — the unauthenticated editor now answers only to Home Assistant, Kuma, and the console.
 
 > [!WARNING]
 > Never create a port-forward to any of this regardless — camera footage stays on the network, and remote access comes through Tailscale.
 
 > [!NOTE]
-> Script versions vary: some instead write an explicit `auth: enabled: false` into the generated config, which switches the login off entirely — 8971 included, every camera open to the LAN. If your config shows that line, flip it to `true` in the config editor, **Save & Restart** (`systemctl restart frigate` in the container's **Console** does the same), then read the log as above.
+> Script versions vary: some instead write an explicit `auth: enabled: false` into the generated config, which switches the login off entirely — 8971 included, every camera open to the LAN.
+>
+> If your config shows that line:
+>
+> 1. Flip it to `true` in the config editor.
+> 2. **Save & Restart.**
+> 3. Read the log as above.
+>
+> The container's **Console** can do step 2 as well:
+>
+> ```bash
+> systemctl restart frigate
+> ```
 
 ### Confirm its address and start at boot
 The static address was set in the script's Advanced walk, so there is nothing to reserve at the router. In Proxmox, select the container and open **Options**:
@@ -191,19 +244,27 @@ The static address was set in the script's Advanced walk, so there is nothing to
 ## Detect on the 1080 Ti
 
 ### Lend the GPU into the container
-The 1080 Ti is **shared** into this LXC from the host's NVIDIA driver — it is never VFIO (Virtual Function I/O)'d to a VM. Answering **Yes** at the install script's **GPU PASSTHROUGH** dialog already bound the card in: the script found every `/dev/nvidia*` node the host driver exposes and wrote a `devN:` line for each into the container's config. Verify rather than re-do it. On the host (click the Proxmox node, then **Shell**):
+The 1080 Ti is **shared** into this LXC from the host's NVIDIA driver — it is never VFIO (Virtual Function I/O)'d to a VM. Answering **Yes** at the install script's **GPU PASSTHROUGH** dialog already bound the card in: the script found every `/dev/nvidia*` node the host driver exposes and wrote a `devN:` line for each into the container's config. Verify rather than re-do it. On the host:
+
+1. Click the Proxmox node.
+2. Click **Shell**.
+3. Run:
 
 ```bash
 grep ^dev /etc/pve/lxc/102.conf
 ```
 
-(`102` is this container's ID, shown next to its name in the sidebar.) Expect several `devN: /dev/nvidia…,gid=44` lines — the script binds every NVIDIA node it finds, a superset of the three the GPU Sharing & HBA Passthrough page's lending recipe names, which is fine. Only if the list comes back **empty** — the dialog answered No, or a container built before it existed — fall back to that recipe: edit the same file, add the three lines below, and restart the container.
+(`102` is this container's ID, shown next to its name in the sidebar.) Expect several `devN: /dev/nvidia…,gid=44` lines — the script binds every NVIDIA node it finds, a superset of the three the GPU Sharing & HBA Passthrough page's lending recipe names, which is fine. If the list comes back **empty** — the dialog answered No, or a container built before it existed — fall back to that recipe:
+
+1. Edit the same file and add the three lines below.
 
 ```ini
 dev0: /dev/nvidia0,gid=44
 dev1: /dev/nvidiactl,gid=44
 dev2: /dev/nvidia-uvm,gid=44
 ```
+
+2. Restart the container.
 
 The script also attempts the **in-container userspace driver** itself — its output shows `NVIDIA GPU passthrough detected`, and on this build a `Version-pinned install failed - trying unpinned` fallback, which lands whatever version its source offers rather than the host's. One command in the container's **Console** settles whether it matched:
 
@@ -227,7 +288,15 @@ Purge anything it lists, so the two installs do not fight — and expect it **no
 apt purge -y libnvidia-encode1 libnvidia-gpucomp libnvidia-ml1 libnvidia-pkcs11-openssl3 libnvidia-ptxjitcompiler1 nvidia-smi
 ```
 
-Match the package names to what *your* list shows — the script's set can drift. Then, in the **container's console**, download NVIDIA's installer for the exact host version and run it userspace-only. The first command uses `wget` — the standard command-line downloader ("web get"), which saves the file at that URL into the current folder (`apt install -y wget` first if the container lacks it); the second runs the ~300 MB installer it fetched. With the host on `550.163.01`:
+Match the package names to what *your* list shows — the script's set can drift. Then, in the **container's console**, download NVIDIA's installer for the exact host version and run it userspace-only.
+
+If the container lacks `wget` — the standard command-line downloader ("web get") — install it first:
+
+```bash
+apt install -y wget
+```
+
+The first command below uses it to save the file at that URL into the current folder; the second runs the ~300 MB installer it fetched. With the host on `550.163.01`:
 
 ```bash
 wget https://us.download.nvidia.com/XFree86/Linux-x86_64/550.163.01/NVIDIA-Linux-x86_64-550.163.01.run
@@ -295,7 +364,10 @@ It leaves **`yolov9-t-320.onnx`** in the folder you ran it from. Move it to the 
 scp yolov9-t-320.onnx root@192.168.1.50:/tmp/
 ```
 
-First run it asks about the host's authenticity — type `yes` — then wants the **Proxmox root password** from the field on the Install Proxmox page.
+First run, it prompts twice:
+
+- **Host authenticity** → type `yes`
+- **Password** → the **Proxmox root password** from the field on the Install Proxmox page
 
 Then, in the **Proxmox host shell**, push it into the container under the name the config expects:
 
@@ -313,7 +385,12 @@ This build does **not** use the Intel iGPU + OpenVINO path that Frigate defaults
 > The 1080 Ti is Pascal — compute capability 6.1 — which clears every requirement: compute capability 5.0 or higher, NVIDIA driver 545 or newer, and CUDA 12.x. Use a **YOLOv9** model (the small `yolov9-t` is a good starting point); avoid RF-DETR, which runs very slowly on Pascal cards. One rule that never relaxes: **detector types cannot be mixed** — an `onnx` detector here means no `openvino` or `edgetpu` block alongside it. And keep the `labelmap_path` line: a YOLOv9 export emits the **80-class** COCO list, so without it Frigate falls back to its 90-class default and mislabels every class past the first few — your tracked `dog` comes through as `cat`.
 
 ### Set the decode preset
-Frigate also hardware-decodes every camera stream so the CPU is not burning cycles unpacking video — `hwaccel_args: preset-nvidia` selects NVDEC on the card, replacing the generated `auto`. In the config editor at `https://192.168.1.52:8971` (or `nano /config/config.yml` in the container's console), **select all, delete, paste the complete file** — the ONNX detector, the YOLOv9 model, and the decode preset together. No tokens to swap:
+Frigate also hardware-decodes every camera stream so the CPU is not burning cycles unpacking video — `hwaccel_args: preset-nvidia` selects NVDEC on the card, replacing the generated `auto`. The ONNX detector, the YOLOv9 model, and the decode preset land together in one paste. No tokens to swap:
+
+1. Open the config editor at `https://192.168.1.52:8971` (or `nano /config/config.yml` in the container's console).
+2. Select all.
+3. Delete it.
+4. Paste the complete file below.
 
 ```yaml
 ffmpeg:
@@ -394,7 +471,11 @@ For the login fields below, use the doorbell's **admin** account: the User-level
 > Take the exact stream details from the Reolink app — do not guess them. In particular confirm **HTTP is enabled**, or the http-flv video path will not connect at all.
 
 ### Add the doorbell to the config
-Back in Frigate's config editor: **select all, delete, paste the complete file below.**
+Back in Frigate's config editor:
+
+1. Select all.
+2. Delete it.
+3. Paste the complete file below.
 
 - **What it carries** → everything so far (detector, model, decode) plus the doorbell's `go2rtc:` streams and camera entry — and the `placeholder:` camera is gone, its job done
 - **Tokens** → **`DOORBELL-PASS`** ×3, all in the `go2rtc:` stream URLs; the username `admin` is baked in
@@ -408,7 +489,14 @@ Back in Frigate's config editor: **select all, delete, paste the complete file b
 > ```
 
 > [!WARNING]
-> These are URLs, so a password containing `@ : / ? # & % +` or a space **breaks them** — `&` splits the query, `#` ends it early, `@` confuses the rtsp login. If the doorbell password has any of those, change it (Reolink UI, the admin account) to a long **letters-and-digits-only** one and update the field above before filling in the config.
+> These are URLs, so a password containing `@ : / ? # & % +` or a space **breaks them** — `&` splits the query, `#` ends it early, `@` confuses the rtsp login.
+>
+> If the doorbell password has any of those:
+>
+> 1. Change it, in the Reolink UI's admin account, to a long **letters-and-digits-only** one.
+> 2. Update the field above.
+>
+> Do this before filling in the config.
 
 
 ```yaml
@@ -483,7 +571,14 @@ cameras:
 ## Add the RLC-510WA
 
 > [!NOTE]
-> **Camera not placed yet? Skip this whole section and keep going** — nothing after it depends on the RLC. Every later complete-file paste includes the `rlc510:` entries; if the camera is still unplaced when you reach one, add `enabled: false` under `rlc510:` (same indent as its `ffmpeg:`) and flip it to `true` when the camera is up. A defined-but-disabled camera costs nothing — Frigate starts no processes for it, and go2rtc only dials on demand. The same line works for any EmpireTech turret not yet on the wall when its paste arrives.
+> **Camera not placed yet? Skip this whole section and keep going** — nothing after it depends on the RLC. Every later complete-file paste includes the `rlc510:` entries.
+>
+> If the camera is still unplaced when you reach one:
+>
+> 1. Add `enabled: false` under `rlc510:` (same indent as its `ffmpeg:`).
+> 2. Flip it to `true` when the camera is up.
+>
+> A defined-but-disabled camera costs nothing — Frigate starts no processes for it, and go2rtc only dials on demand. The same line works for any EmpireTech turret not yet on the wall when its paste arrives.
 
 ### Add the second indoor camera
 The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep instead: it becomes the **second indoor camera**, covering the big room from the opposite side so the far corner the Color4K-T can't identify into isn't blind. It stays on **WiFi with its 12 V adapter** — no PoE run, no switch port — and is added the same restream way as the doorbell, so its single connection is shared between recording and detection, with detection on the sub stream to keep the WiFi link light. Prep it in the Reolink app first, the same way the doorbell was:
@@ -493,7 +588,11 @@ The **Reolink RLC-510WA** (5MP WiFi) missed its return window and earns its keep
 - **Interframe Space** → **1×** — an I-frame interval matching the frame rate, what keeps Frigate's recording segments clean
 - **Stream paths** → take the exact ones from the app while you are there
 
-Same pattern: **select all, delete, paste the complete file below** — everything from the doorbell step plus the `rlc510` pair.
+Same pattern:
+
+1. Select all.
+2. Delete it.
+3. Paste the complete file below — everything from the doorbell step plus the `rlc510` pair.
 
 - **Tokens** → re-swap **`DOORBELL-PASS`** ×3 (the paste resets them); fill **`RLC-PASS`** ×2
 
@@ -587,7 +686,10 @@ A Dahua-family camera takes **plain RTSP** — none of the doorbell's http-flv w
 
 > [!SECRET] empiretech-password | EmpireTech cameras admin password (all five)
 
-Wire each camera to the **GS308EPP**, then assign its permanent static in its own web UI — the names are the real corners:
+1. Wire each camera to the **GS308EPP**.
+2. Assign its permanent static in its own web UI.
+
+The names are the real corners:
 
 - **`shed_turret`** → `192.168.1.72`
 - **`carport_turret`** → `192.168.1.73`
@@ -596,7 +698,11 @@ Wire each camera to the **GS308EPP**, then assign its permanent static in its ow
 - **`kitchen_turret`** (the indoor Color4K) → `192.168.1.76`
 - **Gateway, all five** → `192.168.1.1` — until the hardening step blanks it
 
-Once all five are addressed: **select all, delete, paste the complete file below.**
+Once all five are addressed:
+
+1. Select all.
+2. Delete it.
+3. Paste the complete file below.
 
 - **Tokens** → re-swap **`DOORBELL-PASS`** ×3 and **`RLC-PASS`** ×2; fill **`TURRET-PASS`** ×10 — the one shared EmpireTech admin password
 - **`chimney_turret`** → ships **`enabled: false`** in this file and the two after it (not mounted yet); delete that line or flip it to `true` in whichever paste lands after it goes up
@@ -843,8 +949,11 @@ Routing into the wall cavity means the cable and its waterproof connector tuck *
 
 1. **Drill about a 1-inch hole** behind the base, big enough to pass the camera's moulded waterproof RJ45 pigtail into the cavity. Position it so the base covers the hole.
 2. **Deal with the unused pigtails before anything goes in the wall.** Running PoE leaves the 12 V barrel, alarm in/out, and audio leads doing nothing.
-   - Tape each unused end closed — quality electrical tape is fine in a dry cavity; self-amalgamating tape is the upgrade — with a dab of **dielectric grease** inside any connector shell first. (Dahua's own guides actually sanction cutting unused leads and taping the stubs; taping without cutting preserves the options and is the default here.)
-   - Coil the capped leads, tuck them to the side of the cavity rather than against the drywall's back face where condensation forms, and zip-tie the bundle so nothing hangs on the camera's cable gland.
+   1. Apply a dab of **dielectric grease** inside each unused connector shell.
+   2. Tape each end closed — quality electrical tape is fine in a dry cavity; self-amalgamating tape is the upgrade. (Dahua's own guides actually sanction cutting unused leads and taping the stubs; taping without cutting preserves the options and is the default here.)
+   3. Coil the capped leads.
+   4. Tuck them to the side of the cavity, rather than against the drywall's back face where condensation forms.
+   5. Zip-tie the bundle so nothing hangs on the camera's cable gland.
 
    An open connector is a wick: moisture corrodes the pins and can travel the conductors back into the camera body.
 3. **Seal the wall, not the camera** — the verified picture, from Dahua's own install guide and installer practice: the turret body is the waterproof (IP67) unit, its pedestal is purely mechanical (Dahua's procedure is template → expansion bolts → screws, with no gasket and no caulk called for — the missing base gasket is by design), and the thing that actually needs sealing is the **hole in your wall**.
@@ -872,7 +981,14 @@ Routing into the wall cavity means the cable and its waterproof connector tuck *
 > The one exception is a corner that turns out to be **solid brick or stucco with no cavity** behind it — there you would want EmpireTech's **`PFA130-E`** junction box (about $20) to hold the connector, since you cannot fish into the wall. For framed walls with a cavity, buy no boxes.
 
 > [!WARNING]
-> Keep each camera's view clear of the **flanking walls, gutters, and fascia**. A turret's lens sits flush, so a bright surface right in front bounces IR — and the T54PRO-AS's warm light — back into the lens and washes the image out. Aiming into the open wedge (the reason for the 3.6mm lens) is exactly what avoids it. The night-time signature of a bright source too close to the lens axis is a **milky wash with a rainbow flare streak** — and the first diagnostic is to notice *when* it appears. If it tracks an external fixture (this build's patio turret flares only while the rear patio light is on), it is that fixture's light grazing the lens: live with it, shade the fixture, or tilt a few degrees. If it is there every night, suspect a film on the front glass (installation fingerprints, pollen, dew — wipe with a dry microfiber) or the camera's own illuminator bouncing off a flanking surface (lower the Night profile's **Fill Light** brightness from auto to a modest manual level). Worth chasing when it sits over walkways — haze eats the contrast the detector feeds on.
+> Keep each camera's view clear of the **flanking walls, gutters, and fascia**. A turret's lens sits flush, so a bright surface right in front bounces IR — and the T54PRO-AS's warm light — back into the lens and washes the image out. Aiming into the open wedge (the reason for the 3.6mm lens) is exactly what avoids it.
+>
+> The night-time signature of a bright source too close to the lens axis is a **milky wash with a rainbow flare streak**. The first diagnostic is to notice *when* it appears.
+>
+> - If it tracks an external fixture (this build's patio turret flares only while the rear patio light is on), it is that fixture's light grazing the lens — live with it, shade the fixture, or tilt the camera a few degrees.
+> - If it is there every night, suspect a film on the front glass (installation fingerprints, pollen, dew — wipe it with a dry microfiber) or the camera's own illuminator bouncing off a flanking surface (lower the Night profile's **Fill Light** brightness from auto to a modest manual level).
+>
+> Worth chasing when it sits over walkways — haze eats the contrast the detector feeds on.
 
 ## Harden each camera
 
@@ -962,7 +1078,9 @@ The dead-end gateway already stops the traffic; this step turns off the services
 
 1. If a camera was added by QR/UID scan, add it again **by IP** (**⊕ → Manual Input → the camera's IP**, the admin login) — so the app keeps working on the LAN after the next toggle kills the relay path.
 2. Prove the new tile opens live view.
-3. Delete the old UID entry. If the app refuses the duplicate ("device already added"), remove the old entry first and re-add by IP.
+3. Delete the old UID entry.
+
+   If the app refuses the duplicate ("device already added"), remove the old entry first and re-add it by IP.
 
 > [!NOTE]
 > Removing costs nothing: the app's device list is just the phone's address book — every setting lives on the camera, and there is no cloud account bound.
@@ -971,7 +1089,12 @@ Then:
 
 - **Enable UID** (Reolink's P2P relay) → **off — web UI only**: **Network → Advanced → Enable UID**, switch off — its caption is honest about what it is: "Allow Reolink App/Client to access the device via WAN using UID." It ships enabled on every Reolink camera, and the iOS app has no switch for it on cameras. Off means no Reolink-relay access from anywhere outside — remote viewing on this build is Frigate over Tailscale once the Remote Access page is done — while LAN app, web UI, and streams carry on
 - **UPnP** → **off**: **Network → Advanced → UPnP** — web UI again; the app has no such toggle
-- **Push Notifications** → **off**: the web UI's **Surveillance → Push** — no single switch there; the **Enable/Disable** icons are brushes for the week-by-hour schedule grid, which arrives fully painted. Select **Disable**, clear the whole grid (the clear-all icon at its right edge, or drag across it), and **Save** — an empty schedule never pushes, whatever the type checkboxes say. (App equivalent: **Device Settings → Push Notifications**.) Reolink's push routes device → Reolink's servers → Apple → phone; Frigate and Home Assistant notifications replace it, local and far smarter
+- **Push Notifications** → **off**, in the web UI's **Surveillance → Push** (app equivalent: **Device Settings → Push Notifications**) — no single switch exists there; the **Enable/Disable** icons are brushes for the week-by-hour schedule grid, which arrives fully painted:
+  1. Select **Disable**.
+  2. Clear the whole grid (the clear-all icon at its right edge, or drag across it).
+  3. Click **Save**.
+
+  An empty schedule never pushes, whatever the type checkboxes say. Reolink's push routes device → Reolink's servers → Apple → phone; Frigate and Home Assistant notifications replace it, local and far smarter
 - **Auto Update** → **off**: app → **Device Settings → Device Info → Update Device → Auto Update** — firmware stays pinned until you choose otherwise (manual `.pak` files from reolink.com, applied via the web UI)
 - **Auto Reboot** → **off**: web UI **System → Maintenance** — it arrives **on**, set to every Sunday at 02:00, and a weekly reboot is a weekly recording gap plus a weekly false blip on the Kuma pings, for nothing (the turrets' Auto Restart verdict, same reasoning). The **Firmware Update** row above it is the manual update path; the red **Restore** button below is a factory reset — never that
 - **Illegal Login Lockout** → **leave on**: web UI **System → User Management** — a burst of failed logins locks the account for a few minutes; Reolink's counterpart of the turrets' Account Lockout
@@ -1036,7 +1159,10 @@ Then point every camera at the host:
 ## Footage and retention
 
 ### Record to the dedicated footage drive
-Detection runs in the NVMe (Non-Volatile Memory Express)-cached container, but recordings are bulk, write-heavy data that belongs on a spinning disk. They go to the **third Seagate IronWolf ST4000VN006 4 TB** — the lone footage drive on a motherboard SATA (Serial ATA) port, deliberately kept off the two-disk TrueNAS ZFS (Zettabyte File System) mirror. Frigate writes everything under `/media/frigate` inside the container — `recordings`, `clips` (snapshots), and `exports` — so the job is to put the footage disk under that exact path. All of this happens on the host: click the Proxmox node, then **Shell**.
+Detection runs in the NVMe (Non-Volatile Memory Express)-cached container, but recordings are bulk, write-heavy data that belongs on a spinning disk. They go to the **third Seagate IronWolf ST4000VN006 4 TB** — the lone footage drive on a motherboard SATA (Serial ATA) port, deliberately kept off the two-disk TrueNAS ZFS (Zettabyte File System) mirror. Frigate writes everything under `/media/frigate` inside the container — `recordings`, `clips` (snapshots), and `exports` — so the job is to put the footage disk under that exact path. All of this happens on the host:
+
+1. Click the Proxmox node.
+2. Click **Shell**.
 
 **Identify the third IronWolf by serial.** It is the only ST4000VN006 the host can still see — the two mirror disks sit behind the VFIO'd HBA and never appear here:
 
@@ -1108,7 +1234,8 @@ ffmpeg:
             - audio
 ```
 
-4. Housekeeping, if your file predates the cleanup: the `rlc510` stanza is the file's oldest text and needs bringing up to the family pattern. Delete its own `detect:` and `record:` stanzas (the global `record:` block makes them redundant), then check the **`go2rtc: streams:`** map at the top — if the `rlc510` / `rlc510_sub` pair is missing, add it (same indent as the other stream names, `RLC-PASS` swapped for the camera's admin password):
+4. If your file predates the cleanup, the `rlc510` stanza is the file's oldest text and needs bringing up to the family pattern — delete its own `detect:` and `record:` stanzas (the global `record:` block makes them redundant).
+5. Check the **`go2rtc: streams:`** map at the top. If the `rlc510` / `rlc510_sub` pair is missing, add it (same indent as the other stream names, `RLC-PASS` swapped for the camera's admin password):
 
 ```yaml
     rlc510:
@@ -1117,7 +1244,7 @@ ffmpeg:
       - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
 ```
 
-   And make the camera stanza itself read like its siblings — restream inputs, the audio role, an explicit track list, and dark until the hardware is mounted (a defined-but-disabled camera costs nothing; go2rtc only dials on demand):
+6. Make the camera stanza itself read like its siblings — restream inputs, the audio role, an explicit track list, and dark until the hardware is mounted (a defined-but-disabled camera costs nothing; go2rtc only dials on demand):
 
 ```yaml
   rlc510:
@@ -1138,7 +1265,13 @@ ffmpeg:
         - person
 ```
 
-5. **Save & Restart** — and mind the restreamer rule: if step 4 added the `rlc510` pair to the `go2rtc:` block, that block changed, so restart both from the container's **Console** (`systemctl restart go2rtc frigate`); if your file already had the pair, plain Save & Restart is enough — go2rtc untouched, no bounce.
+7. **Save & Restart** — and mind the restreamer rule: if step 5 added the `rlc510` pair to the `go2rtc:` block, that block changed, so restart both from the container's **Console**:
+
+```bash
+systemctl restart go2rtc frigate
+```
+
+   If your file already had the pair, plain Save & Restart is enough — go2rtc untouched, no bounce.
 
 A few minutes later, prove recording is real — from the **host** Shell:
 
@@ -1551,8 +1684,14 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 > [!DETAILS] Install HACS first, then the Frigate integration
 > The Frigate integration is not in Home Assistant's built-in list — it ships through HACS, a community catalog installed once. And the App store cannot even *find* the installer until its repository is added — the store only searches repositories it already knows, which is the step everyone hits:
 >
-> 1. **Settings → Apps → App store** → the **⋮ menu (top right) → Repositories** → paste `https://github.com/hacs/addons` → **Add**, close the dialog
-> 2. The **Get HACS** card now exists — search for it, **Install**, then **Start** it once: it downloads HACS into the config folder and stops; its **Log** tab should end in success
+> 1. **Settings → Apps → App store → ⋮ menu (top right) → Repositories**:
+>    - Paste `https://github.com/hacs/addons`.
+>    - Click **Add**.
+>    - Close the dialog.
+> 2. The **Get HACS** card now exists:
+>    - Search for it.
+>    - Click **Install**.
+>    - Click **Start** — it downloads HACS into the config folder and stops; its **Log** tab should end in success.
 > 3. **Restart Home Assistant** — Settings → System → the power menu → Restart
 > 4. **Settings → Devices & services → Add integration → HACS**:
 >    - Tick the acknowledgement boxes.
@@ -1561,8 +1700,9 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 >
 >    A **`could_not_register`** error here means HA's own call to GitHub failed before a code existed — usually a transient hiccup: retry once; if it persists, the real cause is in **Settings → System → Logs** (search `hacs`), and AdGuard's Query Log confirms `github.com` resolves. The GitHub link is low-stakes: HACS requests **no scopes** — a public-read token for rate limits only, revocable at GitHub → Settings → Applications. And while on the Integrations screen: **Ignore** the discovered **UPnP — Verizon Router** card — nothing in this build should drive router port-mappings.
 > 5. The **HACS** panel joins the sidebar:
->    - Open it and search **Frigate**.
->    - **Download** it.
+>    - Open it.
+>    - Search **Frigate**.
+>    - Click **Download**.
 >    - **Restart Home Assistant again**.
 > 6. **Settings → Devices & services → Add integration → Frigate** — the dialog's four fields:
 >    - **URL** → **`http://192.168.1.52:5000`** — the internal port; HA's `.51` is one of the two addresses the firewall fence admits there
@@ -1577,7 +1717,11 @@ Then install the Frigate integration in the Home Assistant OS VM through **HACS 
 > The `mqtt-user` login's password from the Mosquitto broker's Logins list — the value that replaces `MQTT-PASS` in the config.
 
 > [!WARNING]
-> **Boot order matters.** The broker lives in the Home Assistant OS VM, which boots slower than this LXC. After a power cut the container can come up before the broker exists, so its MQTT connection never establishes and its Home Assistant entities stay dead until a restart. You set the Home Assistant VM to **order=2** on the Home Assistant & Zigbee2MQTT page; now give this Frigate container **order=3** — in Proxmox, select the container → **Options → Start/Shutdown order** — so the broker's VM (the lower number) always starts first, with a **startup delay** on the container as belt-and-suspenders insurance. Footage still records locally either way; only the automation side goes quiet.
+> **Boot order matters.** The broker lives in the Home Assistant OS VM, which boots slower than this LXC. After a power cut the container can come up before the broker exists, so its MQTT connection never establishes and its Home Assistant entities stay dead until a restart. You set the Home Assistant VM to **order=2** on the Home Assistant & Zigbee2MQTT page.
+>
+> Give this Frigate container **order=3**: in Proxmox, select the container → **Options → Start/Shutdown order**. Add a **startup delay** on the container too, as belt-and-suspenders insurance.
+>
+> That way the broker's VM (the lower number) always starts first. Footage still records locally either way; only the automation side goes quiet.
 
 ### Restart and watch it work
 Apply any config change by restarting Frigate in the container's console:
@@ -1586,15 +1730,30 @@ Apply any config change by restarting Frigate in the container's console:
 systemctl restart frigate
 ```
 
-Reload the web UI — the enabled cameras' live views should appear, and walking through a frame should produce a tracked person within a few seconds. Three ways to *see* the tracking, from most direct:
+1. Reload the web UI — the enabled cameras' live views should appear.
+2. Walk through a frame — a tracked person should appear within a few seconds.
+
+Three ways to *see* the tracking, from most direct:
 
 - **Debug view** — on a camera's own view, the **gear icon → Debug**, tick **Bounding boxes**: a live box labeled `person` with a confidence score follows you around the frame — the detector's raw output. Know the two box kinds: **red boxes are motion** (the cheap pixel-change stage — the camera's own OSD clock draws one forever until masked), **labeled boxes are tracked objects**. Motion boxes without ever a labeled box on a plainly visible person means detection is not running — first suspect the **person-silhouette icon** in the camera view's top icon row, a runtime Detect switch that overrides the config until flipped back (HA exposes it as `switch.<camera>_detect`); if that is on, check **Settings → System metrics** for the **onnx** detector and its inference speed
-- **The first motion mask** — every camera whose burned-in clock draws a permanent red box deserves one: **Settings → Masks and Zones** → pick the camera → add a **Motion Mask** → draw a rectangle over the timestamp → Save. Keep the OSD itself (a clock on recordings is evidence); the mask removes Frigate's attention, not the overlay
+- **The first motion mask** — every camera whose burned-in clock draws a permanent red box deserves one:
+  1. **Settings → Masks and Zones** → pick the camera.
+  2. Add a **Motion Mask**.
+  3. Draw a rectangle over the timestamp.
+  4. **Save**.
+
+  Keep the OSD itself (a clock on recordings is evidence) — the mask removes Frigate's attention, not the overlay
 - **History** — the walk becomes a review item with a thumbnail; every tracked object does
 - **The occupancy entity** — once the HA integration below is in: **Settings → Tools → States** (what older write-ups call *Developer tools*), filter the camera; `binary_sensor.<camera>_person_occupancy` reads **on** while you stand in frame and drops to **off** when you leave — the whole camera → detector → MQTT → integration chain proven in one toggle
 
 > [!TIP]
-> If a camera stays black, watch the logs while it starts: `journalctl -u frigate -f` in the console. A wrong RTSP path or password shows up there immediately. If detection feels sluggish or the CPU is pinned, the 1080 Ti probably is not doing the work — re-check that `nvidia-smi` sees the card inside the container and that the logs name the ONNX/CUDA detector, not a CPU fallback.
+> If a camera stays black, watch the logs while it starts, in the console:
+>
+> ```bash
+> journalctl -u frigate -f
+> ```
+>
+> A wrong RTSP path or password shows up there immediately. If detection feels sluggish or the CPU is pinned, the 1080 Ti probably is not doing the work — re-check that `nvidia-smi` sees the card inside the container and that the logs name the ONNX/CUDA detector, not a CPU fallback.
 
 > [!NOTE]
 > This install does not update in place, so **back up `/config/config.yml`** after every change. That single file is the hand-built heart of the setup — the ONNX detector, the go2rtc doorbell and camera blocks, the MQTT credentials — and rebuilding it from memory is the painful part of any upgrade. Copy it to the TrueNAS `backups` share (or, later in the build, a Nextcloud folder) so a new container is a five-minute restore. At upgrade time, the script's own path is to build a fresh container and copy `/config` across — take a snapshot first.
