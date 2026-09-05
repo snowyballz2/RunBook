@@ -452,6 +452,100 @@ actions:
       entity_id: cover.all_shades
 ```
 
+The morning open waits for both daylight and a civilised hour, so a June sunrise never opens the house at five:
+
+```yaml
+alias: Shades — open in the morning
+triggers:
+  - trigger: sun
+    event: sunrise
+    offset: "00:30:00"
+  - trigger: time
+    at: "07:30:00"
+conditions:
+  - condition: time
+    after: "07:00:00"
+  - condition: state
+    entity_id: sun.sun
+    state: above_horizon
+actions:
+  - action: cover.open_cover
+    target:
+      entity_id: cover.all_shades
+mode: single
+```
+
+Following the sun through the day needs a second group — only the windows that take direct sun:
+
+1. Go to **Settings → Devices & services → Helpers → Create helper → Group → Cover group**.
+2. Add only the shades on windows that get direct sun.
+3. Name it `cover.sun_facing_shades`.
+
+This rule checks the sun's position every ten minutes, lowers those shades to 30% while the sun is in the window, and opens them again once it has moved on:
+
+```yaml
+alias: Shades — follow the sun
+triggers:
+  - trigger: time_pattern
+    minutes: "/10"
+conditions:
+  - condition: state
+    entity_id: sun.sun
+    state: above_horizon
+  - condition: state
+    entity_id: input_boolean.guest_mode
+    state: "off"
+actions:
+  - choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: sun.sun
+            attribute: azimuth
+            above: 150
+            below: 270
+          - condition: numeric_state
+            entity_id: sun.sun
+            attribute: elevation
+            above: 10
+            below: 45
+        sequence:
+          - action: cover.set_cover_position
+            target:
+              entity_id: cover.sun_facing_shades
+            data:
+              position: 30
+    default:
+      - action: cover.open_cover
+        target:
+          entity_id: cover.sun_facing_shades
+mode: single
+```
+
+> [!NOTE]
+> Two numbers are yours to set. **Azimuth** is the sun's compass bearing: `150`–`270` covers south through west, where afternoon glare lives; east-facing windows want roughly `60`–`120`, south alone `150`–`210`. **Elevation** is the sun's height: below `10°` it is behind trees and neighbours, above `45°` it is too high to reach far into a room. The rule re-asserts the daytime position every ten minutes, so a shade lowered by hand during the day comes back up — flip **Guest mode** on for the afternoon and the rule stands down, the same off-switch as the rest of the house.
+
+When a fixed clock beats the sun — school mornings, a set bedtime — swap the sun trigger for a time trigger with a weekday condition:
+
+```yaml
+alias: Shades — close at bedtime on school nights
+triggers:
+  - trigger: time
+    at: "21:30:00"
+conditions:
+  - condition: time
+    weekday:
+      - sun
+      - mon
+      - tue
+      - wed
+      - thu
+actions:
+  - action: cover.close_cover
+    target:
+      entity_id: cover.all_shades
+mode: single
+```
+
 > [!TIP]
 > Drive shades with **`cover.set_cover_position`** (0–100) rather than the vendor app — one action covers every shade, PoE or battery, in the house. If a close-all ever browns a motor out on the PoE budget, split `cover.all_shades` into two smaller groups and close them a second apart.
 
