@@ -188,12 +188,12 @@ The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — th
 ### Give the family a status page
 Your dashboard sits behind your login; a status page is the version everyone else in the household can check.
 
-1. Open **Status Pages → New Status Page**, give it a **Name** and a **Slug** (the form shows the `/status/` prefix live; a taken slug errors with "The slug is already taken.").
+1. Open **Status Pages → New Status Page**, **Name** `Kuzco's House`, **Slug** `home` (the form shows the `/status/` prefix live; a taken slug errors with "The slug is already taken.").
 2. In the editor that opens, attach each monitor with the **Add a monitor** selector.
 3. Leave the editor's **Refresh Interval** at `300` seconds.
 4. Press **Save**.
 
-Then share the address: `http://`192.168.1.57`:3001/status/`-your-slug. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
+Then share the address: `http://192.168.1.57:3001/status/home`. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
 
 > [!NOTE]
 > Slugs accept lowercase letters, digits, and dashes — starting and ending alphanumeric, no doubled dashes. The slug `default` is special — `/status` with no slug points to it. Status pages lag the live dashboard slightly: the server caches them for five minutes, and each viewer's page re-fetches on the editor's Refresh Interval (the 300-second default). For "is it down, or is it just me", that is plenty.

@@ -203,35 +203,115 @@ A search box and a clock are the two that earn their place:
 > [!NOTE]
 > You will also see a `resources` widget in the samples — skip it. It reports the CPU and memory of the Homepage container itself, not the server. The real host numbers come from the Proxmox tile widget in the expandable below.
 
-> [!DETAILS] Live stats inside the tiles
-> Any tile can grow a `widget:` block showing live numbers — at the cost of pasting a credential into `services.yaml`. The most rewarding one is Proxmox: VM and container counts plus real host CPU and RAM. It needs a dedicated **read-only API (application programming interface) token**, never the root password. In the Proxmox UI:
->
-> 1. **Datacenter → Permissions → Users → Add** — user `api`, realm Linux PAM.
-> 2. **API Tokens → Add** — user `api@pam`, Token ID `homepage`, Privilege Separation ticked. Copy the secret the dialog shows — it appears once — into Vaultwarden and the field below.
-> 3. **Permissions → Add** — the **PVEAuditor** role at path `/`, Propagate ticked — once for the user *and* once for the token.
-> 4. Extend the Proxmox tile in `services.yaml`:
->
-> ```yaml
->         widget:
->           type: proxmox
->           url: https://192.168.1.50:8006
->           username: api@pam!homepage
->           password: paste-the-token-secret
-> ```
->
-> The others, one line each:
->
-> - `homeassistant` — a long-lived access token from your Home Assistant profile page
-> - `adguard` — reuses the dashboard login (`type: adguard`, `url`, plus `username` and `password`)
-> - `truenas` — an API key (add `version: 2` on TrueNAS Scale 25.04 or newer, which this build runs)
-> - `uptimekuma` — the slug of a status page
-> - `frigate` — the admin login (`username` and `password` — this build's 8971 requires auth, and the credential-free internal port 5000 is fenced to Home Assistant and Kuma only), plus `enableRecentEvents: true` for a list of latest detections
-> - `npm` — the admin email and password
-> - `nextcloud` — the NC-Token from its **Settings → System** page
->
-> Exact recipes live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
+### Live stats inside the tiles
+Any tile can grow a `widget:` block showing live numbers, at the cost of pasting a credential into `services.yaml` — so each one below starts by minting a token, or reusing a login this collection already recorded. Every block pastes under its tile in `services.yaml`, indented exactly as shown (eight spaces before `widget:`); after each addition, save and click the refresh icon. Homepage skips certificate validation on these calls, so the self-signed HTTPS services work as written.
+
+**Proxmox** — VM and container counts plus real host CPU and RAM. It needs a dedicated **read-only API (application programming interface) token**, never the root password. In the Proxmox UI:
+
+1. **Datacenter → Permissions → Users → Add** — user `api`, realm Linux PAM.
+2. **API Tokens → Add** — user `api@pam`, Token ID `homepage`, Privilege Separation ticked. Copy the secret the dialog shows — it appears once — into Vaultwarden and the field below.
+3. **Permissions → Add** — the **PVEAuditor** role at path `/`, Propagate ticked — once for the user *and* once for the token.
+4. Under the Proxmox tile:
+
+```yaml
+        widget:
+          type: proxmox
+          url: https://192.168.1.50:8006
+          username: api@pam!homepage
+          password: paste-the-token-secret
+```
 
 > [!SECRET] homepage-proxmox-token | Proxmox API token secret (api@pam!homepage)
+
+**Home Assistant** — people home, lights on, switches on. In Home Assistant:
+
+1. Click your name at the bottom of the left sidebar to open your profile, then the **Security** tab.
+2. At the bottom, under **Long-lived access tokens**, click **Create token**, name it `homepage`, and copy the token — it is shown once and never again (it stays valid for ten years).
+3. Under the Home Assistant tile:
+
+```yaml
+        widget:
+          type: homeassistant
+          url: http://192.168.1.51:8123
+          key: paste-the-token
+```
+
+> [!SECRET] homepage-ha-token | Home Assistant long-lived access token (homepage)
+
+**TrueNAS** — load, uptime, alerts, and the pool. In the TrueNAS UI at `http://192.168.1.20`:
+
+1. Click the user icon (top right) → **My API Keys** → **Add**. Name it `homepage` and save — the key string is shown once, in the confirmation dialog.
+2. Under the TrueNAS tile:
+
+```yaml
+        widget:
+          type: truenas
+          url: http://192.168.1.20
+          version: 2
+          key: paste-the-api-key
+          enablePools: true
+```
+
+> [!SECRET] homepage-truenas-key | TrueNAS API key (homepage)
+
+**AdGuard Home** — queries, blocked, latency. No new credential: it reuses the dashboard login recorded on the AdGuard page. Under the AdGuard Home tile:
+
+```yaml
+        widget:
+          type: adguard
+          url: http://192.168.1.53
+          username: the-adguard-dashboard-username
+          password: the-adguard-dashboard-password
+```
+
+**Uptime Kuma** — up and down counts from the status page. No credential, only the status page's slug — `home`, the one the Uptime Kuma page creates. Under the Uptime Kuma tile:
+
+```yaml
+        widget:
+          type: uptimekuma
+          url: http://192.168.1.57:3001
+          slug: home
+```
+
+**Frigate** — cameras, uptime, version, and the latest detections. It reuses the Frigate admin login from the Cameras page — this build's port 8971 requires it, and the credential-free port 5000 is fenced to Home Assistant and Kuma only. Under the Frigate tile:
+
+```yaml
+        widget:
+          type: frigate
+          url: https://192.168.1.52:8971
+          username: admin
+          password: the-frigate-admin-password
+          enableRecentEvents: true
+```
+
+**Nginx Proxy Manager** — enabled, disabled, and total hosts. It reuses the admin login from the Reverse Proxy page; the `username` field takes the admin email. Under the Nginx Proxy Manager tile:
+
+```yaml
+        widget:
+          type: npm
+          url: http://192.168.1.54:81
+          username: the-npm-admin-email
+          password: the-npm-admin-password
+```
+
+**Nextcloud** — free space, active users, files, shares. Nextcloud's server-info API takes a dedicated token rather than a login. In **Proxmox → 105 (nextcloudpi) → Console**, generate one, store it in Nextcloud, and print it, in one go:
+
+```bash
+T=$(openssl rand -hex 32); sudo -E -u www-data php /var/www/nextcloud/occ config:app:set serverinfo token --value "$T"; echo "$T"
+```
+
+Copy the printed token into the field below, then under the Nextcloud tile:
+
+```yaml
+        widget:
+          type: nextcloud
+          url: https://cloud.kuzco.org
+          key: paste-the-token
+```
+
+> [!SECRET] homepage-nextcloud-token | Nextcloud server-info token (homepage)
+
+Every optional field — which numbers each widget can show, and in what order — is listed at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
 
 ### Bookmarks and the name on the door
 Two small files finish the job. `bookmarks.yaml` holds plain links — the router's admin page is the classic, the thing nobody can ever find when they need it. Empty and open it:
