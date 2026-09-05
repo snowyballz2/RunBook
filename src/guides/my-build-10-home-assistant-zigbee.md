@@ -281,8 +281,18 @@ serial:
 > [!NOTE]
 > The non-Zigbee devices on this build — the Lutron Caséta bridge, the ecobee thermostats, the cameras, and the rest — arrive the same way, under **Settings → Devices & services** after onboarding (many auto-detected in the **Discovered** section). An empty Discovered list right after setup is normal. The cameras and locks get their integrations on their own pages, and the ecobee thermostats are onboarded on the Automations page. The Lutron Caséta bridge has no page of its own, so add it now:
 >
-> 1. **Settings → Devices & services → Add integration → Lutron Caséta**.
-> 2. Press the button on the back of the bridge when prompted.
+> The bridge is reached by address, so pin it first — Home Assistant's own docs recommend a fixed address for it. In the **Lutron app**:
+>
+> 1. Go to **Settings → Advanced → Integration → Network Settings**.
+> 2. Set a static address: IP `192.168.1.61`, subnet `255.255.255.0`, gateway `192.168.1.1`, DNS `192.168.1.53`.
+> 3. Save.
+>
+> Then in Home Assistant:
+>
+> 4. **Settings → Devices & services → Add integration → Lutron Caséta**.
+> 5. Press the button on the back of the bridge when prompted.
+>
+> Already paired while the bridge sat on a DHCP address? After pinning it, if the Caséta lights go unavailable, remove the integration and add it again — the bridge remembers every device, and the entities come back under the same IDs, so the automations keep working.
 >
 > The lights surface as entities for the scenes and scripts later in the build. **Adding Caséta switches later never means re-adding the integration:** pair the new switch in the *Lutron app* (the bridge owns the device list), then **Settings → Devices & services → Lutron Caséta → ⋮ → Reload** in Home Assistant and the new entities appear. That is the pattern for every hub-based integration — pair at the hub, reload in HA; only hub-less devices (the Zigbee ones through Z2M, the Matter locks) get paired inside Home Assistant itself.
 

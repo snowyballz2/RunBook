@@ -67,6 +67,7 @@ const TAILNET: Row[] = [
 
 const DEVICES: Row[] = [
   { ip: "192.168.1.1", name: "Fios router", note: "gateway and DHCP" },
+  { ip: "192.168.1.61", name: "Lutron Caséta Pro bridge", note: "static set in the Lutron app" },
   { ip: "192.168.1.70", name: "Reolink Video Doorbell", credKey: "doorbell-ip", note: "Wi-Fi" },
   { ip: "192.168.1.71", name: "Reolink RLC-510WA", credKey: "camera-ip", note: "Wi-Fi, 2nd indoor" },
   { ip: "192.168.1.72", name: "shed_turret", note: "EmpireTech PoE" },
