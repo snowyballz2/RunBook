@@ -36,13 +36,27 @@ Both were done on the Install Proxmox page.
 ### Get the TrueNAS installer into Proxmox storage
 TrueNAS ships as a standard installer **ISO**, and the server fetches it itself — no upload from a laptop:
 
-1. On the official download page ([truenas.com/download-truenas-community-edition](https://www.truenas.com/download-truenas-community-edition/)), **right-click the stable release's Download button → Copy Link Address**. The link you want ends in **`.iso`** — the download page's own address is a web page, not the file.
-2. In Proxmox's left tree, click the **local** storage under your node, then **ISO Images → Download from URL**.
-3. Paste the `.iso` link and click **Query URL**. The **File name** field fills itself in and the size shows a couple of gigabytes — if it stays empty and **MIME type** reads `text/html`, you pasted the page rather than the file.
-4. Click **Download** and wait for `TASK OK`.
+1. Go to the official download page ([truenas.com/download-truenas-community-edition](https://www.truenas.com/download-truenas-community-edition/)).
+2. Right-click the stable release's **Download** button.
+3. Click **Copy Link Address**.
+4. In Proxmox's left tree, click the **local** storage under your node.
+5. Click **ISO Images**.
+6. Click **Download from URL**.
+7. Paste the `.iso` link.
+8. Click **Query URL**.
+9. Click **Download**.
+10. Wait for `TASK OK`.
+
+The link you want ends in `.iso` — the download page's own address is a web page, not the file. The **File name** field fills itself in and the size shows a couple of gigabytes once the URL resolves; if it stays empty and **MIME type** reads `text/html`, you pasted the page rather than the file.
 
 > [!TIP]
-> The download page lists a **SHA256** checksum next to the ISO. In the **Download from URL** dialog, click **Advanced** to reveal the **Checksum** and **Hash algorithm** fields — paste the checksum in, pick `SHA256`, and Proxmox confirms the file arrived intact before you boot it. Same habit you used for the Proxmox installer.
+> The download page lists a **SHA256** checksum next to the ISO. To verify it:
+>
+> 1. In the **Download from URL** dialog, click **Advanced**.
+> 2. Paste the checksum into **Checksum**.
+> 3. Set **Hash algorithm** to `SHA256`.
+>
+> Proxmox confirms the file arrived intact before you boot it — same habit you used for the Proxmox installer.
 
 > [!NOTE]
 > No Home Assistant OS media to fetch here — it is built on the Home Assistant & Zigbee2MQTT page (it uses a disk image, not the wizard below). The wizard and install steps that follow are the TrueNAS VM only.
@@ -68,27 +82,33 @@ Click **Create VM** (top right) and step through the tabs with these values:
 
 Leave the rest, including the BIOS choice, at the defaults.
 
-Confirm — and do **not** add the HBA on this page. The TrueNAS install needs only the 32 GB boot disk; the data controller is attached later.
+Click **Confirm** to create the VM.
+
+Do not add the HBA on this page — the TrueNAS install needs only the 32 GB boot disk; the data controller is attached later.
 
 > [!DETAILS] Why the HBA is not attached here
 > The 9300-8i is still claimed by the host's SAS driver at this point — it has not been bound to vfio-pci yet, so adding it as a PCI device now would either fail to pass through or pull the host's driver out from under it. The binding, the **Hardware → Add → PCI Device → All Functions** step, and the power-cycle all happen on the **GPU Sharing & HBA Passthrough page**. The whole controller is passed through (rather than individual disks) so TrueNAS sees the **two** mirror IronWolf disks as raw bare-metal drives with genuine SMART and real serials — no per-disk `serial=` plumbing. Those disks appear, and the mirrored pool is built, on the **TrueNAS Storage page**, after the passthrough is done. (The third IronWolf is Frigate's footage drive on a motherboard SATA port, so it stays with the host and never appears in TrueNAS.)
 
 ### Install from the console
 1. Select the VM.
-2. Click **Start**, then **Console**.
-3. Run the TrueNAS installer exactly as you would on physical hardware.
+2. Click **Start**.
+3. Click **Console**.
+4. Run the TrueNAS installer exactly as you would on physical hardware.
 
 It installs to the **32 GB boot disk** (the only disk it can see right now, which is correct).
 
 > [!DETAILS] Every prompt the installer shows, in order
 > 1. **Boot menu** — let it time out, or press Enter on the default entry.
 > 2. **Console setup menu** — choose **Install/Upgrade**.
-> 3. **Destination media** — one ~32 GB QEMU disk is listed (the boot disk from the wizard). Press **spacebar** to tick it, then OK.
-> 4. **"This erases everything on the disk" warning** — proceed; the disk is empty.
-> 5. **Authentication method** — pick **Administrative user (`truenas_admin`)** and set the password. This is the web UI login — the two credential fields below record exactly this pair. Do not pick the root or configure-later options; the rest of this build assumes `truenas_admin`.
-> 6. **"Allow EFI boot?"** — answer **No**. The wording feels backwards because it is written for physical hardware ("Yes for systems with newer components such as NVMe") — but what matters is the *VM's virtual firmware*, not the host's parts, and this VM's SeaBIOS default is exactly the "legacy BIOS boot workaround" case. Answering Yes on a SeaBIOS VM is the classic route to a "no bootable device" error after the reboot.
-> 7. **Installation succeeded** — OK, then **Reboot System** from the menu. The VM's boot order tries the disk before the ISO, so the installer will not hijack the reboot; the ISO gets ejected in a moment.
-> 8. After the reboot, the console shows the **Console Setup menu** with the web UI address at the top — a temporary DHCP address for now; the step below gives it its permanent one.
+> 3. **Destination media** — one ~32 GB QEMU disk is listed (the boot disk from the wizard). Press **spacebar** to tick it.
+> 4. Click **OK**.
+> 5. **"This erases everything on the disk" warning** — proceed; the disk is empty.
+> 6. **Authentication method** — pick **Administrative user (`truenas_admin`)**.
+> 7. Set the password. This is the web UI login — the two credential fields below record exactly this pair. Do not pick the root or configure-later options; the rest of this build assumes `truenas_admin`.
+> 8. **"Allow EFI boot?"** — answer **No**. The wording feels backwards because it is written for physical hardware ("Yes for systems with newer components such as NVMe") — but what matters is the *VM's virtual firmware*, not the host's parts, and this VM's SeaBIOS default is exactly the "legacy BIOS boot workaround" case. Answering Yes on a SeaBIOS VM is the classic route to a "no bootable device" error after the reboot.
+> 9. **Installation succeeded** — click **OK**.
+> 10. Choose **Reboot System** from the menu. The VM's boot order tries the disk before the ISO, so the installer will not hijack the reboot; the ISO gets ejected in a moment.
+> 11. After the reboot, the console shows the **Console Setup menu** with the web UI address at the top — a temporary DHCP address for now; the step below gives it its permanent one.
 
 > [!INPUT] truenas-ip | TrueNAS VM IP | 192.168.1.20
 > The permanent address, set **statically inside TrueNAS** in the next step — it lives in the `.2–.99` static zone carved out on the Start Here page, alongside the host at `.50`. The first boot comes up on a temporary DHCP address from the console screen; that one is just for reaching the web UI once.
@@ -110,20 +130,26 @@ Otherwise it tries to boot the installer at every restart.
 ### Give it its permanent address
 The storage server is the one machine half this build leans on by address — backups, shares, Frigate's footage path — so it gets a device-set static in the protected zone, not a DHCP lease.
 
-1. Browse to the temporary address the console showed (`http://` that IP) and log in as `truenas_admin`.
-2. Open **Network**, then on the **Interfaces** card click the interface itself (the VM's single virtual NIC, `enp…`) to edit it.
-3. Untick **DHCP**.
-4. Add **`192.168.1.20/24`** under **Aliases**.
-5. Save.
-6. Park a second browser tab at `http://192.168.1.20` — the rollback countdown starts the moment you click **Test Changes** next.
-7. Click **Test Changes**.
-8. Jump to the parked tab and reload until the login appears.
-9. Log in, then click **Save Changes** — all inside the countdown.
-10. Still under **Network**, open **Global Configuration** and set the **default gateway** (`192.168.1.1`) and a **DNS nameserver** (the router, or `1.1.1.1`).
-11. In the same dialog, change **Domain** from `local` to `home.arpa`.
+1. Browse to the temporary address the console showed (`http://` that IP).
+2. Log in as `truenas_admin`.
+3. Open **Network**.
+4. On the **Interfaces** card, click the interface itself (the VM's single virtual NIC, `enp…`) to edit it.
+5. Untick **DHCP**.
+6. Add **`192.168.1.20/24`** under **Aliases**.
+7. Save.
+8. Park a second browser tab at `http://192.168.1.20` — the rollback countdown starts the moment you click **Test Changes** next.
+9. Click **Test Changes**.
+10. Jump to the parked tab.
+11. Reload until the login appears.
+12. Log in.
+13. Click **Save Changes** — still inside the countdown.
+14. Still under **Network**, open **Global Configuration**.
+15. Set the **default gateway** to `192.168.1.1`.
+16. Set a **DNS nameserver** (the router, or `1.1.1.1`).
+17. In the same dialog, change **Domain** from `local` to `home.arpa`.
 
 > [!TIP]
-> Step 2 means the interface itself, not the **Static Routes** card beside it — its Add button looks inviting, but routes are for reaching *other* networks, and an entry there does not give this machine an address.
+> Step 4 means the interface itself, not the **Static Routes** card beside it — its Add button looks inviting, but routes are for reaching *other* networks, and an entry there does not give this machine an address.
 
 > [!WARNING]
 > Confirming **Test Changes** is a race you have to win: the moment you click, the old tab's address vanishes and it can never reconnect, so the second tab must already be parked first. Lose the race and a "Network Reconnection Issue" dialog announces the rollback; nothing is broken, just try again.
@@ -134,8 +160,9 @@ The storage server is the one machine half this build leans on by address — ba
 > 1. Pick the interface.
 > 2. Remove current settings when asked (a momentary blip).
 > 3. Answer DHCP **no**.
-> 4. Answer IPv4 **yes** and enter `192.168.1.20/24`.
-> 5. Answer IPv6 **no**.
+> 4. Answer IPv4 **yes**.
+> 5. Enter `192.168.1.20/24`.
+> 6. Answer IPv6 **no**.
 >
 > The menu header updates to `.20` and the job is done.
 
@@ -152,12 +179,26 @@ The second VM — **Home Assistant OS**, the brain of the house — is built on 
 > The **Qemu Agent** is built into both these appliance OSes — Home Assistant OS and TrueNAS — so unlike a plain Debian guest you never `apt-get` it. You only flip the VM-side half on: tick the VM's **Qemu Agent** option (in the Create VM wizard, or later under **Hardware / Options**). With it on, Proxmox can read the VM's IP, freeze the filesystem during backups, and — important later — shut the VM down cleanly when the battery backup orders the host down.
 
 ### Start at boot
-An appliance should come back on its own after a power cut or host reboot. Two ways, same result. In the web UI: select the **truenas** VM in the left tree and open its **Options** tab:
+An appliance should come back on its own after a power cut or host reboot. Two ways, same result.
 
-- **Start at boot** → double-click, tick, **OK**
-- **Protection** → double-click, tick, **OK** — this VM carries the storage pool, and the flag blocks deleting it until deliberately unticked
+In the web UI:
 
-Or set both at once from the **host shell** — **Datacenter → the `pve` node → Shell**, the same shell the post-install script ran in:
+1. Select the **truenas** VM in the left tree.
+2. Open its **Options** tab.
+3. Double-click **Start at boot**.
+4. Tick it.
+5. Click **OK**.
+6. Double-click **Protection**.
+7. Tick it.
+8. Click **OK**.
+
+Protection blocks deleting this VM until deliberately unticked — it carries the storage pool.
+
+Or set both at once from the host shell:
+
+1. Click **Datacenter**.
+2. Click the **`pve`** node.
+3. Click **Shell** — the same shell the post-install script ran in.
 
 ```bash
 qm set 100 -onboot 1 -protection 1
@@ -193,11 +234,17 @@ That is all this page sets. The two guests that care about ordering take the nex
 Snapshots are instant and nearly free. Before an OS upgrade or a config experiment on either VM:
 
 1. Select it in the left tree.
-2. Open **Snapshots → Take Snapshot**.
-3. Name it for *what you're about to do* (`before-ha-core-upgrade`), not the date.
-4. For a running VM, tick **Include RAM** so a rollback returns it running exactly where it was.
+2. Open **Snapshots**.
+3. Click **Take Snapshot**.
+4. Name it for *what you're about to do* (`before-ha-core-upgrade`), not the date.
+5. For a running VM, tick **Include RAM** so a rollback returns it running exactly where it was.
 
-To undo, select the snapshot and click **Rollback** — everything since is discarded.
+To undo:
+
+1. Select the snapshot.
+2. Click **Rollback**.
+
+Everything since is discarded.
 
 > [!WARNING]
 > A snapshot is not a backup — it lives on the same disk as the VM. The off-box safety net is the Proxmox vzdump job that lands on the TrueNAS share (on the mirror, not the same NVMe as the VM); this build configures that once the mirror exists. Those guest archives stay on-site on the NAS — only the irreplaceable data gets pushed offsite later. Snapshots are for fast undo, not disaster recovery.
@@ -205,7 +252,12 @@ To undo, select the snapshot and click **Rollback** — everything since is disc
 ### Grow a disk later
 When a VM's disk fills, adding space is a two-part job and Proxmox only does the first part. From the host, grow the virtual disk; then, inside the guest, extend the partition and filesystem into the new space. Shrinking isn't supported, so size changes are one-way.
 
-Check the disk name (`scsi0`, `virtio0`, …) in the VM's Hardware tab first, and swap in the VM's ID — this is a someday command, so both vary:
+Before running it:
+
+1. Check the disk name (`scsi0`, `virtio0`, …) in the VM's **Hardware** tab.
+2. Note the VM's ID.
+
+Both vary, so this is a someday command:
 
 ```bash
 qm disk resize <vmid> scsi0 +16G
@@ -224,6 +276,8 @@ Both VMs make the guest-side half easy on this build. For TrueNAS the host-side 
 >
 > 1. Run `lsblk` to see which layout the guest uses.
 > 2. Grow the partition with `parted` or `fdisk`.
-> 3. Grow the filesystem: `resize2fs` for ext4, or `pvresize` then `lvresize --resizefs` for LVM.
+> 3. Grow the filesystem with `resize2fs` (ext4).
+> 4. For LVM, run `pvresize`.
+> 5. Run `lvresize --resizefs`.
 >
 > This build has no such guests, so you should not need these by hand — but they are the fallback if a disk shows the new size at the host but not inside.

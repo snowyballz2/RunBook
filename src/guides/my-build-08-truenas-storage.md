@@ -52,13 +52,17 @@ So this page picks up after both of those: it confirms the raw disks arrived, th
 > VFIO is for the HBA only. The GTX 1080 Ti is *shared* across the service containers from the host driver and must never be VFIO-bound or handed to a VM. Keep the two policies straight: the HBA locks to this one VM; the GPU never locks to anyone.
 
 ### Confirm the raw disks appear
-1. Boot the VM, then open the **TrueNAS web UI at `192.168.1.20`** — a different site from the Proxmox interface you have been working in, which cannot see these disks at all.
-2. The Disks screen there is not a left-nav entry, so click **Storage** in the left nav to open the Storage Dashboard, then the **Disks** button on that page (the *Disk Health* widget's **View Disks** link goes to the same place) — or skip the hunt entirely: `https://192.168.1.20/ui/storage/disks`.
+1. Boot the VM.
+2. Open the TrueNAS web UI at `192.168.1.20` — a different site from the Proxmox interface you have been working in, which cannot see these disks at all.
+3. Click **Storage** in the left nav to open the Storage Dashboard.
+4. Click the **Disks** button on that page (the *Disk Health* widget's **View Disks** link goes to the same place) — or skip the hunt entirely: `https://192.168.1.20/ui/storage/disks`.
 
 You should see both **mirror Seagate IronWolf ST4000VN006 4 TB** drives by their real model and serial, each reporting genuine SMART — exactly as if TrueNAS were running on bare metal. The third (footage) IronWolf sits on a motherboard SATA port with the host, so it does not — and should not — appear here.
 
 1. While the mirror serials are on screen, record each one below — with **which physical tray each one sits in** (the drives are identical at a glance, and the dead-disk drill on the next page keys on serial).
-2. For the footage disk's serial, switch to the Proxmox web UI, click the **`pve`** node, then **Disks** in its menu, and record it below too.
+2. For the footage disk's serial, switch to the Proxmox web UI.
+3. Click the **`pve`** node.
+4. Click **Disks** in its menu, and record it below too.
 
 > [!INPUT] mirror-a-serial | Mirror disk A — serial + tray position
 
@@ -87,17 +91,35 @@ You should see both **mirror Seagate IronWolf ST4000VN006 4 TB** drives by their
 ## Build the pool
 
 ### Mirror two of the IronWolf disks
-A pool is ZFS's big bucket: physical disks fused into one storage unit. In the TrueNAS web interface go to **Storage** and click **Create Pool** to open the wizard:
+A pool is ZFS's big bucket: physical disks fused into one storage unit.
+
+In the TrueNAS web interface:
+
+1. Go to **Storage**.
+2. Click **Create Pool** to open the wizard.
+
+Set:
 
 - **Name** → `tank` (lowercase)
 - **Layout** → **Mirror**
 - **Disks** → both IronWolfs — via **Manual Disk Selection**, picking the two by their serials; or under **Automated Disk Selection**: **Disk Size** → **4 TB**, **Width** → **2**
-- **Review** → confirm the screen lists exactly two disks, then **Create Pool**
+
+On the **Review** screen:
+
+1. Confirm it lists exactly two disks.
+2. Click **Create Pool**.
 
 The wizard can only offer the two IronWolfs on the HBA — the footage disk is invisible to this VM by design, so it can never be grabbed by mistake.
 
 > [!WARNING]
-> Confirm the **Review** screen lists exactly **two** disks before you click **Create Pool**. If a third ST4000VN006 is ever offered here, stop — that means Frigate's footage drive ended up on the HBA instead of a motherboard SATA port, and it must stay out of `tank`. Power down and recable it before building the pool.
+> Confirm the **Review** screen lists exactly **two** disks before you click **Create Pool**.
+>
+> If a third ST4000VN006 is ever offered here, stop — that means Frigate's footage drive ended up on the HBA instead of a motherboard SATA port, and it must stay out of `tank`:
+>
+> 1. Power down.
+> 2. Recable it.
+>
+> Then build the pool.
 
 With a mirror, one drive can die and the data survives; usable space is one disk's worth — roughly **4 TB**. The second disk holds the live copy.
 
@@ -108,13 +130,35 @@ With a mirror, one drive can die and the data survives; usable space is one disk
 The **third** ST4000VN006 is **not** part of `tank`. It is the dedicated **Frigate footage drive** — camera recordings are bulk, replaceable, write-heavy data that has no business churning a mirror or eating snapshot space. That disk lives on a motherboard SATA port and is mounted directly into the Frigate container during this collection's camera work, so it does not belong to a TrueNAS pool at all. It gets **no redundancy and no offsite, by choice.**
 
 ### Add a dataset with the SMB preset
-Datasets are the folders-with-superpowers inside a pool — each carries its own settings, and snapshot tasks target them individually. Still in the TrueNAS UI, go to **Datasets**, select the `tank` root dataset, click **Add Dataset**, and create:
+Datasets are the folders-with-superpowers inside a pool — each carries its own settings, and snapshot tasks target them individually.
 
-- **`files`** — general household storage. Set **Dataset Preset → SMB (Server Message Block)** so it gets case-insensitive names and NFSv4 ACLs, the permission style SMB expects.
-- **`backups`** — a separate dataset (also SMB preset) so the build's safety copies stay out of your file snapshots. **Re-select the `tank` root before clicking Add Dataset for this one.**
+Still in the TrueNAS UI:
+
+1. Go to **Datasets**.
+2. Select the `tank` root dataset.
+3. Click **Add Dataset**.
+4. Name it **`files`**.
+5. Set **Dataset Preset** to **SMB (Server Message Block)**.
+
+`files` is general household storage; the SMB preset gives it case-insensitive names and NFSv4 ACLs, the permission style SMB expects.
+
+Create a second dataset the same way:
+
+6. Re-select the `tank` root dataset.
+7. Click **Add Dataset**.
+8. Name it **`backups`**.
+9. Set **Dataset Preset** to **SMB** again.
+
+`backups` is a separate dataset so the build's safety copies stay out of your file snapshots.
 
 > [!WARNING]
-> After creating `files`, the selection stays on `files` — Add Dataset then nests the new one *inside* it as `tank/files/backups` unless you re-select `tank` first. If that happens: select the nested dataset, delete it (the dialog has you type its full path to confirm — it is empty, so this is safe), then create it again from the root.
+> After creating `files`, the selection stays on `files` — **Add Dataset** then nests the new one *inside* it as `tank/files/backups` unless you re-select `tank` first.
+>
+> If that happens:
+>
+> 1. Select the nested dataset.
+> 2. Delete it (the dialog has you type its full path to confirm — it is empty, so this is safe).
+> 3. Create it again from the root.
 
 > [!NOTE]
 > The SMB preset tunes a dataset for network sharing — case-insensitive filenames and NFSv4 ACLs. Both datasets here get exposed over the network (the `backups` dataset receives the Proxmox vzdump archives over SMB), so SMB is the right choice for both. If you ever add a dataset that stays internal and is never shared, pick the **Generic** preset instead.
@@ -132,7 +176,13 @@ Datasets are the folders-with-superpowers inside a pool — each carries its own
 ### Create the SMB user
 SMB — served by Samba — is the network-drive protocol Macs speak natively, and TrueNAS requires at least one local SMB user before it will create any share. You cannot connect as root or a built-in account.
 
-In the TrueNAS UI, go to **Credentials → Users → Add**:
+In the TrueNAS UI:
+
+1. Go to **Credentials**.
+2. Click **Users**.
+3. Click **Add**.
+
+Set:
 
 - **Username** and **Password** — a strong password for share logins.
 - **Allow Access** → leave **SMB Access** ticked and everything else off. This account exists purely for share logins, so it deliberately gets no web UI, shell, or SSH access (`truenas_admin` covers administration).
@@ -150,20 +200,36 @@ Save.
 > Three accounts now exist, and the ladder is deliberate: **root** (Linux's built-in superuser — present because the OS needs it, login-disabled on modern TrueNAS, never used), **`truenas_admin`** (the administrator — web UI and `sudo`, used only to run the NAS), and this **SMB user** (shares only — no UI, no shell). The point of the separation: the one password scattered across household devices can open the file shares and *nothing else*; the password that can reconfigure the NAS never leaves the admin's hands.
 
 ### Confirm the shares the presets created
-There is nothing to create here — **the SMB preset already made each dataset's share** when the dataset was created (that is also why TrueNAS asked to start the SMB service back then). So this step is a check, not a task: in the TrueNAS UI, go to **Shares** and confirm the **Windows (SMB) Shares** widget lists **`files`** and **`backups`**, both **Enabled**, with the widget's badge reading **RUNNING**. The `files` share is everyday household storage; `backups` is where the Proxmox backups land later in the build.
+There is nothing to create here — **the SMB preset already made each dataset's share** when the dataset was created (that is also why TrueNAS asked to start the SMB service back then). So this step is a check, not a task.
 
-Only if a share is missing — a dataset created without the preset — does the **Add** button come out: leave **Purpose** at **Default Share**, point it at the dataset, and accept any prompt to enable the SMB service.
+In the TrueNAS UI:
+
+1. Go to **Shares**.
+2. Confirm the **Windows (SMB) Shares** widget lists **`files`** and **`backups`**, both **Enabled**, with the widget's badge reading **RUNNING**.
+
+The `files` share is everyday household storage; `backups` is where the Proxmox backups land later in the build.
+
+Only if a share is missing — a dataset created without the preset — does the **Add** button come out:
+
+1. Leave **Purpose** at **Default Share**.
+2. Point it at the dataset.
+3. Accept any prompt to enable the SMB service.
 
 ### Connect from every computer
 The share answers at the VM's address from both sides of the house — the Macs and the Windows PC alike, same SMB user either way.
 
-**On a Mac**: in Finder, choose **Go → Connect to Server**, enter this, and give the SMB credentials when asked:
+**On a Mac**, in Finder, the address to connect to is:
 
 ```
 smb://192.168.1.20
 ```
 
-**On the Windows PC**: map each share to its own drive letter — **This PC → Map network drive**, and give the **full share path**, not the bare address:
+1. Open the **Go** menu.
+2. Click **Connect to Server**.
+3. Enter the address above.
+4. Give the SMB credentials when asked.
+
+**On the Windows PC**, map each share to its own drive letter. The full share path is:
 
 ```
 \\192.168.1.20\files
@@ -171,9 +237,13 @@ smb://192.168.1.20
 
 `\\192.168.1.20` alone is a *server*, not something Windows can mount; a drive letter must point at one share.
 
-1. Pick a letter from the far end of the alphabet — **`Z:`** is the convention.
-2. Tick **Reconnect at sign-in** *and* **Connect using different credentials**.
-3. Click **Finish**.
+1. Open **This PC**.
+2. Click **Map network drive**.
+3. Enter the full share path above.
+4. Pick a letter from the far end of the alphabet — **`Z:`** is the convention.
+5. Tick **Reconnect at sign-in**.
+6. Tick **Connect using different credentials**.
+7. Click **Finish**.
 
 > [!WARNING]
 > Do not give the mapping a letter anywhere near the local disks (`C:` through `H:`). Windows lets a network drive take a letter a local volume already owns, and after the next reboot that local drive comes back **with no letter at all** — it disappears from File Explorer while remaining perfectly healthy — and the mapping fails too, because the letter is contested. One collision, two mysteries.
@@ -181,33 +251,63 @@ smb://192.168.1.20
 > [!DETAILS] If it has already happened
 > 1. Open **Disk Management** (`Win+X → Disk Management`).
 > 2. Find the volume listed as **Healthy** with no letter.
-> 3. Right-click it → **Change Drive Letter and Paths → Add**.
-> 4. Give it its letter back.
-> 5. Re-map the share at `Z:`.
+> 3. Right-click it.
+> 4. Click **Change Drive Letter and Paths**.
+> 5. Click **Add**.
+> 6. Give it its letter back.
+> 7. Re-map the share at `Z:`.
 
 Map **`files`** only.
 
 > [!WARNING]
 > The `backups` share is for machines — the Proxmox host and the Home Assistant VM mount it themselves to write their archives — and a permanently mapped drive letter full of backups on a daily-driver PC is exactly what ransomware enumerates and encrypts. Proxmox also manages its own retention, so hand-deleting archives to reclaim space corrupts its bookkeeping; change the retention setting instead, and check backups ran from **Datacenter → Backup** rather than by browsing files. If you ever need a file out of an archive, map it for that one job and disconnect after.
 
-Open `files` on each machine and confirm you can drop a file in.
+1. Open **`files`** on each machine.
+2. Confirm you can drop a file in.
 
 > [!WARNING]
-> On the credential prompt Windows shows next, click **More choices → Use a different account** — otherwise it aims your **Microsoft account** at TrueNAS (a sign-in/certificate picker appears) and the password is rejected, because the NAS has never heard of that account. Enter the plain SMB username with no prefix; if Windows keeps prepending the PC's name, force the local scope by typing `192.168.1.20\<smb-user>` instead.
+> On the credential prompt Windows shows next, click **More choices**.
+>
+> Click **Use a different account** — otherwise it aims your **Microsoft account** at TrueNAS (a sign-in/certificate picker appears) and the password is rejected, because the NAS has never heard of that account.
+>
+> Enter the plain SMB username with no prefix. If Windows keeps prepending the PC's name, force the local scope by typing `192.168.1.20\<smb-user>` instead.
 
 > [!DETAILS] If it fails once and keeps failing
 > Windows caches the bad attempt and replays it forever:
 >
-> 1. Open **Credential Manager → Windows Credentials**.
-> 2. Delete every `192.168.1.20` entry.
-> 3. Run `net use * /delete` in Command Prompt.
-> 4. Map again.
+> 1. Open **Credential Manager**.
+> 2. Click **Windows Credentials**.
+> 3. Delete every `192.168.1.20` entry.
+> 4. Run this in Command Prompt:
+>
+> ```
+> net use * /delete
+> ```
+>
+> Then map the share again.
 
 > [!TIP]
-> If the drive shows a red X after every reboot but connects the moment you click it, the mapping is losing a race at login rather than failing outright. Two usual causes: a VPN client that auto-connects at startup and blocks the LAN before the mapping restores (the same trap as reaching the server from a VPN'd machine — turn on its allow-LAN setting), or credentials that were never persisted. For the latter, pre-store them: **Credential Manager → Windows Credentials → Add a Windows credential**, address `192.168.1.20`, with the SMB username and password.
+> If the drive shows a red X after every reboot but connects the moment you click it, the mapping is losing a race at login rather than failing outright. Two usual causes: a VPN client that auto-connects at startup and blocks the LAN before the mapping restores (the same trap as reaching the server from a VPN'd machine — turn on its allow-LAN setting), or credentials that were never persisted.
+>
+> For the latter, pre-store them:
+>
+> 1. Open **Credential Manager**.
+> 2. Click **Windows Credentials**.
+> 3. Click **Add a Windows credential**.
+> 4. Enter the address `192.168.1.20`.
+> 5. Enter the SMB username and password.
 
 > [!TIP]
-> Keep the Mac mount too: with the share mounted, open **System Settings → General → Login Items & Extensions → Open at Login**, click **+**, and pick the mounted `files` share — macOS re-mounts it at every login.
+> Keep the Mac mount too: with the share mounted:
+>
+> 1. Open **System Settings**.
+> 2. Click **General**.
+> 3. Click **Login Items & Extensions**.
+> 4. Click **Open at Login**.
+> 5. Click **+**.
+> 6. Pick the mounted `files` share.
+>
+> macOS re-mounts it at every login.
 
 > [!NOTE]
 > The `backups` share you just created is the landing zone for the build's safety copies — the Proxmox vzdump archives and the host-config backup point at it once the storage is up. Snapshots, scrubs, disk-health alerts, and the offsite copy to Backblaze B2 get their own steps later in this collection.

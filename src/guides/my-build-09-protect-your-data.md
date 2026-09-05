@@ -9,7 +9,14 @@ accent: azure
 ## Schedule the safety nets
 
 ### Schedule snapshots
-The two IronWolf drives in the ZFS (Zettabyte File System) mirror hold the data the household cares about; this page makes it hard to lose. Start with the cheapest protection ZFS offers. In the TrueNAS web UI, go to **Data Protection** and click **Add** on the **Periodic Snapshot Tasks** widget:
+The two IronWolf drives in the ZFS (Zettabyte File System) mirror hold the data the household cares about; this page makes it hard to lose. Start with the cheapest protection ZFS offers.
+
+In the TrueNAS web UI:
+
+1. Go to **Data Protection**.
+2. Click **Add** on the **Periodic Snapshot Tasks** widget.
+
+Set:
 
 - **Dataset** → `tank/files` — the `backups` dataset holds the build's own safety copies and stays out of these snapshots, as planned when you created it
 - **Schedule** and **Snapshot Lifetime** → one of the two pairs below
@@ -86,9 +93,10 @@ That prints one `ata-ST4000VN006-…_<serial>` name per drive (ignore any `-part
 
 In the TrueNAS UI:
 
-1. Go to **System → Advanced Settings**.
-2. Find the **Cron Jobs** widget.
-3. Click **Add** three times — one job per block below.
+1. Go to **System**.
+2. Click **Advanced Settings**.
+3. Find the **Cron Jobs** widget.
+4. Click **Add** three times — one job per block below.
 
 Every job takes the same answers:
 
@@ -129,9 +137,14 @@ A NAS (network-attached storage) that notices a dying IronWolf but has no way to
 > [!NOTE]
 > The Email dialog enforces one prerequisite: the admin account needs an address on file, or it refuses with *"No e-mail address is set for root user or any other local administrator."*
 
-1. In the TrueNAS UI, go to **Credentials → Users** and edit **`truenas_admin`**.
-2. Fill in its **Email** field with the inbox you actually read, and save.
-3. Go to **System → General Settings** and click **Settings** on the **Email** widget:
+1. In the TrueNAS UI, go to **Credentials**.
+2. Click **Users**.
+3. Edit **`truenas_admin`**.
+4. Fill in its **Email** field with the inbox you actually read.
+5. Save.
+6. Go to **System**.
+7. Click **General Settings**.
+8. Click **Settings** on the **Email** widget:
 
 - **Send Mail Method** → **SMTP** (Simple Mail Transfer Protocol) — the general path for this mostly-iCloud household; **GMail OAuth** / **Outlook OAuth** spare app-password wrangling if you have one of those accounts
 - **Email Recipients** → the inbox you actually read
@@ -149,7 +162,13 @@ With email working, TrueNAS also sends a nightly status email that includes disk
 > - **Password** → for an iCloud sender, an app-specific password generated at appleid.apple.com — the account password will not authenticate
 
 ### Aim the alerts at your inbox — and test them
-In the TrueNAS UI, go to **System → Alert Settings**. The **E-Mail** entry is the one that matters — open it with the pencil/**Edit**:
+In the TrueNAS UI:
+
+1. Go to **System**.
+2. Click **Alert Settings**.
+3. Open the **E-Mail** entry with the pencil/**Edit** icon — the one that matters.
+
+Set:
 
 - **Email Address** → the recipient
 - **Level** → keep the default **Warning** — alerts at that level and above are sent
@@ -173,8 +192,9 @@ Snapshots are only as good as your ability to use one under pressure, so rehears
 
 **Server-side, in the TrueNAS UI:**
 
-1. Go to **Datasets** and select the dataset.
-2. Click **Manage Snapshots** on its **Data Protection** widget — that screen lists, holds, clones, and rolls back snapshots.
+1. Go to **Datasets**.
+2. Select the dataset.
+3. Click **Manage Snapshots** on its **Data Protection** widget — that screen lists, holds, clones, and rolls back snapshots.
 
 **Straight from a Mac, to grab a single file:**
 
@@ -186,10 +206,25 @@ Snapshots are only as good as your ability to use one under pressure, so rehears
 > [!SECRET] smb-password | SMB share password
 
 > [!TIP]
-> Rehearse on a sacrificial file today: drop a test file on the share, wait out one snapshot interval, delete it, and bring it back. Recovery you have rehearsed once is calm; recovery you are attempting for the first time mid-disaster is not.
+> Rehearse on a sacrificial file today:
+>
+> 1. Drop a test file on the share.
+> 2. Wait out one snapshot interval.
+> 3. Delete it.
+> 4. Bring it back.
+>
+> Recovery you have rehearsed once is calm; recovery you are attempting for the first time mid-disaster is not.
 
 > [!DETAILS] Rolling back — and why cloning is safer
-> **Rollback** rewinds the entire dataset to the snapshot, and TrueNAS's own dialog warns it destroys newer data and can cause permanent loss. Unless the whole dataset is wrecked, use **Clone to New Dataset** instead: the clone appears with the snapshot's contents, you copy out what you need, then delete the clone. Nothing on disk is destroyed — it is the flow the official docs recommend.
+> **Rollback** rewinds the entire dataset to the snapshot, and TrueNAS's own dialog warns it destroys newer data and can cause permanent loss.
+>
+> Unless the whole dataset is wrecked, use **Clone to New Dataset** instead:
+>
+> 1. Clone to the new dataset — it appears with the snapshot's contents.
+> 2. Copy out what you need.
+> 3. Delete the clone.
+>
+> Nothing on disk is destroyed — it is the flow the official docs recommend.
 
 ### Rehearse the dead-disk drill
 When a mirror IronWolf fails, the pool drops to **Degraded** — the dashboard pool widget shows it, the alert you just tested emails you, and the share keeps answering from the surviving drive. The serial-to-tray map captured on the TrueNAS Storage page is the drill's anchor:
@@ -201,25 +236,27 @@ When a mirror IronWolf fails, the pool drops to **Degraded** — the dashboard p
 The drill:
 
 1. On the **Storage** dashboard, click **View VDEVs** on the pool's VDEVs widget.
-2. Expand the vdev (the pool's disk group) and click the failed disk (often shown as **REMOVED**).
-3. Click **Offline** on its **ZFS Info** widget.
-4. **Verify the serial before you pull anything** — note the failed disk's serial from its **Disk Info** widget (or the alert email).
-5. From the **TrueNAS shell** (**System → Shell**), confirm `lsblk -o +MODEL,SERIAL` maps that serial to the device you are about to remove.
-6. Shut the TrueNAS VM down.
-7. Swap the physical drive.
-8. Boot the VM back up.
-9. Back in TrueNAS, click **Replace** on the disk's **Disk Info** widget.
-10. Pick the new drive from **Member Disk** and click **Replace Disk**.
-11. While the resilver runs, update the new drive's serial in its `mirror-…-serial` field above.
-12. Update the **self-test cron jobs** too — their `/dev/disk/by-id/` path died with the old disk.
+2. Expand the vdev (the pool's disk group).
+3. Click the failed disk (often shown as **REMOVED**).
+4. Click **Offline** on its **ZFS Info** widget.
+5. **Verify the serial before you pull anything** — note the failed disk's serial from its **Disk Info** widget (or the alert email).
+6. From the **TrueNAS shell** (**System → Shell**), confirm `lsblk -o +MODEL,SERIAL` maps that serial to the device you are about to remove.
+7. Shut the TrueNAS VM down.
+8. Swap the physical drive.
+9. Boot the VM back up.
+10. Back in TrueNAS, click **Replace** on the disk's **Disk Info** widget.
+11. Pick the new drive from **Member Disk**.
+12. Click **Replace Disk**.
+13. While the resilver runs, update the new drive's serial in its `mirror-…-serial` field above.
+14. Update the **self-test cron jobs** too — their `/dev/disk/by-id/` path died with the old disk.
 
 > [!WARNING]
-> The passed-through HBA means the Proxmox host cannot see these disks, which is why step 5 runs from the TrueNAS shell, not Proxmox. The serial-to-tray map recorded on the TrueNAS Storage page (the `mirror-a-serial` / `mirror-b-serial` fields) tells you which bay to open. A dead-enough disk may not report anything anymore, so the bulletproof identification is **by elimination**: `lsblk` can only show the *survivor* — match its serial to the map, and the failed disk is the other tray. That works even when the dead drive cannot say a word, and it is the reason the map was recorded while both disks were healthy.
+> The passed-through HBA means the Proxmox host cannot see these disks, which is why step 6 runs from the TrueNAS shell, not Proxmox. The serial-to-tray map recorded on the TrueNAS Storage page (the `mirror-a-serial` / `mirror-b-serial` fields) tells you which bay to open. A dead-enough disk may not report anything anymore, so the bulletproof identification is **by elimination**: `lsblk` can only show the *survivor* — match its serial to the map, and the failed disk is the other tray. That works even when the dead drive cannot say a word, and it is the reason the map was recorded while both disks were healthy.
 >
 > The two ST4000VN006 drives are identical at a glance — pull the *healthy* one and a degraded mirror goes straight to dead. The drives sit in the View 71's fixed rear trays behind the motherboard tray, so check the label there too.
 
 > [!NOTE]
-> Because the whole HBA is passed through, there is no per-disk passthrough line to rewire when you swap the drive (steps 6–8) — TrueNAS simply sees the new drive on the controller.
+> Because the whole HBA is passed through, there is no per-disk passthrough line to rewire when you swap the drive (steps 7–9) — TrueNAS simply sees the new drive on the controller.
 
 The replacement must be the same 4TB capacity or larger, and TrueNAS wipes it. Replacing triggers a **resilver** — ZFS copying the survivor's data onto the newcomer — which takes a while on a full pool; the share stays online throughout, just slower.
 
@@ -227,7 +264,14 @@ The replacement must be the same 4TB capacity or larger, and TrueNAS wipes it. R
 > Replace a failed IronWolf as soon as you can. A degraded two-way mirror has no margin left — the next failure takes the pool, and with it everything that has not yet reached the offsite copy below.
 
 > [!DETAILS] If TrueNAS refuses partway through the drill
-> Two walls a brand-new IronWolf can hit: if **Offline** fails with *"no valid replicas"*, run a **Scrub** from the **ZFS Health** widget and retry once it finishes. If **Replace** is refused because the new ST4000VN006 carries old partitions or data (these drives may be from the same batch or previously used), the **Force** option in the **Replacing disk** dialog overrides the safety check — and erases whatever is on that disk.
+> Two walls a brand-new IronWolf can hit.
+>
+> If **Offline** fails with *"no valid replicas"*:
+>
+> 1. Run a **Scrub** from the **ZFS Health** widget.
+> 2. Retry once it finishes.
+>
+> If **Replace** is refused because the new ST4000VN006 carries old partitions or data (these drives may be from the same batch or previously used), use the **Force** option in the **Replacing disk** dialog — it overrides the safety check and erases whatever is on that disk.
 
 ## Get a copy off the property
 
@@ -243,7 +287,11 @@ The build's offsite leg is the free one.
 4. Mount the `files` share (the connection saved on the TrueNAS Storage page).
 5. Copy the whole share onto the drive.
 
-Store the drive **somewhere that is not this house** — a desk at work, a relative's — and refresh the copy on a rhythm: each Maintenance & Upkeep pass, or quarterly at worst. Low-tech is the feature: no account, no bill, no cloud, and stored off-property it genuinely closes the fire-and-theft gap.
+Store the drive **somewhere that is not this house** — a desk at work, a relative's.
+
+Refresh the copy on a rhythm: each Maintenance & Upkeep pass, or quarterly at worst.
+
+Low-tech is the feature: no account, no bill, no cloud, and stored off-property it genuinely closes the fire-and-theft gap.
 
 > [!TIP]
 > Open a few files straight from the drive after each refresh — a copy you have never read back is a hope, not a backup. Same principle as the alert test buttons.
@@ -257,7 +305,12 @@ The scorecard is **3-2-1**: three copies of anything that matters, on at least t
 > [!DETAILS] Optional, future: automate the offsite leg with Backblaze B2
 > **Backblaze B2** is a cloud-storage service — roughly $7 per terabyte per month, so a few hundred gigabytes of files costs a few dollars — and TrueNAS drives it natively. It turns the offsite copy from a chore you remember into a nightly job that never forgets, encrypted with your own password before a byte leaves the house so Backblaze only ever stores ciphertext. If the USB rhythm ever lapses in practice, this is the upgrade; it needs an account (with payment details) created at backblaze.com first.
 >
-> **The push:** go to **Data Protection → Add** on the **Cloud Sync Task** widget:
+> **The push:**
+>
+> 1. Go to **Data Protection**.
+> 2. Click **Add** on the **Cloud Sync Task** widget.
+>
+> Set:
 >
 > - **Credential** → the Backblaze B2 one, or **Add New** (credentials live under **Credentials → Backup Credentials → Cloud Credentials**; B2 needs an Application Key ID and its key)
 > - **Direction** → **PUSH**
@@ -269,8 +322,10 @@ The scorecard is **3-2-1**: three copies of anything that matters, on at least t
 > **The encryption:** under the task's **Advanced Options**:
 >
 > - **Remote Encryption** → on — TrueNAS encrypts with rclone before a byte leaves
-> - **Encryption Password / Encryption Salt** → set both, and record them in the fields below *before the first run* and in your password manager — lose them and the offsite copy is unreadable by anyone, including you
+> - **Encryption Password / Encryption Salt** → set both — lose them and the offsite copy is unreadable by anyone, including you
 > - **Filename Encryption** → off — current docs advise against it
+>
+> Record both password and salt **before the first run** — in the fields below, and in your password manager.
 >
 > **The drill:** an encrypted backup fails silently — a wrong password looks identical to a good backup until the day you reach for it. So once at setup and once a year, run a one-off **PULL** task:
 >
@@ -278,7 +333,8 @@ The scorecard is **3-2-1**: three copies of anything that matters, on at least t
 > - **Local folder** → an empty scratch dataset (`restore-test`, deleted afterward)
 > - **Password / Salt** (Advanced Options) → re-entered by hand — that re-entry is the part being tested
 >
-> Open a recovered photo and confirm it is the file, not scrambled bytes.
+> 1. Open a recovered photo.
+> 2. Confirm it is the file, not scrambled bytes.
 >
 > The other automated route, no subscription: **Replication** (**Data Protection → Replication Tasks**) ships ZFS snapshots over SSH (Secure Shell) to a second ZFS box — ideally another TrueNAS at a relative's house — incremental after the first run, and it preserves point-in-time history a file-level copy cannot.
 

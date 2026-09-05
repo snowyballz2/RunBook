@@ -93,13 +93,19 @@ With the host on the pinned kernel, install the driver and persistence daemon �
 apt install -y build-essential nvidia-driver nvidia-smi nvidia-persistenced
 ```
 
-Midway, a text dialog interrupts: **"Conflicting nouveau kernel module loaded."** Expected — nouveau is the free driver that grabbed the card at boot, and it has to let go before NVIDIA's module can load. Press Enter on **Ok**, let the install finish, then do what the dialog says:
+Midway, a text dialog interrupts: **"Conflicting nouveau kernel module loaded."** Expected — nouveau is the free driver that grabbed the card at boot, and it has to let go before NVIDIA's module can load.
+
+Press Enter on **Ok**.
+
+Let the install finish, then reboot as the dialog says:
 
 ```bash
 reboot
 ```
 
-Once the host is back, reopen the Shell and confirm the card is seen — before that reboot this command errors, which is nouveau still holding on, not a failed install:
+Once the host is back, reopen the Shell.
+
+Confirm the card is seen — before that reboot this command errors, which is nouveau still holding on, not a failed install:
 
 ```bash
 nvidia-smi
@@ -111,10 +117,20 @@ It should print the GTX 1080 Ti with the driver version in its top line. Record 
 > From the top line of the host's `nvidia-smi`. Frigate, Ollama, and faster-whisper each install an in-container userspace driver that must match this **exactly** — check this field before building any of them, and update it whenever a host upgrade bumps the driver (the Maintenance page's update pass calls that out).
 
 > [!NOTE]
-> If `apt install -y nvidia-driver` cannot find the package, the extra components did not take — open `/etc/apt/sources.list.d/debian.sources` and check its `Components:` lines end with `non-free non-free-firmware`, then run `apt update` again. The `nvidia-persistenced` package ships the persistence daemon's systemd unit; installing it alongside the driver is what gives the next step a unit to enable.
+> If `apt install -y nvidia-driver` cannot find the package, the extra components did not take:
+>
+> 1. Open `/etc/apt/sources.list.d/debian.sources`.
+> 2. Confirm its `Components:` lines end with `non-free non-free-firmware`.
+> 3. Run `apt update` again.
+>
+> The `nvidia-persistenced` package ships the persistence daemon's systemd unit; installing it alongside the driver is what gives the next step a unit to enable.
 
 > [!NOTE]
-> The 1080 Ti is Pascal — compute capability 6.1 — which clears Frigate's detection bar (compute capability 5.0+, NVIDIA driver 545 or newer, CUDA 12.x). Debian's packaged `nvidia-driver` on this host is the 550 series, which clears that bar — confirm the version `nvidia-smi` printed is 545 or newer so the same card can run the ONNX/CUDA detector later. A YOLOv9 model is the right pick on this card; RF-DETR runs very slowly on Pascal, so avoid it.
+> The 1080 Ti is Pascal — compute capability 6.1 — which clears Frigate's detection bar (compute capability 5.0+, NVIDIA driver 545 or newer, CUDA 12.x). Debian's packaged `nvidia-driver` on this host is the 550 series, which clears that bar.
+>
+> Confirm the version `nvidia-smi` printed above is 545 or newer, so the same card can run the ONNX/CUDA detector later.
+>
+> A YOLOv9 model is the right pick on this card; RF-DETR runs very slowly on Pascal, so avoid it.
 
 ### Keep the driver awake with nvidia-persistenced
 Without the persistence daemon the driver de-initialises whenever nothing is actively using the card, and the first detection after an idle stretch pays a slow wake-up cost. You installed the `nvidia-persistenced` package above; now enable and start its service on the host:
@@ -123,7 +139,13 @@ Without the persistence daemon the driver de-initialises whenever nothing is act
 systemctl enable --now nvidia-persistenced
 ```
 
-If this reports `Failed to enable unit: Unit file nvidia-persistenced.service does not exist`, the package did not install — run `apt install -y nvidia-persistenced` and try again.
+If this reports `Failed to enable unit: Unit file nvidia-persistenced.service does not exist`, the package did not install. Install it:
+
+```bash
+apt install -y nvidia-persistenced
+```
+
+Then run the `enable --now` command above again.
 
 ### The dev0: lending recipe (applied when each container is built)
 The host now owns a working driver. Each container that needs the card borrows it by adding three device lines to **its own** config file — but **none of those containers exist yet at this stage**. You will apply this recipe as you create each one later in the build:
@@ -198,7 +220,15 @@ ls /sys/kernel/iommu_groups/13/devices/
 You want the HBA in a group containing only itself (or only its own functions) — and the `ls` is the command that proves it, since the loop's grep only shows the HBA's own line and would hide any neighbours sharing the group. If other devices do show up in there, passthrough either fails or drags those neighbours into the VM — recheck that the card is in the chipset-attached PCIEX4_3 slot.
 
 > [!NOTE]
-> The vendor:device IDs from `lspci -nn` (something like `[1000:0097]`) are what you bind to vfio-pci. They sit in brackets at the very end of the line — exactly the part a console cuts off when the line runs past the screen edge. If you cannot see them, re-run scoped to just the card and the line stays short: `lspci -nn -s 03:00.0` (your address from the step above). Note the pair down — the next step uses it.
+> The vendor:device IDs from `lspci -nn` (something like `[1000:0097]`) are what you bind to vfio-pci. They sit in brackets at the very end of the line — exactly the part a console cuts off when the line runs past the screen edge.
+>
+> If you cannot see them, re-run scoped to just the card so the line stays short (`03:00.0` is your address from the step above):
+>
+> ```bash
+> lspci -nn -s 03:00.0
+> ```
+>
+> Note the pair down — the next step uses it.
 
 ### Bind the card to vfio-pci
 Tell the host to claim the HBA for VFIO at boot so no host driver grabs it first: a modprobe entry with the card's IDs, a blacklist of its native driver so it can never win the race for the device, the vfio modules loaded early, then a refreshed initramfs and a reboot. The values below are this build's, both verified live — `1000:0097` from the `lspci -nn` brackets, `mpt3sas` from its `Kernel modules:` line:
@@ -219,10 +249,25 @@ lspci -nnk | grep -A3 -i -e LSI -e SAS -e Broadcom
 > [!NOTE]
 > The `ids=` option alone is not reliable here — both `vfio-pci` and the HBA's native driver load as modules at boot, and the native one commonly wins the race to claim the device even with `vfio-pci` loaded early via `/etc/modules`. Blacklisting the native driver outright is what actually guarantees `vfio-pci` gets it. Nothing else on this build uses `mpt3sas`, so losing it costs nothing.
 >
-> Still says `Kernel driver in use: mpt3sas` after the reboot? `cat /etc/modprobe.d/vfio.conf` — it must show **both** lines, the `ids=` and the `blacklist`; a `>` that overwrote instead of a `>>` that appended is the usual culprit. (`Kernel modules: mpt3sas` continuing to appear in `lspci -nnk` is fine — that line lists what *could* drive the card, not what does. And duplicate `vfio` lines in `/etc/modules` from running the setup block twice are harmless; no need to clean them up.)
+> Still shows `Kernel driver in use: mpt3sas` after the reboot? Check the file:
+>
+> ```bash
+> cat /etc/modprobe.d/vfio.conf
+> ```
+>
+> It must show **both** lines, the `ids=` and the `blacklist`; a `>` that overwrote instead of a `>>` that appended is the usual culprit. (`Kernel modules: mpt3sas` continuing to appear in `lspci -nnk` is fine — that line lists what *could* drive the card, not what does. And duplicate `vfio` lines in `/etc/modules` from running the setup block twice are harmless; no need to clean them up.)
 
 ### Add the HBA to the TrueNAS VM
-With the card on vfio-pci, hand the **whole device** to the TrueNAS VM — the TrueNAS VM only, no other guest. In the Proxmox web interface, select the TrueNAS VM, then **Hardware → Add → PCI Device**:
+With the card on vfio-pci, hand the **whole device** to the TrueNAS VM — the TrueNAS VM only, no other guest.
+
+In the Proxmox web interface:
+
+1. Select the TrueNAS VM.
+2. Open its **Hardware** tab.
+3. Click **Add**.
+4. Click **PCI Device**.
+
+Set:
 
 - **Device** → the 9300-8i
 - **All Functions** → ticked
@@ -236,9 +281,11 @@ qm set 100 -hostpci0 0000:03:00,pcie=1,rombar=0
 
 **`rombar=0` is not optional on this build.** Without it, the VM's SeaBIOS tries to run the HBA's own **MPT option ROM** at every boot, that ROM faults inside the guest (`MPT BIOS Fault 02h … Firmware Fault Code: 2667h`), and the VM parks at `Press any key to continue...` — waiting for a human forever. It boots fine when you are watching and never boots after a power cut, which is the worst possible failure shape for a machine the whole outage-recovery plan depends on. The option ROM exists only to let a machine *boot from* disks on the card; this VM boots from its own 32 GB virtual disk and TrueNAS loads the `mpt3sas` driver itself once running, so hiding the ROM costs nothing.
 
-1. Power-cycle the TrueNAS VM — a full **stop and start**, not a guest reboot; the PCI device only attaches on a cold VM start.
-2. Watch this first boot in the **Console**. It should pass straight through SeaBIOS with no `Press any key` prompt — if that prompt appears, `rombar=0` did not take: re-run the command and cold-start again.
-3. Confirm in the TrueNAS web UI at `http://192.168.1.20/ui/storage/disks` — the Disks screen, which is not a left-nav entry but a **Disks** button on the Storage Dashboard. The two mirror IronWolfs should be listed by their **real model (`ST4000VN…`) and real serial numbers** — the same serials as the stickers on the drives — alongside the 32 GB QEMU boot disk.
+1. Stop the TrueNAS VM.
+2. Start it — that's a full power-cycle, not a guest reboot; the PCI device only attaches on a cold VM start.
+3. Open the **Console**.
+4. Watch this first boot. It should pass straight through SeaBIOS with no `Press any key` prompt — if that prompt appears, `rombar=0` did not take: re-run the command above and cold-start again.
+5. Confirm in the TrueNAS web UI at `http://192.168.1.20/ui/storage/disks` — the Disks screen, which is not a left-nav entry but a **Disks** button on the Storage Dashboard. The two mirror IronWolfs should be listed by their **real model (`ST4000VN…`) and real serial numbers** — the same serials as the stickers on the drives — alongside the 32 GB QEMU boot disk.
 
 Real model and serial is the proof the passthrough is genuine; the mirrored pool gets built from them on the TrueNAS Storage page.
 
@@ -255,9 +302,24 @@ The whole point of this page in one table — they coexist perfectly, but only i
 | 9300-8i HBA | **VFIO passthrough** (locked to one VM) | Inside TrueNAS | TrueNAS VM only |
 
 > [!DETAILS] The failure modes, so you can spot them fast
-> - **Containers lost the GPU after an update** — driver version mismatch between host and container, *or* someone VFIO-bound the GPU. Check `nvidia-smi` on the host first, then inside the container; the versions must match.
-> - **TrueNAS sees no disks** — the HBA didn't pass through cleanly. Confirm `Kernel driver in use: vfio-pci` on the host and that the device is added to the VM with **All Functions**. (A `duplicate serial` error is a *different* failure that belongs to per-disk passthrough — passing the whole card, as you do here, hands TrueNAS each drive's real serial, so it never arises on this build.)
-> - **Passthrough fails or drags other devices in** — the HBA isn't alone in its IOMMU group. Confirm it's in the chipset-attached PCIEX4_3 slot at x4 and that VT-d is enabled in BIOS.
+> If containers lost the GPU after an update — driver version mismatch between host and container, *or* someone VFIO-bound the GPU:
+>
+> 1. Check `nvidia-smi` on the host.
+> 2. Check `nvidia-smi` inside the container.
+>
+> The versions must match.
+>
+> If TrueNAS sees no disks — the HBA didn't pass through cleanly:
+>
+> 1. Confirm `Kernel driver in use: vfio-pci` on the host.
+> 2. Confirm the device is added to the VM with **All Functions**.
+>
+> (A `duplicate serial` error is a *different* failure that belongs to per-disk passthrough — passing the whole card, as you do here, hands TrueNAS each drive's real serial, so it never arises on this build.)
+>
+> If passthrough fails or drags other devices in — the HBA isn't alone in its IOMMU group:
+>
+> 1. Confirm it's in the chipset-attached PCIEX4_3 slot at x4.
+> 2. Confirm VT-d is enabled in BIOS.
 
 > [!NOTE]
 > The shared-GPU setup here is reused downstream: the same card runs Frigate's ONNX/CUDA detection and the Ollama/faster-whisper voice stack. Doing it correctly now pays off across several later steps — and the only ongoing maintenance is keeping host and container driver versions matched.
