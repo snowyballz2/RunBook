@@ -14,21 +14,44 @@ Do this alongside the Hardware & BIOS page's work — same screwdriver session, 
 > The swap, at a glance. **Out:** the 2017 Thermaltake AIO, the liquid metal on the CPU, all seven proprietary-plug RGB fans, and the RGB/fan controller box. **In:** a **Thermalright Phantom Spirit 120 SE** air cooler (about $40, ships with two fans and its own paste) and **four Noctua NF-P12 redux-1700 PWM** case fans (about $72), all running straight off the motherboard's own headers — no controller, no splitters, no lights.
 
 > [!WARNING]
-> Static kills chips. Before touching the card or the board: unplug the PC, hold the power button ten seconds to bleed residual charge, and ground yourself on bare case or PSU metal — or wear an **ESD** (electrostatic discharge) strap. Work on a hard, non-carpet surface.
+> Static kills chips. Before touching the card or the board:
+> 1. Unplug the PC.
+> 2. Hold the power button ten seconds to bleed residual charge.
+> 3. Ground yourself on bare case or PSU metal, or wear an **ESD** (electrostatic discharge) strap.
+> 4. Work on a hard, non-carpet surface.
 
 ## Swap the CPU cooler
 
 ### Remove the AIO and the controller box
-Unplug the pump lead and the three radiator-fan leads, unscrew the pump block from the CPU bracket, then free the radiator from the case and lift the whole unit out — it is a sealed loop, so there is nothing to drain; it leaves in one piece. While you are in there, pull the **Thermaltake controller box** and every proprietary RGB fan with it: the four case fans and their controller come out as a set. The motherboard's own headers drive everything from now on, which is one less powered box that can fail and one less piece of vendor software that never worked well anyway.
+1. Unplug the pump lead and the three radiator-fan leads.
+2. Unscrew the pump block from the CPU bracket.
+3. Free the radiator from the case and lift the whole unit out — it is a sealed loop, so there is nothing to drain; it leaves in one piece.
+4. Pull the **Thermaltake controller box** and every proprietary RGB fan with it — the four case fans and their controller come out as a set.
+
+The motherboard's own headers drive everything from now on, which is one less powered box that can fail and one less piece of vendor software that never worked well anyway.
 
 ### Clean the liquid metal off the CPU
-Liquid metal is the other maintenance item leaving today. It is electrically conductive — a stray droplet on the socket or board kills the machine — so work carefully: wipe the **IHS** (integrated heat spreader, the CPU's metal lid) with isopropyl alcohol on lint-free cloth, repeatedly, until nothing gray transfers. A permanent dull stain where the metal alloyed into the lid is normal and harmless. Keep the cloth moving away from the socket.
+Liquid metal is the other maintenance item leaving today.
+
+> [!WARNING]
+> Liquid metal is electrically conductive — a stray droplet on the socket or board kills the machine. Work carefully.
+
+1. Wipe the **IHS** (integrated heat spreader, the CPU's metal lid) with isopropyl alcohol on lint-free cloth, repeatedly, until nothing gray transfers.
+2. Keep the cloth moving away from the socket.
+
+A permanent dull stain where the metal alloyed into the lid is normal and harmless.
 
 > [!NOTE]
 > This applies to the liquid metal between the lid and the old cooler. If this CPU was ever **delidded** with liquid metal *under* the lid, leave the inside alone — only the lid-to-cooler interface gets cleaned and repasted here.
 
 ### Mount the Phantom Spirit
-Fit the cooler's LGA1151 mounting bracket, spread a pea-sized dot of the **included paste** on the center of the IHS, seat the tower, and tighten its two spring screws evenly. Clip on its two fans blowing **toward the rear of the case** so the tower exhausts into the rear fan's airstream. Plug fan one into **CPU_FAN** and fan two into **CPU_OPT** — on this board CPU_OPT follows CPU_FAN's curve, which is exactly what two fans on one tower want.
+1. Fit the cooler's LGA1151 mounting bracket.
+2. Spread a pea-sized dot of the **included paste** on the center of the IHS.
+3. Seat the tower and tighten its two spring screws evenly.
+4. Clip on its two fans blowing **toward the rear of the case**, so the tower exhausts into the rear fan's airstream.
+5. Plug fan one into **CPU_FAN** and fan two into **CPU_OPT**.
+
+On this board CPU_OPT follows CPU_FAN's curve, which is exactly what two fans on one tower want.
 
 > [!NOTE]
 > Regular paste over liquid metal costs a couple of degrees on paper and nothing in practice at server loads — and it never needs to be touched again. The Phantom Spirit is heavily oversized for an i7-8700K that is not being overclocked, which is the point: big heatsink, slow quiet fans, no pump.
@@ -82,7 +105,10 @@ The 1080 Ti FTW3's paste and pads are as old as the AIO, and the card now works 
 ## Take the card apart
 
 ### Pull the card
-Power off, unplug, release the PCIe slot latch and the bracket screws, and lift the card out. Set it on the clean, well-lit, non-static surface.
+1. Power off and unplug.
+2. Release the PCIe slot latch and the bracket screws.
+3. Lift the card out.
+4. Set it on the clean, well-lit, non-static surface.
 
 ### Remove the backplate
 On this card the backplate is what frees the whole assembly, so it comes off first. Note that some backplate areas have their own pads touching the rear of the PCB — note their positions too.
@@ -98,7 +124,8 @@ The FTW3 runs more cables than a normal card. Unplug every one you find before y
 - **LED sync cable** at the top
 
 ### Separate the heatsink, carefully
-Remove the four spring-loaded screws around the GPU die, plus the remaining screws holding the heatsink to the PCB for VRAM and VRM contact. Back the four die screws off gradually in a diagonal cross pattern so tension releases evenly.
+1. Remove the remaining screws holding the heatsink to the PCB for VRAM and VRM contact.
+2. Back the four spring-loaded screws around the GPU die off gradually, in a diagonal cross pattern, so tension releases evenly.
 
 > [!WARNING]
 > Nine-year-old paste acts like glue. Do **not** pry hard or pull the heatsink straight up — you can tear the die off its substrate. **Twist** the heatsink a few degrees to break the paste seal. If it resists, warm it gently with a hair dryer on low (or, if you have not torn down yet, run the card under load for a minute first so it comes apart warm) and twist again. Let it come free on its own.
@@ -109,10 +136,13 @@ Remove the four spring-loaded screws around the GPU die, plus the remaining scre
 ## Clean and repad
 
 ### Strip the old interface
-Wipe all old paste off the bare die and the coldplate until both are spotless. The die is exposed silicon — gentle pressure, no abrasives. Peel the old VRAM and VRM pads one at a time, noting exactly where each sat and measuring its thickness as you go. Blow the dust out of the fins and fans now while you have full access.
+1. Wipe all old paste off the bare die and the coldplate until both are spotless — gentle pressure, no abrasives; the die is exposed silicon.
+2. Peel the old VRAM and VRM pads one at a time, noting exactly where each sat and measuring its thickness as you go.
+3. Blow the dust out of the fins and fans now while you have full access.
 
 ### Lay the new pads
-Cut new pads to cover each VRAM chip and VRM/MOSFET group where the originals were, matched to each location's measured thickness, and peel the protective film off **both** sides.
+1. Cut new pads to cover each VRAM chip and VRM/MOSFET group where the originals were, matched to each location's measured thickness.
+2. Peel the protective film off **both** sides.
 
 > [!NOTE]
 > If an old pad is still soft and intact you can reuse it, but at nine years most are hard and crumbly — replacing is the safer call.
@@ -123,15 +153,27 @@ Cut new pads to cover each VRAM chip and VRM/MOSFET group where the originals we
 The GPU die is small, like a CPU die. A modest pea-sized dot in the center, or a thin even spread. Do not drown it — mounting pressure spreads it.
 
 ### Reassemble evenly
-Set the heatsink back down aligned, start all screws by hand, then tighten the four die screws gradually in a diagonal cross pattern so the die seats under even pressure. Snug, not cranked.
+1. Set the heatsink back down aligned.
+2. Start all screws by hand.
+3. Tighten the four die screws gradually, in a diagonal cross pattern, so the die seats under even pressure — snug, not cranked.
+4. Tighten the remaining heatsink screws.
+5. Reconnect all three fan cables plus the RGB and LED leads.
+6. Reattach the shroud and backplate with their correct screw types.
 
 > [!WARNING]
-> Overtightening cracks dies and PCBs. Even, moderate pressure only. Then the remaining heatsink screws, reconnect all three fan cables plus the RGB and LED leads, and reattach the shroud and backplate with their correct screw types.
+> Overtightening cracks dies and PCBs. Even, moderate pressure only.
 
 ## Verify before the wipe
 
 ### Test it under Windows while you still can
-Windows is still on the NVMe until the Install Proxmox page erases it — use it. Seat the card, reconnect the GPU's PCIe power cable to both 8-pin inputs (end connector + pigtail), boot into the old Windows install, and run a GPU stress test (FurMark, or Heaven looping) for ten minutes while watching temperatures, plus a short CPU load (Cinebench) to prove the new tower is seated well. This is the last point where load-testing the hardware is trivial.
+Windows is still on the NVMe until the Install Proxmox page erases it — use it while you can.
+
+1. Seat the card and reconnect the GPU's PCIe power cable to both 8-pin inputs (end connector + pigtail).
+2. Boot into the old Windows install.
+3. Run a GPU stress test (FurMark, or Heaven looping) for ten minutes while watching temperatures.
+4. Run a short CPU load test (Cinebench) to prove the new tower is seated well.
+
+This is the last point where load-testing the hardware is trivial.
 
 > [!NOTE]
 > A good repaste and repad usually drops GPU load temps 10–20°C; target under about **80°C** under sustained load. If temps are the same or worse, the die screws are uneven or a pad is the wrong thickness — recheck before trusting it. The CPU under the new air cooler should sit comfortably under 75°C in a stress run, and the room should be noticeably quieter with the pump gone.

@@ -333,9 +333,23 @@ The 500 GB NVMe currently has Windows and your files on it, and the Proxmox inst
 > - **App data** — paste `%APPDATA%` into a File Explorer address bar and skim for email clients, chat history, and configs worth keeping.
 
 > [!DETAILS] How to copy it off (and what if you have no external drive)
-> **With an external drive:** plug it in, press `Win+E` to open File Explorer, open `C:\Users\`-your-name, select the folders you are keeping (`Ctrl`+click for several), `Ctrl+C`, then open the external drive and `Ctrl+V`. When the copy finishes, open a few files from the external drive to confirm they work — then click the USB icon in the system tray and choose **Eject** before unplugging. Skipping the eject can leave a half-written, corrupted copy of the very files you are trying to save.
+> **With an external drive:**
+> 1. Plug in the external drive.
+> 2. Press `Win+E` to open File Explorer.
+> 3. Open `C:\Users\`-your-name.
+> 4. Select the folders you are keeping (`Ctrl`+click for several).
+> 5. Press `Ctrl+C`.
+> 6. Open the external drive and press `Ctrl+V`.
+> 7. When the copy finishes, open a few files from the external drive to confirm they work.
+> 8. Click the USB icon in the system tray and choose **Eject** before unplugging.
 >
-> **No external drive?** Use a cloud free tier (Google Drive 15 GB, OneDrive 5 GB, Dropbox 2 GB — fine for documents and photos, too small for big game folders), or copy to another PC on your network: on the receiving PC right-click a folder → *Properties → Sharing → Share* and grant write access, then on the old PC type `\\OTHER-PC-NAME` into the File Explorer address bar and copy files in. Both machines must be on the same network.
+> Skipping the eject can leave a half-written, corrupted copy of the very files you are trying to save.
+>
+> **No external drive?** Use a cloud free tier (Google Drive 15 GB, OneDrive 5 GB, Dropbox 2 GB — fine for documents and photos, too small for big game folders), or copy to another PC on your network:
+> 1. On the receiving PC, right-click a folder → **Properties → Sharing → Share** and grant write access.
+> 2. On the old PC, type `\\OTHER-PC-NAME` into the File Explorer address bar and copy files in.
+>
+> Both machines must be on the same network.
 
 ### Make the two USB sticks
 Two separate sticks, both written now while a working PC exists:

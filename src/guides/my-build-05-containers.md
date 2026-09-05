@@ -19,14 +19,16 @@ Most of the always-on services on this box are not full virtual machines — the
 ### Download a Debian template first
 Container templates live in storage, and a fresh Proxmox install has none. Grab one before you create the first container:
 
-- In the left tree, click the node, then the **local** storage under it.
-- Open **CT Templates**, then click the **Templates** button.
-- Find **debian** with the *standard* flavour — the list offers more than one version; take the newest, **debian-13-standard** — and click **Download**. Debian 13 is the same generation Proxmox 9 itself runs on and stays in security support years longer than 12; containers share the host's kernel, so there is no compatibility reason to reach back.
+1. In the left tree, click the node, then the **local** storage under it.
+2. Open **CT Templates**, then click the **Templates** button.
+3. Find **debian** with the *standard* flavour — the list offers more than one version; take the newest, **debian-13-standard** — and click **Download**.
+
+Debian 13 is the same generation Proxmox 9 itself runs on and stays in security support years longer than 12; containers share the host's kernel, so there is no compatibility reason to reach back.
 
 When the task log says `TASK OK`, the template is ready in the wizard.
 
 ### Walk the Create CT wizard
-Click **Create CT** (top right) and step through the tabs. Build one **throwaway practice container** now to learn the flow — DHCP is fine for it, and you can delete it at the end of this page (select it, **Shutdown**, then **More → Remove**, typing the CT ID to confirm). Each real service gets its own container, with its own values and static IP, on its own page later in the build. These are the starter values for a plain service container on this build; the heavier guests get more later.
+Click **Create CT** (top right) and step through the tabs. Build one **throwaway practice container** now to learn the flow — DHCP is fine for it, and you can delete it at the end of this page. Each real service gets its own container, with its own values and static IP, on its own page later in the build. These are the starter values for a plain service container on this build; the heavier guests get more later.
 
 - **General** — accept the suggested **CT ID** (every guest gets a unique number starting at 100; the suggestion is the next free one), set a hostname (e.g. `testbox`), and set a root password. **Leave Unprivileged container ticked** (more below).
 - **Template** — the Debian standard template you just downloaded.
@@ -35,6 +37,9 @@ Click **Create CT** (top right) and step through the tabs. Build one **throwaway
 - **Memory** — 2048 MB.
 - **Network** — set IPv4 to **DHCP (Dynamic Host Configuration Protocol)** only for throwaway tests. Every real service on this build gets a **static IP address** instead, because other machines point *at* these containers and the address must never move.
 - **Confirm** — tick **Start after created** and finish.
+
+> [!TIP]
+> To delete the practice container later: select it, click **Shutdown**, then **More → Remove**, typing the CT ID to confirm.
 
 > [!WARNING]
 > AdGuard Home is the household **DNS (Domain Name System)** — the whole house resolves names through it — and Nginx Proxy Manager holds every reverse-proxy route. Those two especially must have a fixed address. Pin a static IP in the **Network** tab (or a DHCP reservation on the router); never leave them on roaming DHCP.
@@ -54,7 +59,10 @@ On the **General** tab, keep the **Unprivileged container** box ticked — the s
 ## Get inside and settle it
 
 ### Log in at the Console
-Select the container in the left tree and open **Console**. Log in as `root` with the password you set in the wizard — you are standing inside a small, fresh Debian machine. From the node's **Shell** you can also drop straight in with `pct enter 100` (swap in the container's ID), no password asked.
+1. Select the container in the left tree and open **Console**.
+2. Log in as `root` with the password you set in the wizard.
+
+You are standing inside a small, fresh Debian machine. From the node's **Shell** you can also drop straight in with `pct enter 100` (swap in the container's ID), no password asked.
 
 ### Bring Debian up to date
 Templates are built ahead of time, so the packages inside are a little stale. First command in any new container:
@@ -87,7 +95,12 @@ A helper-script container may be built from a leaner template that does not ship
 ## Run it like an appliance
 
 ### Make it start at boot
-A useful container should survive a power cut without you remembering it exists. Select it, open **Options**, and set **Start at boot** to Yes — or from the host shell:
+A useful container should survive a power cut without you remembering it exists.
+
+1. Select it and open **Options**.
+2. Set **Start at boot** to **Yes**.
+
+Or from the host shell:
 
 ```bash
 pct set 100 -onboot 1
@@ -103,7 +116,12 @@ The panel's **Protection** flag is worth knowing at the same time: it blocks del
 > The same **Options** panel holds **Start/Shutdown order**, which matters once on this build: the **Home Assistant OS VM must start before the Frigate LXC**, because Frigate points at the Mosquitto MQTT (MQ Telemetry Transport) broker inside that VM. Give the HA VM a lower order number than Frigate so the broker is up first — you will set this later in the build, once both guests exist, on their own pages; nothing to do here yet. The plain service containers can stay at the default. The same panel also has a **Startup delay** — useful here because a VM boots slower than a container, so a few seconds of delay gives the HA VM time to bring its broker up before Frigate starts. On host shutdown, Proxmox asks each guest to stop cleanly and waits before moving on — by default up to 60 seconds for a container and 180 for a VM.
 
 ### Grow the disk, cores, or memory live
-That 8 GB starter disk enlarges with no downtime — in **Resources**, select the **Root Disk** row, then **Volume Action → Resize**, or:
+That 8 GB starter disk enlarges with no downtime.
+
+1. In **Resources**, select the **Root Disk** row.
+2. Click **Volume Action → Resize**.
+
+Or from the host shell:
 
 ```bash
 pct resize 100 rootfs +4G
@@ -119,7 +137,13 @@ The filesystem inside grows along with the disk — unlike a VM, where the guest
 > Disk growth is one-way: shrinking a container disk is not supported. Grow in modest increments rather than one generous guess — Nextcloud is the one most likely to want more room over time.
 
 ### Snapshot before you change anything
-Snapshots are instant and nearly free. Before any risky change — an upgrade, a config experiment — open **Snapshots**, click **Take Snapshot**, and name it for *what you were about to do* (`before-adguard-upgrade`), not the date. To undo, select it and click **Rollback**; everything since is discarded.
+Snapshots are instant and nearly free.
+
+1. Before any risky change — an upgrade, a config experiment — open **Snapshots**.
+2. Click **Take Snapshot**.
+3. Name it for *what you were about to do* (`before-adguard-upgrade`), not the date.
+
+To undo, select the snapshot and click **Rollback** — everything since is discarded.
 
 > [!TIP]
 > That is the whole container lifecycle on this build: create unprivileged, pin a static IP, update, set start-at-boot, snapshot before you tinker. The service containers all follow it; Frigate is the only one that breaks the unprivileged default, and only because its stack needs deeper access to the host's device nodes than the rest.

@@ -14,7 +14,13 @@ This is the bare-metal install of **Proxmox VE** — the hypervisor that hosts e
 ## Make the installer USB
 
 ### Download the Proxmox VE ISO
-Do this on the Mac or the Windows PC — either works; the server's own Windows install is about to be wiped, so the download and the USB-writing both happen on another computer. Get the ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads) — click **Proxmox Virtual Environment**, then the top entry, the **Proxmox VE 9.2 ISO Installer**. It is free, needs no account, and is about 1.7 GB.
+Do this on the Mac or the Windows PC — either works; the server's own Windows install is about to be wiped, so the download and the USB-writing both happen on another computer.
+
+1. Go to [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads).
+2. Click **Proxmox Virtual Environment**.
+3. Click the top entry, the **Proxmox VE 9.2 ISO Installer**.
+
+It is free, needs no account, and is about 1.7 GB.
 
 > [!DETAILS] Verify the download (optional but smart)
 > Hash the file and compare it against the SHA256 checksum shown next to the download link. A match means the file arrived intact and untampered. On a Mac:
@@ -51,7 +57,10 @@ Write the ISO to a USB stick of 4 GB or larger with **balenaEtcher**, which runs
 ### Boot the installer
 This part happens on a keyboard and monitor plugged into the server itself — there is nothing to reach remotely yet. It is temporary: once the install is done, the box runs headless and you do everything from a browser at your desk.
 
-Make sure the server has wired **Ethernet** to the LAN first — through the GS308EPP switch to the router, as cabled on the Hardware & BIOS page — because Proxmox cannot use Wi-Fi for management out of the box. Power on and tap **`F8`** right away to get the ASUS one-time boot menu, then pick the USB stick. If the menu lists it twice, choose the **UEFI:** entry.
+Make sure the server has wired **Ethernet** to the LAN first — through the GS308EPP switch to the router, as cabled on the Hardware & BIOS page — because Proxmox cannot use Wi-Fi for management out of the box.
+
+1. Power on and tap **`F8`** right away to get the ASUS one-time boot menu.
+2. Pick the USB stick. If the menu lists it twice, choose the **UEFI:** entry.
 
 > [!TIP]
 > If the stick refuses to boot, disable **Secure Boot** in the BIOS and try again. Proxmox has been signed for Secure Boot since version 8.1, but on some ASUS boards it still gets in the way, and turning it off is the documented fallback.
@@ -94,13 +103,17 @@ At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts.
 > Can't get into the router at all? Pick a high number like `.250` and ping it first — if nothing answers, it is almost certainly free.
 
 ### Log in to the web UI for the first time
-Proxmox has no desktop of its own — you administer it from a browser. From your Mac on the same LAN, browse to:
+Proxmox has no desktop of its own — you administer it from a browser. From your Mac on the same LAN, browse to the address below. Type the **`https://`** out in full — the Proxmox port speaks only HTTPS, and a browser that quietly tries plain `http` on 8006 reports a vague "can't open the page" instead of the certificate screen:
 
 ```bash
 https://your-ip:8006
 ```
 
-The browser will warn about the certificate before the login screen — that is expected. Proxmox generates its own self-signed certificate, so the browser cannot vouch for it. In Chrome or Edge: **Advanced → Proceed**. Safari words the same screen differently: **Show Details → visit this website**, then confirm. Either way, type the address with the **`https://`** spelled out — the Proxmox port speaks only HTTPS, and a browser that quietly tries plain `http` on 8006 reports a vague "can't open the page" instead of the certificate screen. Log in as **`root`** with the realm left on **Linux PAM standard authentication** and the password you set during install. A "No valid subscription" popup appears on every login — click **OK**; the next step removes it.
+The browser will warn about the certificate before the login screen — that is expected, since Proxmox generates its own self-signed certificate and the browser cannot vouch for it.
+
+1. In Chrome or Edge, click **Advanced → Proceed**. In Safari, click **Show Details → visit this website**, then confirm.
+2. Log in as **`root`** with the realm left on **Linux PAM standard authentication**, using the password you set during install.
+3. Click **OK** on the "No valid subscription" popup — it appears on every login; the next step removes it.
 
 > [!WARNING]
 > If **one machine cannot reach the page while others can, check that machine's VPN client first.** A consumer VPN (NordVPN and friends) silently blocks the local network while connected — internet works, the router works, but LAN devices like this server go completely dark, with no error saying why. It cost this build a solid diagnostic detour. The fix is one toggle, kept on: NordVPN on macOS calls it **Local Network Discovery** (Settings → General); other clients call it "allow LAN access" or similar. Disconnecting the VPN to test is the fastest way to confirm.
@@ -144,7 +157,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > This project is open source with a large, active maintainer community, but it is community-run — not official Proxmox software. The same habit applies to every other one-liner the internet hands you.
 
 > [!DETAILS] Prefer no script? Do the same by hand
-> **Easiest: use the web UI.** Select your node → **Updates → Repositories**. Disable the two *enterprise* entries, then use **Add** to add the **No-Subscription** repository.
+> **Easiest: use the web UI.**
+> 1. Select your node → **Updates → Repositories**.
+> 2. Disable the two *enterprise* entries.
+> 3. Use **Add** to add the **No-Subscription** repository.
 >
 > **Or edit the files in the node's Shell.** Disable the enterprise repos by adding a line `Enabled: no` to each of these two files (open them with `nano <file>`):
 >
