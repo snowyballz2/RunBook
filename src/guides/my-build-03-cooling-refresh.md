@@ -25,8 +25,9 @@ Do this alongside the Hardware & BIOS page's work — same screwdriver session, 
 ### Remove the AIO and the controller box
 1. Unplug the pump lead and the three radiator-fan leads.
 2. Unscrew the pump block from the CPU bracket.
-3. Free the radiator from the case and lift the whole unit out — it is a sealed loop, so there is nothing to drain; it leaves in one piece.
-4. Pull the **Thermaltake controller box** and every proprietary RGB fan with it — the four case fans and their controller come out as a set.
+3. Free the radiator from the case.
+4. Lift the whole unit out — it is a sealed loop, so there is nothing to drain; it leaves in one piece.
+5. Pull the **Thermaltake controller box** and every proprietary RGB fan with it — the four case fans and their controller come out as a set.
 
 The motherboard's own headers drive everything from now on, which is one less powered box that can fail and one less piece of vendor software that never worked well anyway.
 
@@ -47,9 +48,11 @@ A permanent dull stain where the metal alloyed into the lid is normal and harmle
 ### Mount the Phantom Spirit
 1. Fit the cooler's LGA1151 mounting bracket.
 2. Spread a pea-sized dot of the **included paste** on the center of the IHS.
-3. Seat the tower and tighten its two spring screws evenly.
-4. Clip on its two fans blowing **toward the rear of the case**, so the tower exhausts into the rear fan's airstream.
-5. Plug fan one into **CPU_FAN** and fan two into **CPU_OPT**.
+3. Seat the tower.
+4. Tighten its two spring screws evenly.
+5. Clip on its two fans blowing **toward the rear of the case**, so the tower exhausts into the rear fan's airstream.
+6. Plug fan one into **CPU_FAN**.
+7. Plug fan two into **CPU_OPT**.
 
 On this board CPU_OPT follows CPU_FAN's curve, which is exactly what two fans on one tower want.
 
@@ -105,16 +108,23 @@ The 1080 Ti FTW3's paste and pads are as old as the AIO, and the card now works 
 ## Take the card apart
 
 ### Pull the card
-1. Power off and unplug.
-2. Release the PCIe slot latch and the bracket screws.
-3. Lift the card out.
-4. Set it on the clean, well-lit, non-static surface.
+1. Power off.
+2. Unplug.
+3. Release the PCIe slot latch and the bracket screws.
+4. Lift the card out.
+5. Set it on the clean, well-lit, non-static surface.
 
 ### Remove the backplate
-On this card the backplate is what frees the whole assembly, so it comes off first. Note that some backplate areas have their own pads touching the rear of the PCB — note their positions too.
+On this card the backplate is what frees the whole assembly, so it comes off first. Some backplate areas have their own pads touching the rear of the PCB.
+
+1. Note their positions too.
 
 > [!WARNING]
-> Two Phillips screw types are used: **wider-thread** screws for the plastic shroud, **thinner** screws where the backplate secures to the front-side heatsinks. Keep the two piles separate. The wrong screw in the wrong hole strips or bottoms out.
+> Two Phillips screw types are used: **wider-thread** screws for the plastic shroud, **thinner** screws where the backplate secures to the front-side heatsinks.
+>
+> 1. Keep the two piles separate.
+>
+> The wrong screw in the wrong hole strips or bottoms out.
 
 ### Disconnect all the cables
 The FTW3 runs more cables than a normal card. Unplug every one you find before you lift the shroud, or you will tear a connector. Pull on the connector, never the wires.
@@ -128,7 +138,13 @@ The FTW3 runs more cables than a normal card. Unplug every one you find before y
 2. Back the four spring-loaded screws around the GPU die off gradually, in a diagonal cross pattern, so tension releases evenly.
 
 > [!WARNING]
-> Nine-year-old paste acts like glue. Do **not** pry hard or pull the heatsink straight up — you can tear the die off its substrate. **Twist** the heatsink a few degrees to break the paste seal. If it resists, warm it gently with a hair dryer on low (or, if you have not torn down yet, run the card under load for a minute first so it comes apart warm) and twist again. Let it come free on its own.
+> Nine-year-old paste acts like glue. Do **not** pry hard or pull the heatsink straight up — you can tear the die off its substrate.
+>
+> 1. **Twist** the heatsink a few degrees to break the paste seal.
+> 2. If it resists, warm it gently with a hair dryer on low (or, if you have not torn down yet, run the card under load for a minute first so it comes apart warm).
+> 3. Twist again.
+>
+> Let it come free on its own.
 
 > [!TIP]
 > Mind the **iCX sensors** on the PCB — the extra little chips that feed EVGA's per-component temperature readouts. Be gentle and do not pry near them.
@@ -137,8 +153,10 @@ The FTW3 runs more cables than a normal card. Unplug every one you find before y
 
 ### Strip the old interface
 1. Wipe all old paste off the bare die and the coldplate until both are spotless — gentle pressure, no abrasives; the die is exposed silicon.
-2. Peel the old VRAM and VRM pads one at a time, noting exactly where each sat and measuring its thickness as you go.
-3. Blow the dust out of the fins and fans now while you have full access.
+2. Peel the old VRAM and VRM pads one at a time.
+3. Note exactly where each sat.
+4. Measure its thickness as you go.
+5. Blow the dust out of the fins and fans now while you have full access.
 
 ### Lay the new pads
 1. Cut new pads to cover each VRAM chip and VRM/MOSFET group where the originals were, matched to each location's measured thickness.
@@ -150,7 +168,11 @@ The FTW3 runs more cables than a normal card. Unplug every one you find before y
 ## Repaste and reassemble
 
 ### Paste the die
-The GPU die is small, like a CPU die. A modest pea-sized dot in the center, or a thin even spread. Do not drown it — mounting pressure spreads it.
+The GPU die is small, like a CPU die.
+
+1. Apply a modest pea-sized dot in the center, or a thin even spread.
+
+Do not drown it — mounting pressure spreads it.
 
 ### Reassemble evenly
 1. Set the heatsink back down aligned.
@@ -168,10 +190,11 @@ The GPU die is small, like a CPU die. A modest pea-sized dot in the center, or a
 ### Test it under Windows while you still can
 Windows is still on the NVMe until the Install Proxmox page erases it — use it while you can.
 
-1. Seat the card and reconnect the GPU's PCIe power cable to both 8-pin inputs (end connector + pigtail).
-2. Boot into the old Windows install.
-3. Run a GPU stress test (FurMark, or Heaven looping) for ten minutes while watching temperatures.
-4. Run a short CPU load test (Cinebench) to prove the new tower is seated well.
+1. Seat the card.
+2. Reconnect the GPU's PCIe power cable to both 8-pin inputs (end connector + pigtail).
+3. Boot into the old Windows install.
+4. Run a GPU stress test (FurMark, or Heaven looping) for ten minutes while watching temperatures.
+5. Run a short CPU load test (Cinebench) to prove the new tower is seated well.
 
 This is the last point where load-testing the hardware is trivial.
 

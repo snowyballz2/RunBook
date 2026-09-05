@@ -58,20 +58,24 @@ The platform is a Z370 build: an ASUS ROG Maximus X Hero board with an Intel i7-
 *Two IronWolfs ride the HBA as the mirror; the third sits on a motherboard SATA port as Frigate's footage drive. The 1080 Ti stays on the host; only the HBA is passed through later.*
 
 ### Mount the board, CPU, RAM, and PSU
-1. Seat the i7-8700K and its cooler.
-2. Fit the 32 GB RAM.
-3. Mount the Maximus X Hero in the View 71 on brass standoffs.
-4. Install the Toughpower Grand RGB 850W in the bottom PSU shroud.
-5. Run the 24-pin and the 8-pin CPU power now.
-6. Leave the PCIe power leads loose until the GPU is in.
+1. Seat the i7-8700K.
+2. Seat its cooler.
+3. Fit the 32 GB RAM.
+4. Mount the Maximus X Hero in the View 71 on brass standoffs.
+5. Install the Toughpower Grand RGB 850W in the bottom PSU shroud.
+6. Run the 24-pin power now.
+7. Run the 8-pin CPU power now.
+8. Leave the PCIe power leads loose until the GPU is in.
 
 ### Place the three IronWolf drives
 The build has three Seagate IronWolf ST4000VN006 4 TB drives. Two of them become a TrueNAS ZFS (Zettabyte File System) mirror; the third holds Frigate footage.
 
 1. Mount all three IronWolfs in the View 71's **fixed rear drive trays** behind the motherboard tray. The removable front pods are not required for this build.
-2. The **two mirror drives belong on the LSI/Broadcom 9300-8i HBA (host bus adapter)**, not the board — they follow the HBA into the TrueNAS VM (virtual machine). Leave their data connectors empty for now; you cable them once the HBA is seated below.
+2. Leave the two mirror drives' data connectors empty for now.
 3. Cable the **single footage drive to a motherboard SATA (Serial Advanced Technology Attachment) port**. The host and the Frigate container need direct access to it, so it stays on the board — never on the HBA.
 4. Mount the 500 GB NVMe (Non-Volatile Memory Express) drive on the board's M.2 slot. This is the Proxmox OS plus Frigate cache disk.
+
+The **two mirror drives belong on the LSI/Broadcom 9300-8i HBA (host bus adapter)**, not the board — they follow the HBA into the TrueNAS VM (virtual machine). You cable them once the HBA is seated below.
 
 Here is the tray plate itself — traced from the actual part, hole for hole. The plate is stamped with its own manual (`A: 3.5" HDD`, `B: 2.5" HDD/SSD`), and the stamps on the metal are always the authority:
 
@@ -148,7 +152,10 @@ Here is the tray plate itself — traced from the actual part, hole for hole. Th
 *Traced from the plate in hand: the top hump with the lock-screw hole is UP, the two bent tabs at the bottom hook the rail. The two red-ringed holes are factory rubber-damped — use them as two of your four #6-32 positions so the spinning drive stays quiet against the sheet metal. Dry-fit the bare plate on the rail once before screwing any drive down, just to see which face ends up outward.*
 
 > [!TIP]
-> Label the two mirror drives now and record their serials below. ZFS identifies disks by serial, and you will want to know which physical drive is which when one eventually fails. The footage drive can stay unlabelled — it is the lone one on a board SATA port.
+> 1. Label the two mirror drives now.
+> 2. Record their serials below.
+>
+> ZFS identifies disks by serial, and you will want to know which physical drive is which when one eventually fails. The footage drive can stay unlabelled — it is the lone one on a board SATA port.
 
 > [!INPUT] zfs-mirror-disk1-serial | IronWolf mirror disk 1 serial
 
@@ -464,12 +471,23 @@ Enter the BIOS by tapping `Del` repeatedly the moment the screen lights up on po
 ### Update the BIOS first
 Flash the latest Maximus X Hero firmware before touching any toggle, so the settings below sit on current microcode. This needs its own USB stick — it is **not** the Proxmox installer stick you made during the Start Here prep.
 
-1. On another computer, open the ASUS support page for the **ROG Maximus X Hero** (asus.com → Support → search "Maximus X Hero" → **Driver & Utility → BIOS & Firmware**) and download the **latest BIOS** file. Note the version number — you will confirm it after the flash.
-2. Unzip the download and run the bundled **BIOSRenamer** utility (included in the same zip) once. Strictly, that rename is only required for the board's **USB BIOS FlashBack** button-recovery method — EZ Flash takes the file as downloaded — but renaming costs nothing and leaves the stick ready for either path.
-3. Format a USB stick as **FAT32** and copy the renamed BIOS file to its **root** (not inside a folder).
-4. Plug the stick into the server, enter the BIOS (`Del` on power-on), and open **EZ Flash 3** under the *Tool* menu.
-5. Point it at the file on the stick and confirm — the board flashes the firmware, reboots itself, and lands back in the BIOS on its own.
-6. Confirm the BIOS version on the **EZ Mode** main screen (also listed in EZ Flash 3 itself) matches the version you downloaded, before continuing with the toggles below.
+1. On another computer, go to `asus.com`.
+2. Click **Support**.
+3. Search "Maximus X Hero".
+4. Click **Driver & Utility**.
+5. Click **BIOS & Firmware**.
+6. Download the latest **BIOS** file.
+7. Note the version number — you will confirm it after the flash.
+8. Unzip the download.
+9. Run the bundled **BIOSRenamer** utility (included in the same zip) once. Strictly, that rename is only required for the board's **USB BIOS FlashBack** button-recovery method — EZ Flash takes the file as downloaded — but renaming costs nothing and leaves the stick ready for either path.
+10. Format a USB stick as **FAT32**.
+11. Copy the renamed BIOS file to its **root** (not inside a folder).
+12. Plug the stick into the server.
+13. Enter the BIOS (`Del` on power-on).
+14. Open **EZ Flash 3** under the *Tool* menu.
+15. Point it at the file on the stick.
+16. Confirm. The board flashes the firmware, reboots itself, and lands back in the BIOS on its own.
+17. Confirm the BIOS version on the **EZ Mode** main screen (also listed in EZ Flash 3 itself) matches the version you downloaded, before continuing with the toggles below.
 
 > [!WARNING]
 > Do not interrupt the flash or cut power during it. A failed BIOS update on this board means a recovery dance you want to avoid — let EZ Flash run to completion.
@@ -478,14 +496,16 @@ Flash the latest Maximus X Hero firmware before touching any toggle, so the sett
 > A firmware update occasionally moves or renames a toggle, so if one isn't where it's written below, check the neighbouring Advanced menus — this board's UEFI predates the searchable-settings feature of newer ASUS boards, so the menu paths below are the map. `F3` (My Favorites) is the closest built-in aid: pin the toggles there once you find them.
 
 ### Enable Intel Virtualization (VMX)
-1. Go to *Advanced → CPU Configuration*.
-2. Find **Intel (VMX) Virtualization Technology** (older firmware labels it *Intel Virtualization Technology*).
-3. Set it to **Enabled**. This is the core CPU virtualization switch that lets Proxmox run VMs at all.
+1. Go to the *Advanced* tab.
+2. Go to *CPU Configuration*.
+3. Find **Intel (VMX) Virtualization Technology** (older firmware labels it *Intel Virtualization Technology*).
+4. Set it to **Enabled**. This is the core CPU virtualization switch that lets Proxmox run VMs at all.
 
 ### Enable Intel VT-d
-1. Go to *Advanced → System Agent (SA) Configuration* — a **different submenu** than VMX, so do not assume the first toggle covered it.
-2. Find **VT-d** (Intel Virtualization Technology for Directed I/O).
-3. Set it to **Enabled**. This is the switch that makes PCIe passthrough possible — without it, the 9300-8i can never be handed to the TrueNAS VM.
+1. Go to the *Advanced* tab.
+2. Go to *System Agent (SA) Configuration* — a **different submenu** than VMX, so do not assume the first toggle covered it.
+3. Find **VT-d** (Intel Virtualization Technology for Directed I/O).
+4. Set it to **Enabled**. This is the switch that makes PCIe passthrough possible — without it, the 9300-8i can never be handed to the TrueNAS VM.
 
 ### Set the bottom slot to x4 mode
 1. In the onboard-devices / PCIe configuration section, find the lane setting for **`PCIEX4_3`** (the bottom slot, where the HBA now sits).
@@ -495,9 +515,11 @@ Flash the latest Maximus X Hero firmware before touching any toggle, so the sett
 Press `F6` to open **Q-Fan Control** (the same screen lives at *Advanced → Monitor → Q-Fan Configuration*). This box idles 24/7 upstairs in lived-in space, far below the thermal load the default curves assume — quiet is not optional here:
 
 1. Set **CHA_FAN1, CHA_FAN2, CHA_FAN3** and **H_AMP** — the rear exhaust and the three front intakes — to the **Silent** profile. The Noctuas at low PWM are effectively inaudible, and they only need to ramp when the GPU is grinding through detection.
-2. **The optional top exhaust rides W_PUMP+ — deal with that header here.** The pump headers (W_PUMP+ and AIO_PUMP) ship at 100% because they expect a pump, not a fan — set **W_PUMP+ Control → PWM Mode** and give it the **Silent** profile, or it runs flat out forever.
-3. Leave **CPU_FAN** and **CPU_OPT** on **Standard**. The Phantom Spirit is quiet at idle and you want it free to ramp under load.
-4. **Stick to the preset profiles** — skip the graphical curve editor and the Q-Fan Tuning sweep. Press `F10` right after the fan settings so a hang can't take the rest of the session with it.
+2. **The optional top exhaust rides W_PUMP+ — deal with that header here.** The pump headers (W_PUMP+ and AIO_PUMP) ship at 100% because they expect a pump, not a fan. Set **W_PUMP+ Control** to **PWM Mode**.
+3. Give it the **Silent** profile, or it runs flat out forever.
+4. Leave **CPU_FAN** and **CPU_OPT** on **Standard**. The Phantom Spirit is quiet at idle and you want it free to ramp under load.
+5. **Stick to the preset profiles** — skip the graphical curve editor and the Q-Fan Tuning sweep.
+6. Press `F10` right after the fan settings so a hang can't take the rest of the session with it.
 
 > [!WARNING]
 > The hand-drawn curve screen can freeze the whole setup session — a hard power-off then costs every unsaved toggle (harmless otherwise; only a mid-*flash* power cut is dangerous). The presets are all this build needs.
@@ -521,15 +543,21 @@ Still under **Advanced**, a quick pass through the onboard extras — none of th
 > Two things stay **on**: the **Intel LAN** controller is the server's only NIC, and **USB** carries the two ZBT-2 radios plus the UPS's data cable. Disable either and the build stops working in ways that take a while to trace back here.
 
 > [!TIP]
-> The FTW3's own lights are set from EVGA's Windows software, not this BIOS — and Linux has no tool for them. While Windows still exists on the NVMe, open **Precision X1** and turn the GPU LEDs off; settings made there generally persist on the card after the OS is gone. Two minutes now, or a GPU glowing through the glass in the room with you indefinitely.
+> The FTW3's own lights are set from EVGA's Windows software, not this BIOS — and Linux has no tool for them. While Windows still exists on the NVMe:
+>
+> 1. Open **Precision X1**.
+> 2. Turn the GPU LEDs off.
+>
+> Settings made there generally persist on the card after the OS is gone. Two minutes now, or a GPU glowing through the glass in the room with you indefinitely.
 
 ### Save a profile, then save and confirm
 Before leaving, save the current settings in **Tool → ASUS User Profile**, then reboot:
 
 1. Save to a profile slot, named **`PVE-BASE`**.
 2. Save to USB, with the FAT32 stick still plugged in, for an off-board copy.
-3. Press `F10`, confirm, and let the board reboot.
-4. Leave the monitor and keyboard attached for now — you will need them for the OS install.
+3. Press `F10`.
+4. Confirm. The board reboots on its own.
+5. Leave the monitor and keyboard attached for now — you will need them for the OS install.
 
 > [!NOTE]
 > The reason is a slow one: these settings live in CMOS behind a coin-cell battery that dies after enough years, and on a headless server the failure is quiet — an extended outage drains it, the board reverts to defaults, **VT-d comes back off**, and TrueNAS refuses to start because the HBA passthrough underneath it is gone. With the profile, recovery is *load `PVE-BASE`* instead of re-walking this page toggle by toggle — same BIOS visit either way, but two exact minutes instead of fifteen error-prone ones, and it is the missed toggle that hurts: a forgotten VT-d announces itself immediately, while a forgotten slot mode or AC-power setting resurfaces weeks later as a mystery. The insurance holds because ASUS keeps user profiles in the board's **flash**, not in the battery-backed CMOS — surviving a CMOS clear is their advertised use — so the profile outlives exactly the event it insures against. One honest limit: ASUS ties profiles to the BIOS version, so re-save it after any future BIOS update. (Reading this after the build is done? Do it during the next planned reboot — two minutes in the BIOS.)
@@ -541,8 +569,10 @@ Before leaving, save the current settings in **Tool → ASUS User Profile**, the
 > Windows is still on the NVMe at this point — you do not wipe it until the OS install — so you can verify virtualization from the existing install:
 >
 > 1. Boot into Windows.
-> 2. Press `Ctrl+Shift+Esc` for Task Manager → **Performance → CPU**.
-> 3. Confirm the right-hand column reads **Virtualization: Enabled**.
+> 2. Press `Ctrl+Shift+Esc` to open Task Manager.
+> 3. Click the **Performance** tab.
+> 4. Click **CPU**.
+> 5. Confirm the right-hand column reads **Virtualization: Enabled**.
 >
 > If you would rather not boot Windows, no stress — the Proxmox installer on the next stage warns loudly if hardware virtualization is missing, so a missed VMX or VT-d toggle surfaces there too.
 

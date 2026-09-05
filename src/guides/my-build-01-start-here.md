@@ -312,7 +312,13 @@ Check you have everything before you start — the later pages assume each piece
 > - **Already in the house:** Lutron Caseta lights (Pro bridge), 2x ecobee thermostats, Google/Nest speakers for announcements, and a Samsung Family Hub fridge
 
 ### Get wired Ethernet to the server's final spot
-Proxmox cannot use Wi-Fi for its management interface, so the box must be plugged into the router with a cable. If the spot where the quiet box will live is far from the router, get a long Ethernet cable or a powerline adapter (both work) **before** you start — this is the one networking thing you cannot fix from a browser later, and discovering it after the wipe means the server is unreachable.
+Proxmox cannot use Wi-Fi for its management interface, so the box must be plugged into the router with a cable.
+
+If the spot where the quiet box will live is far from the router:
+
+1. Get a long Ethernet cable or a powerline adapter (both work).
+
+Do this **before** you start — this is the one networking thing you cannot fix from a browser later, and discovering it after the wipe means the server is unreachable.
 
 ### Back up everything on the NVMe
 The 500 GB NVMe currently has Windows and your files on it, and the Proxmox install **erases the whole drive**. Copy anything you want to keep onto another machine or an external disk first — there is no undo.
@@ -321,7 +327,13 @@ The 500 GB NVMe currently has Windows and your files on it, and the Proxmox inst
 > Wiping the NVMe is irreversible. Confirm your files are copied off — and that a few of them actually open from the copy — before you reach the install.
 
 > [!TIP]
-> While Windows is still on the machine, you can confirm hardware virtualization is on: press `Ctrl+Shift+Esc` for Task Manager → **Performance → CPU** — the right-hand column should read **Virtualization: Enabled**. (You set the BIOS toggles for this on the Hardware & BIOS page; after the wipe the Proxmox installer also warns loudly if it is missing, so a missed switch surfaces there too.)
+> While Windows is still on the machine, you can confirm hardware virtualization is on.
+>
+> 1. Press `Ctrl+Shift+Esc` to open Task Manager.
+> 2. Click the **Performance** tab.
+> 3. Click **CPU**.
+>
+> The right-hand column should read **Virtualization: Enabled**. (You set the BIOS toggles for this on the Hardware & BIOS page; after the wipe the Proxmox installer also warns loudly if it is missing, so a missed switch surfaces there too.)
 
 > [!DETAILS] What to pull off the NVMe before it is wiped
 > Most of what matters lives in a handful of places — work down this list on the Windows machine, then copy it all to an external drive or another PC and spot-check that it opens:
@@ -339,15 +351,22 @@ The 500 GB NVMe currently has Windows and your files on it, and the Proxmox inst
 > 3. Open `C:\Users\`-your-name.
 > 4. Select the folders you are keeping (`Ctrl`+click for several).
 > 5. Press `Ctrl+C`.
-> 6. Open the external drive and press `Ctrl+V`.
-> 7. When the copy finishes, open a few files from the external drive to confirm they work.
-> 8. Click the USB icon in the system tray and choose **Eject** before unplugging.
+> 6. Open the external drive.
+> 7. Press `Ctrl+V`.
+> 8. When the copy finishes, open a few files from the external drive to confirm they work.
+> 9. Click the USB icon in the system tray.
+> 10. Choose **Eject** before unplugging.
 >
 > Skipping the eject can leave a half-written, corrupted copy of the very files you are trying to save.
 >
 > **No external drive?** Use a cloud free tier (Google Drive 15 GB, OneDrive 5 GB, Dropbox 2 GB — fine for documents and photos, too small for big game folders), or copy to another PC on your network:
-> 1. On the receiving PC, right-click a folder → **Properties → Sharing → Share** and grant write access.
-> 2. On the old PC, type `\\OTHER-PC-NAME` into the File Explorer address bar and copy files in.
+> 1. On the receiving PC, right-click a folder.
+> 2. Choose **Properties**.
+> 3. Click the **Sharing** tab.
+> 4. Click **Share**.
+> 5. Grant write access.
+> 6. On the old PC, type `\\OTHER-PC-NAME` into the File Explorer address bar.
+> 7. Copy files in.
 >
 > Both machines must be on the same network.
 
@@ -360,7 +379,11 @@ Two separate sticks, both written now while a working PC exists:
 Do not reuse one stick for both. Writing the installer image converts the stick to a read-only installer layout Windows cannot add files to — and USB BIOS Flashback only reads a plain **FAT32** stick anyway, so the BIOS file needs its own.
 
 ### Round up a monitor and keyboard
-Borrow both and plug them into the server for the install itself. You unplug them once Proxmox is up and drive everything from a browser after that.
+
+1. Borrow a monitor and keyboard.
+2. Plug them into the server for the install itself.
+
+You unplug them once Proxmox is up and drive everything from a browser after that.
 
 > [!NOTE]
 > After the install there is nothing more to download on a PC. The server pulls the rest over its own network connection — the TrueNAS installer, the Home Assistant image, every service container, the GPU driver — so from then on any device with a browser (a laptop, an iPad, even a phone) is enough to reach `https://192.168.1.50:8006` and keep building. The two USB sticks above are the only things that strictly need a full PC, because you cannot write them from a phone.
@@ -374,10 +397,12 @@ The whole collection starts from one number — the static address you give the 
 > [!WARNING]
 > **Carve out the static block first.** Every static address in this collection — the host here, the service guests in the .50s, the cameras in the .70s — assumes those numbers are *reserved territory*, but the Fios router's DHCP pool spans nearly the whole subnet out of the box, so nothing stops it handing `.50` to a phone someday.
 
-1. Open the router at `192.168.1.1` → its LAN/DHCP settings.
-2. Shrink the pool to `192.168.1.100 – 192.168.1.254`.
-3. Reboot the router. Devices currently leasing an address below `.100` migrate into the pool automatically on their next renewal — a reboot does them all at once.
-4. Check the device list: anything still squatting below `.100` that does not move was statically configured on the device itself — reconfigure it into the pool range before it collides with a service.
+1. Open the router at `192.168.1.1`.
+2. Go to its **LAN/DHCP settings**.
+3. Shrink the pool to `192.168.1.100 – 192.168.1.254`.
+4. Reboot the router. Devices currently leasing an address below `.100` migrate into the pool automatically on their next renewal — a reboot does them all at once.
+5. Check the device list for anything still squatting below `.100` — that means it was statically configured on the device itself.
+6. Reconfigure it into the pool range before it collides with a service.
 
 > [!NOTE]
 > That leaves `.2 – .99` as the static zone every default below lives in, and the pool keeps 155 addresses for everything else — phones, guests, and the PoE shades (which get DHCP reservations *inside* the pool, one per motor).
@@ -392,7 +417,14 @@ The pages are numbered in the exact sequence to build in. Do not skip ahead — 
 >
 > - **Each page is complete on its own.** The full steps for that stage are written inline and specialized to this exact hardware. You do not need any other reference.
 > - **Sensitive values are credential fields, not plain text.** Anything secret — IP addresses, drive serials, usernames, passwords, tokens — is captured in a fill-in field that stays on this device and is never committed or synced. Plain hardware and choices are written out normally. Your real synced secret store is your password manager (you will build Vaultwarden for this role later in the build); these fields are just a convenience as you follow along.
-> - **Your ad-blocker may flag the copy buttons.** uBlock Origin's ClickFix protection warns when any page offers a `bash -c "$(curl …)"` command to the clipboard — the mechanics of a real attack class, so the warning is earned, but here it is this guide's own install one-liners. Check the flagged domain is the one the page prints (the community-scripts repo on `raw.githubusercontent.com`), then dismiss or allowlist this site. The download-read-run habit below is the real protection either way.
+> - **Your ad-blocker may flag the copy buttons.** uBlock Origin's ClickFix protection warns when any page offers a `bash -c "$(curl …)"` command to the clipboard — the mechanics of a real attack class, so the warning is earned, but here it is this guide's own install one-liners.
+>
+>   If it flags one of this guide's copy buttons:
+>
+>   1. Check the flagged domain is the one the page prints (the community-scripts repo on `raw.githubusercontent.com`).
+>   2. Dismiss or allowlist this site.
+>
+>   The download-read-run habit below is the real protection either way.
 > - **The order is the plan.** Build top to bottom. When a later page says "after the GPU is shared in" or "once the mirror exists," it is pointing back at a stage you have already finished.
 
 1. **Start Here** — this page: the map and parts list.

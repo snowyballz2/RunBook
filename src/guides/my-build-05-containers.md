@@ -19,9 +19,12 @@ Most of the always-on services on this box are not full virtual machines — the
 ### Download a Debian template first
 Container templates live in storage, and a fresh Proxmox install has none. Grab one before you create the first container:
 
-1. In the left tree, click the node, then the **local** storage under it.
-2. Open **CT Templates**, then click the **Templates** button.
-3. Find **debian** with the *standard* flavour — the list offers more than one version; take the newest, **debian-13-standard** — and click **Download**.
+1. In the left tree, click the node.
+2. Click the **local** storage under it.
+3. Open **CT Templates**.
+4. Click the **Templates** button.
+5. Find **debian** with the *standard* flavour — the list offers more than one version; take the newest, **debian-13-standard**.
+6. Click **Download**.
 
 Debian 13 is the same generation Proxmox 9 itself runs on and stays in security support years longer than 12; containers share the host's kernel, so there is no compatibility reason to reach back.
 
@@ -43,7 +46,13 @@ Click **Create CT** (top right) and step through the tabs. Build one **throwaway
 - **Confirm** — tick **Start after created** and finish.
 
 > [!TIP]
-> To delete the practice container later: select it, click **Shutdown**, then **More → Remove**, typing the CT ID to confirm.
+> To delete the practice container later:
+>
+> 1. Select it.
+> 2. Click **Shutdown**.
+> 3. Click **More**.
+> 4. Click **Remove**.
+> 5. Type the CT ID to confirm.
 
 > [!WARNING]
 > AdGuard Home is the household **DNS (Domain Name System)** — the whole house resolves names through it — and Nginx Proxy Manager holds every reverse-proxy route. Those two especially must have a fixed address. Pin a static IP in the **Network** tab (or a DHCP reservation on the router); never leave them on roaming DHCP.
@@ -63,8 +72,9 @@ On the **General** tab, keep the **Unprivileged container** box ticked — the s
 ## Get inside and settle it
 
 ### Log in at the Console
-1. Select the container in the left tree and open **Console**.
-2. Log in as `root` with the password you set in the wizard.
+1. Select the container in the left tree.
+2. Open **Console**.
+3. Log in as `root` with the password you set in the wizard.
 
 You are standing inside a small, fresh Debian machine. From the node's **Shell** you can also drop straight in with `pct enter 100` (swap in the container's ID), no password asked.
 
@@ -91,7 +101,11 @@ mkdir -p /root/.ssh && chmod 700 /root/.ssh
 echo "ssh-ed25519 AAAA... you@laptop" >> /root/.ssh/authorized_keys
 ```
 
-A helper-script container may be built from a leaner template that does not ship an SSH server. If `ssh` refuses to connect at all, install one from inside via the Console: `apt install -y openssh-server`.
+A helper-script container may be built from a leaner template that does not ship an SSH server. If `ssh` refuses to connect at all, install one from inside via the Console:
+
+```bash
+apt install -y openssh-server
+```
 
 > [!TIP]
 > Day to day you will reach these services by their **web UIs at their static IPs**, not SSH — and from anywhere once Tailscale and its subnet route are set up later, on the Remote Access page. The SSH key is for the occasional `apt` pass and config edit.
@@ -101,8 +115,9 @@ A helper-script container may be built from a leaner template that does not ship
 ### Make it start at boot
 A useful container should survive a power cut without you remembering it exists.
 
-1. Select it and open **Options**.
-2. Set **Start at boot** to **Yes**.
+1. Select it.
+2. Open **Options**.
+3. Set **Start at boot** to **Yes**.
 
 Or from the host shell:
 
@@ -123,7 +138,8 @@ The panel's **Protection** flag is worth knowing at the same time: it blocks del
 That 8 GB starter disk enlarges with no downtime.
 
 1. In **Resources**, select the **Root Disk** row.
-2. Click **Volume Action → Resize**.
+2. Click **Volume Action**.
+3. Click **Resize**.
 
 Or from the host shell:
 
@@ -147,7 +163,12 @@ Snapshots are instant and nearly free.
 2. Click **Take Snapshot**.
 3. Name it for *what you were about to do* (`before-adguard-upgrade`), not the date.
 
-To undo, select the snapshot and click **Rollback** — everything since is discarded.
+To undo:
+
+1. Select the snapshot.
+2. Click **Rollback**.
+
+Everything since is discarded.
 
 > [!TIP]
 > That is the whole container lifecycle on this build: create unprivileged, pin a static IP, update, set start-at-boot, snapshot before you tinker. The service containers all follow it; Frigate is the only one that breaks the unprivileged default, and only because its stack needs deeper access to the host's device nodes than the rest.

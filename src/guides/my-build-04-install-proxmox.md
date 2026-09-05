@@ -23,19 +23,21 @@ Do this on the Mac or the Windows PC — either works; the server's own Windows 
 It is free, needs no account, and is about 1.7 GB.
 
 > [!DETAILS] Verify the download (optional but smart)
-> Hash the file and compare it against the SHA256 checksum shown next to the download link. A match means the file arrived intact and untampered. On a Mac:
+> A match means the file arrived intact and untampered.
+>
+> On a Mac, hash the file:
 >
 > ```bash
 > shasum -a 256 proxmox-ve_9.2-1.iso
 > ```
 >
-> On the Windows PC (Command Prompt):
+> On the Windows PC (Command Prompt), hash the file:
 >
 > ```
 > certutil -hashfile proxmox-ve_9.2-1.iso SHA256
 > ```
 >
-> For the 9.2-1 ISO the expected value is `4e88fe416df9b527624a175f24c9aa07c714d3332afb1ee3dbf3879573ef2c6c`.
+> Compare the result against the SHA256 checksum shown next to the download link. For the 9.2-1 ISO the expected value is `4e88fe416df9b527624a175f24c9aa07c714d3332afb1ee3dbf3879573ef2c6c`.
 
 ### Flash the ISO to a USB stick
 Write the ISO to a USB stick of 4 GB or larger with **balenaEtcher**, which runs on both macOS and Windows and handles the Proxmox ISO with no special settings.
@@ -43,14 +45,21 @@ Write the ISO to a USB stick of 4 GB or larger with **balenaEtcher**, which runs
 > [!WARNING]
 > Flashing erases everything on the stick. Confirm you have selected the USB drive, not an internal disk.
 
-1. Download Etcher from [etcher.balena.io](https://etcher.balena.io/) and install it.
-2. Insert a USB stick of 4 GB or more.
-3. Click **Flash from file** and pick the Proxmox ISO.
-4. Click **Select target** and pick the USB stick — check the size matches.
-5. Click **Flash** and wait. Etcher validates the write afterwards; let it finish.
+1. Download Etcher from [etcher.balena.io](https://etcher.balena.io/).
+2. Install it.
+3. Insert a USB stick of 4 GB or more.
+4. Click **Flash from file**.
+5. Pick the Proxmox ISO.
+6. Click **Select target**.
+7. Pick the USB stick — check the size matches.
+8. Click **Flash** and wait. Etcher validates the write afterwards; let it finish.
 
 > [!NOTE]
-> After flashing, macOS may pop up **"The disk you inserted was not readable by this computer."** Click **Ignore** (or **Eject**) — do **not** click **Initialize**, which would reformat the stick and destroy the installer you just wrote. The popup is normal: macOS cannot read the Linux filesystem on the stick, but the server's BIOS can boot from it fine.
+> After flashing, macOS may pop up **"The disk you inserted was not readable by this computer."**
+>
+> 1. Click **Ignore** (or **Eject**).
+>
+> Do **not** click **Initialize**, which would reformat the stick and destroy the installer you just wrote. The popup is normal: macOS cannot read the Linux filesystem on the stick, but the server's BIOS can boot from it fine.
 
 ## Install Proxmox to the NVMe
 
@@ -59,8 +68,10 @@ This part happens on a keyboard and monitor plugged into the server itself — t
 
 Make sure the server has wired **Ethernet** to the LAN first — through the GS308EPP switch to the router, as cabled on the Hardware & BIOS page — because Proxmox cannot use Wi-Fi for management out of the box.
 
-1. Power on and tap **`F8`** right away to get the ASUS one-time boot menu.
-2. Pick the USB stick. If the menu lists it twice, choose the **UEFI:** entry.
+1. Power on.
+2. Tap **`F8`** right away to get the ASUS one-time boot menu.
+3. Pick the USB stick.
+4. If the menu lists it twice, choose the **UEFI:** entry.
 
 > [!TIP]
 > If the stick refuses to boot, disable **Secure Boot** in the BIOS and try again. Proxmox has been signed for Secure Boot since version 8.1, but on some ASUS boards it still gets in the way, and turning it off is the documented fallback.
@@ -86,16 +97,20 @@ At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts.
 > Set during install — 8 characters minimum, longer is better. Record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build), but write it here too so this checklist stands on its own.
 
 > [!DETAILS] Every prompt the installer shows, in order
-> 1. **EULA** — read or skim, click I agree.
-> 2. **Target disk** — select the **500 GB NVMe** and leave the **Options** filesystem at the default (ext4 on LVM) — this is a single boot drive, not a mirror. The install **wipes this whole drive** (be certain you already copied its Windows files off, the prep step before you began); it holds the Proxmox OS and, later, the Frigate cache, while the three IronWolf 4 TB spinners stay untouched here.
-> 3. **Country, time zone, keyboard layout** — usually auto-detected; confirm and move on.
-> 4. **Password, confirm, email address** — the root password above, plus an email for system notifications.
-> 5. **Management network** — pick the **wired interface**, then fill in:
+> 1. Read or skim the **EULA**.
+> 2. Click **I agree**.
+> 3. **Target disk** — select the **500 GB NVMe**.
+> 4. Leave the **Options** filesystem at the default (ext4 on LVM) — this is a single boot drive, not a mirror. The install **wipes this whole drive** (be certain you already copied its Windows files off, the prep step before you began); it holds the Proxmox OS and, later, the Frigate cache, while the three IronWolf 4 TB spinners stay untouched here.
+> 5. **Country, time zone, keyboard layout** — usually auto-detected; confirm and move on.
+> 6. **Password, confirm, email address** — the root password above, plus an email for system notifications.
+> 7. **Management network** — pick the **wired interface**, then fill in:
 >    - **Hostname** → the hostname you chose
 >    - **IP address** → the static IP you picked for the server
 >    - **Gateway** → your router's address
 >    - **DNS server** → your router's address again
-> 6. **Summary** — review, click Install, and the box reboots itself when done. As the reboot starts, unplug the USB stick so it does not boot back into the installer.
+> 8. Review the **Summary**.
+> 9. Click **Install**. The box reboots itself when done.
+> 10. As the reboot starts, unplug the USB stick so it does not boot back into the installer.
 
 > [!DETAILS] Picking the static IP — what you find and what you pick
 > The installer wants three numbers. Two you **find** (facts about your network), one you **pick** (a fresh address for the server):
@@ -107,20 +122,28 @@ At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts.
 > Can't get into the router at all? Pick a high number like `.250` and ping it first — if nothing answers, it is almost certainly free.
 
 ### Log in to the web UI for the first time
-Proxmox has no desktop of its own — you administer it from a browser. From your Mac on the same LAN, browse to the address below. Type the **`https://`** out in full — the Proxmox port speaks only HTTPS, and a browser that quietly tries plain `http` on 8006 reports a vague "can't open the page" instead of the certificate screen:
+Proxmox has no desktop of its own — you administer it from a browser. From your Mac on the same LAN, browse to the address below:
 
 ```bash
 https://192.168.1.50:8006
 ```
 
+Type the **`https://`** out in full — the Proxmox port speaks only HTTPS, and a browser that quietly tries plain `http` on 8006 reports a vague "can't open the page" instead of the certificate screen.
+
 The browser will warn about the certificate before the login screen — that is expected, since Proxmox generates its own self-signed certificate and the browser cannot vouch for it.
 
-1. In Chrome or Edge, click **Advanced → Proceed**. In Safari, click **Show Details → visit this website**, then confirm.
+1. Get past the certificate warning — in **Chrome or Edge**, click **Advanced → Proceed**; in **Safari**, click **Show Details → visit this website**, then confirm.
 2. Log in as **`root`** with the realm left on **Linux PAM standard authentication**, using the password you set during install.
 3. Click **OK** on the "No valid subscription" popup — it appears on every login; the next step removes it.
 
 > [!WARNING]
-> If **one machine cannot reach the page while others can, check that machine's VPN client first.** A consumer VPN (NordVPN and friends) silently blocks the local network while connected — internet works, the router works, but LAN devices like this server go completely dark, with no error saying why. It cost this build a solid diagnostic detour. The fix is one toggle, kept on: NordVPN on macOS calls it **Local Network Discovery** (Settings → General); other clients call it "allow LAN access" or similar. Disconnecting the VPN to test is the fastest way to confirm.
+> A consumer VPN (NordVPN and friends) silently blocks the local network while connected — internet works, the router works, but LAN devices like this server go completely dark, with no error saying why. It cost this build a solid diagnostic detour. The fix is one toggle, kept on.
+>
+> If one machine cannot reach the page while others can:
+>
+> 1. Check that machine's VPN client first.
+> 2. Disconnect the VPN to test — the fastest way to confirm.
+> 3. Turn the toggle on: NordVPN on macOS calls it **Local Network Discovery** (Settings → General); other clients call it "allow LAN access" or similar.
 
 ## Post-install: switch to the no-subscription repo
 
@@ -128,7 +151,13 @@ A fresh install points at Proxmox's paid *enterprise* package repo, so updates e
 
 ### Run the post-install helper
 
-Open the host shell (**Datacenter → your node → Shell**) and run it:
+Open the host shell:
+
+1. Click **Datacenter**.
+2. Click your node.
+3. Click **Shell**.
+
+Run it:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh)"
@@ -162,9 +191,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 
 > [!DETAILS] Prefer no script? Do the same by hand
 > **Easiest: use the web UI.**
-> 1. Select your node → **Updates → Repositories**.
-> 2. Disable the two *enterprise* entries.
-> 3. Use **Add** to add the **No-Subscription** repository.
+> 1. Select your node.
+> 2. Click **Updates**.
+> 3. Click **Repositories**.
+> 4. Disable the two *enterprise* entries.
+> 5. Use **Add** to add the **No-Subscription** repository.
 >
 > **Or edit the files in the node's Shell.** Disable the enterprise repos by adding a line `Enabled: no` to each of these two files (open them with `nano <file>`):
 >
@@ -231,9 +262,10 @@ Open the file:
 nano /etc/default/grub
 ```
 
-1. Find the `GRUB_CMDLINE_LINUX_DEFAULT` line and add the two flags inside its quotes, so it reads `GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"`.
-2. Save and exit.
-3. Apply the change and reboot:
+1. Find the `GRUB_CMDLINE_LINUX_DEFAULT` line.
+2. Add the two flags inside its quotes, so it reads `GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"`.
+3. Save and exit.
+4. Apply the change and reboot:
 
 ```bash
 update-grub
@@ -244,7 +276,13 @@ reboot
 > First time in **nano**: it is a plain text editor, nothing more. Arrow keys move, typing inserts, and **Enter just starts a new line** — inside an editor it never runs or saves anything, unlike at the shell prompt. Save with **Ctrl+O**, then **Enter** to confirm the filename, then **Ctrl+X** to exit. **Undo is Alt+U** (redo Alt+E) — and since a Mac's Option key often does not register as Alt in the web console, **Esc then U** does the same thing. Exiting with unsaved changes asks Y/N — answering **N** abandons the edit entirely, the escape hatch if something went sideways. The bar along nano's bottom edge lists these: `^` means Ctrl, `M-` means Alt/Esc.
 
 > [!NOTE]
-> Not sure which bootloader you have? Run `proxmox-boot-tool status`. The GRUB steps above match this build's ext4-on-LVM install. If you instead installed on **ZFS root** with Secure Boot off, Proxmox boots with systemd-boot — add the same `intel_iommu=on iommu=pt` to `/etc/kernel/cmdline`, then run `proxmox-boot-tool refresh` and reboot. (With Secure Boot **on**, even a ZFS install uses GRUB — follow the GRUB steps above.)
+> Not sure which bootloader you have?
+>
+> ```bash
+> proxmox-boot-tool status
+> ```
+>
+> The GRUB steps above match this build's ext4-on-LVM install. If you instead installed on **ZFS root** with Secure Boot off, Proxmox boots with systemd-boot — add the same `intel_iommu=on iommu=pt` to `/etc/kernel/cmdline`, then run `proxmox-boot-tool refresh` and reboot. (With Secure Boot **on**, even a ZFS install uses GRUB — follow the GRUB steps above.)
 
 ### Confirm IOMMU is live
 
