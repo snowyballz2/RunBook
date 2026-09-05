@@ -23,7 +23,14 @@ The payoff fits this local-first household exactly: one mesh VPN (virtual privat
 ## Put the host on a tailnet
 
 > [!NOTE]
-> Before you start, know which identity this is: **your own Apple ID** — the build administrator's, the one already on your iPhone and MacBook. This house runs two personal Apple IDs, and the tailnet belongs to **yours**; do not create a new shared ID for it (a rarely-used Apple ID is a neglected account, the exact weakness being avoided here). The same identity signs in the host (in a browser on the MacBook, which may ask you to re-authenticate) and later your iPhone, so keep its password and a two-factor device within reach. The second phone in the house never signs in with your ID — invite it in the admin console's **Users** page as **its own user with its own Apple ID** — the button is **Invite external users**, the role is picked inside the invite (Member), and an unaccepted invite expires after 30 days (the free Personal plan covers six users), and do it **while you are in the console anyway**: the Automations page's presence rules depend on it. A phone with no route to Home Assistant cannot report leaving, so its tracker freezes on "home" and *everybody-left* never fires — her membership is what makes her presence real when she is away.
+> Before you start, know which identity this is: **your own Apple ID** — the build administrator's, the one already on your iPhone and MacBook. This house runs two personal Apple IDs, and the tailnet belongs to **yours**; do not create a new shared ID for it (a rarely-used Apple ID is a neglected account, the exact weakness being avoided here). The same identity signs in the host (in a browser on the MacBook, which may ask you to re-authenticate) and later your iPhone, so keep its password and a two-factor device within reach.
+>
+> The second phone in the house never signs in with your ID — it needs its own user with its own Apple ID. In the admin console's **Users** page:
+>
+> 1. Click **Invite external users**.
+> 2. Pick the role **Member** inside the invite.
+>
+> An unaccepted invite expires after 30 days (the free Personal plan covers six users). Do this **while you are in the console anyway**: the Automations page's presence rules depend on it. A phone with no route to Home Assistant cannot report leaving, so its tracker freezes on "home" and *everybody-left* never fires — her membership is what makes her presence real when she is away.
 
 ### Create your Tailscale account
 Tailscale calls your private network a *tailnet*; it is created the moment you first sign in. Go to [tailscale.com](https://tailscale.com/) and sign up — the Personal plan is $0, free forever. There is no Tailscale password to invent: you sign in with an identity you already own. For this household, **Apple** is the natural choice — it is the Apple ID your iPhones already use — but Google, Microsoft, GitHub, or a passkey work too.
@@ -55,11 +62,16 @@ Fair question to ask here: why should a third party's identity sit between you a
 
 Do it now, while the console is open — Tailscale's *Admin account with passkey login* doc is the canonical walk:
 
-1. In the **admin console → Users**, click **Invite external users**, set the role to **Admin** inside the invite, and use the **Copy invite link** tab — **Generate & copy invite link** — rather than emailing it.
-2. Open that link in a **private/incognito window** (Tailscale's docs say so explicitly — a normal window binds the invite to whatever account is already signed in) and choose to **sign up with a passkey**.
-3. Pick the username deliberately: it becomes permanent as `<name>@passkey` and can never be reused, and the invite itself expires after 30 days unused.
-4. Store its passkey with the same discipline as the Home Assistant backup key — the device keychain now, Vaultwarden when it exists later in the build.
-5. Sign in with it **once** to prove it works — an untested break-glass login is a decoration.
+1. In the **admin console**, open **Users**.
+2. Click **Invite external users**.
+3. Set the role to **Admin** inside the invite.
+4. Click the **Copy invite link** tab.
+5. Click **Generate & copy invite link** — rather than emailing it.
+6. Open that link in a **private/incognito window** — Tailscale's docs say so explicitly, since a normal window binds the invite to whatever account is already signed in.
+7. Choose to **sign up with a passkey**.
+8. Pick the username deliberately: it becomes permanent as `<name>@passkey` and can never be reused, and the invite itself expires after 30 days unused.
+9. Store its passkey with the same discipline as the Home Assistant backup key — the device keychain now, Vaultwarden when it exists later in the build.
+10. Sign in with it **once** to prove it works — an untested break-glass login is a decoration.
 
 There is deliberately **no password field below for the passkey itself** — a passkey has no secret string to record. Its private key is generated inside the device's secure hardware and never leaves; Tailscale only ever holds the public half. What does need recording is the username, because it is permanent and you will be typing it on your worst day:
 
@@ -78,7 +90,12 @@ This is stage one of a two-stage plan. Today the Apple ID does daily duty and th
 > Scope honesty: this removes the identity-provider dependency, not Tailscale itself — their coordination server still introduces your devices to each other (self-hosting that means Headscale, which this build deliberately skips). Your WireGuard keys are end-to-end regardless; the coordination plane never holds them. One quirk worth knowing: a deleted tailnet is unrecoverable, and a passkey username can never be reused — even by you.
 
 ### Install Tailscale on the Proxmox host
-Tailscale's documented path for Proxmox is to install directly on the host — Proxmox VE 9 is Debian 13 "Trixie" underneath, so the standard Debian packages are correct. Open the host shell in the web UI (select the **pve** node, then **Shell**) and run the block below — Tailscale's official Debian Trixie instructions with `sudo` removed, because this shell is already root. The first command adds Tailscale's signing key, the second its package repository, and then apt installs the signed package:
+Tailscale's documented path for Proxmox is to install directly on the host — Proxmox VE 9 is Debian 13 "Trixie" underneath, so the standard Debian packages are correct.
+
+1. In the web UI, select the **pve** node.
+2. Click **Shell**.
+
+Run the block below — Tailscale's official Debian Trixie instructions with `sudo` removed, because this shell is already root:
 
 ```bash
 curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
@@ -86,6 +103,8 @@ curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.lis
 apt-get update
 apt-get install tailscale
 ```
+
+The first command adds Tailscale's signing key, the second its package repository, and then apt installs the signed package.
 
 > [!NOTE]
 > **If apt asks about `tailscale-archive-keyring.gpg`, answer `Y`.** The first `curl` above writes that keyring by hand, and the package ships its own copy of the same file — so dpkg stops and asks rather than overwriting something you appear to have edited. Both files are Tailscale's own repository signing key, so either answer installs correctly. **Y** (install the package maintainer's version) is the better one: it puts the file back under package management, so future Tailscale updates refresh the key silently instead of raising this prompt again every time. `D` shows the diff first if you want to see for yourself; `N` keeps your copy and works, at the cost of meeting this prompt again later.
@@ -99,7 +118,7 @@ apt-get install tailscale
 > curl -fsSL https://tailscale.com/install.sh | sh
 > ```
 >
-> It works fine — but it is still a script piped into a root shell, so apply the download-read-run habit used elsewhere in this build: fetch it to a file, read it, then run it.
+> It works fine — but it is still a script piped into a root shell, so apply the download-read-run habit used elsewhere in this build: fetch it to a file, read it, then run it:
 >
 > ```bash
 > curl -fsSL https://tailscale.com/install.sh -o tailscale-install.sh
@@ -150,7 +169,13 @@ tailscale set --accept-dns=false
 Every phone and laptop keeps the override — that is what carries the `*.kuzco.org` names off-LAN — but the machine underneath them all keeps its boring, self-sufficient DNS.
 
 ### Stop the host's key from expiring
-By default a tailnet device must re-authenticate every 180 days, and a server that silently drops off the network while you are travelling defeats the entire point. On the [Machines page](https://login.tailscale.com/admin/machines) of the admin console, find the **pve** row, open the **…** menu at the far right, and select **Disable Key Expiry**.
+By default a tailnet device must re-authenticate every 180 days, and a server that silently drops off the network while you are travelling defeats the entire point.
+
+On the [Machines page](https://login.tailscale.com/admin/machines) of the admin console:
+
+1. Find the **pve** row.
+2. Open the **…** menu at the far right.
+3. Select **Disable Key Expiry**.
 
 > [!WARNING]
 > Tailscale recommends disabling key expiry on trusted servers and subnet routers — this host is about to be both. A subnet router whose key expires *stops routing*, cutting off every guest behind it. Your iPhone and MacBook can keep the 180-day default; re-authenticating there is a ten-second sign-in. Never run `tailscale up --force-reauth` over the Tailscale link itself — it can drop the connection mid-command, and then you are locked out until you are home.
@@ -185,9 +210,11 @@ tailscale set --advertise-routes=192.168.1.0/24
 ### Approve the route in the admin console
 Advertised routes do nothing until an admin — you — approves them, so a stray device can never quietly announce itself as a gateway.
 
-1. Open the [Machines page](https://login.tailscale.com/admin/machines) and select **pve** — its row now shows a **Subnets** badge.
-2. In the **Subnets** section, select **Edit**.
-3. Tick `192.168.1.0/24` under **Subnet routes**, then **Save**.
+1. Open the [Machines page](https://login.tailscale.com/admin/machines).
+2. Select **pve** — its row now shows a **Subnets** badge.
+3. In the **Subnets** section, select **Edit**.
+4. Tick `192.168.1.0/24` under **Subnet routes**.
+5. Click **Save**.
 
 > [!NOTE]
 > The household's other devices need nothing extra: macOS, iOS, tvOS, and Windows all pick up new subnet routes automatically. Only Linux clients opt in manually, with `tailscale set --accept-routes` — relevant only if you later run a Linux laptop on the tailnet.
@@ -197,14 +224,17 @@ Advertised routes do nothing until an admin — you — approves them, so a stra
 ### Put Tailscale on your phone
 A phone on cellular data is the cleanest test: a device that is definitely not on your network, reaching addresses that should only exist on your network. Its first-run prompts, in order:
 
-1. Install Tailscale from the App Store (iOS 15 or later) and open it.
-2. **Get Started**.
-3. iOS asks permission to add a **VPN configuration** — accept; that is what switches the connection on.
-4. Allow **notifications** — how a future re-authentication asks for you instead of silently dropping.
-5. **Log in** with the same account you used for the host.
+1. Install Tailscale from the App Store (iOS 15 or later).
+2. Open it.
+3. **Get Started**.
+4. iOS asks permission to add a **VPN configuration** — accept; that is what switches the connection on.
+5. Allow **notifications** — how a future re-authentication asks for you instead of silently dropping.
+6. **Log in** with the same account you used for the host.
 
 ### Reach every service from anywhere
-Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app shows connected, then browse to each service on its normal LAN address — no Tailscale install needed on any of them, because the subnet route carries them all:
+1. Turn off Wi-Fi so the phone is genuinely on cellular.
+2. Confirm the Tailscale app shows connected.
+3. Browse to each service on its normal LAN address — no Tailscale install needed on any of them, because the subnet route carries them all:
 
 - **Proxmox** — `https://192.168.1.50:8006`. Expect the same self-signed certificate warning as on the LAN — **iOS Safari cannot reliably get past it**, so confirm with an **HTTP** service below instead, and reach Proxmox by its proxied name once DNS is set below.
 - **Home Assistant** — `http://192.168.1.51:8123`.
@@ -217,9 +247,11 @@ Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app 
 
 The `*.kuzco.org` hostnames Nginx Proxy Manager serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System):
 
-1. On the admin console's [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers**, open **Add nameserver** and choose **Custom…** — every preset in that list (Google, Cloudflare, Quad9, Mullvad, NextDNS, Control D) is a public resolver, and you want your own.
-2. Enter AdGuard's LAN IP, `192.168.1.53`, and save.
-3. Turn the **Override DNS servers** toggle **on** — it stays greyed until a nameserver exists.
+1. On the admin console's [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers**, click **Add nameserver**.
+2. Choose **Custom…** — every preset in that list (Google, Cloudflare, Quad9, Mullvad, NextDNS, Control D) is a public resolver, and you want your own.
+3. Enter AdGuard's LAN IP, `192.168.1.53`.
+4. Click **Save**.
+5. Turn the **Override DNS servers** toggle **on** — it stays greyed until a nameserver exists.
 
 After that, `https://proxmox.kuzco.org` and the rest work from anywhere too.
 
@@ -281,7 +313,13 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 > [!DETAILS] Optional extras — exit node and a clean certificate
 > Two add-ons, neither required and nothing later depends on them:
 >
-> - **Exit node** — `tailscale set --advertise-exit-node` on the host, approved on the Machines page like the subnet route. Selected on your iPhone, it routes *all* the phone's traffic through home — handy on hostile hotel Wi-Fi, off by default, separate from the subnet route. It is also the closest thing this build has to a consumer VPN; see below for how far that goes.
+> - **Exit node** — run on the host:
+>
+>    ```bash
+>    tailscale set --advertise-exit-node
+>    ```
+>
+>    Approve it on the Machines page, like the subnet route. Selected on your iPhone, it routes *all* the phone's traffic through home — handy on hostile hotel Wi-Fi, off by default, separate from the subnet route. It is also the closest thing this build has to a consumer VPN; see below for how far that goes.
 > - **Quiet the Proxmox certificate warning over Tailscale** — Tailscale Serve fronts the web UI with a valid certificate.
 >
 > 1. Run this in the host shell:
@@ -290,7 +328,10 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 >    tailscale serve --bg https+insecure://localhost:8006
 >    ```
 >
-> 2. **If it refuses** with `Serve is not enabled on your tailnet`, follow the `login.tailscale.com/f/serve?node=…` link it prints, or enable **HTTPS Certificates → Enable HTTPS** on the [DNS page](https://login.tailscale.com/admin/dns) — then run the command again. Serve provisions a real Let's Encrypt certificate for the machine, so HTTPS certificates have to be switched on for the tailnet once.
+> 2. **If it refuses** with `Serve is not enabled on your tailnet`, follow the `login.tailscale.com/f/serve?node=…` link it prints, or enable **HTTPS Certificates → Enable HTTPS** on the [DNS page](https://login.tailscale.com/admin/dns).
+> 3. Run the command again.
+>
+> Serve provisions a real Let's Encrypt certificate for the machine, so HTTPS certificates have to be switched on for the tailnet once.
 >
 > The result is `https://pve.<tailnet>.ts.net` with no warning to click past.
 >
@@ -340,9 +381,11 @@ First launch opens a **Required permissions** screen listing two rows, with **Ne
 - **VPN Configuration** — *"allows Tailscale to route traffic to other devices in your tailnet"*. macOS raises this one as a dialog on its own; choose **Allow** and the row goes green immediately. An app cannot create a network interface directly — Apple routes all tunnelling through the Network Extension framework, so every VPN app must register a configuration first. This is macOS describing the mechanism, not Tailscale asking to carry your browsing. Decline it and the app installs but can never connect to anything.
 - **System extension** — *"allows Tailscale to control the networking features of your Mac"*. This row stays red at **System Extension Approval Required** until you approve it:
 
-1. Select its **Grant permissions** button — macOS raises a *System Extension Blocked* dialog with **Open System Settings**.
-2. Under **General → Login Items & Extensions → Network Extensions**, toggle **Tailscale Network Extension** on.
-3. Authenticate with Touch ID, then select **Done**.
+1. Select its **Grant permissions** button.
+2. macOS raises a *System Extension Blocked* dialog — click **Open System Settings**.
+3. Under **General → Login Items & Extensions → Network Extensions**, toggle **Tailscale Network Extension** on.
+4. Authenticate with Touch ID.
+5. Select **Done**.
 
 On macOS Sonoma 14 and earlier it surfaces instead as a blocked-software message under **System Settings → Privacy & Security** with an **Allow** button.
 

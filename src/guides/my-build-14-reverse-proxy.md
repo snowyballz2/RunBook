@@ -16,7 +16,12 @@ The tool here is **Nginx Proxy Manager** (NPM): nginx doing the proxying, with a
 ## Stand up the proxy
 
 ### Run the install script
-Same move as the other service containers: in the Proxmox web interface, click your node, then **Shell**, and run the community-scripts helper (read it first — the download-read-run habit):
+Same move as the other service containers:
+
+1. In the Proxmox web interface, click your node.
+2. Click **Shell**.
+
+Run the community-scripts helper (read it first — the download-read-run habit):
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nginxproxymanager.sh)"
@@ -49,7 +54,7 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
 - **VERBOSE MODE** → **No**
-- Review **CONFIRM SETTINGS**, then press **Create LXC**
+- **CONFIRM SETTINGS** (a review screen) → press **Create LXC**
 - **Which storage pool?** (two radiolists — container, then template — shown only when more than one pool qualifies; this host's stock local/local-lvm split auto-selects silently) → **local-lvm** for the container, **local** for the template
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
 - **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
@@ -59,7 +64,9 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 > [!SECRET] proxy-root | NPM container root password
 > Set at the wizard's **Set Root Password** prompt; logs into the container's **Console** in Proxmox as `root`.
 
-The script finishes by printing `http://<IP>:81`. Before you open it, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
+The script finishes by printing `http://192.168.1.54:81`.
+
+Before you open it, set **Options → Start at boot** in Proxmox — from today, a stopped proxy means every name in the house goes dark.
 
 > [!INPUT] proxy-ip | Proxy container IP | 192.168.1.54
 > Set statically during the install — in the `.2–.99` static zone, so the router can never hand it out; every name below points here.
@@ -75,7 +82,11 @@ The script finishes by printing `http://<IP>:81`. Before you open it, set **Opti
 >
 > 1. Snapshot the container first.
 > 2. Open the container's **Console**.
-> 3. Run `update`.
+> 3. Run:
+>
+> ```bash
+> update
+> ```
 
 ### Create your admin account
 Browse to the proxy at `http://192.168.1.54:81`. There is nothing to log in *with* yet — a fresh install opens on a **"Welcome!"** screen that says **"Get started by creating your admin account."**, with exactly three fields and a **Save** button:
@@ -84,7 +95,9 @@ Browse to the proxy at `http://192.168.1.54:81`. There is nothing to log in *wit
 - **Email address** → your real one; it becomes the login
 - **New Password** → strong, at least 8 characters
 
-**Save** logs you straight in. This login controls where every name in your house points, so record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
+Click **Save** — it logs you straight in.
+
+This login controls where every name in your house points, so record it in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build). Record it below too so this checklist stands on its own.
 
 > [!INPUT] npm-email | NPM admin email
 
@@ -141,28 +154,48 @@ Eight things, ordered by what hurts most if skipped. Cloudflare splits these acr
 
 1. **Two-factor authentication** → **My Profile → Authentication**, the same profile menu as the API token below — TOTP or a hardware key, before anything else. The highest-value item on this page: that account controls DNS for the domain every certificate in the house depends on, so anyone inside it could redirect your names or issue certificates as you.
 2. **Auto-renew on** → **Domain Registration → Manage domains → your domain → Manage domain**, where the Auto-Renew status lives. Use a registrant email you will still read in three years — a lapsed domain breaks every hostname and every certificate at once, and presents as a network fault rather than an expiry
-3. **DNSSEC** → click the **domain**, then **DNS → Settings → Enable DNSSEC**. One click here and nothing else: because Cloudflare is both registrar and DNS host it **publishes the DS record itself**, which is the step that breaks DNSSEC for people whose registrar and DNS are separate
-4. **CAA record** → click the **domain** first (this is zone-level, which is why it looks missing from the account home), then **DNS → Records → Add record**, and fill the form:
+3. **DNSSEC**:
+   1. Click the **domain**.
+   2. Click **DNS → Settings → Enable DNSSEC** — one click here and nothing else.
+
+   Because Cloudflare is both registrar and DNS host it **publishes the DS record itself**, which is the step that breaks DNSSEC for people whose registrar and DNS are separate
+4. **CAA record**:
+   1. Click the **domain** first — this is zone-level, which is why it looks missing from the account home.
+   2. Click **DNS → Records → Add record**.
+
+   Fill the form:
    - **Type** → **CAA**
    - **Name** → **`@`**, the root of the domain
    - **Tag** → **"Only allow specific hostnames"** — Cloudflare's friendly label for the `issue` tag
    - **CA domain name** → **`letsencrypt.org`**
-   - **TTL** → **Auto**, then **Save**
+   - **TTL** → **Auto**
+
+   Click **Save**.
 5. **Declare that the domain sends no mail.** You will never send from it, which currently leaves it free for anyone to spoof in phishing. Three records on the same **DNS → Records** page close that permanently:
    - **TXT**, name `@`, content `v=spf1 -all`
    - **TXT**, name `_dmarc`, content `v=DMARC1; p=reject;`
    - **MX**, name `@`, server `.`, priority `0`
-6. **Settle the certificate settings the registrar runs on your behalf.** Cloudflare issues its own **Universal SSL** certificate for every zone, which is why a warning appears beside your CAA record saying *"Cloudflare will respond with additional CAA records"* — it injects entries permitting its own authorities so its issuance keeps working, quietly widening the restriction you just wrote. Under **SSL/TLS → Edge Certificates**:
+6. **Settle the certificate settings the registrar runs on your behalf**, under **SSL/TLS → Edge Certificates**:
    - **Disable Universal SSL** — the button's warning that "visitors will be unable to access the domain over HTTPS" does not apply here: nothing is hosted at or proxied through Cloudflare, and the certificate this build actually uses comes from Let's Encrypt through NPM over the DNS API, entirely independently. Disabling stops certificates being minted in your name for a service you do not use, and makes the CAA record mean what it says
    - **Certificate Transparency Monitoring → on** — free, and it emails you whenever any authority issues a certificate for your domain. It is the natural partner to the CAA record: CAA *prevents* unauthorised issuance, this *tells you* when something was issued anyway. Your own renewals will generate a notice every couple of months, which is confirmation rather than noise
    - **Always Use HTTPS**, **HSTS**, **Automatic HTTPS Rewrites**, **Total TLS**, and anything gated behind Advanced Certificate Manager → leave them. All of them act on traffic proxied through Cloudflare, and none of your traffic is
+
+   Cloudflare issues its own **Universal SSL** certificate for every zone, which is why a warning appears beside your CAA record saying *"Cloudflare will respond with additional CAA records"* — it injects entries permitting its own authorities so its issuance keeps working, quietly widening the restriction you just wrote.
 7. **Ignore the registrar's own recommendations** — the Recommendations panel that urges an A record, a `www` record, and MX records assumes you are publishing a website and receiving mail, neither of which applies here.
 8. **Verify WHOIS privacy** → the registrar **Settings** tab should read *data redaction is currently enabled* — the button offers *Disable*, which is the action, not the state.
 9. **Verify the transfer lock** → same tab, **Transfer to another registrar** should be locked — on a fresh registration the Unlock control is greyed out with *domain created within the last 60 days*, which is ICANN's new-registration lock doing a transfer lock's job for you.
 10. Check **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance.
 
 > [!WARNING]
-> **If you signed up with Sign in with Apple (or Google), the 2FA screen in step 1 will not let you.** Cloudflare accounts authenticating through SSO **cannot configure 2FA at all** — a documented limitation, not a password problem. You are not unprotected: Apple mandates two-factor on Apple IDs and it is hardware-backed on your own devices, so the account has a second factor, just Apple's rather than Cloudflare's. That is the same posture the Remote Access page takes for the tailnet. Harden the identity that now carries the weight instead — confirm Apple ID two-factor is on, trusted numbers are current, and a **recovery key or recovery contacts** exist. The failure mode is slow rather than sudden: an Apple lockout would cost certificate renewals on their 90-day cycle and the domain at its annual one, leaving weeks to recover. If native 2FA matters more than that, the cheapest moment to move to an email-and-password account is now, while the account holds one domain and nothing else — though a new registration carries a 60-day ICANN transfer lock.
+> **If you signed up with Sign in with Apple (or Google), the 2FA screen in step 1 will not let you.** Cloudflare accounts authenticating through SSO **cannot configure 2FA at all** — a documented limitation, not a password problem. You are not unprotected: Apple mandates two-factor on Apple IDs and it is hardware-backed on your own devices, so the account has a second factor, just Apple's rather than Cloudflare's. That is the same posture the Remote Access page takes for the tailnet.
+>
+> Harden the identity that now carries the weight instead:
+>
+> - Confirm Apple ID two-factor is on.
+> - Confirm trusted numbers are current.
+> - Confirm a **recovery key or recovery contacts** exist.
+>
+> The failure mode is slow rather than sudden: an Apple lockout would cost certificate renewals on their 90-day cycle and the domain at its annual one, leaving weeks to recover. If native 2FA matters more than that, the cheapest moment to move to an email-and-password account is now, while the account holds one domain and nothing else — though a new registration carries a 60-day ICANN transfer lock.
 
 > [!NOTE]
 > **One CAA record from step 4 is enough.** It looks like a wildcard certificate would need a second rule, but the spec applies `issue` to wildcards whenever no wildcard-specific rule exists — so the dropdown's other options, *Only allow wildcards* (`issuewild`) and *Send violation reports to* (`iodef`), stay unused. The effect: no certificate authority other than Let's Encrypt can legitimately issue for your name.
@@ -183,14 +216,17 @@ NPM's built-in Certbot proves you own the domain by publishing a temporary recor
 
 On **Cloudflare**, this build's registrar:
 
-1. In the dashboard, open **My Profile → API Tokens** and select **Create Token**
-2. Choose the **Edit zone DNS** template — it exists precisely for this and pre-fills the right permission
-3. **Token name** → the name from the field above
-4. **Permissions** → the template sets **Zone · DNS · Edit**; leave it
-5. **Zone Resources** → **Include → Specific zone → your domain**. Not "All zones" — this token should reach exactly one thing
-6. **Client IP Address Filtering** and **TTL** → leave both empty; the container's address can change, and an expiring token means a renewal that fails silently months from now
-7. **Continue to summary → Create Token**
-8. Copy the value into the field above and your password manager — it is shown **once**
+1. In the dashboard, open **My Profile → API Tokens**.
+2. Select **Create Token**.
+3. Choose the **Edit zone DNS** template — it exists precisely for this and pre-fills the right permission
+4. **Token name** → the name from the field above
+5. **Permissions** → the template sets **Zone · DNS · Edit**; leave it
+6. **Zone Resources** → **Include → Specific zone → your domain**. Not "All zones" — this token should reach exactly one thing
+7. **Client IP Address Filtering** → leave empty
+8. **TTL** → leave empty — the container's address can change, and an expiring token means a renewal that fails silently months from now
+9. Click **Continue to summary**.
+10. Click **Create Token**.
+11. Copy the value into the field above and your password manager — it is shown **once**
 
 > [!DETAILS] The better free path — deSEC
 > If the annual cost is the sticking point, **deSEC** beats DuckDNS on every axis and NPM supports it natively. It is run by a German non-profit, hands you a name like `yourname.dedyn.io`, and — unlike DuckDNS — gives you a **real DNS API with proper wildcard support and no one-TXT-record limit**, so certificates behave exactly as they would on a purchased domain. Still a borrowed name and still a third-party dependency, but without the compromises below. Take this over DuckDNS unless you have a specific reason not to.
@@ -202,7 +238,13 @@ On **Cloudflare**, this build's registrar:
 > DuckDNS hands out free subdomains of `duckdns.org`. Claim one, copy the token from its dashboard, and your services become `proxmox.yourname.duckdns.org` and friends — NPM's provider list includes **DuckDNS**, credentials a single line: `dns_duckdns_token=your-token`. The trade: longer, visibly borrowed names, and DuckDNS allows only one TXT record at a time, so request exactly one certificate — the wildcard `*.yourname.duckdns.org`, which covers every service anyway. Everywhere below you see `*.kuzco.org`, read your DuckDNS name instead.
 
 ### Request the wildcard certificate
-In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Encrypt via DNS** from the dropdown (its siblings are **Let's Encrypt via HTTP** and **Custom Certificate** — neither is for this build) — a wildcard can only be issued over DNS, and in the current interface you pick that route here, up front, rather than with a toggle inside the dialog. Then:
+In NPM:
+
+1. Open **Certificates**.
+2. Click **Add Certificate**.
+3. Choose **Let's Encrypt via DNS** from the dropdown — its siblings are **Let's Encrypt via HTTP** and **Custom Certificate**, neither for this build.
+
+A wildcard can only be issued over DNS, and in the current interface you pick that route here, up front, rather than with a toggle inside the dialog. Then:
 
 - **Domain Names** — `*.kuzco.org`, your own domain swapped in.
 - **Key Type** — leave the default.
@@ -215,11 +257,19 @@ In NPM, open **Certificates**, click **Add Certificate**, and choose **Let's Enc
 
 - **Propagation Seconds** — leave empty for the plugin's default.
 
-There is no email field or terms-of-service box — Let's Encrypt stopped sending expiry emails in 2025, and current NPM handles the terms agreement itself. (If your NPM instead shows an **SSL Certificates** menu with an email field and an *I Agree* checkbox, it predates the v2.13 interface rewrite — run `update` from the container's Console to come current.)
+There is no email field or terms-of-service box — Let's Encrypt stopped sending expiry emails in 2025, and current NPM handles the terms agreement itself.
+
+If your NPM instead shows an **SSL Certificates** menu with an email field and an *I Agree* checkbox, it predates the v2.13 interface rewrite. From the container's Console, run:
+
+```bash
+update
+```
 
 Save, and after a short wait the certificate appears, valid for every name under your domain.
 
-It will show an expiry roughly **90 days** out, which is normal rather than a problem: Let's Encrypt issues short-lived certificates deliberately, to limit the damage window if a key leaks and to force renewal to be automatic rather than a calendar reminder. NPM renews it at around 30 days remaining by repeating the DNS challenge with the stored token — nothing for you to do. It is also why the token was created without a TTL: an expiring token turns renewal into a silent failure that surfaces months later as certificate errors on every service at once. If Certificate Transparency Monitoring is on at the registrar, each renewal emails you, which doubles as passive proof the automation is alive. If it fails on timing, set **Propagation Seconds** to something patient like `120` and try again.
+It will show an expiry roughly **90 days** out, which is normal rather than a problem: Let's Encrypt issues short-lived certificates deliberately, to limit the damage window if a key leaks and to force renewal to be automatic rather than a calendar reminder. NPM renews it at around 30 days remaining by repeating the DNS challenge with the stored token — nothing for you to do. It is also why the token was created without a TTL: an expiring token turns renewal into a silent failure that surfaces months later as certificate errors on every service at once. If Certificate Transparency Monitoring is on at the registrar, each renewal emails you, which doubles as passive proof the automation is alive.
+
+If the request fails on timing, set **Propagation Seconds** to something patient like `120` and try again.
 
 > [!NOTE]
 > The dialog warns that these credentials are stored as plaintext in NPM's database and in a file. That is the trade for hands-off issuance and renewal: the proxy keeps your DNS token. A tightly scoped token and a strong NPM admin password are the mitigations.
@@ -233,7 +283,10 @@ It will show an expiry roughly **90 days** out, which is normal rather than a pr
 ## Teach the LAN the names
 
 ### Point the wildcard at the proxy
-In the AdGuard dashboard, open **Filters → DNS rewrites** and click **Add DNS rewrite**:
+In the AdGuard dashboard:
+
+1. Open **Filters → DNS rewrites**.
+2. Click **Add DNS rewrite**.
 
 - **Domain** → `*.kuzco.org`
 - **Answer** → your `proxy-ip`
@@ -262,7 +315,12 @@ Expect the proxy's IP. The names resolve; nothing answers on them yet — that i
 ## Put every service behind it
 
 ### Give Proxmox the first name
-The pattern you repeat for everything — in NPM, **Hosts → Proxy Hosts → Add Proxy Host**, then on the **Details** tab:
+The pattern you repeat for everything:
+
+1. In NPM, click **Hosts → Proxy Hosts**.
+2. Click **Add Proxy Host**.
+
+On the **Details** tab:
 
 - **Domain Names**: `proxmox.kuzco.org`
 - **Scheme**: `https` — Proxmox speaks HTTPS on its own port
@@ -280,7 +338,9 @@ Then the **SSL** tab, every field:
 - **HTTP/2 Support**, **HSTS Enabled**, **HSTS Sub-domains** → off, the defaults — none earns its keep on a LAN
 - the tab's **Advanced** collapsible (Trust Upstream Forwarded Proto Headers) → leave collapsed
 
-Save, then browse to `https://proxmox.kuzco.org`: the familiar login, a real padlock, nothing to click through.
+Click **Save**.
+
+Browse to `https://proxmox.kuzco.org`: the familiar login, a real padlock, nothing to click through.
 
 > [!NOTE]
 > The dialog has four tabs — **Details**, **Custom Locations**, **SSL**, and an **Advanced** gear at the right end of the tab bar. Only Details and SSL get touched, for every host on this page.
@@ -289,25 +349,32 @@ Save, then browse to `https://proxmox.kuzco.org`: the familiar login, a real pad
 > The proxy now talks to Proxmox's self-signed certificate and does not verify upstream certificates by default, so this just works. The warning you have clicked past since install was not fixed so much as moved to an encrypted-but-unverified hop inside your own LAN — a fair trade at home, and the browsers in your house never see it again.
 
 ### Tell Home Assistant to trust the proxy
-Add the next host the same way — **Hosts → Proxy Hosts → Add Proxy Host**:
+Add the next host the same way:
+
+1. In NPM, click **Hosts → Proxy Hosts**.
+2. Click **Add Proxy Host**.
 
 - **Domain Names** → `ha.kuzco.org`
 - **Scheme** → `http`
 - **Forward Hostname / IP** → `192.168.1.51`
 - **Forward Port** → `8123`
 - **Websockets Support** → **on**
-- **SSL tab** → the `*.kuzco.org` wildcard, **Force SSL** → **on**
+- **SSL tab: SSL Certificate** → the `*.kuzco.org` wildcard
+- **SSL tab: Force SSL** → **on**
 
-Save and browse to `https://ha.kuzco.org` — a deliberate roadblock: a bare **400: Bad Request**. Home Assistant OS refuses proxied requests until you name your proxy.
+Click **Save**.
+
+Browse to `https://ha.kuzco.org` — a deliberate roadblock: a bare **400: Bad Request**. Home Assistant OS refuses proxied requests until you name your proxy.
 
 The fix lives in the **Home Assistant UI** at `http://192.168.1.51:8123`, not in NPM — since Home Assistant 2026.8 it is a settings screen, not a YAML edit:
 
-1. **Settings → System → Network**, then scroll to the **HTTP server** section. Not there? Your Home Assistant predates it — see the callout below.
-2. **Trust X-Forwarded-For** → **on** — lets HA read the real client address the proxy passes along.
-3. **Trusted proxies** → add `192.168.1.54` — the only machine allowed to speak for clients.
-4. **Save** — Home Assistant restarts itself.
-5. After the restart, HA asks an administrator to **confirm the new network settings within five minutes** — confirm, or it reverts them (a guard against locking yourself out with a bad proxy config).
-6. Reload `https://ha.kuzco.org` — the normal dashboard, behind a real lock.
+1. Open **Settings → System → Network**.
+2. Scroll to the **HTTP server** section. Not there? Your Home Assistant predates it — see the callout below.
+3. **Trust X-Forwarded-For** → **on** — lets HA read the real client address the proxy passes along.
+4. **Trusted proxies** → add `192.168.1.54` — the only machine allowed to speak for clients.
+5. **Save** — Home Assistant restarts itself.
+6. After the restart, HA asks an administrator to **confirm the new network settings within five minutes** — confirm, or it reverts them (a guard against locking yourself out with a bad proxy config).
+7. Reload `https://ha.kuzco.org` — the normal dashboard, behind a real lock.
 
 > [!NOTE]
 > The trusted proxy saves back as `192.168.1.54/32` — the same single address written as a one-address network, not a sign anything went wrong. Leave it that narrow; if you ever do mean a whole subnet, Home Assistant wants the *network* address there (`192.168.1.0/24`), never a host address wearing a broad mask (`192.168.1.54/24`).
@@ -414,7 +481,12 @@ Every remaining host is the **same dialog with four fields changed**. Nothing el
 > Position does not matter for `trusted_domains` — Nextcloud tests membership of that list, not where an entry sits — so if a name lands at a different index than planned, nothing needs correcting. Existing sync clients signed in against the IP keep working as long as that IP stays in `trusted_domains`; set up new devices with the new name.
 
 > [!TIP]
-> When you later build Uptime Kuma and put it behind the proxy, tell it so: **Settings → Reverse Proxy**, and under HTTP Headers set **Trust Proxy** on — its logs and rate limiting then see real client IPs instead of the proxy's.
+> When you later build Uptime Kuma and put it behind the proxy, tell it so:
+>
+> 1. Open **Settings → Reverse Proxy**.
+> 2. Under **HTTP Headers**, set **Trust Proxy** on.
+>
+> Its logs and rate limiting then see real client IPs instead of the proxy's.
 
 ### Decide what keeps its number
 Walk the bookmarks bar and replace what you have today: `proxmox.`, `ha.`, `nas.`, `frigate.` — `cloud.`, `status.`, and more join the set as later pages bring their services up, every name behind the same lock, and Force SSL means even a typed `http://` lands on HTTPS.
