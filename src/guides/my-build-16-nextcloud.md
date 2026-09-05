@@ -14,7 +14,11 @@ Nextcloud gives the household what Google Drive, Google Photos, and iCloud sell 
 ## Create the container
 
 ### Run the install script
-Open the Proxmox web interface at the host (log in as **root@pam**), click the node, then **Shell**, and run the community-scripts helper. Read it first — the same download-read-run habit the other containers on this build were created with:
+1. Open the Proxmox web interface at the host, and log in as **root@pam**.
+2. Click the node.
+3. Click **Shell**.
+
+Read the community-scripts helper before running it — the same download-read-run habit the other containers on this build were created with:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nextcloudpi.sh)"
@@ -72,13 +76,17 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 > [!NOTE]
 > Two things on the way past look like problems and are not:
 >
-> - The build report marks **IPv6 Internet Not Connected** with a red ✗ a couple of lines below its own **Disabled IPv6** ✓ — it is testing connectivity you deliberately turned off in the walk above. Ignore it.
-> - A **`Do you want to continue? [y/N]`** prompt appears under a warning that the script runs an external installer the repo does not audit. **Answer `y`.** The wrapper only builds the LXC; Nextcloud itself is installed by NextcloudPi's own `install.sh`, and the URL printed above the prompt is `github.com/nextcloud/nextcloudpi` — **Nextcloud's own GitHub organisation**, not an unrelated third party. The warning is community-scripts being honest about the handoff, not a signal about the code.
+> 1. The build report marks **IPv6 Internet Not Connected** with a red ✗ a couple of lines below its own **Disabled IPv6** ✓ — it is testing connectivity you deliberately turned off in the walk above. Ignore it.
+> 2. A **`Do you want to continue? [y/N]`** prompt appears under a warning that the script runs an external installer the repo does not audit. Answer **`y`**.
+>
+> The wrapper only builds the LXC; Nextcloud itself is installed by NextcloudPi's own `install.sh`, and the URL printed above the prompt is `github.com/nextcloud/nextcloudpi` — **Nextcloud's own GitHub organisation**, not an unrelated third party. The warning is community-scripts being honest about the handoff, not a signal about the code.
 
 The script finishes by printing the container's address as `http://192.168.1.58` — no port, no passwords yet; those come in the browser. Before opening it, in Proxmox:
 
-1. Select the container in the left tree → **Options** → **Start at boot** → **Yes**, so the family cloud survives a power cut.
-2. Confirm **Options → Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
+1. Select the container in the left tree.
+2. Open **Options**.
+3. Set **Start at boot** → **Yes**, so the family cloud survives a power cut.
+4. Confirm **Options → Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
 
 > [!NOTE]
 > The address was set statically in the Advanced walk: it is about to be baked into every device's sync client, so it must never move — and there is nothing to reserve at the router.
@@ -88,7 +96,10 @@ The script finishes by printing the container's address as `http://192.168.1.58`
 ## First login
 
 ### Open the activation page
-Browse to the printed address. Plain `http://` redirects to HTTPS, and the browser objects to the self-signed certificate — the same warning you clicked through for the Proxmox UI on port 8006. Proceed past it; in this browser you meet it exactly once more, at the panel's port 4443.
+1. Browse to the printed address. Plain `http://` redirects to HTTPS.
+2. Proceed past the browser's self-signed certificate warning — the same one you clicked through for the Proxmox UI on port 8006.
+
+In this browser you meet that warning exactly once more, at the panel's port 4443.
 
 > [!NOTE]
 > NCP's docs mention `https://nextcloudpi.local`, an mDNS name that may not resolve to this unprivileged container from another Mac. The IP always works, and lives on the container's **Network** tab if you lose it (Proxmox does not show an LXC's address on the Summary tab — only VMs with the guest agent get that).
@@ -98,15 +109,11 @@ The activation page generates two random passwords for a user named **ncp** — 
 
 1. Save both in the fields below (the **Print** button captures them too). They move into Vaultwarden when that page is built later in this build.
 2. Click **Activate** — the page flashes **ACTIVATION SUCCESSFUL** and opens `https://192.168.1.58:4443` in a new tab a few seconds later. If a pop-up blocker eats it, type the address yourself.
-3. Two prompts stand between you and the panel:
+3. Proceed past the second self-signed **certificate warning**, as before.
+4. At the **browser login popup** titled **"ncp-web login"** — the browser's own gray Basic-auth dialog, not a web page — log in as **`ncp`** with the **panel** password just saved.
+5. On the panel's first load, click **skip** on the overlay's own wizard — **"Click to start the configuration wizard"**, offering **run** and **skip**.
 
-- the second self-signed **certificate warning** — proceed, as before
-- a **browser login popup** titled **"ncp-web login"** — the browser's own gray Basic-auth dialog, not a web page. User **`ncp`**, password the **panel** password just saved
-
-On the panel's first load, an overlay offers its own wizard — **"Click to start the configuration wizard"**, with **run** and **skip**:
-
-- **skip** — its two working tabs solve problems this build does not have: **USB Configuration** wants to format a USB drive as the data disk (this is an LXC on the NVMe, and the archive rides External storage below), and **External access** wants router port-forwards and DDNS (Dynamic DNS), which this build forbids
-- it shows only once; the wand icon in the panel's header reopens it if ever wanted
+Its two working tabs solve problems this build does not have: **USB Configuration** wants to format a USB drive as the data disk (this is an LXC on the NVMe, and the archive rides External storage below), and **External access** wants router port-forwards and DDNS (Dynamic DNS), which this build forbids. It shows only once; the wand icon in the panel's header reopens it if ever wanted.
 
 > [!INPUT] nextcloud-user | Nextcloud / NCP username | | ncp
 > The same `ncp` user signs in to both — only the passwords differ.
@@ -116,7 +123,13 @@ On the panel's first load, an overlay offers its own wizard — **"Click to star
 > [!SECRET] nextcloud-password | Nextcloud password
 
 > [!NOTE]
-> Older write-ups call the Nextcloud user `admin`; current NCP uses **ncp** for both logins. Lose one and you can **reset** it via `sudo ncp-config` in the container's console — `nc-admin` sets a new password for the Nextcloud login, `nc-passwd` for the panel's. Neither shows a current password; nothing does.
+> Older write-ups call the Nextcloud user `admin`; current NCP uses **ncp** for both logins. Lose one and reset it from the container's console:
+>
+> ```bash
+> sudo ncp-config
+> ```
+>
+> `nc-admin` sets a new password for the Nextcloud login there, `nc-passwd` for the panel's. Neither shows a current password; nothing does.
 
 > [!DETAILS] Getting to know the 4443 panel
 > `https://192.168.1.58:4443` (login `ncp` plus the panel password) is where NCP keeps its admin tools, mirrored on the console as `sudo ncp-config`. It can run Let's Encrypt to get a real certificate if you ever give this box a public name — but this is a local-first household, so living with the self-signed warning is a legitimate choice. The router blocks unsolicited inbound traffic and nothing here needs a port-forward; don't create one. Remote access rides the Tailscale tunnel set up on the previous page.
@@ -135,7 +148,8 @@ On the panel's first load, an overlay offers its own wizard — **"Click to star
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:get trusted_domains
 > ```
 >
-> 2. Count the entries — the list indexes from **0**, and reusing a taken number silently **overwrites** that entry instead of adding. NCP ships roughly eight, so the next free index is usually **8**. Set it:
+> 2. Count the entries — the list indexes from **0**, and reusing a taken number silently **overwrites** that entry instead of adding. NCP ships roughly eight, so the next free index is usually **8**.
+> 3. Set it:
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_domains 8 --value=cloud.kuzco.org
@@ -155,16 +169,18 @@ sudo -E -u www-data php /var/www/nextcloud/occ config:system:set skeletondirecto
 
 Accounts that already exist keep what they were given. To clean one, in the browser at `https://cloud.kuzco.org`:
 
-- **Files** → select the sample files → delete
-- **Contacts** app → remove the sample contact; the auto-generated *Contact birthdays* calendar entry goes with it
+1. Open **Files**, and select the sample files.
+2. Delete them.
+3. Open the **Contacts** app, and remove the sample contact — the auto-generated *Contact birthdays* calendar entry goes with it.
 
-**Do not share the `ncp` login** — one account per person, so everyone gets their own files, photos, and password. Click your avatar (top right) → **Accounts** → **New account**, and fill the dialog:
+**Do not share the `ncp` login** — one account per person, so everyone gets their own files, photos, and password.
 
-- **Username** → the person's own login name
-- **Password** → their own, never a shared one
-- **Display name**, **Email**, **Groups**, **Quota**, **Language**, **Manager** → leave blank or default
-
-Click **Add new account**, then repeat for the second person.
+1. Click your avatar (top right) → **Accounts** → **New account** — a dialog opens. Fill it in:
+   - **Username** → the person's own login name
+   - **Password** → their own, never a shared one
+   - **Display name**, **Email**, **Groups**, **Quota**, **Language**, **Manager** → leave blank or default
+2. Click **Add new account**.
+3. Repeat for the second person.
 
 > [!NOTE]
 > **"App" means two different things from here on.** A **Nextcloud app** — Photos, External storage support, Duplicate Finder — is a *server* plugin: it installs from **Administration settings → Apps**, runs inside this container, and is used through a browser from any machine. Nothing installs on the Mac or the PC. The **desktop and mobile clients** later on this page are the other kind: real software on your own devices. (Home Assistant adds a third sense of the word — its own add-ons, renamed *Apps* in 2026.2.)
@@ -186,25 +202,27 @@ Record each one as you create it — these are the logins that go into the phone
 > These fields live on this device only, like every credential in this collection — they are a convenience while you follow along, not the household's password store. **Vaultwarden**, built on the next page, is where these belong permanently, and where the second person can actually reach their own copy. Move them there once it exists rather than leaving two people's logins recorded on one laptop.
 
 ### Decide where the bytes live
-Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root disk — fine to start, tiny against a camera roll across the whole household. There are two ways to give it room, and this build uses both:
+Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root disk — fine to start, tiny against a camera roll across the whole household. There are two ways to give it room, and this build uses both: grow the container disk for the app, database, and sync-critical data, and park the heavy archive on the mirror.
 
-- **Grow the container disk** for the app, database, and sync-critical data. This runs in the **Proxmox host shell** (`pve` node → **Shell**), not the container console:
+**Grow the container disk.** This runs in the **Proxmox host shell** (`pve` node → **Shell**), not the container console:
 
-  ```bash
-  pct resize 105 rootfs +32G
-  ```
+1. Resize it:
 
-  It prints the logical volume growing from 8 GiB to 40 GiB, then `resize2fs` extending the filesystem — **online, while the container runs**, so nothing needs stopping. Confirm:
+   ```bash
+   pct resize 105 rootfs +32G
+   ```
 
-  ```bash
-  pct config 105 | grep -E 'rootfs|protection'
-  ```
+2. Confirm it:
 
-  Expect `protection: 1` in that output, and **no need to touch it** — verified on this build, `pct resize` runs fine on a protected container. That is worth stating because the Cameras page had to drop protection to add Frigate's mount point, which invites the assumption that every disk operation needs the same dance. It does not: the flag blocks **`pct set`** disk-config changes and container-or-disk **deletion**, while `pct resize` is permitted. Leave protection on.
+   ```bash
+   pct config 105 | grep -E 'rootfs|protection'
+   ```
 
-  **Shrinking is not supported**, so add space in honest increments rather than one giant leap.
+Step 1 prints the logical volume growing from 8 GiB to 40 GiB, then `resize2fs` extending the filesystem — **online, while the container runs**, so nothing needs stopping. Step 2 should show `protection: 1`, and **no need to touch it** — verified on this build, `pct resize` runs fine on a protected container. That is worth stating because the Cameras page had to drop protection to add Frigate's mount point, which invites the assumption that every disk operation needs the same dance. It does not: the flag blocks **`pct set`** disk-config changes and container-or-disk **deletion**, while `pct resize` is permitted. Leave protection on.
 
-- **Park the heavy archive on the mirror.** The photo and media archive belongs on the two IronWolf drives in the ZFS mirror, where there is real room — reached through Nextcloud's **External Storage**, not by moving the data directory.
+**Shrinking is not supported**, so add space in honest increments rather than one giant leap.
+
+**Park the heavy archive on the mirror.** The photo and media archive belongs on the two IronWolf drives in the ZFS mirror, where there is real room — reached through Nextcloud's **External Storage**, not by moving the data directory.
 
 > [!WARNING]
 > You cannot simply point Nextcloud's data directory at the TrueNAS share — NCP enforces that "Only ext/btrfs/zfs filesystems can hold the data directory," and an **SMB (Server Message Block)** mount is none of those. External Storage is the supported way to put files on the pool; the data directory stays on the container's local disk.
@@ -213,7 +231,7 @@ Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root dis
 The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated SMB user.
 
 > [!WARNING]
-> **Install the SMB module for NCP's pinned PHP — `php8.3-smbclient`, never the unversioned `php-smbclient`**, which targets the repo's default PHP instead of the **8.3** NCP actually runs (`systemctl list-units --type=service | grep fpm` confirms the version). Without the module, downloads over roughly 512 MB from the share fail. In the container console:
+> **Install the SMB module for NCP's pinned PHP — `php8.3-smbclient`, never the unversioned `php-smbclient`**, which targets the repo's default PHP instead of the **8.3** NCP actually runs. Without the module, downloads over roughly 512 MB from the share fail. In the container console:
 >
 > ```bash
 > apt update && apt install -y smbclient php8.3-smbclient
@@ -223,7 +241,11 @@ The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated
 > systemctl restart php8.3-fpm
 > ```
 >
-> Do it **before** creating the mount below. Proof: reload **Administration settings → External storage** and the red php-smbclient notice is gone.
+> Do it **before** creating the mount below. Proof: reload **Administration settings → External storage** and the red php-smbclient notice is gone. Confirm the running PHP version, if you want to double check:
+>
+> ```bash
+> systemctl list-units --type=service | grep fpm
+> ```
 
 Now hang the share inside Nextcloud:
 
@@ -288,21 +310,31 @@ The share appears as a folder in everyone's files. Photo archives and media sit 
 ## Make it yours
 
 ### Put it on every device
-**On each Mac and the Windows PC**, take the desktop client from [nextcloud.com/install](https://nextcloud.com/install/) — the macOS app for the Macs, the Windows app for the PC — then walk its first run:
+**On each Mac and the Windows PC**, walk the desktop client through its first run:
 
-1. **Sign in to Nextcloud in your browser first, as the household account you want this device to sync** — not `ncp`. The client adopts whatever account the browser is already logged in as, and re-doing it later means unpicking a wrongly-bound device.
-2. **Server address** → **`https://cloud.kuzco.org`** — the proxied name, on every device without exception. Never the raw `https://192.168.1.58`: it raises a certificate warning and stops working the moment the device leaves the house, while the name follows it over Tailscale.
-3. **"Allow Nextcloud to find devices on local networks?"** (macOS) → **Allow** — the server is a local address, and denying this blocks the client with an error that looks nothing like a permissions problem.
-4. **Grant access** in the browser tab it opens — check the *"Currently logged in as"* line names the right account before clicking. This issues the device its own app password, revocable later under **Settings → Security**.
-5. It syncs into a local **Nextcloud** folder, and lives in the **menu bar** from then on — closing the window does not quit it, and re-opening the app shows nothing because it is still running. Click the menu-bar logo instead.
+1. Download and install the client from [nextcloud.com/install](https://nextcloud.com/install/) — the macOS app for the Macs, the Windows app for the PC.
+2. **Sign in to Nextcloud in your browser first, as the household account you want this device to sync** — not `ncp`. The client adopts whatever account the browser is already logged in as, and re-doing it later means unpicking a wrongly-bound device.
+3. **Server address** → **`https://cloud.kuzco.org`** — the proxied name, on every device without exception. Never the raw `https://192.168.1.58`: it raises a certificate warning and stops working the moment the device leaves the house, while the name follows it over Tailscale.
+4. **"Allow Nextcloud to find devices on local networks?"** (macOS) → **Allow** — the server is a local address, and denying this blocks the client with an error that looks nothing like a permissions problem.
+5. **Grant access** in the browser tab it opens — check the *"Currently logged in as"* line names the right account before clicking. This issues the device its own app password, revocable later under **Settings → Security**.
+6. It syncs into a local **Nextcloud** folder, and lives in the **menu bar** from then on — closing the window does not quit it, and re-opening the app shows nothing because it is still running. Click the menu-bar logo instead.
 
 > [!NOTE]
-> **On a notched MacBook, the menu-bar logo from step 5 may never appear.** macOS silently drops menu-bar icons that do not fit rather than collapsing them, so trim an item or two (or run an overflow manager) if it is missing. `killall Nextcloud && open -a Nextcloud` forces the window back meanwhile.
+> **On a notched MacBook, the menu-bar logo from step 6 may never appear.** macOS silently drops menu-bar icons that do not fit rather than collapsing them, so trim an item or two (or run an overflow manager) if it is missing. Force the window back meanwhile:
+>
+> ```bash
+> killall Nextcloud && open -a Nextcloud
+> ```
 
 > [!WARNING]
 > **Deselect `Pool` in the desktop client, or it syncs the whole archive onto the laptop.** The client treats an external storage mount like any other folder, so the terabytes on the ZFS mirror become a download queue against an SSD that cannot hold them. In the client's **Settings → the account → "Choose what to sync"**, untick **Pool**. The archive is meant to be reached through the browser or Finder on demand — the mirror is where it lives, not the laptop.
 
-Prove the sync works while you are here: drop any file into `~/Nextcloud` on the Mac and reload `https://cloud.kuzco.org` in the browser. Seeing it there confirms client, proxy and server all agree.
+Prove the sync works while you are here:
+
+1. Drop any file into `~/Nextcloud` on the Mac.
+2. Reload `https://cloud.kuzco.org` in the browser.
+
+Seeing it there confirms client, proxy and server all agree.
 
 **On each iPhone:**
 
@@ -316,26 +348,49 @@ Prove the sync works while you are here: drop any file into `~/Nextcloud` on the
 > So run it in two tiers, deliberately:
 >
 > - **Auto upload** → the default local folder. This path is reliable.
-> - **Deepen the buffer** so emptying it is rare — `pct set 105 -protection 0 && pct resize 105 rootfs +100G && pct set 105 -protection 1` from the node shell, affordable against the thin pool's free space (check with `pvesm status` first).
+> - **Deepen the buffer** so emptying it is rare, affordable against the thin pool's free space (check with `pvesm status` first). From the node shell:
+>
+>   ```bash
+>   pct set 105 -protection 0 && pct resize 105 rootfs +100G && pct set 105 -protection 1
+>   ```
+>
 > - **Move batches into `Pool`** during the monthly pass — a drag in the browser, since both folders sit in the same tree.
 >
 > Photos are **not** unprotected while they wait: the nightly vzdump captures the whole container, so they are backed up from the first night. Moving them to Pool promotes them to the mirror's snapshots, scrub and offsite copy.
 >
-> Two quirks worth knowing. Files written to the share **directly over SMB** (Finder at `smb://192.168.1.20`) may not appear in Nextcloud until it notices them — `sudo -E -u www-data php /var/www/nextcloud/occ files:scan --all` in the container console forces the sweep. And on iOS 26 with app 7.2.2, [#3969](https://github.com/nextcloud/ios/issues/3969) reports Auto upload stamping modified dates a week in the future, which sorts photos oddly in timeline views; manual uploads are unaffected.
+> Two quirks worth knowing. Files written to the share **directly over SMB** (Finder at `smb://192.168.1.20`) may not appear in Nextcloud until it notices them — force the sweep from the container console:
+>
+> ```bash
+> sudo -E -u www-data php /var/www/nextcloud/occ files:scan --all
+> ```
+>
+> And on iOS 26 with app 7.2.2, [#3969](https://github.com/nextcloud/ios/issues/3969) reports Auto upload stamping modified dates a week in the future, which sorts photos oddly in timeline views; manual uploads are unaffected.
 
 > [!WARNING]
-> If the desktop client ever offers **"Connect without TLS"**, choose **Cancel** — that sends the password in the clear against a server that has a working certificate. Confirm the certificate independently from the Mac's Terminal, where a `200` or `302` means the chain is healthy and the client is the odd one out:
+> If the desktop client ever offers **"Connect without TLS"**, choose **Cancel** — that sends the password in the clear against a server that has a working certificate.
+>
+> Confirm the certificate independently from the Mac's Terminal:
 >
 > ```bash
 > curl -sSI https://cloud.kuzco.org | head -1
 > ```
+>
+> A `200` or `302` means the chain is healthy and the client is the odd one out.
 
 > [!WARNING]
-> **Remove the proxy's 2 GB upload cap.** NPM ships a global `client_max_body_size 2000m`, which fails any larger browser upload with a 413 (the sync clients chunk and never hit it). In **Nginx Proxy Manager** (`http://192.168.1.54:81`): edit the `cloud.kuzco.org` proxy host → **Advanced** tab → paste the line below → **Save**.
+> **Remove the proxy's 2 GB upload cap.** NPM ships a global `client_max_body_size 2000m`, which fails any larger browser upload with a 413 (the sync clients chunk and never hit it).
 >
-> ```
-> client_max_body_size 0;
-> ```
+> In **Nginx Proxy Manager** (`http://192.168.1.54:81`):
+>
+> 1. Edit the `cloud.kuzco.org` proxy host.
+> 2. Open the **Advanced** tab.
+> 3. Paste this:
+>
+>    ```
+>    client_max_body_size 0;
+>    ```
+>
+> 4. Click **Save**.
 >
 > `0` removes the cap — fine on a LAN-only host behind Tailscale; PHP's own ceiling (the NCP panel's `nc-limits`) is the remaining one if a giant upload still stops. This is the only proxy host in the collection that needs an Advanced-tab line: the cap counts only *inbound* bodies, and Nextcloud is the one service pushing multi-gigabyte files in through a browser.
 
@@ -349,9 +404,9 @@ Bringing years of photos over from a Windows PC or a Mac is the first real use o
 
 **Czkawka** (actively maintained, cross-platform, has a similar-images mode) and **dupeGuru** (older, its Picture mode does fuzzy matching) are both free and both do the job. Both run fully offline — no telemetry, nothing uploaded. **Download Czkawka only from [github.com/qarmin/czkawka](https://github.com/qarmin/czkawka) → Releases**: the lookalike domains (`czkawka.net`/`.com`/`.org`) are not the project and distribute tampered builds — the [official repo warns about them](https://github.com/qarmin/czkawka/issues/1921), and a trojaned tool pointed at a whole photo library is the exact leak the offline design prevents. Whichever you use:
 
-- Back the library up first.
-- Set the tool to **move to the Recycle Bin / Trash** rather than delete outright.
-- Review its groups by hand — the tool cannot know which copy you care about, and "keep the largest" is wrong as often as it is right.
+1. Back the library up first.
+2. Set the tool to **move to the Recycle Bin / Trash** rather than delete outright.
+3. Review its groups by hand — the tool cannot know which copy you care about, and "keep the largest" is wrong as often as it is right.
 
 **On the iPhone, use what iOS already has** rather than a third-party cleaner:
 
@@ -399,4 +454,14 @@ This section is coverage, not a step: no commands to run today. Nextcloud's docs
 > Remember the data directory here is `/opt/ncdata/data`, outside the web root, so copy it too.
 
 ### Update on purpose, snapshot first
-Take a Proxmox snapshot before any update — Nextcloud's own docs warn in a red box that "The built-in updater does not backup your database or data directory." Then keep two layers current: Debian inside the container with `apt update && apt -y upgrade`, and Nextcloud itself, whose version NCP manages through its own tooling on port 4443. Let NCP drive the Nextcloud upgrade — mixing updaters is how appliances and their apps fall out of step. Fold this into the monthly upkeep the Maintenance & Upkeep page sets up later in this build for every guest.
+Take a Proxmox snapshot before any update — Nextcloud's own docs warn in a red box that "The built-in updater does not backup your database or data directory." Then keep two layers current:
+
+1. Debian inside the container:
+
+   ```bash
+   apt update && apt -y upgrade
+   ```
+
+2. Nextcloud itself, through NCP's own tooling on port 4443 — let NCP drive the Nextcloud upgrade; mixing updaters is how appliances and their apps fall out of step.
+
+Fold this into the monthly upkeep the Maintenance & Upkeep page sets up later in this build for every guest.

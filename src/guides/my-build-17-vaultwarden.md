@@ -17,7 +17,12 @@ Every page in this build has told you to put a value in your password manager �
 ## Create the container
 
 ### Run the install script
-Vaultwarden is one more of the small service **LXCs (Linux Containers)** on this box, and like the others it goes up with the Proxmox community helper script. In the Proxmox web interface at `https://192.168.1.50:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Paste this and press Return:
+Vaultwarden is one more of the small service **LXCs (Linux Containers)** on this box, and like the others it goes up with the Proxmox community helper script — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine).
+
+1. In the Proxmox web interface at `https://192.168.1.50:8006`, click the node (the Maximus X Hero server) in the left tree.
+2. Click **Shell**.
+
+Run the script:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/vaultwarden.sh)"
@@ -89,8 +94,10 @@ After the half-hour compile:
 1. Browse to `https://192.168.1.56:8000` — the `https://` is load-bearing; plain `http://` fails outright until the proxy handover below.
 2. Click through the self-signed certificate warning — expected; it is the install script's own certificate, replaced by a real one two steps from now.
 3. The Bitwarden web vault login screen appears. **Stop there — do not create an account yet.** Accounts made before the proxy handover are born with the wrong links.
-4. In the Proxmox left tree, select the container, open **Options**, and set **Start at boot** → **Yes**.
-5. Confirm **Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
+4. In the Proxmox left tree, select the container.
+5. Open **Options**.
+6. Set **Start at boot** → **Yes**.
+7. Confirm **Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
 
 > [!NOTE]
 > `vault.kuzco.org` does not work yet either, if the Reverse Proxy page's eight hosts went in as one sitting: that host forwards plain HTTP to a port currently answering HTTPS — a mismatch the handover below resolves. Check aliveness by the direct address only.
@@ -113,11 +120,14 @@ Vaultwarden's own wiki calls its built-in TLS (Transport Layer Security) "not re
 nano /opt/vaultwarden/.env
 ```
 
-Add this line, and delete any `ROCKET_TLS` line — then save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`):
+1. Add this line:
 
-```ini
-DOMAIN=https://vault.kuzco.org
-```
+   ```ini
+   DOMAIN=https://vault.kuzco.org
+   ```
+
+2. Delete any `ROCKET_TLS` line.
+3. Save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`).
 
 Restart:
 
@@ -152,7 +162,8 @@ Once for each of you, at `https://vault.kuzco.org` — **in a browser**, not in 
 2. **Email** — the real address, typed exactly: it is the account's *username*, entered at every login. No verification mail will ever arrive (this server cannot send mail), so a typo is accepted silently — and becomes the username.
 3. **Name** — the person's name, as the apps will greet them.
 4. **Master password**, twice — a long passphrase, and a **different one for each of you**; neither of you learns the other's. Keep the optional hint vague, or skip it.
-5. Create the account, then log in once at the same address to see the empty vault.
+5. Create the account.
+6. Log in once at the same address to see the empty vault.
 
 > [!WARNING]
 > Do not use the apps' own Create account flow: signup from the phone or desktop apps against Vaultwarden trips an open upstream bug — **"Error decoding JWT"**, `InvalidByte(0, 34)` ([vaultwarden #6592](https://github.com/dani-garcia/vaultwarden/issues/6592)). Accounts are born in the browser; the apps log into them afterwards.
@@ -168,13 +179,23 @@ Two separate vaults raise an immediate question: where do the *joint* logins liv
 
 From **your** web vault, with both accounts now existing:
 
-1. Click **+ New organization** — under the vault filter's organization heading. Name it `Kuzco's House` and create it; your account becomes its **Owner** automatically.
-2. Click **Admin Console** at the bottom of the left sidebar, then **Members** in its navigation, then the **Invite member** button.
-3. On the **Role** tab: the other account's email, role **Owner**.
-4. On the **Collections** tab: the **Default collection** row, its permission set to **Manage collection**. **Save**.
-5. Nobody accepts anything: with no mail server, the invite goes straight to accepted — the other person does nothing, and no notification appears anywhere.
-6. Back on **Members**, the new member appears under the **Needs confirmation** tab: tick their row → **⋮ Options** → **Confirm selected**. Confirming hands their account the organization's key — until then, they see nothing shared.
-7. Move each joint login in: tick the item's checkbox in the vault view → **Assign to collections** on the action bar → set **Move to organization** to `Kuzco's House` and pick its collection.
+1. Click **+ New organization** — under the vault filter's organization heading — and name it `Kuzco's House`.
+2. Create it. Your account becomes its **Owner** automatically.
+3. Click **Admin Console** at the bottom of the left sidebar.
+4. Click **Members** in its navigation.
+5. Click **Invite member**.
+6. On the **Role** tab: the other account's email, role **Owner**.
+7. On the **Collections** tab: the **Default collection** row, its permission set to **Manage collection**.
+8. Click **Save**.
+
+Nobody accepts anything: with no mail server, the invite goes straight to accepted — the other person does nothing, and no notification appears anywhere.
+
+9. Back on **Members**, find the new member under the **Needs confirmation** tab, and tick their row.
+10. Click **⋮ Options**.
+11. Click **Confirm selected** — this hands their account the organization's key; until then, they see nothing shared.
+12. For each joint login, tick its checkbox in the vault view.
+13. Click **Assign to collections** on the action bar.
+14. Set **Move to organization** to `Kuzco's House`, and pick its collection.
 
 > [!NOTE]
 > An organization is not an account of its own — nobody logs in "as" Kuzco's House; it is a shared space your two existing accounts belong to, free of Bitwarden's paid seat limits. Both of you are Owners on purpose: a household of equals, so the shared entries are never stranded behind one person's account — the role only governs managing the organization. **Admin Console** here is the organization's management area *inside the web vault*, unlocked by that Owner role; no relation to the server's `/admin` panel, which stays off. And in the invite dialog, the top Permission dropdown is only a default for collections added later — the per-row permission is what counts, and equals take the top one (the lesser ones are read-only or hide passwords).
@@ -182,9 +203,10 @@ From **your** web vault, with both accounts now existing:
 > [!WARNING]
 > A row lingering under **Invited** — bare email, no name — means no account with that exact email exists: the account step above was skipped, or the address differs by a letter. Do not register into a pending invite; that trips an upstream bug (**"Error decoding JWT"**, [vaultwarden #6049](https://github.com/dani-garcia/vaultwarden/issues/6049)). Instead:
 >
-> 1. **Remove** the invite — the row's **⋮** → Remove.
-> 2. Create the account in a browser.
-> 3. Invite again — landing on an existing account, it accepts instantly.
+> 1. Click the row's **⋮**.
+> 2. Click **Remove**.
+> 3. Create the account in a browser.
+> 4. Invite again — landing on an existing account, it accepts instantly.
 
 The split that keeps it tidy: personal accounts, personal cards, anything one person uses → own vault. Anything the *house* uses → the organization. The build's infrastructure credentials can go either way — in the organization both of you can reach them, which is the better failure mode.
 
@@ -195,11 +217,13 @@ Out of the box, anyone who can reach the page can register an account. On this L
 nano /opt/vaultwarden/.env
 ```
 
-Append this line, then save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`):
+1. Append this line:
 
-```ini
-SIGNUPS_ALLOWED=false
-```
+   ```ini
+   SIGNUPS_ALLOWED=false
+   ```
+
+2. Save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`).
 
 Then restart:
 
@@ -210,11 +234,30 @@ systemctl restart vaultwarden
 Existing accounts are untouched; the Create account door is closed.
 
 > [!DETAILS] Adding someone later, with signups closed
-> Two routes. Easiest: reopen — flip the line to `true`, restart, register them, flip it back. More formal: the admin panel (next expandable) has an **Invite User** button that works even when registration is disabled; with no email server configured no invitation mail goes out, so the new person just registers themselves with the exact invited address. Registering everyone *before* closing signups stays the friction-free path.
+> Two routes. Easiest — reopen signups temporarily:
+>
+> 1. Flip the line to `true`.
+> 2. Restart.
+> 3. Register them.
+> 4. Flip it back.
+>
+> More formal: the admin panel (next expandable) has an **Invite User** button that works even when registration is disabled; with no email server configured no invitation mail goes out, so the new person just registers themselves with the exact invited address. Registering everyone *before* closing signups stays the friction-free path.
 
 > [!DETAILS] The admin panel — this build's answer is to leave it off
-> Every job the panel does already has a home here: signups toggle via `.env`, member management via the Organization, server settings via `.env` — and an account removal, the rare leftover, justifies enabling the panel for ten minutes that day. Off means one less privileged login on the network and no `config.json` override risk. The mechanics, for that day:
-> Vaultwarden ships a server-admin page at `/admin` — view and remove accounts, invite users, change settings from the browser. It is disabled until a token exists, and the install script left the token empty on purpose. To enable it, type `update` in the container's console and choose **Set Admin Token**: you type a passphrase, the script stores only an argon2 hash of it, and `https://vault.kuzco.org/admin` starts accepting that passphrase. Treat it like the root password it is — and if you never need the panel, leave it off; an empty token *is* the off switch. One caution if you do enable it: the moment any setting is **saved in the panel**, Vaultwarden writes a `config.json` that **overrides the matching `.env` lines from then on** — including `SIGNUPS_ALLOWED` (the panel calls it **Allow new signups**, under General settings) and the push-relay lines. Pick one place to manage settings; on this build that place is `.env`.
+> Every job the panel does already has a home here: signups toggle via `.env`, member management via the Organization, server settings via `.env` — and an account removal, the rare leftover, justifies enabling the panel for ten minutes that day. Off means one less privileged login on the network and no `config.json` override risk.
+>
+> Vaultwarden ships a server-admin page at `/admin` — view and remove accounts, invite users, change settings from the browser. It is disabled until a token exists, and the install script left the token empty on purpose. The mechanics, for that day:
+>
+> 1. Type this in the container's console:
+>
+>    ```bash
+>    update
+>    ```
+>
+> 2. Choose **Set Admin Token**.
+> 3. Type a passphrase.
+>
+> The script stores only an argon2 hash of the passphrase, and `https://vault.kuzco.org/admin` starts accepting it from then on. Treat it like the root password it is — and if you never need the panel, leave it off; an empty token *is* the off switch. One caution if you do enable it: the moment any setting is **saved in the panel**, Vaultwarden writes a `config.json` that **overrides the matching `.env` lines from then on** — including `SIGNUPS_ALLOWED` (the panel calls it **Allow new signups**, under General settings) and the push-relay lines. Pick one place to manage settings; on this build that place is `.env`.
 >
 > > [!SECRET] vaultwarden-admin-token | Vaultwarden admin token
 > > Only if you enabled the `/admin` panel — the passphrase you typed into Set Admin Token.
@@ -230,9 +273,12 @@ On each device, install the official Bitwarden client from its official source:
 
 Then, on each client's login screen:
 
-1. *Before* signing in, open the **Logging in on** dropdown (the desktop apps label it **Accessing**) → **Self-hosted** → enter `https://vault.kuzco.org` as the Server URL and save.
-2. Log in with the account's email and master password.
-3. Turn on autofill.
+1. *Before* signing in, open the **Logging in on** dropdown (the desktop apps label it **Accessing**).
+2. Choose **Self-hosted**.
+3. Enter `https://vault.kuzco.org` as the Server URL.
+4. Save.
+5. Log in with the account's email and master password.
+6. Turn on autofill.
 
 > [!WARNING]
 > Skipping that dropdown is the classic first-login failure: the client asks Bitwarden's cloud — where your account does not exist — and rejects your perfectly correct password with a misleading **"Username or password is incorrect."** The server a login screen is about to use is shown right on it; make it yours before typing anything. Already typed into the wrong one? No harm done: Bitwarden clients never transmit the master password — only a one-way hash derived on your device (600,000 key-stretching rounds) goes over the wire, useless to anyone without brute-forcing the passphrase itself.
@@ -241,19 +287,37 @@ Then, on each client's login screen:
 > The extension is the piece you actually use on a computer: it autofills inside web pages, and it only offers a fill on the exact domain an item was saved with — a lookalike phishing domain gets silence instead of your password, protection copy-paste cannot give.
 
 ### Import what the browser already holds
-Each account brings its existing passwords over once. First, export the source to CSV — this household's source is Apple's **Passwords** app:
+Each account brings its existing passwords over once. First, export the source to CSV — this household's source is Apple's **Passwords** app.
 
-- **On the Mac**: open **Passwords** → **File → Export All Passwords to File** → **Export Passwords** → save; it lands as `Passwords.csv`.
-- **On an iPhone** (no Mac needed, iOS 18+): **Settings → Apps → Safari** → under History and Website Data, **Export** → select only **Passwords** → **Save to Downloads**. It arrives as `Safari Export.zip` — tap it in **Files** to unzip; `Passwords.CSV` sits inside the `Safari Export` folder.
-- Chrome, Firefox, and any password manager offer equivalent CSV exports. Passkeys never export — they keep working where they are; only passwords and codes make the trip.
+**On the Mac:**
+
+1. Open **Passwords**.
+2. Click **File → Export All Passwords to File**.
+3. Click **Export Passwords**.
+4. Save it — it lands as `Passwords.csv`.
+
+**On an iPhone** (no Mac needed, iOS 18+):
+
+1. Go to **Settings → Apps → Safari**.
+2. Under History and Website Data, click **Export**.
+3. Select only **Passwords**.
+4. Click **Save to Downloads**.
+
+It arrives as `Safari Export.zip` — tap it in **Files** to unzip; `Passwords.CSV` sits inside the `Safari Export` folder.
+
+Chrome, Firefox, and any password manager offer equivalent CSV exports. Passkeys never export — they keep working where they are; only passwords and codes make the trip.
 
 Then run the import from the web vault's **Tools → Import data** — on an iPhone that means Safari at `https://vault.kuzco.org`, since the phone apps have no import screen (the browser extension does):
 
 1. **Vault** → **My vault** — personal logins stay personal; move any joint ones into `Kuzco's House` afterwards, with the same Assign-to-collections move as above.
 2. **Folder** → leave unselected.
 3. **File format** → the entry matching the source: **Safari and macOS (csv)** for Apple's export, **Chrome (csv)**, **Firefox (csv)**, or the old manager's own entry.
-4. **Choose File** → the exported CSV → **Import**.
-5. **Delete the export and empty the Trash** — on the iPhone: the zip, the folder, and the CSV in **Files**, then **Browse → Recently Deleted → Delete All**. That file is every password in plaintext, the most dangerous thing on the device while it exists.
+4. **Choose File** → the exported CSV.
+5. Click **Import**.
+6. Delete the export — on the iPhone: the zip, the folder, and the CSV in **Files**.
+7. Empty the trash — on the iPhone: **Browse → Recently Deleted → Delete All**.
+
+That file is every password in plaintext, the most dangerous thing on the device while it exists.
 
 > [!NOTE]
 > Importing before the backup gate is fine: an import *copies*, the browser keeps everything it had, and nothing becomes vault-exclusive. The gate below is about the build's infrastructure secrets, whose only home will be the vault.
@@ -305,14 +369,15 @@ In the **Tailscale admin console**, signed in with the Apple ID:
 
 6. Open **Users**.
 7. Remove the old passkey user.
-8. Click **Invite users** → **Invite via link**.
-9. Set the role as high as offered — **Owner** if available, **Admin** otherwise.
-10. Open the invite link in the same browser.
-11. Choose the passkey signup.
-12. At the passkey prompt, accept the **Bitwarden extension's offer to save** and pick the `Tailscale` item.
-13. Sign out of the admin console.
-14. Sign in **once with the stored passkey** — untested custody is no custody.
-15. Back on **Users**, confirm the new admin's role.
+8. Click **Invite users**.
+9. Click **Invite via link**.
+10. Set the role as high as offered — **Owner** if available, **Admin** otherwise.
+11. Open the invite link in the same browser.
+12. Choose the passkey signup.
+13. At the passkey prompt, accept the **Bitwarden extension's offer to save**, and pick the `Tailscale` item.
+14. Sign out of the admin console.
+15. Sign in **once with the stored passkey** — untested custody is no custody.
+16. Back on **Users**, confirm the new admin's role.
 
 > [!NOTE]
 > The old passkey user goes first because the Personal plan's three-user cap has no seat for a second passkey admin, and removing it frees its email for reuse — the Apple-ID owner keeps the tailnet reachable throughout the swap. Admin covers every operation this build performs. If the Apple iCloud sheet appears at the passkey prompt instead of Bitwarden's, cancel and retry with the extension unlocked. Afterwards the Apple-ID user is the spare key, not the daily door: with the passkey holding equal or higher rank, an Apple lockout no longer reaches the tailnet.
@@ -325,8 +390,8 @@ In the **Tailscale admin console**, signed in with the Apple ID:
 ### Make sure the backups already cover it
 Once the Proxmox guest-backup job (set up on the Proxmox Backups page, in **Selection mode: All**) is running, each night's vzdump archives this container — data, settings, everything — to the TrueNAS share. Restoring is the standard Proxmox drill: restore the container, the vault returns as of the backup. Two things to actually do:
 
-- If that job is not in place yet, set it up **before** trusting real credentials to the vault.
-- Run the restore drill for real once, into a spare container ID you delete afterwards — the vault is the one guest where "probably restorable" is not good enough.
+1. If that job is not in place yet, set it up **before** trusting real credentials to the vault.
+2. Run the restore drill for real once, into a spare container ID you delete afterwards — the vault is the one guest where "probably restorable" is not good enough.
 
 > [!DETAILS] What inside the container actually matters
 > Everything lives in `/opt/vaultwarden/data`: the wiki ranks `db.sqlite3` and `attachments/` as required, `config.json` and the `rsa_key*` files as recommended — losing the keys just signs everyone out once.
@@ -348,19 +413,34 @@ Add one layer the server cannot take down with it. From the web vault, go to **T
 - **File password** → appears once Password protected is chosen; set one and record it in your password manager
 - **Confirm vault export** → the final verification dialog, then the file downloads
 
-- Save the file onto the TrueNAS mirror, in with the irreplaceable files the nightly Backblaze B2 Cloud Sync task pushes offsite — a vault whose only copies sit in one house is not finished.
-- Repeat after big additions; the export is a snapshot, not a feed.
+Then:
+
+1. Save the file onto the TrueNAS mirror, in with the irreplaceable files the nightly Backblaze B2 Cloud Sync task pushes offsite — a vault whose only copies sit in one house is not finished.
+2. Repeat after big additions; the export is a snapshot, not a feed.
 
 > [!WARNING]
-> The encrypted-JSON export holds your logins and notes but **leaves out file attachments** — and Sends and trash with them. If you keep recovery-code images, scanned documents, or the like attached to vault items, that "complete copy" silently is not. To capture the attachments too, also take a **.zip export** (the export screen offers it), which packages the attached files alongside the data. Store the .zip beside the JSON on the NAS (network-attached storage), and treat it with the same care — it carries the unencrypted attachments inside.
+> The encrypted-JSON export holds your logins and notes but **leaves out file attachments** — and Sends and trash with them. If you keep recovery-code images, scanned documents, or the like attached to vault items, that "complete copy" silently is not.
+>
+> To capture the attachments too:
+>
+> 1. Also take a **.zip export** (the export screen offers it), which packages the attached files alongside the data.
+> 2. Store the .zip beside the JSON on the NAS (network-attached storage).
+>
+> Treat it with the same care as the JSON — it carries the unencrypted attachments inside.
 
 ### Give the watcher a watcher
 When you build Uptime Kuma later in this build, give it an HTTP(s) monitor pointed at the direct address `http://192.168.1.56:8000` rather than the proxied name — the login may live behind the proxy, but the dot should not. If the vault ever stops answering, that is how you find out before a family member does.
 
 ### Update on purpose
 1. Snapshot the container — the standard habit before any change.
-2. Type `update` in the container's console and pick **1 Update VaultWarden + Web-Vault** — the same menu whose option 2 set the admin token.
-3. Wait out the recompile (patience, again). Data and settings stay put; the bundled web vault refreshes to match.
+2. Type this in the container's console:
+
+   ```bash
+   update
+   ```
+
+3. Pick **1 Update VaultWarden + Web-Vault** — the same menu whose option 2 set the admin token.
+4. Wait out the recompile (patience, again). Data and settings stay put; the bundled web vault refreshes to match.
 
 Vaultwarden's releases sometimes carry security fixes — when the project says update, take it promptly.
 
