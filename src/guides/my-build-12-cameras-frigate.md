@@ -66,7 +66,16 @@ Then let it work — it compiles Frigate from source, so expect a long run. Read
 > The script builds a **privileged** container, which has weaker isolation from the host than an unprivileged one, and Frigate's own docs note that running in an LXC is community territory rather than officially supported. This path is popular and works well on this hardware, but the officially supported route is Docker Compose inside a VM (virtual machine). The LXC is chosen here so the container can share the host's GPU directly — the whole reason detection runs on the 1080 Ti instead of an Intel iGPU.
 
 ### Open the web UI
-The script prints the container's address when it finishes — browse to **`http://192.168.1.52:5000`**. Expect the **Config Editor (Safe Mode)**, not a dashboard: Frigate 0.17 requires the `mqtt` and `cameras` fields, the generated config has neither, and validation fails with *"mqtt - Field required… cameras - Field required."* That is the install working, not broken — 0.17 also ships no sample camera, so there is no test clip to look for. Escape safe mode with Frigate's own documented minimal blocks. The config is **YAML** — an indentation-based text format where the leading spaces are meaningful — and this page treats it one way throughout: **every config step gives the complete file as it should exist at that moment.** Select everything in the editor, delete it, paste the block, swap any password tokens it names, **Save & Restart**. No merging, no hunting for changed lines. Here, the whole file becomes:
+The script prints the container's address when it finishes.
+
+1. Browse to **`http://192.168.1.52:5000`**.
+2. Select everything in the editor, delete it, and paste the complete file below, swapping any password tokens it names.
+3. **Save & Restart**.
+
+> [!NOTE]
+> Expect the **Config Editor (Safe Mode)**, not a dashboard: Frigate 0.17 requires the `mqtt` and `cameras` fields, the generated config has neither, and validation fails with *"mqtt - Field required… cameras - Field required."* That is the install working, not broken — 0.17 also ships no sample camera, so there is no test clip to look for. Escape safe mode with Frigate's own documented minimal blocks. The config is **YAML** — an indentation-based text format where the leading spaces are meaningful — and this page treats it one way throughout: **every config step gives the complete file as it should exist at that moment.** No merging, no hunting for changed lines.
+
+Here, the whole file becomes:
 
 ```yaml
 ffmpeg:
@@ -106,7 +115,10 @@ With **no `auth:` block** in the config — which is what the script generated �
 grep -i password /dev/shm/logs/frigate/current
 ```
 
-Log in at `https://192.168.1.52:8971` as **`admin`** with that password, open **Settings → Users**, and replace it with a password of your own. Record it below.
+1. Log in at `https://192.168.1.52:8971` as **`admin`** with that password.
+2. Open **Settings → Users** and replace it with a password of your own.
+
+Record it below.
 
 > [!INPUT] frigate-admin-user | Frigate UI username | | admin
 > Frigate names its first user `admin`; it is not configurable at creation.
@@ -218,7 +230,14 @@ wget https://us.download.nvidia.com/XFree86/Linux-x86_64/550.163.01/NVIDIA-Linux
 sh NVIDIA-Linux-x86_64-550.163.01.run --no-kernel-module
 ```
 
-The installer walks a few text dialogs — accept the license, **No** to the 32-bit compatibility libraries, accept the rest as offered. Two blue **WARNING** dialogs appear, and both are expected. The first — it "will not install any kernel modules", matching modules must be "installed separately" — is `--no-kernel-module` doing its job: the kernel half lives on the host at exactly this version, from the GPU/HBA page. The second — it "was forced to guess the X library path" — is about X, the Linux desktop display system, which this headless container does not have and never needs; Frigate reaches the card through CUDA, not a screen. **OK** through both, and answer **No** (the offered default) to running `nvidia-xconfig` at the end — same theme, it writes a desktop X config for a desktop that does not exist.
+The installer walks a few text dialogs:
+
+- **License** → accept
+- **32-bit compatibility libraries** → **No**
+- Everything else → accept as offered
+- First blue **WARNING** (it "will not install any kernel modules", matching modules must be "installed separately") → **OK** — expected: `--no-kernel-module` is doing its job, since the kernel half lives on the host at exactly this version, from the GPU/HBA page
+- Second blue **WARNING** (it "was forced to guess the X library path") → **OK** — expected: about X, the Linux desktop display system, which this headless container does not have and never needs; Frigate reaches the card through CUDA, not a screen
+- Run `nvidia-xconfig`? → **No** (the offered default) — same theme, it writes a desktop X config for a desktop that does not exist
 
 If a host upgrade ever bumps the driver, swap the new version into both lines — the URL follows that pattern for any version. The kernel module lives on the host, so only the libraries install inside; the host-side "never a `.run`" rule is about kernel modules and does not apply in an LXC.
 
@@ -917,7 +936,16 @@ The dead-end gateway already stops the traffic; this step turns off the services
   - **Account → Password Expires in** → **Never**, its shipped state — forced rotation on cameras breeds sticky-note passwords
   - **Peripheral** (Serial Port / External Light / Wiper) → leave untouched — RS-485 and accessory config for hardware these turrets do not have
 
-**The Reolink pair** — one preparation first: in the **iOS app**, if a camera was added by QR/UID scan, add it again **by IP** (**⊕ → Manual Input → the camera's IP**, the admin login) so the app keeps working on the LAN after the next toggle kills the relay path. Prove the new tile opens live view, then delete the old UID entry — and if the app refuses the duplicate ("device already added"), remove the old entry first and re-add by IP. Removing costs nothing: the app's device list is just the phone's address book — every setting lives on the camera, and there is no cloud account bound. Then:
+**The Reolink pair** — one preparation first, in the **iOS app**:
+
+1. If a camera was added by QR/UID scan, add it again **by IP** (**⊕ → Manual Input → the camera's IP**, the admin login) — so the app keeps working on the LAN after the next toggle kills the relay path.
+2. Prove the new tile opens live view.
+3. Delete the old UID entry. If the app refuses the duplicate ("device already added"), remove the old entry first and re-add by IP.
+
+> [!NOTE]
+> Removing costs nothing: the app's device list is just the phone's address book — every setting lives on the camera, and there is no cloud account bound.
+
+Then:
 
 - **Enable UID** (Reolink's P2P relay) → **off — web UI only**: **Network → Advanced → Enable UID**, switch off — its caption is honest about what it is: "Allow Reolink App/Client to access the device via WAN using UID." It ships enabled on every Reolink camera, and the iOS app has no switch for it on cameras. Off means no Reolink-relay access from anywhere outside — remote viewing on this build is Frigate over Tailscale once the Remote Access page is done — while LAN app, web UI, and streams carry on
 - **UPnP** → **off**: **Network → Advanced → UPnP** — web UI again; the app has no such toggle
@@ -1288,7 +1316,12 @@ cameras:
 ### Connect to Home Assistant over MQTT
 Frigate and Home Assistant talk over **MQTT (MQ Telemetry Transport)**. This build runs a single **Mosquitto** broker that Zigbee2MQTT also uses; Frigate logs in with its own dedicated MQTT credentials — the `mqtt-user` login you created in the broker's Logins list on the Home Assistant & Zigbee2MQTT page. Point Frigate at the broker — the last config change, two ways in.
 
-**Edit in place** — find the `mqtt:` block and replace its two lines with the five below. One token to fill: **`MQTT-PASS`** becomes the `mqtt-user` login's password — the one set in the Mosquitto broker's **Logins** list on the Home Assistant & Zigbee2MQTT page (recoverable any time at **HA → Settings → Apps → Mosquitto broker → Configuration → Logins**). Record it in the `frigate-mqtt-password` box in this page's credentials section below, so the checklist stands on its own. **Save & Restart**, no restreamer bounce:
+**Edit in place** — find the `mqtt:` block and replace its two lines with the five below.
+
+> [!NOTE]
+> One token to fill: **`MQTT-PASS`** becomes the `mqtt-user` login's password — the one set in the Mosquitto broker's **Logins** list on the Home Assistant & Zigbee2MQTT page (recoverable any time at **HA → Settings → Apps → Mosquitto broker → Configuration → Logins**). Record it in the `frigate-mqtt-password` box in this page's credentials section below, so the checklist stands on its own.
+
+**Save & Restart**, no restreamer bounce:
 
 ```yaml
 mqtt:

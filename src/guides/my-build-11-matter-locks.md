@@ -14,7 +14,14 @@ The three Aqara U400 deadbolts are **Matter-over-Thread** devices, and this buil
 ## Stand up Home Assistant's Thread border router
 
 ### Add a second ZBT-2 for Thread
-Your first **HA Connect ZBT-2** is busy running Zigbee2MQTT — and one radio cannot cleanly do Zigbee and Thread at once (the multi-protocol firmware is experimental and degrades both). So Thread gets its **own** ZBT-2. Plug a **second ZBT-2** into another rear USB port on its included 1.5 m USB-C cable (stand the antenna away from the case, and away from the first radio), then pass it to the Home Assistant OS VM — but **not** the way the first one was added. Both sticks report the identical USB ID `303a:831a`, so **Use USB Vendor/Device ID cannot tell them apart** and a second entry with the same ID may hand Proxmox the same physical stick twice. Select **Use USB Port** instead, which binds to the physical port and is unambiguous. To learn which port holds which stick, run this in the **Proxmox host shell**:
+Your first **HA Connect ZBT-2** is busy running Zigbee2MQTT — and one radio cannot cleanly do Zigbee and Thread at once (the multi-protocol firmware is experimental and degrades both). So Thread gets its **own** ZBT-2.
+
+> [!WARNING]
+> Both sticks report the identical USB ID `303a:831a`, so **Use USB Vendor/Device ID cannot tell them apart** and a second entry with the same ID may hand Proxmox the same physical stick twice. Select **Use USB Port** instead, which binds to the physical port and is unambiguous.
+
+1. Plug a **second ZBT-2** into another rear USB port on its included 1.5 m USB-C cable (stand the antenna away from the case, and away from the first radio).
+2. Pass it to the Home Assistant OS VM using **Use USB Port** — *not* the way the first one was added.
+3. To learn which port holds which stick, run this in the **Proxmox host shell**:
 
 ```bash
 for d in /sys/bus/usb/devices/*; do
@@ -235,13 +242,24 @@ These locks may already be commissioned — to **Aqara Home**, **SmartThings**, 
 - **The QR code on the sticker will not work.** A Matter setup code commissions a device *once*. After that the device leaves commissioning mode, and adding a second controller requires a fresh, time-limited code minted by the existing admin through its own share flow. The sticker is dead until the lock is reset — at which point it works again, which is exactly why you keep it.
 - **Sharing into Home Assistant would not move the lock onto your network.** Multi-admin adds a *controller*; it never re-runs network commissioning. A lock commissioned by SmartThings or Aqara joined whatever Thread network *they* used, and it stays there. Home Assistant would still control it, routed through that foreign border router — but your own radio would serve nothing, and the network you just built would be decorative.
 
-**Find every fabric before you remove anything.** A lock can belong to more than one ecosystem at once — that is the whole point of Matter multi-admin — so removing it from one app frequently leaves another behind, and one surviving fabric is enough to keep the sticker code dead. Open the lock in **Aqara Home** and find its **Matter** screen: that list of connected ecosystems is the authoritative inventory, and on this build the locks turned out to be spread across **Google/Nest** and **SmartThings**, some in both. Check whether that screen lets you remove the entries directly — if it does, it is one place instead of three. Note also what is *absent*: Aqara Home itself holds no Matter fabric, so its binding, your keypad codes, and the calibration are never at risk here.
+**Find every fabric before you remove anything.** A lock can belong to more than one ecosystem at once — that is the whole point of Matter multi-admin — so removing it from one app frequently leaves another behind, and one surviving fabric is enough to keep the sticker code dead.
+
+1. Open the lock in **Aqara Home** and find its **Matter** screen — that list of connected ecosystems is the authoritative inventory.
+2. Check whether that screen lets you remove the entries directly — if it does, it is one place instead of three.
+
+> [!NOTE]
+> On this build the locks turned out to be spread across **Google/Nest** and **SmartThings**, some in both. Note also what is *absent*: Aqara Home itself holds no Matter fabric, so its binding, your keypad codes, and the calibration are never at risk here.
 
 Work through the list app by app — the **SmartThings app** for SmartThings entries, the **Google Home app** for Nest ones — then come back to the Aqara **Matter** screen and confirm **nothing remains listed**. That empty list is the gate to commissioning.
 
 A full factory reset is the certain fix, but **try dropping just the Matter fabrics first** — it keeps the lock's calibration, its keypad codes, and its Aqara Home binding. Removing the lock from **SmartThings** removes SmartThings' fabric alone, and once a Matter device leaves its *last* fabric its network credentials become unusable and it returns to a commissionable state. Aqara Home is untouched by that, because Aqara's binding is its own thing over Bluetooth/UWB rather than a Matter fabric.
 
-One caveat keeps this from being a guarantee: the last-fabric behaviour is **vendor-configurable**, so Aqara may not clear Thread cleanly. A single test settles both — delete the lock in the **SmartThings app**, then scan the **Matter Pairing Code** from the inner panel in the **Home Assistant companion app** under **Settings → Matter → Add device**. If it commissions, the lock was genuinely commissionable and Home Assistant has just provisioned *your* Thread network. If it refuses as already commissioned, a fabric survived and that lock needs the reset after all.
+One caveat keeps this from being a guarantee: the last-fabric behaviour is **vendor-configurable**, so Aqara may not clear Thread cleanly. A single test settles both:
+
+1. Delete the lock in the **SmartThings app**.
+2. Scan the **Matter Pairing Code** from the inner panel in the **Home Assistant companion app** under **Settings → Matter → Add device**.
+
+If it commissions, the lock was genuinely commissionable and Home Assistant has just provisioned *your* Thread network. If it refuses as already commissioned, a fabric survived and that lock needs the reset after all.
 
 ### Two QR codes, and why Aqara Home is worth keeping
 The battery compartment holds **two different codes**, and they are not interchangeable:
@@ -294,12 +312,20 @@ Run the same Matter add flow for the **second and third U400**, each with its ow
 ## Verify and hand off
 
 ### Re-commissioning a lock that joined the wrong network
-Once coverage reaches the door, moving a lock onto your own network is a re-commission — there is no migration path for an already-commissioned Matter device. It is short, though, provided the foreign ecosystems no longer hold fabrics: Home Assistant is then the only one. For each lock, open its **device page**, delete it, press the lock's **Set** button once, and add it again from the companion app. Check **Network name** before starting the next one.
+Once coverage reaches the door, moving a lock onto your own network is a re-commission — there is no migration path for an already-commissioned Matter device. It is short, though, provided the foreign ecosystems no longer hold fabrics: Home Assistant is then the only one.
+
+For each lock:
+
+1. Open its **device page** and delete it.
+2. Press the lock's **Set** button once.
+3. Add it again from the companion app.
+4. Check **Network name** before starting the next one.
 
 ### Confirm they landed on your Thread network
-A lock that commissioned onto a neighbouring mesh looks identical in the device list, so check rather than assume — this is the one thing the whole border-router exercise was for. Open **Matter Server** in the sidebar and select the lock's node, then scroll past Node Info to **Endpoints** and open **Endpoint 0** — the root endpoint, where every network cluster lives (the higher-numbered endpoints are the device's own functions, the lock itself among them). Expand **Thread Network Diagnostics** (cluster `0x0035`): its **NetworkName** attribute names the mesh the lock actually joined. The **Show in graph** button beside the node title draws the same relationship visually if you prefer it.
-
-Do not confuse this with the gear-icon **Settings** dialog on that page: its *Network credentials* section, showing WiFi and Thread as **Not configured / DEFAULT**, is what the server hands *out* when commissioning future devices — DEFAULT there means "use Home Assistant's own Thread network", which is exactly right, and it says nothing about where an existing device landed. It should read your **`ha-thread-…`** network. If it reads a neighbouring network instead, the phone's preferred network won during commissioning — fix the phone's credentials and re-commission that lock.
+> [!WARNING]
+> A lock that commissioned onto a neighbouring mesh looks identical in the device list, so check rather than assume — this is the one thing the whole border-router exercise was for. Open **Matter Server** in the sidebar and select the lock's node, then scroll past Node Info to **Endpoints** and open **Endpoint 0** — the root endpoint, where every network cluster lives (the higher-numbered endpoints are the device's own functions, the lock itself among them). Expand **Thread Network Diagnostics** (cluster `0x0035`): its **NetworkName** attribute names the mesh the lock actually joined. The **Show in graph** button beside the node title draws the same relationship visually if you prefer it.
+>
+> Do not confuse this with the gear-icon **Settings** dialog on that page: its *Network credentials* section, showing WiFi and Thread as **Not configured / DEFAULT**, is what the server hands *out* when commissioning future devices — DEFAULT there means "use Home Assistant's own Thread network", which is exactly right, and it says nothing about where an existing device landed. It should read your **`ha-thread-…`** network. If it reads a neighbouring network instead, the phone's preferred network won during commissioning — fix the phone's credentials and re-commission that lock.
 
 **Check all three, not one.** Locks added back to back do *not* necessarily land together: on this build the Carport lock joined **NEST-PAN** while the Basement lock joined **ST-TIZEN**, on the same afternoon with the same phone, purely because each door hears a different set of neighbours. The node list is the only place that difference is visible — the device list shows three healthy locks either way.
 
@@ -317,7 +343,12 @@ After a re-commission you will often see a device twice — one live, one offlin
 
 Leave stale entries alone. They are cosmetic, and they disappear on their own when the Matter Server next reconciles. If one genuinely must go, take a Home Assistant backup first.
 
-Recovering from it is usually easy, and the keypad and key never depended on Home Assistant anyway. **First check the Matter Server panel in the sidebar and count the nodes.** If it still lists one node per lock while Devices shows fewer, the commissioning survived — only Home Assistant's device entry went — and the fix is to make HA rebuild it rather than to re-pair anything. The same ladder also cures a second, quieter failure: a lock that still shows **connected** but reports a stale state and **times out** on lock and unlock — that is a stale subscription, not a lost node, and step 1 alone usually revives it (check the battery entity on the device page too; a dying lock wears its last-known face while it stops answering). All three steps are safe from anywhere:
+Recovering from it is usually easy, and the keypad and key never depended on Home Assistant anyway. **First check the Matter Server panel in the sidebar and count the nodes.**
+
+> [!NOTE]
+> If it still lists one node per lock while Devices shows fewer, the commissioning survived — only Home Assistant's device entry went — and the fix is to make HA rebuild it rather than to re-pair anything. The same ladder also cures a second, quieter failure: a lock that still shows **connected** but reports a stale state and **times out** on lock and unlock — that is a stale subscription, not a lost node, and step 1 alone usually revives it (check the battery entity on the device page too; a dying lock wears its last-known face while it stops answering).
+
+All three steps are safe from anywhere:
 
 1. **Settings → Devices & services → Matter → ⋮ → Reload** — re-reads the fabric, and an orphaned node normally returns as a device.
 2. **Settings → Apps → Matter Server → Restart**, if that alone does not do it.
@@ -328,7 +359,13 @@ Only if the node itself is *missing* from that panel is the lock genuinely out o
 ### Re-enter the keypad codes — all three at once
 A factory reset, and sometimes a re-commission, wipes the locks' keypad codes. Do not re-key them one door at a time: since **Home Assistant 2026.8.2** the Matter integration manages lock users natively, and the action takes multiple targets in a single call.
 
-First confirm the lock implements it — user management is an optional Matter cluster, so the action fails outright rather than silently doing nothing. Open **Settings → Tools** ("Inspect and debug your system" — this is what older write-ups call *Developer tools*, renamed and moved off the sidebar). On its **Actions** tab, run **Get Matter lock info** against one lock. The U400 answers `supports_user_management: true` with **PIN only** (no RFID), **20 users**, and a **4–8 digit** PIN length — verified on this build's locks, so the route below is open.
+First confirm the lock implements it — user management is an optional Matter cluster, so the action fails outright rather than silently doing nothing.
+
+1. Open **Settings → Tools** ("Inspect and debug your system" — this is what older write-ups call *Developer tools*, renamed and moved off the sidebar).
+2. On its **Actions** tab, run **Get Matter lock info** against one lock.
+
+> [!NOTE]
+> The U400 answers `supports_user_management: true` with **PIN only** (no RFID), **20 users**, and a **4–8 digit** PIN length — verified on this build's locks, so the route below is open.
 
 Grab the real entity IDs before writing the call: on the **States** tab, filter for `lock.`. If you have just renamed anything, **hard-refresh the browser first** (Cmd/Ctrl+Shift+R) — the frontend caches the entity registry, so the Actions tab's target picker keeps offering the old names and finds nothing under the new ones until it reloads. Home Assistant prefixes the area onto the name, so they read `lock.carport_carport_door` rather than the `lock.carport_door` you would guess.
 
@@ -346,7 +383,7 @@ data:
   credential_data: "1234"
 ```
 
-Run from **Tools → Actions** this works as written. Wrapped in a **script**, it needs one extra line — `response_variable: cred`, alongside `action`/`target`/`data` — because Home Assistant refuses to run a script that discards an action's response data.
+Run from **Tools → Actions**, this works as written. Wrapped in a **script**, it needs one extra line — `response_variable: cred`, alongside `action`/`target`/`data` — because Home Assistant refuses to run a script that discards an action's response data.
 
 Omitting `credential_index` and `user_index` lets each lock choose a free slot and create the user itself — the right behaviour after a wipe. Substitute your real entity IDs and a real 4–8 digit code, then **test it on one physical keypad**: the action succeeding means the lock accepted the credential, not that the keypad behaves as you expect.
 
@@ -477,7 +514,10 @@ mode: single
 
 Keep the expiry automation pointed at the single-slot Revoke, never the broom — an automation should remove the guest whose date passed, not sweep away a second guest mid-stay. And ignore any online suggestion of Matter's magic clear-all index (65534): it clears **everything, household included**; the broom exists so it is never needed.
 
-The slot convention survives auto-allocation: the household's codes, created first, fill **1–6** in order, so the lock hands the first guest **slot 7** — confirm it in the Grant run's trace. Then add a **Date and time** helper (Settings → Devices & services → Helpers) called *Guest access ends*, and one automation to fire the revoke:
+The slot convention survives auto-allocation: the household's codes, created first, fill **1–6** in order, so the lock hands the first guest **slot 7** — confirm it in the Grant run's trace.
+
+1. Add a **Date and time** helper (**Settings → Devices & services → Helpers**) called *Guest access ends*.
+2. Add one automation to fire the revoke:
 
 ```yaml
 alias: Revoke guest access when it expires

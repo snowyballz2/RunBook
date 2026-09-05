@@ -90,7 +90,10 @@ Save. Phone apps, dashboards, and the MQTT links all use this address — `homea
 ## First boot
 
 ### Walk the onboarding
-Give it a few minutes on first boot — Home Assistant OS sets itself up unattended. Then browse to `http://homeassistant.local:8123` (or the pinned IP). The first screen is **Preparing Home Assistant** while it downloads the latest version (roughly 700 MB) — this can take twenty minutes, so let it work. Then choose **Create my smart home** and the wizard walks you through the owner account, your home location (it sets time zone, units, and currency), and an analytics choice, ending with **Finish**.
+1. Wait a few minutes on first boot — Home Assistant OS sets itself up unattended.
+2. Browse to `http://homeassistant.local:8123` (or the pinned IP).
+3. Let **Preparing Home Assistant** finish downloading the latest version (roughly 700 MB) — this can take twenty minutes.
+4. Choose **Create my smart home**, then walk the wizard: owner account, home location (time zone, units, currency), analytics choice, and **Finish**.
 
 > [!NOTE]
 > Home Assistant can show high RAM use right after boot — that is normal; it uses free memory for caching, not a sign the 8 GB is too small.
@@ -103,16 +106,21 @@ Give it a few minutes on first boot — Home Assistant OS sets itself up unatten
 > [!SECRET] ha-owner-password | Home Assistant owner password
 
 ### Sketch the Areas now
-Before any devices arrive, lay out your rooms under **Settings → Areas, labels & zones**. Add an Area per room — kitchen, laundry, garage, basement, baths — so that as each Zigbee device joins you can drop it straight into the right one. Two minutes that pays forever: dashboards group by Area automatically, and voice and automation targeting only works once Home Assistant knows what is *in* each room.
+1. Go to **Settings → Areas, labels & zones**.
+2. Add an Area per room — kitchen, laundry, garage, basement, baths — so each Zigbee device has somewhere to land as it joins.
+
+Two minutes that pays forever: dashboards group by Area automatically, and voice and automation targeting only works once Home Assistant knows what is *in* each room.
 
 ### Set the entity ID format before anything is paired
-Two minutes here saves a rename campaign later. Home Assistant builds every new entity's ID from a **format** you control at **Settings → Entity ID format** (`/config/entity-id-format`), and the default is **Area + Device + Entity** — which produces `lock.carport_carport_door` and `sensor.living_room_thermostat_temperature`.
+1. Go to **Settings → Entity ID format** (`/config/entity-id-format`).
+2. Click the **×** on the **Area** chip, leaving **Device + Entity**.
+3. **Save**.
 
-Click the **×** on the **Area** chip, leaving **Device + Entity**, and **Save**. The preview shortens immediately, and everything paired from here — the Zigbee sensors, the locks, the shades — arrives with an ID you would willingly type into an automation.
+> [!NOTE]
+> Two minutes here saves a rename campaign later. Home Assistant builds every new entity's ID from a **format**, and the default is **Area + Device + Entity** — which produces `lock.carport_carport_door` and `sensor.living_room_thermostat_temperature`. Removing Area shortens the preview immediately, and everything paired from here — the Zigbee sensors, the locks, the shades — arrives with an ID you would willingly type into an automation. Nothing is lost: the area still lives on the *device*, so dashboard grouping, "turn off the basement" voice targeting, and area-targeted automations all behave the same. Area in the ID only earns its keep when two devices share a name across rooms, and this build's names are already distinct.
 
-Nothing is lost: the area still lives on the *device*, so dashboard grouping, "turn off the basement" voice targeting, and area-targeted automations all behave the same. Area in the ID only earns its keep when two devices share a name across rooms, and this build's names are already distinct.
-
-**Do it now, before pairing.** The setting applies only to entities created *after* it is saved — existing ones keep their IDs and must be renamed individually, which is the tedious path this step exists to avoid.
+> [!WARNING]
+> **Do it now, before pairing.** The setting applies only to entities created *after* it is saved — existing ones keep their IDs and must be renamed individually, which is the tedious path this step exists to avoid.
 
 > [!TIP]
 > Name the Areas the way you would say them out loud ("Laundry Room", not "laundry_1"). Those names become the words a Cast announcement or a future voice command leans on.
@@ -120,7 +128,12 @@ Nothing is lost: the area still lives on the *device*, so dashboard grouping, "t
 ## Zigbee2MQTT on the ZBT-2
 
 ### Pass the coordinator through
-This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broader device support, and it speaks the same MQTT bus the rest of the build uses — and it runs as a Home Assistant app, so the coordinator goes to the Home Assistant OS VM. Plug the **HA Connect ZBT-2** into a rear USB port on its included 1.5 m USB-C cable — long enough to stand the antenna base away from case interference — then pass it through: in Proxmox, select the VM → **Hardware → Add → USB Device**, pick the ZBT-2 by name, and reboot the VM.
+This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broader device support, and it speaks the same MQTT bus the rest of the build uses — and it runs as a Home Assistant app, so the coordinator goes to the Home Assistant OS VM.
+
+1. Plug the **HA Connect ZBT-2** into a rear USB port on its included 1.5 m USB-C cable — long enough to stand the antenna base away from case interference.
+2. In Proxmox, select the VM → **Hardware → Add → USB Device**.
+3. Pick the ZBT-2 by name.
+4. Reboot the VM.
 
 > [!WARNING]
 > Proxmox does not hand USB devices to a guest automatically. If Z2M cannot see the coordinator, this missed passthrough step is almost always why. (Passing it through also means the **host** stops showing it under `/dev/serial/by-id/` — QEMU detaches the host driver, so that path now exists *inside* the VM. Find it at **Settings → System → Hardware → All Hardware** in the Home Assistant UI, which is the same list Z2M's port dropdown reads.)
@@ -129,12 +142,18 @@ This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broa
 > Once the stick is passed through, Home Assistant discovers it and offers a **Home Assistant Connect ZBT-2** card under **Settings → Devices & services**. **Ignore that card — never click Add.** It starts HA's built-in **ZHA** (or Thread) setup, which seizes the coordinator this build needs for Zigbee2MQTT; Z2M reaches the radio through its own add-on config, not through an HA integration. One click there costs you the whole Zigbee setup. The same page also lists the **Lutron Smart Bridge Pro 2 as a "HomeKit Device"** — ignore that too, and add the bridge through its **native Lutron Caséta** card instead: the HomeKit route exposes only a subset (no Pico remotes as triggers) and consumes the bridge's HomeKit pairing.
 
 ### Stand up the Mosquitto broker and its logins
-The whole build talks over one **Mosquitto** broker, and it lives here on the Home Assistant VM. In the Home Assistant UI (`192.168.1.51:8123`), install the official **Mosquitto broker** app (**Settings → Apps → Install app** — Home Assistant renamed *Add-ons* to *Apps* in 2026.2, so older write-ups say "add-on store") if it is not already running, and do not stand up a second broker anywhere else. On the app's page, set its toggles deliberately:
+The whole build talks over one **Mosquitto** broker, and it lives here on the Home Assistant VM.
+
+1. In the Home Assistant UI (`192.168.1.51:8123`), go to **Settings → Apps → Install app** and install the official **Mosquitto broker** app, if it is not already running.
+2. On the app's page, set its toggles deliberately:
 
 - **Start on boot** → **on** — the broker is the spine; without it, Zigbee entities and Frigate's events are dead after any reboot
 - **Watchdog** → **on** — restarts the app if it stops; a dead broker fails *silently*, nothing errors, entities just quietly stop updating
 - **Auto update** → **off** — a single point of failure for both the Zigbee mesh and Frigate gets updated deliberately, in the monthly maintenance pass, after a snapshot
 - **Show in sidebar** → cosmetic either way — Mosquitto has no real UI
+
+> [!NOTE]
+> Do not stand up a second broker anywhere else. Home Assistant renamed *Add-ons* to *Apps* in 2026.2, so older write-ups say "add-on store".
 
 > [!WARNING]
 > **Restart the Mosquitto app after adding logins.** It writes its password file at startup, so credentials added to the Logins list do not exist to the broker until it restarts — and every client that tries meanwhile is refused with a bare **"Connection refused: Not authorized"**, which reads like a wrong password rather than a not-yet-loaded one. Restart Mosquitto, then whatever was rejected. If it persists, Mosquitto's own **Log** names the username it turned away, which tells you whether the client is sending the wrong name or the wrong password. Then create the build's two broker logins — the broker rejects unknown credentials by default, so a username nobody created just gets "not authorised". Add both under the app's **Configuration → Logins** list (or create dedicated non-admin Home Assistant users with these names): **`zigbee2mqtt`** for Z2M, used below, and **`mqtt-user`** for Frigate, used on the Cameras, Doorbell & Frigate page. Same broker, distinct logins — the broker's logs make it obvious who is talking.
@@ -154,7 +173,12 @@ The whole build talks over one **Mosquitto** broker, and it lives here on the Ho
 > Leave **`password_pre_hashed` off** (its default). That option tells the add-on the password you typed is *already* a PBKDF2 hash, for migrating credentials from an existing Mosquitto install. Switch it on with a plain password and the broker stores your literal text as though it were a hash — nothing ever authenticates, and every client just reports a wrong password.
 
 ### Point Z2M at the Mosquitto broker
-Install Z2M as a Home Assistant app. Its apps live in a separate repository: in **Settings → Apps → Install app**, open the **⋮ menu → Repositories**, add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`, then install **Zigbee2MQTT** from the store and start it.
+Install Z2M as a Home Assistant app — its apps live in a separate repository:
+
+1. In **Settings → Apps → Install app**, open the **⋮ menu → Repositories**.
+2. Add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`.
+3. Install **Zigbee2MQTT** from the store.
+4. Start it.
 
 Opening it the first time gives you the **Zigbee2MQTT Onboarding** wizard, not the normal frontend — so there is no **Permit join** button yet; that appears only after this wizard is submitted and Z2M is running. The wizard is one page with a **Coordinator/Adapter** picker, a **Network** panel, and a row of tabs (Main, Frontend, MQTT, Serial…). Work it in this order, and note that **nothing commits until you submit at the bottom** — tab-hopping is safe, closing the page is not.
 
@@ -167,7 +191,8 @@ Opening it the first time gives you the **Zigbee2MQTT Onboarding** wizard, not t
 - **rtscts** → **ticked**. Defaults off.
 - **port** → the full **`/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_<serial>-if00…`** path, copied verbatim from **Settings → System → Hardware → All Hardware**. Never the raw `/dev/ttyACM0`: that is assigned in plug order, so once the second ZBT-2 arrives for Thread it can silently point Z2M at the wrong radio after a reboot, while the by-id path carries the stick's serial and cannot be confused.
 
-If any of these revert on you, the coordinator dropdown is re-applying its auto-fill — set it back to `-`, redo the four fields, and submit without reloading. Failing that, bypass the form entirely: **Settings → Apps → Zigbee2MQTT → Configuration → ⋮ → Edit in YAML** writes the same values where autodetect cannot overwrite them:
+> [!WARNING]
+> If any of these revert on you, the coordinator dropdown is re-applying its auto-fill — set it back to `-`, redo the four fields, and submit without reloading. Failing that, bypass the form entirely: **Settings → Apps → Zigbee2MQTT → Configuration → ⋮ → Edit in YAML** writes the same values where autodetect cannot overwrite them:
 
 ```yaml
 serial:
@@ -177,7 +202,12 @@ serial:
   rtscts: true
 ```
 
-**3. Fill the MQTT tab.** **server** wants a URL, and the right one is the broker's *internal* name — **`mqtt://core-mosquitto:1883`** — not the VM's LAN address, since both are add-ons on this same Home Assistant. **user** and **password** are the `zigbee2mqtt` pair you created in Mosquitto. Leave **ca / key / cert** blank (TLS, unnecessary internally) and **base_topic** at `zigbee2mqtt` — everything Z2M publishes namespaces under `zigbee2mqtt/…` and stays out of Frigate's way.
+**3. Fill the MQTT tab.**
+
+- **server** → **`mqtt://core-mosquitto:1883`** — the broker's *internal* name, not the VM's LAN address, since both are add-ons on this same Home Assistant
+- **user** / **password** → the `zigbee2mqtt` pair created in Mosquitto
+- **ca / key / cert** → blank — TLS, unnecessary internally
+- **base_topic** → `zigbee2mqtt` — everything Z2M publishes namespaces under `zigbee2mqtt/…` and stays out of Frigate's way
 
 **4. Leave the Network panel alone.** Its **PAN ID**, **Extended PAN ID**, and **Network key** are auto-generated; the shuffle buttons beside them would force re-pairing every device. Do **write all three down** first, though — they are what lets a rebuilt Z2M (new container, restored backup, migration) have all thirteen devices rejoin without walking to each sensor and valve.
 
@@ -190,7 +220,10 @@ Then submit. Z2M starts, and the sidebar entry now opens the real frontend with 
 > Z2M uses `mqtt://core-mosquitto:1883` internally, but **Frigate is a separate container off-box** — it connects to the broker at this LAN address with its `mqtt-user` login, on the Cameras, Doorbell & Frigate page.
 
 ### Surface Z2M in Home Assistant
-Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT integration**. Home Assistant auto-discovers the local Mosquitto app: in **Settings → Devices & services**, confirm the discovered **MQTT** integration and accept it — it connects with the app's own internal login, so there are no credentials to type. With both Z2M and Home Assistant on the broker, every device Z2M reports shows up as an ordinary Home Assistant entity automatically — no per-device wiring.
+In **Settings → Devices & services**, confirm the discovered **MQTT** integration and accept it.
+
+> [!NOTE]
+> Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT integration**. Home Assistant auto-discovers the local Mosquitto app. Accepting it connects with the app's own internal login, so there are no credentials to type. With both Z2M and Home Assistant on the broker, every device Z2M reports shows up as an ordinary Home Assistant entity automatically — no per-device wiring.
 
 > [!NOTE]
 > The non-Zigbee devices on this build — the Lutron Caséta bridge, the ecobee thermostats, the cameras, and the rest — arrive the same way, under **Settings → Devices & services** after onboarding (many auto-detected in the **Discovered** section). An empty Discovered list right after setup is normal. The cameras and locks get their integrations on their own pages, and the ecobee thermostats are onboarded on the Automations page. The Lutron Caséta bridge has no page of its own, so add it now: **Settings → Devices & services → Add integration → Lutron Caséta**, then press the button on the back of the bridge when prompted — the lights surface as entities for the scenes and scripts later in the build. **Adding Caséta switches later never means re-adding the integration:** pair the new switch in the *Lutron app* (the bridge owns the device list), then **Settings → Devices & services → Lutron Caséta → ⋮ → Reload** in Home Assistant and the new entities appear. That is the pattern for every hub-based integration — pair at the hub, reload in HA; only hub-less devices (the Zigbee ones through Z2M, the Matter locks) get paired inside Home Assistant itself.
@@ -198,7 +231,12 @@ Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT
 ## Pair the mesh
 
 ### Lay down the routers first
-Plug in the **Third Reality 3RSP019BZ smart plugs** and pair them **before** anything battery-powered. They are mains-powered Zigbee **routers** — they build and extend the mesh that the battery sensors lean on. (Zigbee only — the 3RSP019BZ is a Zigbee/BLE device with no Thread support, so it can never extend the *Thread* mesh the locks use; that gap is discussed on the Matter Locks page.) Place them **near the sensor clusters and near the valve** so the leak devices and the shut-off always have a strong hop home. Pairing them takes three steps, and the first one is the trap — these plugs **ship in BLE mode**, not Zigbee, and a plug left in BLE simply never appears in Z2M, with no error to explain why:
+Plug in the **Third Reality 3RSP019BZ smart plugs** and pair them **before** anything battery-powered. Place them **near the sensor clusters and near the valve** so the leak devices and the shut-off always have a strong hop home.
+
+> [!NOTE]
+> They are mains-powered Zigbee **routers** — they build and extend the mesh that the battery sensors lean on. (Zigbee only — the 3RSP019BZ is a Zigbee/BLE device with no Thread support, so it can never extend the *Thread* mesh the locks use; that gap is discussed on the Matter Locks page.)
+
+Pairing them takes three steps, and the first one is the trap — these plugs **ship in BLE mode**, not Zigbee, and a plug left in BLE simply never appears in Z2M, with no error to explain why:
 
 1. **Switch it to Zigbee mode.** Press and **hold** the plug's button while inserting it into the outlet, until the **green** light comes on (green = BLE, the factory default, used by Third Reality's own app). Release, then **immediately press the button once**. The LED flashes **red** — Zigbee mode confirmed. Do this on every plug, including brand-new ones.
 2. **Enter pairing mode.** Press and hold the button for **more than 10 seconds**, until the LED flashes.
@@ -245,7 +283,12 @@ Pair the **Aqara Valve Controller T1** last. It is the clamp-on actuator on the 
 ## Keep it backed up
 
 ### Turn on Home Assistant's own backups
-Home Assistant keeps its own backups separate from the whole-VM copy Proxmox takes. Turn them on now in the Home Assistant UI, under **Settings → System → Backups → Set up backups**: pick a **daily** schedule and **System optimal** for the time, and Home Assistant handles it from then on. These local backups are the fast in-app undo — one click to roll back a bad app or a broken automation.
+Home Assistant keeps its own backups separate from the whole-VM copy Proxmox takes. Turn them on now in the Home Assistant UI, under **Settings → System → Backups → Set up backups**:
+
+- **Schedule** → **Daily**
+- **Time** → **System optimal**
+
+Home Assistant handles it from then on. These local backups are the fast in-app undo — one click to roll back a bad app or a broken automation.
 
 Setup generates an **encryption key** and shows it once, alongside a downloadable **emergency kit**. Record it before clicking past — this is the highest-stakes secret on the page:
 
@@ -264,9 +307,17 @@ On their own, those backups land on the VM's disk — the copy lives on the very
 - **Protocol** → **Samba/Windows (CIFS)**
 - **Share** → `backups`, with the **SMB user** below — the share account from the TrueNAS Storage page, not `truenas_admin`
 
-Then back under **Settings → System → Backups**, enable that location and **leave "This system" on as well**: local gives the instant rollback, the NAS gives the copy that survives the VM's disk. Ignore **Home Assistant Cloud backup** — that is the Nabu Casa subscription, and this build is deliberately local-first.
+Then back under **Settings → System → Backups**, enable that location:
 
-While on that screen, the **Backup data** toggles: **History on** (the recorder database — sensor history and the energy dashboard; it grows the backups, but they land on a 4 TB mirror and a restore that quietly loses months of leak-sensor history is a nasty surprise), **Media off** (camera recordings live on Frigate's own disk), **Share folder off** (unused here), and **Apps: All** — that last one matters more than it looks, because it is what carries **Mosquitto's logins and Z2M's configuration including the Zigbee network key**. Narrow it and a restored Home Assistant comes back with a broker nothing can log into and a Zigbee network it cannot rejoin.
+- **This system** → leave **on** as well — local gives the instant rollback, the NAS gives the copy that survives the VM's disk
+- **Home Assistant Cloud backup** → ignore — that is the Nabu Casa subscription, and this build is deliberately local-first
+
+While on that screen, set the **Backup data** toggles:
+
+- **History** → **on** — the recorder database (sensor history and the energy dashboard); it grows the backups, but they land on a 4 TB mirror and a restore that quietly loses months of leak-sensor history is a nasty surprise
+- **Media** → **off** — camera recordings live on Frigate's own disk
+- **Share folder** → **off** — unused here
+- **Apps** → **All** — matters more than it looks, because it is what carries **Mosquitto's logins and Z2M's configuration including the Zigbee network key**; narrow it and a restored Home Assistant comes back with a broker nothing can log into and a Zigbee network it cannot rejoin
 
 > [!NOTE]
 > Parked on the NAS, Home Assistant's own backups are a real second copy as well as the quick in-app undo. The other layer is the **nightly Proxmox vzdump of the whole VM** (set up on the Proxmox Backups page) — that is what survives a dead VM disk and feeds the restore drill later in the build. The two layers do different jobs: HA's backups are the quick undo, the vzdump is the rebuild-from-scratch copy.

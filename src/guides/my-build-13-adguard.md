@@ -14,7 +14,13 @@ accent: violet
 ## Create the container
 
 ### Run the install script
-The quickest path is the Proxmox community helper script, which builds a ready-to-go AdGuard container in about two minutes. In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). One heads-up before you paste: the script shows its **Community-Scripts Options** menu almost as soon as it starts, so read the **Choose Advanced and pin a static IP** section below first — the same Advanced-and-static-IP move every container in this build makes. Then paste this and press Return:
+The quickest path is the Proxmox community helper script, which builds a ready-to-go AdGuard container in about two minutes.
+
+> [!NOTE]
+> The script shows its **Community-Scripts Options** menu almost as soon as it starts, so read the **Choose Advanced and pin a static IP** section below before you paste — the same Advanced-and-static-IP move every container in this build makes.
+
+1. In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine).
+2. Paste this and press Return:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/adguard.sh)"
@@ -89,15 +95,17 @@ Let the script finish — it prints the setup URL when done.
 > It sits in the `.2–.99` static zone carved out of the Fios DHCP pool on the Start Here page — an address the router can never hand to anything else — and it mirrors DNS port 53, which makes it easy to remember forever.
 
 ### Set it to start at boot
-DNS for the entire house cannot depend on you remembering to start a container after a power cut. Select the container in the left tree, open **Options**, and set **Start at boot** to Yes — or from the node Shell:
+DNS for the entire house cannot depend on you remembering to start a container after a power cut.
 
-Leave **Start/Shutdown order** alone while you are in that panel — `any` is the right answer. This build numbers only three guests, to solve one dependency chain: **1** TrueNAS (so storage boots first and, since shutdown reverses the order, goes down last), **2** the Home Assistant VM holding the Mosquitto broker, **3** Frigate which depends on that broker. Unordered guests shut down *before* any numbered one, so AdGuard stops cleanly well ahead of the storage it never touches. Numbering it would only enlist it in a sequence it has no stake in.
-
-The `103` is the container ID the script assigns here — this build's guests run **100** TrueNAS, **101** Home Assistant, **102** Frigate, then **103** for AdGuard. It shows next to the container's name in the left tree; swap it if yours differs:
+- **GUI** → select the container in the left tree, open **Options**, and set **Start at boot** to **Yes**.
+- **Shell** → run this on the node (`103` is the container ID the script assigns here; swap it if yours differs):
 
 ```bash
 pct set 103 -onboot 1
 ```
+
+> [!NOTE]
+> Leave **Start/Shutdown order** alone while you are in that Options panel — `any` is the right answer. This build numbers only three guests, to solve one dependency chain: **1** TrueNAS (so storage boots first and, since shutdown reverses the order, goes down last), **2** the Home Assistant VM holding the Mosquitto broker, **3** Frigate which depends on that broker. Unordered guests shut down *before* any numbered one, so AdGuard stops cleanly well ahead of the storage it never touches. Numbering it would only enlist it in a sequence it has no stake in. This build's guests run **100** TrueNAS, **101** Home Assistant, **102** Frigate, then **103** for AdGuard — it shows next to the container's name in the left tree.
 
 > [!NOTE]
 > This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief power blips never reach AdGuard at all. Start-at-boot covers the longer outages that do drain the battery — and once the UPS & Safe Shutdown page later in the build wires up an automatic shutdown, those end cleanly instead of as a hard cut.
@@ -112,7 +120,10 @@ http://192.168.1.53:3000
 ```
 
 ### Set the ports
-Leave the **Admin Web Interface** on its default port, and leave the **DNS server** on port 53, listening on all interfaces. Click Next.
+- **Admin Web Interface** → leave on its default port
+- **DNS server** → leave on port 53, listening on all interfaces
+
+Click **Next**.
 
 > [!NOTE]
 > Port 53 is the standard DNS port, and "all interfaces" means all of the *container's* interfaces — which sit entirely on the home LAN. None of this is reachable from the internet; the router blocks unsolicited inbound traffic by default.
@@ -121,7 +132,13 @@ Leave the **Admin Web Interface** on its default port, and leave the **DNS serve
 > Never create a router port-forward to this container. A DNS server exposed to the internet — an "open resolver" — gets found and abused for amplification attacks within hours. AdGuard serves the LAN only. For remote access, reach it over Tailscale instead of opening a port.
 
 ### Create the admin login
-Set a username and a strong password for the dashboard. The wizard's final screen is **device-configuration instructions** — informational only; click through it. Pointing the network at AdGuard happens once, at the router, further down this page. The dashboard now lives at the container's IP with no `:3000` suffix. Record both in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build), and capture them in the fields below so this page stands on its own.
+1. Set a username and a strong password for the dashboard.
+2. Click through the wizard's final screen — **device-configuration instructions**, informational only.
+
+> [!NOTE]
+> Pointing the network at AdGuard happens once, at the router, further down this page. The dashboard now lives at the container's IP with no `:3000` suffix.
+
+Record both in your password manager (you will consolidate these into Vaultwarden when you set it up later in the build), and capture them in the fields below so this page stands on its own.
 
 > [!INPUT] adguard-admin-user | AdGuard admin username
 
@@ -241,7 +258,11 @@ scutil --dns | grep 'nameserver\[0\]' | head -3
 
 Anything you cannot account for beyond those — an old console, a previous NAS, something a UPnP-enabled device created years ago — should go.
 
-And if the router **refuses to delete its own entries** (Verizon's firmware manages them and re-adds them), handle the consequence instead: the set-top-box rule targets an address like `192.168.1.100`, which is the **first address in the DHCP pool** on this build's `.2–.99` static plan. A new phone joining the Wi-Fi could be handed that address and silently inherit an inbound port forward. Set the router's DHCP pool to start at **`.101`** so the address stays permanently unassigned and the undeletable rule points at nothing. Finally **remote administration off** — **System → Remote Administration**, where the settings that matter are the two **"Using Primary HTTPS Port (443)"** boxes, v4 and v6; both ship unticked, so this is usually a verify. The **WAN ICMP Echo Requests** boxes on that page ship *ticked* and can come off — nothing here needs the router answering internet pings — though that one is marginal: a scanner does not need ping to find you, and what protects this house is that there is nothing listening to find.
+And if the router **refuses to delete its own entries** (Verizon's firmware manages them and re-adds them), handle the consequence instead: the set-top-box rule targets an address like `192.168.1.100`, which is the **first address in the DHCP pool** on this build's `.2–.99` static plan. A new phone joining the Wi-Fi could be handed that address and silently inherit an inbound port forward.
+
+- **DHCP pool start** → **`.101`** — so the address stays permanently unassigned and the undeletable rule points at nothing
+- **Remote administration** → off, at **System → Remote Administration** — the two **"Using Primary HTTPS Port (443)"** boxes (v4 and v6) are what matter; both ship unticked, so this is usually a verify
+- **WAN ICMP Echo Requests** → optional — ships *ticked* and can come off, since nothing here needs the router answering internet pings, though this one is marginal: a scanner does not need ping to find you, and what protects this house is that there is nothing listening to find
 
 > [!TIP]
 > Keep this one in your back pocket for the Reverse Proxy page: Fios routers run **DNS rebinding protection**, which drops responses pointing at private addresses. AdGuard's `*.kuzco.org → 192.168.1.54` rewrites are precisely that shape. If the proxy hostnames later resolve to nothing, this router setting is the first suspect, not AdGuard.
@@ -284,7 +305,13 @@ Picking a *filtering* secondary — AdGuard's own public resolvers at `94.140.14
 ## Tune and verify
 
 ### Add a couple of blocklists
-**Back to AdGuard now** — leave the Verizon router UI and return to the AdGuard dashboard at **`http://192.168.1.53`**. Everything in this section happens there. Open **Filters → DNS blocklists**. AdGuard ships with its own **AdGuard DNS filter** enabled; click **Add blocklist → Choose from the list** and add **OISD Blocklist (Big)** — the standard low-breakage pick, comprehensive without being trigger-happy. Stop there for now: more lists block more but break more, and the Query Log below is where you would diagnose it.
+**Back to AdGuard now** — leave the Verizon router UI and return to the AdGuard dashboard at **`http://192.168.1.53`**. Everything in this section happens there.
+
+1. Open **Filters → DNS blocklists**.
+2. Click **Add blocklist → Choose from the list** and add **OISD Blocklist (Big)** — the standard low-breakage pick, comprehensive without being trigger-happy.
+
+> [!NOTE]
+> AdGuard ships with its own **AdGuard DNS filter** already enabled. Stop there for now: more lists block more but break more, and the Query Log below is where you would diagnose it.
 
 ### Cap the query log before it fills the disk
 One default has to change now, because it fails months from today. AdGuard keeps its **Query Log** as plain uncompressed JSON on the container's disk, rotates it every **90 days** by default, and rotation keeps the old file too — so retention is really **two** intervals' worth. A household's worth of lookups grows that to hundreds of megabytes and beyond (multi-gigabyte logs are well documented), and this container has a **2 GB disk**. The failure shape is the bad one: nothing wrong for months, then the disk fills, AdGuard stops answering, and **the whole house appears to lose the internet** — with the cause nowhere near the symptom.
