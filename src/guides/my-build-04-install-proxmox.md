@@ -87,10 +87,14 @@ At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts.
 
 > [!DETAILS] Every prompt the installer shows, in order
 > 1. **EULA** — read or skim, click I agree.
-> 2. **Target disk** — select the **500 GB NVMe**. The install **wipes this whole drive**, so be certain you already copied its Windows files off (the prep step before you began). This drive holds the Proxmox OS and, later, the Frigate cache; the three IronWolf 4 TB spinners stay untouched here. Leave the **Options** filesystem at the default (ext4 on LVM) — this is a single boot drive, not a mirror.
+> 2. **Target disk** — select the **500 GB NVMe** and leave the **Options** filesystem at the default (ext4 on LVM) — this is a single boot drive, not a mirror. The install **wipes this whole drive** (be certain you already copied its Windows files off, the prep step before you began); it holds the Proxmox OS and, later, the Frigate cache, while the three IronWolf 4 TB spinners stay untouched here.
 > 3. **Country, time zone, keyboard layout** — usually auto-detected; confirm and move on.
 > 4. **Password, confirm, email address** — the root password above, plus an email for system notifications.
-> 5. **Management network** — pick the **wired interface**, enter the **hostname** you chose, the **static IP** you picked for the server, and your router's address in both the **Gateway** and **DNS (Domain Name System) server** fields.
+> 5. **Management network** — pick the **wired interface**, then fill in:
+>    - **Hostname** → the hostname you chose
+>    - **IP address** → the static IP you picked for the server
+>    - **Gateway** → your router's address
+>    - **DNS server** → your router's address again
 > 6. **Summary** — review, click Install, and the box reboots itself when done. As the reboot starts, unplug the USB stick so it does not boot back into the installer.
 
 > [!DETAILS] Picking the static IP — what you find and what you pick
@@ -98,7 +102,7 @@ At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts.
 >
 > - **Gateway** — *found*. It is your router's address. On a Mac: System Settings → Wi-Fi → Details → Router. On the Windows PC: `ipconfig` in Command Prompt, the **Default Gateway** line. Usually something like `192.168.1.1`.
 > - **DNS server** — enter the router's address again, or `1.1.1.1` for Cloudflare.
-> - **IP address** — *picked by you*. Keep the first three numbers the same as the router and change the last. Pick a number **below** the router's DHCP range (often `.100` and up) so it is never handed to another device — `192.168.1.50/24` is a fine choice. The `/24` just means a standard home network. The other safe method is a **DHCP reservation** (sometimes called a *static lease*): on the router's LAN/DHCP page, permanently assign your chosen number to the server so the router never gives it to anything else.
+> - **IP address** — *picked by you*. Keep the first three numbers the same as the router and change the last, picking a number **below** the router's DHCP range (often `.100` and up) so it is never handed to another device — `192.168.1.50/24` is a fine choice (the `/24` just means a standard home network). Or use a **DHCP reservation** (sometimes called a *static lease*): on the router's LAN/DHCP page, permanently assign your chosen number to the server so it is never given to anything else.
 >
 > Can't get into the router at all? Pick a high number like `.250` and ping it first — if nothing answers, it is almost certainly free.
 
@@ -106,7 +110,7 @@ At the boot menu pick **Install Proxmox VE (Graphical)** and follow the prompts.
 Proxmox has no desktop of its own — you administer it from a browser. From your Mac on the same LAN, browse to the address below. Type the **`https://`** out in full — the Proxmox port speaks only HTTPS, and a browser that quietly tries plain `http` on 8006 reports a vague "can't open the page" instead of the certificate screen:
 
 ```bash
-https://your-ip:8006
+https://192.168.1.50:8006
 ```
 
 The browser will warn about the certificate before the login screen — that is expected, since Proxmox generates its own self-signed certificate and the browser cannot vouch for it.
@@ -227,7 +231,9 @@ Open the file:
 nano /etc/default/grub
 ```
 
-Find the `GRUB_CMDLINE_LINUX_DEFAULT` line and add the two flags inside its quotes, so it reads `GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"`. Save and exit, then apply the change and reboot:
+1. Find the `GRUB_CMDLINE_LINUX_DEFAULT` line and add the two flags inside its quotes, so it reads `GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"`.
+2. Save and exit.
+3. Apply the change and reboot:
 
 ```bash
 update-grub

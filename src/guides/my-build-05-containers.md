@@ -30,7 +30,11 @@ When the task log says `TASK OK`, the template is ready in the wizard.
 ### Walk the Create CT wizard
 Click **Create CT** (top right) and step through the tabs. Build one **throwaway practice container** now to learn the flow — DHCP is fine for it, and you can delete it at the end of this page. Each real service gets its own container, with its own values and static IP, on its own page later in the build. These are the starter values for a plain service container on this build; the heavier guests get more later.
 
-- **General** — accept the suggested **CT ID** (every guest gets a unique number starting at 100; the suggestion is the next free one), set a hostname (e.g. `testbox`), and set a root password. **Leave Unprivileged container ticked** (more below).
+- **General**:
+  - **CT ID** → accept the suggestion (every guest gets a unique number starting at 100; the suggestion is the next free one)
+  - **Hostname** → e.g. `testbox`
+  - **Password** → set a root password
+  - **Unprivileged container** → leave ticked (more below)
 - **Template** — the Debian standard template you just downloaded.
 - **Disks** — 8 GB is plenty to start; it grows live later.
 - **CPU** — 2 cores.

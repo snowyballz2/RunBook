@@ -58,8 +58,12 @@ The platform is a Z370 build: an ASUS ROG Maximus X Hero board with an Intel i7-
 *Two IronWolfs ride the HBA as the mirror; the third sits on a motherboard SATA port as Frigate's footage drive. The 1080 Ti stays on the host; only the HBA is passed through later.*
 
 ### Mount the board, CPU, RAM, and PSU
-1. Seat the i7-8700K and its cooler, fit the 32 GB RAM, and mount the Maximus X Hero in the View 71 on brass standoffs.
-2. Install the Toughpower Grand RGB 850W in the bottom PSU shroud. Run the 24-pin and the 8-pin CPU power now; leave the PCIe power leads loose until the GPU is in.
+1. Seat the i7-8700K and its cooler.
+2. Fit the 32 GB RAM.
+3. Mount the Maximus X Hero in the View 71 on brass standoffs.
+4. Install the Toughpower Grand RGB 850W in the bottom PSU shroud.
+5. Run the 24-pin and the 8-pin CPU power now.
+6. Leave the PCIe power leads loose until the GPU is in.
 
 ### Place the three IronWolf drives
 The build has three Seagate IronWolf ST4000VN006 4 TB drives. Two of them become a TrueNAS ZFS (Zettabyte File System) mirror; the third holds Frigate footage.
@@ -333,9 +337,8 @@ The 1080 Ti is roughly 300 mm long. In the View 71 it clears the front drive-cag
 > The 1080 Ti is **not** passed through to any VM. The NVIDIA driver lives on the Proxmox host and is shared into the containers that need it (Frigate detection, Ollama, faster-whisper). Do not VFIO the GPU — only the HBA gets VFIO'd. Mixing these two up is the easy mistake in this build.
 
 ### Seat the 9300-8i HBA in the bottom slot
-1. Install the LSI/Broadcom 9300-8i (already flashed to IT mode, Initiator-Target mode) in the **bottom x4 slot** (`PCIEX4_3`).
-2. This slot is **chipset-attached**, which is exactly what produces a clean IOMMU group for passthrough — the CPU-attached upper slots tend to share groups with other devices.
-3. Connect **one SFF-8643-to-4× SATA forward breakout cable** from one of the HBA's two internal SAS (Serial Attached SCSI) ports to the two mirror IronWolfs — two of its four tails are used; the other two stay spare for growing the pool later.
+1. Install the LSI/Broadcom 9300-8i (already flashed to IT mode, Initiator-Target mode) in the **bottom x4 slot** (`PCIEX4_3`). This slot is **chipset-attached**, which is exactly what produces a clean IOMMU group for passthrough — the CPU-attached upper slots tend to share groups with other devices.
+2. Connect **one SFF-8643-to-4× SATA forward breakout cable** from one of the HBA's two internal SAS (Serial Attached SCSI) ports to the two mirror IronWolfs — two of its four tails are used; the other two stay spare for growing the pool later.
 
 ### Wire the power and data
 With both cards seated, run every cable. The rule of thumb: **power comes from the PSU, data comes from the board — except the two mirror disks, whose data comes from the HBA.**
@@ -481,8 +484,8 @@ Flash the latest Maximus X Hero firmware before touching any toggle, so the sett
 
 ### Enable Intel VT-d
 1. Go to *Advanced → System Agent (SA) Configuration* — a **different submenu** than VMX, so do not assume the first toggle covered it.
-2. Find **VT-d** (Intel Virtualization Technology for Directed I/O) and set it to **Enabled**.
-3. This is the switch that makes PCIe passthrough possible. Without it, the 9300-8i can never be handed to the TrueNAS VM.
+2. Find **VT-d** (Intel Virtualization Technology for Directed I/O).
+3. Set it to **Enabled**. This is the switch that makes PCIe passthrough possible — without it, the 9300-8i can never be handed to the TrueNAS VM.
 
 ### Set the bottom slot to x4 mode
 1. In the onboard-devices / PCIe configuration section, find the lane setting for **`PCIEX4_3`** (the bottom slot, where the HBA now sits).
@@ -505,11 +508,14 @@ Press `F6` to open **Q-Fan Control** (the same screen lives at *Advanced → Mon
 ### Turn off what a headless server never uses
 Still under **Advanced**, a quick pass through the onboard extras — none of these earn their keep on a box with no monitor, no speakers, and wired-only networking:
 
-- **Onboard Devices Configuration → LED lighting** — set the *working state* entry to **Aura Off** (or Stealth Mode) and the *sleep/soft-off* entry off too. If the firmware lists a separate **onboard LED** toggle for the logo and accent lighting, that goes off as well. A couple of watts, and a server in lived-in space has no business glowing all night. Two things stay lit no matter what you toggle here, and that's expected, not a setting you missed: the **Q-Code display** (the board's only voice when a headless box refuses to POST — it's how this build's own unseated-NVMe saga got diagnosed) and the four **Q-LEDs** (CPU/DRAM/VGA/BOOT — they light one at a time during boot and go dark once that stage clears; if one is still lit *after* the OS is up, that's flagging a real fault at that stage, not cosmetic lighting to chase off). There's often a **power-button LED** too, wired straight to the PSU's standby rail — lit any time the PSU has wall power, system on or off, with no BIOS toggle that touches it at all.
+- **Onboard Devices Configuration → LED lighting** → **Aura Off** (or Stealth Mode) for the *working state* entry, and off for the *sleep/soft-off* entry too — plus any separate **onboard LED** toggle for the logo and accent lighting, if the firmware lists one. A couple of watts, and a server in lived-in space has no business glowing all night.
 - **HD Audio Controller → Disabled** — nothing will ever play a sound through it.
 - **Wi-Fi and Bluetooth controllers → Disabled** *(only the Wi-Fi AC board variant shows these)* — Proxmox management is wired-only, and every radio this build uses lives on the two ZBT-2 sticks. The phone, not the server, does Bluetooth during Matter commissioning.
 - **Network Stack → Disabled** — drops the UEFI network-boot path for a faster, quieter POST. Its legacy twin, **LAN PXE Option ROM** (under Onboard Devices, next to the Intel LAN entry), goes **Disabled** too — same job, older mechanism, and with CSM off it could never run anyway. Neither touches the LAN controller itself; the NIC keeps working fully.
 - **APM Configuration → Restore AC Power Loss → Power On** — the one that really matters on a 24/7 box: after an outage outlasts the UPS, the returning mains only boots the server if the firmware agrees. The UPS page proves this setting out with a rehearsal; set it now while you are here.
+
+> [!NOTE]
+> Two things stay lit no matter what you toggle above, and that's expected, not a setting you missed: the **Q-Code display** (the board's only voice when a headless box refuses to POST — it's how this build's own unseated-NVMe saga got diagnosed) and the four **Q-LEDs** (CPU/DRAM/VGA/BOOT — they light one at a time during boot and go dark once that stage clears; if one is still lit *after* the OS is up, that's flagging a real fault at that stage, not cosmetic lighting to chase off). There's often a **power-button LED** too, wired straight to the PSU's standby rail — lit any time the PSU has wall power, system on or off, with no BIOS toggle that touches it at all.
 
 > [!WARNING]
 > Two things stay **on**: the **Intel LAN** controller is the server's only NIC, and **USB** carries the two ZBT-2 radios plus the UPS's data cable. Disable either and the build stops working in ways that take a while to trace back here.
@@ -532,7 +538,13 @@ Before leaving, save the current settings in **Tool → ASUS User Profile**, the
 > C-states (under *CPU Power Management*) are worth leaving on Enabled or Auto. This box idles 24/7, so the watts saved over a year add up. They are not load-bearing for passthrough, just good housekeeping.
 
 > [!DETAILS] Confirm the toggles actually took
-> Windows is still on the NVMe at this point — you do not wipe it until the OS install — so you can verify virtualization from the existing install: boot into Windows, press `Ctrl+Shift+Esc` for Task Manager → **Performance → CPU**, and the right-hand column should read **Virtualization: Enabled**. If you would rather not boot Windows, no stress — the Proxmox installer on the next stage warns loudly if hardware virtualization is missing, so a missed VMX or VT-d toggle surfaces there too.
+> Windows is still on the NVMe at this point — you do not wipe it until the OS install — so you can verify virtualization from the existing install:
+>
+> 1. Boot into Windows.
+> 2. Press `Ctrl+Shift+Esc` for Task Manager → **Performance → CPU**.
+> 3. Confirm the right-hand column reads **Virtualization: Enabled**.
+>
+> If you would rather not boot Windows, no stress — the Proxmox installer on the next stage warns loudly if hardware virtualization is missing, so a missed VMX or VT-d toggle surfaces there too.
 
 > [!DETAILS] Why x4 mode and a chipset slot matter
 > Passthrough hands an entire IOMMU group to one VM. If the HBA shares a group with other devices, passthrough either fails outright or yanks those neighbours into the VM with it. The CPU-attached x16 slots on this board commonly group with the GPU and other system-agent devices; the chipset-attached `PCIEX4_3` slot tends to sit alone. Pinning it to x4 keeps that grouping stable across reboots and firmware quirks. You will verify the actual group from the host shell once Proxmox is installed, before binding the card to VFIO.

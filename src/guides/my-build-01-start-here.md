@@ -363,7 +363,7 @@ Do not reuse one stick for both. Writing the installer image converts the stick 
 Borrow both and plug them into the server for the install itself. You unplug them once Proxmox is up and drive everything from a browser after that.
 
 > [!NOTE]
-> After the install there is nothing more to download on a PC. The server pulls the rest over its own network connection — the TrueNAS installer, the Home Assistant image, every service container, the GPU driver — so from then on any device with a browser (a laptop, an iPad, even a phone) is enough to reach `https://`-the-server-IP-`:8006` and keep building. The two USB sticks above are the only things that strictly need a full PC, because you cannot write them from a phone.
+> After the install there is nothing more to download on a PC. The server pulls the rest over its own network connection — the TrueNAS installer, the Home Assistant image, every service container, the GPU driver — so from then on any device with a browser (a laptop, an iPad, even a phone) is enough to reach `https://192.168.1.50:8006` and keep building. The two USB sticks above are the only things that strictly need a full PC, because you cannot write them from a phone.
 
 ### Set the server's address
 The whole collection starts from one number — the static address you give the Proxmox host. Set it now and every later page reuses it.
@@ -372,7 +372,15 @@ The whole collection starts from one number — the static address you give the 
 > The static address for the server. Reach the web interface at `https://`-this-ip-`:8006` once Proxmox is installed. Every later page starts from this value.
 
 > [!WARNING]
-> **Carve out the static block first.** Every static address in this collection — the host here, the service guests in the .50s, the cameras in the .70s — assumes those numbers are *reserved territory*, but the Fios router's DHCP pool spans nearly the whole subnet out of the box, so nothing stops it handing .50 to a phone someday. Before setting anything static, open the router at `192.168.1.1` → its LAN/DHCP settings and **shrink the pool to `192.168.1.100 – 192.168.1.254`**. That leaves `.2 – .99` as the static zone every default below lives in, and the pool keeps 155 addresses for everything else — phones, guests, and the PoE shades (which get DHCP reservations *inside* the pool, one per motor). Devices currently leasing an address below `.100` migrate into the pool on their next renewal automatically; a router reboot does them all at once. One check while you are in there: if the device list shows anything squatting below `.100` that does not move after a reboot, it was statically configured on the device itself — reconfigure it into the pool range before it collides with a service.
+> **Carve out the static block first.** Every static address in this collection — the host here, the service guests in the .50s, the cameras in the .70s — assumes those numbers are *reserved territory*, but the Fios router's DHCP pool spans nearly the whole subnet out of the box, so nothing stops it handing `.50` to a phone someday.
+
+1. Open the router at `192.168.1.1` → its LAN/DHCP settings.
+2. Shrink the pool to `192.168.1.100 – 192.168.1.254`.
+3. Reboot the router. Devices currently leasing an address below `.100` migrate into the pool automatically on their next renewal — a reboot does them all at once.
+4. Check the device list: anything still squatting below `.100` that does not move was statically configured on the device itself — reconfigure it into the pool range before it collides with a service.
+
+> [!NOTE]
+> That leaves `.2 – .99` as the static zone every default below lives in, and the pool keeps 155 addresses for everything else — phones, guests, and the PoE shades (which get DHCP reservations *inside* the pool, one per motor).
 
 ## The build, in order
 
