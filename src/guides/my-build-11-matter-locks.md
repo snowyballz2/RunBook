@@ -33,7 +33,13 @@ done
 
 4. Match the serial already in Z2M's port setting to its port — that is the Zigbee radio, and the *other* port is the one to pass through now.
 5. Reboot the VM.
-6. While here, switch the **first** stick's entry to port-based too if it is still bound by Vendor/Device ID (`grep usb /etc/pve/qemu-server/101.conf`), so a reboot can never shuffle which is which.
+6. While here, check whether the **first** stick's entry is still bound by Vendor/Device ID:
+
+```bash
+grep usb /etc/pve/qemu-server/101.conf
+```
+
+7. If it is, switch it to port-based too, so a reboot can never shuffle which is which.
 
 > [!NOTE]
 > Inside Home Assistant the two sort themselves out regardless: each appears as its own `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_<serial>-if00` path, so Z2M keeps the radio it was configured against and OTBR takes the other. The serial in that path is the whole reason the guide insists on by-id rather than `ttyACM0`.
@@ -54,12 +60,13 @@ Never choose **Use as Zigbee adapter** on either stick. That sets up **ZHA**, Ho
 #### Work out which stick you are flashing, by elimination
 The *Pick your protocol* dialog names no serial and no port, and both discovery cards read **Home Assistant Connect ZBT-2** with nothing to separate them. Do not guess — establish it, without ever taking the Zigbee radio away from Z2M:
 
-1. Close the dialog and **unplug one ZBT-2** at the server.
-2. Reload **Settings → Devices & services**. One ZBT-2 card disappears — that is the stick you pulled.
-3. Check **Zigbee2MQTT**. If it is still running with its devices online, you pulled the **Thread** stick, and the card still on screen is the **Zigbee** one. (If Z2M went down instead, you pulled the Zigbee stick: return it to the same port and pull the other.)
-4. Press **Ignore** on that remaining card. It is the Zigbee radio, Z2M owns it, and ignoring it is what you wanted regardless.
-5. Plug the Thread stick back into **the same USB port** it came out of — passthrough is port-based (`host=1-5` / `host=1-6`), so the port matters.
-6. Exactly one ZBT-2 card returns, and it can only be the Thread one. **Add → Use as Thread adapter.**
+1. Close the dialog.
+2. **Unplug one ZBT-2** at the server.
+3. Reload **Settings → Devices & services**. One ZBT-2 card disappears — that is the stick you pulled.
+4. Check **Zigbee2MQTT**. If it is still running with its devices online, you pulled the **Thread** stick, and the card still on screen is the **Zigbee** one. (If Z2M went down instead, you pulled the Zigbee stick: return it to the same port and pull the other.)
+5. Press **Ignore** on that remaining card. It is the Zigbee radio, Z2M owns it, and ignoring it is what you wanted regardless.
+6. Plug the Thread stick back into **the same USB port** it came out of — passthrough is port-based (`host=1-5` / `host=1-6`), so the port matters.
+7. Exactly one ZBT-2 card returns, and it can only be the Thread one. **Add → Use as Thread adapter.**
 
 It takes a few minutes to flash and configure.
 
@@ -106,9 +113,12 @@ Work in the **browser** at `192.168.1.51:8123`, **Settings → Devices & service
 
 1. Check where your border router landed. Flashed through the **Use as Thread adapter** wizard it usually forms its own network and marks it preferred unasked — look for a **`ha-thread-…`** card sitting *above* the **Other networks** heading, holding a router named **Home Assistant OpenThread Border Router** at `homeassistant-otbr.local`. If that is what you see, steps 1 and 2 are already done; go to step 3.
 2. Otherwise:
-   - On your own OTBR's row, open the **⋮** menu and select **Reset border router** — this erases the radio's configuration and forms a **brand-new** Thread network, which is what you want here.
-   - Select **Make preferred network** on the `ha-thread-…` card that appears, and wait 30–60 seconds. Do not assume the automatic case: the ZBT-2's network is [not always auto-selected as preferred](https://github.com/home-assistant/core/issues/165279).
-3. Hand the network to your phone, so it stops defaulting to a neighbouring one. **This cannot be done from a desktop browser** — **Send credentials to phone** is gated on a keychain capability only the companion app exposes, and simply does not render anywhere else. Open the same **Thread** panel in the **Home Assistant companion app** on your phone; the button sits at the foot of the preferred network's card, below its border router.
+   1. On your own OTBR's row, open the **⋮** menu and select **Reset border router** — this erases the radio's configuration and forms a **brand-new** Thread network, which is what you want here.
+   2. Select **Make preferred network** on the `ha-thread-…` card that appears, and wait 30–60 seconds. Do not assume the automatic case: the ZBT-2's network is [not always auto-selected as preferred](https://github.com/home-assistant/core/issues/165279).
+3. Open the same **Thread** panel in the **Home Assistant companion app** on your phone.
+4. Tap **Send credentials to phone**, at the foot of the preferred network's card, below its border router.
+
+This hands the network to your phone, so it stops defaulting to a neighbouring one. **This cannot be done from a desktop browser** — **Send credentials to phone** is gated on a keychain capability only the companion app exposes, and simply does not render anywhere else.
 
 > [!NOTE]
 > A small phone-and-key icon beside a router's name marks it as that network's **default router** — on a single-router network, just your own radio. Expect a **stale row** as well: a border router you have reset or reflashed lingers under its old network for a while, because the panel builds rows from live mDNS rather than from the OTBR integration. It ages out on its own.
@@ -120,12 +130,14 @@ Work in the **browser** at `192.168.1.51:8123`, **Settings → Devices & service
 > Home Assistant's own docs concede the preferred-network feature **is not fully implemented**: when adding a Matter device through the companion app, *the phone's* preferred network is used, not Home Assistant's — and it is not documented that **Send credentials to phone** promotes yours to preferred rather than merely storing it. So commission **one** lock first and confirm in the Thread panel that it landed on your network before doing the other two. With a Nest Hub Max in the house this is a live risk, not a theoretical one.
 
 ### If you ever do want to join an existing network instead
-Credentials have to come from the phone, and the direction is fixed: the **Home Assistant companion app** reads the phone's operating-system credential locker (Apple's Thread store on iOS, Google Play Services on Android). The SmartThings or Google Home app is only what published a network there earlier — you never import from it directly. Keep the phone on the **same Wi-Fi** as the border routers.
+Credentials have to come from the phone, and the direction is fixed: the **Home Assistant companion app** reads the phone's operating-system credential locker (Apple's Thread store on iOS, Google Play Services on Android). The SmartThings or Google Home app is only what published a network there earlier — you never import from it directly.
 
-1. In the **Home Assistant companion app**, go to **Settings → Devices & services → Thread → Configure**.
-2. On iOS select **Send credentials to Home Assistant**; on Android select **Import credentials** (lower right). If that stalls, the route widely reported as more reliable is **Settings → Companion app → Troubleshooting → Sync Thread credentials**.
-3. Back in the **browser**, refresh the Thread panel. Exactly one network offers **Make preferred network** — the one the phone prefers, since the app exports only the phone's *preferred* credentials. Press it.
-4. On your OTBR's row, **⋮ → Add to my network** to move the radio onto it.
+1. Keep the phone on the **same Wi-Fi** as the border routers.
+2. In the **Home Assistant companion app**, go to **Settings → Devices & services → Thread → Configure**.
+3. On iOS select **Send credentials to Home Assistant**; on Android select **Import credentials** (lower right). If that stalls, the route widely reported as more reliable is **Settings → Companion app → Troubleshooting → Sync Thread credentials**.
+4. Back in the **browser**, refresh the Thread panel.
+5. Press **Make preferred network** — exactly one network offers it, the one the phone prefers, since the app exports only the phone's *preferred* credentials.
+6. On your OTBR's row, **⋮ → Add to my network** to move the radio onto it.
 
 > [!TIP]
 > **"You don't have any credentials to import"** means the phone's OS locker holds nothing, not that anything is broken. Open the other ecosystem's app once on that same phone — **SmartThings** or **Google Home** — so it publishes its network to the locker, then run the sync again. On Android, clearing Google Play Services' cache is the other fix that keeps working for people.
@@ -208,7 +220,8 @@ For each plug, in turn:
 2. In the **Home Assistant companion app**, go to **Settings → Matter** and select **Add device**.
 3. Scan the plug's **Matter QR code** — on the plug body and on the quick-start leaflet. Record the numeric code below before the leaflet goes in a drawer.
 4. The phone commissions it over **Bluetooth** and hands it Home Assistant's **Thread credentials**. It lands as a `switch.*` entity with energy sensors alongside.
-5. Give it a clear name and assign it an **Area**.
+5. Give it a clear name.
+6. Assign it an **Area**.
 
 > [!SECRET] matter-plug-codes | IKEA GRILLPLATS Matter setup codes (all five)
 > The 11-digit numeric code under each plug's QR, labelled by placement. Re-commissioning a plug after a reset needs these.
@@ -309,8 +322,9 @@ The key fact that makes both possible: a lock receives Thread credentials **only
 1. **Send credentials to phone first**, before touching any lock. This is the insurance: whichever app performs the Matter commissioning, the phone hands out *your* network.
 2. **Factory reset** the lock.
 3. **Bind to Aqara Home** with the **Magicpair Code** — Night Latch, Auto-Lock, firmware updates.
-4. In Aqara Home, open the lock → **Matter** → **Matter Pairing Code** to generate a code, then use it in the **Home Assistant companion app** under **Settings → Matter → Add device**. This step is what provisions Thread, from Home Assistant, onto your network.
-5. **Do not let SmartThings commission it.** If you want it there afterwards, share out from Home Assistant — sharing leaves the Thread network alone.
+4. In **Aqara Home**, open the lock → **Matter** → **Matter Pairing Code** to generate a code.
+5. Use that code in the **Home Assistant companion app**, under **Settings → Matter → Add device**. This step is what provisions Thread, from Home Assistant, onto your network.
+6. **Do not let SmartThings commission it.** If you want it there afterwards, share out from Home Assistant — sharing leaves the Thread network alone.
 
 If Aqara Home proves awkward, the direct route is to press **Set** once to enter pairing mode and scan the **Matter Pairing Code** on the inner panel straight from the Home Assistant app — at the cost of those firmware features. Either way, confirm on **lock one** which network it landed on before doing the other two.
 
@@ -324,7 +338,8 @@ With the OTBR up and the companion app open on a Bluetooth phone:
 2. **Press the lock's Set button once** to put it into pairing mode — a single press, in the battery compartment above Reset.
 3. Scan the lock's **Matter Pairing Code** — the lower of the two QR codes in the battery compartment, *not* the Magicpair code above it — or tap to enter the numeric setup code by hand. Do it promptly: the commissioning window is time-limited. Keep the phone within a couple of feet of the lock with Bluetooth on, since commissioning runs over BLE before Thread is involved.
 4. The phone commissions the lock over **Bluetooth**, hands it Home Assistant's **Thread credentials**, and the lock joins HA's Thread network. After a moment it appears in Home Assistant as a `lock.*` entity.
-5. Assign it to the matching **Area** — **Carport Door**, **Front Door**, or **Basement Door** — and give it a clear name.
+5. Assign it to the matching **Area** — **Carport Door**, **Front Door**, or **Basement Door**.
+6. Give it a clear name.
 
 > [!NOTE]
 > Step 2: a lock that is not factory-fresh does *not* advertise on its own, and removing it from another ecosystem does not start it advertising either. Skip this step and the phone reports **"Unable to Add Accessory — you may need to restart your accessory"**, which names the symptom rather than the cause.
@@ -339,7 +354,11 @@ With the OTBR up and the companion app open on a Bluetooth phone:
 > **"Unable to Add Accessory"** usually means the lock is not advertising.
 >
 > 1. Press **Set** once and rescan immediately.
-> 2. If that fails, pull a battery for ten seconds, reseat it, press **Set**, and try again.
+> 2. If that fails:
+>    1. Pull a battery for ten seconds.
+>    2. Reseat it.
+>    3. Press **Set** again.
+>    4. Try again.
 > 3. If it still refuses, a Matter fabric survived somewhere and the sticker code is dead — generate a fresh one from **Aqara Home → the lock → Matter → Matter Pairing Code**.
 >
 > A factory reset is the last resort, not the first.
@@ -417,7 +436,12 @@ First confirm the lock implements it — user management is an optional Matter c
 > [!NOTE]
 > The U400 answers `supports_user_management: true` with **PIN only** (no RFID), **20 users**, and a **4–8 digit** PIN length — verified on this build's locks, so the route below is open.
 
-Grab the real entity IDs before writing the call: on the **States** tab, filter for `lock.`. If you have just renamed anything, **hard-refresh the browser first** (Cmd/Ctrl+Shift+R) — the frontend caches the entity registry, so the Actions tab's target picker keeps offering the old names and finds nothing under the new ones until it reloads. With the entity ID format set to Device + Entity on the Home Assistant page, they read `lock.carport_door`; an area prefix in the ID (`lock.carport_carport_door`) means that format was never changed.
+Grab the real entity IDs before writing the call:
+
+1. On the **States** tab, filter for `lock.`.
+2. If you have just renamed anything, **hard-refresh the browser first** (Cmd/Ctrl+Shift+R) — the frontend caches the entity registry, so the Actions tab's target picker keeps offering the old names and finds nothing under the new ones until it reloads.
+
+With the entity ID format set to Device + Entity on the Home Assistant page, they read `lock.carport_door`; an area prefix in the ID (`lock.carport_carport_door`) means that format was never changed.
 
 Then set the code on every door in one go:
 
@@ -435,7 +459,12 @@ data:
 
 Run from **Tools → Actions**, this works as written. Wrapped in a **script**, it needs one extra line — `response_variable: cred`, alongside `action`/`target`/`data` — because Home Assistant refuses to run a script that discards an action's response data.
 
-Omitting `credential_index` and `user_index` lets each lock choose a free slot and create the user itself — the right behaviour after a wipe. Substitute your real entity IDs and a real 4–8 digit code, then **test it on one physical keypad**: the action succeeding means the lock accepted the credential, not that the keypad behaves as you expect.
+Omitting `credential_index` and `user_index` lets each lock choose a free slot and create the user itself — the right behaviour after a wipe.
+
+1. Substitute your real entity IDs and a real 4–8 digit code in the action above.
+2. Test it on one physical keypad.
+
+The action succeeding means the lock accepted the credential, not that the keypad behaves as you expect.
 
 Two companions worth knowing. **Set a Matter lock user** creates a named user with an access type, including **one-time access** — the lock deletes that code itself after a single use, which is the honest answer for a contractor or a delivery. And if the U400 turns out not to support the cluster, fall back to **Aqara Home**, which this build keeps for Night Latch and firmware anyway; code management is its native ground.
 
@@ -599,8 +628,11 @@ With all three U400s present as `lock.*` entities, they become raw material for 
 **Home Key** (tap-to-unlock with an iPhone or Apple Watch) lives only in **Apple Home**, and adding a Thread lock to Apple Home needs an **Apple Thread border router** — a HomePod or Apple TV. You do not have one yet, so this waits until you do. When the HomePod arrives and is set up as a home hub, add Home Key without disturbing anything:
 
 1. In Home Assistant, open the lock → its device page → **Add to another network / Share device** (Matter multi-admin). Home Assistant generates a **fresh, time-limited pairing code**.
-2. In the Apple **Home** app, tap **+ → Add Accessory → More options**, and enter that fresh code. The lock joins Apple Home *alongside* Home Assistant — both control it locally over Thread, no cloud, no second pairing of the device itself.
-3. Accept Apple's offer to set up **Home Key**. Repeat the share for the other two locks.
+2. In the Apple **Home** app, tap **+ → Add Accessory → More options**.
+3. Enter that fresh code. The lock joins Apple Home *alongside* Home Assistant — both control it locally over Thread, no cloud, no second pairing of the device itself.
+4. Accept Apple's offer to set up **Home Key**.
+
+Repeat the share for the other two locks.
 
 > [!NOTE]
 > This is Matter multi-admin run in reverse of the usual write-up: because you commissioned into Home Assistant **first**, HA is the controller that hands out the share code and Apple Home comes in second. Home Assistant keeps full control throughout; the HomePod adds Home Key *and* a second Thread border router that strengthens the mesh for every battery Thread device in the house.

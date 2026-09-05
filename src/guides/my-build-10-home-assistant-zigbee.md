@@ -33,12 +33,19 @@ Home Assistant OS ships as a ready-made disk image, **not** an installer ISO —
 > 6. **CPU Model** → KVM64 (default).
 > 7. **Core Count** → 2 (default).
 > 8. **RAM** → **8192** — the one that matters; the 2048 default starves the apps this build stacks on.
-> 9. **Bridge** → vmbr0 (default). MAC, VLAN, MTU → leave blank/default.
-> 10. **Storage pool** → `local-lvm`.
-> 11. **Start Virtual Machine** → Yes.
+> 9. **Bridge** → vmbr0 (default).
+> 10. **MAC, VLAN, MTU** → leave blank/default.
+> 11. **Storage pool** → `local-lvm`.
+> 12. **Start Virtual Machine** → Yes.
 
 > [!DETAILS] The manual way — no scripts
-> Four moves in the host shell, official sources only. The two values you may need to adjust before pasting: the version (`17.3` — check the [HA OS releases page](https://github.com/home-assistant/operating-system/releases) for current) and the VM ID (`101` is the next free on this build after TrueNAS's 100; `qm list` confirms).
+> Four moves in the host shell, official sources only. The two values you may need to adjust before pasting: the version (`17.3` — check the [HA OS releases page](https://github.com/home-assistant/operating-system/releases) for current) and the VM ID (`101` is the next free on this build after TrueNAS's 100).
+>
+> Confirm the ID is free before pasting:
+>
+> ```bash
+> qm list
+> ```
 >
 > 1. Download and unpack the official image:
 >
@@ -78,14 +85,20 @@ Home Assistant OS ships as a ready-made disk image, **not** an installer ISO —
 > - **Protection** → **Yes** — this VM *is* the smart home, and the flag blocks accidental deletion
 
 ### Pin its address
-The brain of the house gets a device-set static in the protected zone, like the host and TrueNAS before it — not a router reservation, which the Fios router can only make for in-pool `.100+` addresses. The screen only exists after onboarding, so do this **right after the onboarding below finishes**: in the Home Assistant UI, go to **Settings → System → Network** and expand the interface:
+The brain of the house gets a device-set static in the protected zone, like the host and TrueNAS before it — not a router reservation, which the Fios router can only make for in-pool `.100+` addresses. The screen only exists after onboarding, so do this **right after the onboarding below finishes**, in the Home Assistant UI:
 
-- **IPv4** → **Static**
-- **IP address** → **`192.168.1.51/24`**
-- **Gateway** → **`192.168.1.1`**
-- **DNS** → **`192.168.1.1`**
+1. Go to **Settings → System → Network**.
+2. Expand the interface.
+3. Set the following:
 
-Save. Phone apps, dashboards, and the MQTT links all use this address — `homeassistant.local` does not resolve reliably on every network, and every later page assumes `.51`.
+   - **IPv4** → **Static**
+   - **IP address** → **`192.168.1.51/24`**
+   - **Gateway** → **`192.168.1.1`**
+   - **DNS** → **`192.168.1.1`**
+
+4. **Save**.
+
+Phone apps, dashboards, and the MQTT links all use this address — `homeassistant.local` does not resolve reliably on every network, and every later page assumes `.51`.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
@@ -106,11 +119,11 @@ Save. Phone apps, dashboards, and the MQTT links all use this address — `homea
 1. Wait a few minutes on first boot — Home Assistant OS sets itself up unattended.
 2. Browse to `http://homeassistant.local:8123` (or the pinned IP).
 3. Let **Preparing Home Assistant** finish downloading the latest version (roughly 700 MB) — this can take twenty minutes.
-4. Choose **Create my smart home**, then walk the wizard:
-   - Owner account
-   - Home location — time zone, units, currency
-   - Analytics choice
-   - **Finish**
+4. Choose **Create my smart home**.
+5. Set up the owner account.
+6. Set the home location — time zone, units, currency.
+7. Make your analytics choice.
+8. Click **Finish**.
 
 > [!NOTE]
 > Home Assistant can show high RAM use right after boot — that is normal; it uses free memory for caching, not a sign the 8 GB is too small.
@@ -158,14 +171,18 @@ This build runs **Zigbee2MQTT (Z2M), not ZHA (Zigbee Home Automation)** — broa
 > [!DANGER]
 > Once the stick is passed through, Home Assistant discovers it and offers cards under **Settings → Devices & services** that look helpful and are not:
 >
-> 1. **Home Assistant Connect ZBT-2** — ignore it, never click Add. It starts HA's built-in **ZHA** (or Thread) setup, which seizes the coordinator this build needs for Zigbee2MQTT; Z2M reaches the radio through its own add-on config, not through an HA integration. One click there costs you the whole Zigbee setup.
-> 2. **Lutron Smart Bridge Pro 2**, listed as a "HomeKit Device" — ignore this too. Add the bridge through its native **Lutron Caséta** card instead; the HomeKit route exposes only a subset (no Pico remotes as triggers) and consumes the bridge's HomeKit pairing.
+> 1. **Home Assistant Connect ZBT-2** — ignore it, never click Add.
+> 2. **Lutron Smart Bridge Pro 2**, listed as a "HomeKit Device" — ignore this too.
+> 3. Add the Lutron bridge through its native **Lutron Caséta** card instead.
+>
+> The ZBT-2 card starts HA's built-in **ZHA** (or Thread) setup, which seizes the coordinator this build needs for Zigbee2MQTT; Z2M reaches the radio through its own add-on config, not through an HA integration, so one click on that card costs you the whole Zigbee setup. The HomeKit route for the Lutron bridge exposes only a subset (no Pico remotes as triggers) and consumes the bridge's HomeKit pairing.
 
 ### Stand up the Mosquitto broker and its logins
 The whole build talks over one **Mosquitto** broker, and it lives here on the Home Assistant VM.
 
-1. In the Home Assistant UI (`192.168.1.51:8123`), go to **Settings → Apps → Install app** and install the official **Mosquitto broker** app, if it is not already running.
-2. On the app's page, set its toggles deliberately:
+1. In the Home Assistant UI (`192.168.1.51:8123`), go to **Settings → Apps → Install app**.
+2. Install the official **Mosquitto broker** app, if it is not already running.
+3. On the app's page, set its toggles deliberately:
 
 - **Start on boot** → **on** — the broker is the spine; without it, Zigbee entities and Frigate's events are dead after any reboot
 - **Watchdog** → **on** — restarts the app if it stops; a dead broker fails *silently*, nothing errors, entities just quietly stop updating
@@ -178,10 +195,11 @@ The whole build talks over one **Mosquitto** broker, and it lives here on the Ho
 > [!WARNING]
 > **Restart the Mosquitto app after adding logins.** It writes its password file at startup, so credentials added to the Logins list do not exist to the broker until it restarts — and every client that tries meanwhile is refused with a bare **"Connection refused: Not authorized"**, which reads like a wrong password rather than a not-yet-loaded one.
 >
-> 1. Add both of the build's broker logins under the app's **Configuration → Logins** list (or create dedicated non-admin Home Assistant users with these names): **`zigbee2mqtt`** for Z2M, used below, and **`mqtt-user`** for Frigate, used on the Cameras, Doorbell & Frigate page.
-> 2. Restart Mosquitto.
-> 3. Retry whatever was rejected.
-> 4. If it still fails, check Mosquitto's own **Log** — it names the username it turned away, telling you whether the client is sending the wrong name or the wrong password.
+> 1. Add a login under the app's **Configuration → Logins** list (or create a dedicated non-admin Home Assistant user) named **`zigbee2mqtt`**, for Z2M, used below.
+> 2. Add a second login named **`mqtt-user`**, for Frigate, used on the Cameras, Doorbell & Frigate page.
+> 3. Restart Mosquitto.
+> 4. Retry whatever was rejected.
+> 5. If it still fails, check Mosquitto's own **Log** — it names the username it turned away, telling you whether the client is sending the wrong name or the wrong password.
 >
 > The broker rejects unknown credentials by default, so a username nobody created just gets "not authorised". Same broker, distinct logins — the broker's logs make it obvious who is talking.
 
@@ -202,10 +220,11 @@ The whole build talks over one **Mosquitto** broker, and it lives here on the Ho
 ### Point Z2M at the Mosquitto broker
 Install Z2M as a Home Assistant app — its apps live in a separate repository:
 
-1. In **Settings → Apps → Install app**, open the **⋮ menu → Repositories**.
-2. Add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`.
-3. Install **Zigbee2MQTT** from the store.
-4. Start it.
+1. Go to **Settings → Apps → Install app**.
+2. Open the **⋮ menu → Repositories**.
+3. Add `https://github.com/zigbee2mqtt/hassio-zigbee2mqtt`.
+4. Install **Zigbee2MQTT** from the store.
+5. Start it.
 
 Opening it the first time gives you the **Zigbee2MQTT Onboarding** wizard, not the normal frontend — so there is no **Permit join** button yet; that appears only after this wizard is submitted and Z2M is running. The wizard is one page with a **Coordinator/Adapter** picker, a **Network** panel, and a row of tabs (Main, Frontend, MQTT, Serial…). Work it in this order, and note that **nothing commits until you submit at the bottom** — tab-hopping is safe, closing the page is not.
 
@@ -253,7 +272,8 @@ serial:
 > Z2M uses `mqtt://core-mosquitto:1883` internally, but **Frigate is a separate container off-box** — it connects to the broker at this LAN address with its `mqtt-user` login, on the Cameras, Doorbell & Frigate page.
 
 ### Surface Z2M in Home Assistant
-In **Settings → Devices & services**, confirm the discovered **MQTT** integration and accept it.
+1. Go to **Settings → Devices & services**.
+2. Accept the discovered **MQTT** integration.
 
 > [!NOTE]
 > Once Z2M is talking to the broker, Home Assistant picks it up through the **MQTT integration**. Home Assistant auto-discovers the local Mosquitto app. Accepting it connects with the app's own internal login, so there are no credentials to type. With both Z2M and Home Assistant on the broker, every device Z2M reports shows up as an ordinary Home Assistant entity automatically — no per-device wiring.
@@ -274,11 +294,15 @@ Plug in the **Third Reality 3RSP019BZ smart plugs** and pair them **before** any
 > [!NOTE]
 > They are mains-powered Zigbee **routers** — they build and extend the mesh that the battery sensors lean on. (Zigbee only — the 3RSP019BZ is a Zigbee/BLE device with no Thread support, so it can never extend the *Thread* mesh the locks use; that gap is discussed on the Matter Locks page.)
 
-Pairing them takes three steps, and the first one is the trap — these plugs **ship in BLE mode**, not Zigbee, and a plug left in BLE simply never appears in Z2M, with no error to explain why:
+Pairing them takes a few steps, and the first is the trap — these plugs **ship in BLE mode**, not Zigbee, and a plug left in BLE simply never appears in Z2M, with no error to explain why:
 
-1. **Switch it to Zigbee mode.** Press and **hold** the plug's button while inserting it into the outlet, until the **green** light comes on (green = BLE, the factory default, used by Third Reality's own app). Release, then **immediately press the button once**. The LED flashes **red** — Zigbee mode confirmed. Do this on every plug, including brand-new ones.
-2. **Enter pairing mode.** Press and hold the button for **more than 10 seconds**, until the LED flashes.
-3. **Open the network.** With **Permit join** already running in Z2M's frontend, the plug joins within a minute and appears in the device list.
+1. **Switch it to Zigbee mode.** Press and **hold** the plug's button while inserting it into the outlet, until the **green** light comes on — green means BLE, the factory default used by Third Reality's own app.
+2. Release the button.
+3. Press the button once, immediately. The LED flashes **red** — Zigbee mode confirmed.
+4. **Enter pairing mode.** Press and hold the button for **more than 10 seconds**, until the LED flashes.
+5. **Open the network.** With **Permit join** already running in Z2M's frontend, the plug joins within a minute and appears in the device list.
+
+Do this on every plug, including brand-new ones.
 
 > [!TIP]
 > A few routers spread through the house turn a flaky single-hop mesh into a solid one. Pairing them first also means the sensors join *through* a nearby router rather than straining to reach the coordinator directly.
@@ -294,10 +318,11 @@ Pairing them takes three steps, and the first one is the trap — these plugs **
 ### Join the leak sensors
 With routers in place, pair the **12× Third Reality 3RWS18BZ** siren leak sensors — one at every water risk: water heater, washer, dishwasher, each sink, the sump, and the fridge water line. Repeat this loop per sensor:
 
-1. **Open the network.** Click **Permit join** in Z2M's top-right nav. Use the **arrow beside it** to join through the **nearest plug** rather than "All", so the sensor attaches to a router near where it will live instead of straining for the coordinator.
+1. **Open the network through the nearest plug.** In Z2M's top-right nav, click the **arrow beside Permit join** and choose the nearest plug, rather than "All" — so the sensor attaches to a router near where it will live instead of straining for the coordinator.
 2. **Put the sensor in pairing mode.** Press and hold its **inside button for 3 seconds** until the **red LED** lights; it then switches to a **fast-blinking blue**, which means it is ready. (There is no battery tab to pull on these — the button is the only way in.)
 3. **Wait for it in the device list** — usually under 30 seconds.
-4. **Rename it immediately**, before pairing the next one, and assign its Area. Name it for the *water risk*, not the room — "Water Heater Leak", "Dishwasher Leak", "Sump Leak" — because that exact name is what the leak automation later speaks aloud and pushes to your phone.
+4. **Rename it immediately**, before pairing the next one. Name it for the *water risk*, not the room — "Water Heater Leak", "Dishwasher Leak", "Sump Leak" — because that exact name is what the leak automation later speaks aloud and pushes to your phone.
+5. **Assign its Area.**
 
 **Permit join closes itself after about four minutes**, so expect to re-click it every three or four sensors; a sensor that never appears is usually just a window that expired. They arrive in Home Assistant as `binary_sensor.*_leak` entities. **Turn Permit join off** once all twelve are in.
 
@@ -309,8 +334,16 @@ Pair the **Aqara Valve Controller T1** last. It is the clamp-on actuator on the 
 
 1. **Open the network** — Permit join in Z2M, as with everything else.
 2. **Hold the valve's power / On-Off button for about 5 seconds**, until its LED blinks. That is pairing mode.
-3. It joins as `lumi.valve.agl001`. If it refuses — most likely on a unit that has been paired before — force a reset the way that actually works on stubborn ones: **pull a battery, then hold the button while reinserting it**.
-4. **Rename it so it surfaces as the `switch.main_water` entity** in Home Assistant — Z2M exposes the T1 as a plain **switch** (ON = open, OFF = closed), not a `valve.*` device, and that exact entity ID is what the leak-to-valve automation built later in this collection targets. A default name like `switch.aqara_valve_controller_t1` would leave that automation pointing at nothing.
+3. Wait for it to join — it appears as `lumi.valve.agl001`.
+4. **Rename it so it surfaces as the `switch.main_water` entity** in Home Assistant.
+
+Z2M exposes the T1 as a plain **switch** (ON = open, OFF = closed), not a `valve.*` device, and that exact entity ID is what the leak-to-valve automation built later in this collection targets. A default name like `switch.aqara_valve_controller_t1` would leave that automation pointing at nothing.
+
+> [!NOTE]
+> If step 2 doesn't take — most likely on a unit that has been paired before — force a reset the way that actually works on stubborn ones:
+>
+> 1. Pull a battery.
+> 2. Hold the button while reinserting it.
 
 > [!WARNING]
 > Before trusting it, confirm the T1 throws the lever through its **full travel** — fully open to fully closed. Mount it so closed is genuinely closed; a clamp that slips is worse than no automation at all.
@@ -334,7 +367,10 @@ Setup generates an **encryption key** and shows it once, alongside a downloadabl
 > Generated at **Settings → System → Backups → Set up backups**. Every HA backup is encrypted with it, and **without it a backup cannot be restored by anyone** — Nabu Casa does not hold a copy and cannot recover it. Still have a working HA? Retrieve it any time from the backup settings on that same screen.
 
 > [!WARNING]
-> Also **download the emergency kit** and put it somewhere that is not this server — the encrypted USB drive from the Protect Your Data page is the right home, and Vaultwarden once it exists. A key stored only inside the machine it restores is no key at all: the failure that makes you need the backup is exactly the one that takes the key with it.
+> 1. **Download the emergency kit.**
+> 2. Put it somewhere that is not this server — the encrypted USB drive from the Protect Your Data page is the right home, and Vaultwarden once it exists.
+>
+> A key stored only inside the machine it restores is no key at all: the failure that makes you need the backup is exactly the one that takes the key with it.
 
 ### Point the backups at the NAS
 On their own, those backups land on the VM's disk — the copy lives on the very thing it is protecting. Send them to the NAS as well — still in the Home Assistant UI, go to **Settings → System → Storage → Add network storage**:
@@ -363,7 +399,10 @@ While on that screen, set the **Backup data** toggles:
 ## Where this leads
 
 ### Confirm the entities exist
-In the Home Assistant UI (`192.168.1.51:8123`), open **Settings → Devices & services → Entities** and filter for the new arrivals: twelve `binary_sensor.*_leak` sensors, the `switch.main_water` valve actuator, and the smart-plug switches and power readings. Each should sit in its Area with a human-readable name. That inventory is the prerequisite for the leak-to-valve automation built later in this collection — until the sensors and the valve exist as entities, there is nothing for that rule to listen to or close.
+1. In the Home Assistant UI (`192.168.1.51:8123`), open **Settings → Devices & services → Entities**.
+2. Filter for the new arrivals: twelve `binary_sensor.*_leak` sensors, the `switch.main_water` valve actuator, and the smart-plug switches and power readings.
+
+Each should sit in its Area with a human-readable name. That inventory is the prerequisite for the leak-to-valve automation built later in this collection — until the sensors and the valve exist as entities, there is nothing for that rule to listen to or close.
 
 > [!TIP]
 > The Lutron Caséta lights, the ecobee thermostats, the cameras through Frigate, and the Aqara U400 locks join Home Assistant through their own integrations rather than Zigbee — the locks and cameras are covered on their own pages, the ecobee is onboarded on the Automations page, and the Caséta bridge was added under Devices & services earlier on this page. This page's job is the Zigbee mesh and the safety devices riding it.
