@@ -32,9 +32,19 @@ One deliberate wrinkle on this host: the kernel is **pinned** (to the version re
 
 Lifting it is a planned window, not a wait: the **580 branch** builds on kernel 7.0 and is the last branch supporting the Pascal 1080 Ti — and the Voice page already moves the host onto it (Ollama demands ≥570). Once the host driver is 580:
 
-1. Run `proxmox-boot-tool kernel unpin`.
+1. Run:
+
+   ```bash
+   proxmox-boot-tool kernel unpin
+   ```
+
 2. Reboot onto the current default kernel.
-3. Confirm `nvidia-smi` still answers.
+3. Confirm `nvidia-smi` still answers:
+
+   ```bash
+   nvidia-smi
+   ```
+
 4. Reinstall the matching userspace driver inside the Frigate, Ollama, and faster-whisper containers, in the same sitting (per the note below) — the driver version changed.
 
 > [!NOTE]
@@ -84,9 +94,10 @@ That order is what makes the walk safe: a breakage always has an obvious author,
 One sitting, roughly twenty minutes, the same order every time. Put a recurring "server pass" event on the calendar — that is the entire scheduling system this needs.
 
 1. **Snapshot** anything you are about to touch.
-2. **Update the host**, and reboot if a kernel arrived.
-3. **Walk the guests**, one at a time, confirming each still answers.
-4. **Glance at the dashboards** — Uptime Kuma all green, and the points below.
+2. **Update the host**.
+3. **Reboot** if a kernel arrived.
+4. **Walk the guests**, one at a time, confirming each still answers.
+5. **Glance at the dashboards** — Uptime Kuma all green, and the points below.
 
 > [!INPUT] kuma-ip | Uptime Kuma container IP | 192.168.1.57
 > The single page that tells you, at a glance, whether everything is still answering.
@@ -113,7 +124,13 @@ Two notes that matter when reading it. The Nextcloud entry is a **four-hour wind
 A full disk fails loudly and at the worst time, so this glance is its own habit. Three places hold most of the risk on this build:
 
 - **TrueNAS ZFS pool** — on the **Storage** dashboard, keep the mirror under roughly **80%** full. Past that, ZFS slows down and snapshots have nowhere to grow. This pool also holds the nightly Proxmox backups, so it creeps up from two directions.
-- **Frigate's footage disk** — the third IronWolf on the motherboard SATA port. Check Frigate's own storage figures (its UI reports usage), or run `df -h /mnt/frigate-footage` in the node **Shell** — the node's **Disks** view shows the drive's health, not how full it is. Footage is replaceable, but a full disk still stops new recordings.
+- **Frigate's footage disk** — the third IronWolf on the motherboard SATA port. Check Frigate's own storage figures (its UI reports usage), or in the node **Shell** run:
+
+  ```bash
+  df -h /mnt/frigate-footage
+  ```
+
+  The node's **Disks** view shows the drive's health, not how full it is. Footage is replaceable, but a full disk still stops new recordings.
 - **Nextcloud storage** — its data lives in the service LXC; glance at the usage in its admin view.
 - **The host's own NVMe** — the one disk the three above quietly assume. The node's **Summary** shows root usage, and **local-lvm** in the left tree shows the thin pool every guest disk *and every snapshot* lives in. For which *guest* is tight rather than the pool as a whole, one command in the node shell prints every disk with its fill percentage:
 
@@ -121,7 +138,10 @@ A full disk fails loudly and at the worst time, so this glance is its own habit.
   lvs
   ```
 
-  Watch the `Data%` column — any guest crossing roughly **90%** starts failing in ways that do not name the disk as the cause. This is where the snapshot-before-update habit collects its tax: each pass leaves a snapshot behind, and a thin pool filled by stale ones ends with **every guest pausing on IO errors at once**. So close the loop each pass — once an updated guest has proven healthy, open its **Snapshots** tab and delete the pre-update snapshots it no longer needs.
+  Watch the `Data%` column — any guest crossing roughly **90%** starts failing in ways that do not name the disk as the cause. This is where the snapshot-before-update habit collects its tax: each pass leaves a snapshot behind, and a thin pool filled by stale ones ends with **every guest pausing on IO errors at once**. Close the loop each pass, once an updated guest has proven healthy:
+
+  1. Open its **Snapshots** tab.
+  2. Delete the pre-update snapshots it no longer needs.
 
 ### Glance at the card
 One command in the node **Shell** keeps two promises from earlier pages:
@@ -135,8 +155,11 @@ The **temperature** is the early-warning line the Cooling page set up — a slow
 > [!TIP]
 > On the same pass, open **Datacenter → Backup** and check the job:
 >
-> 1. Press its **Job Detail** button — it opens a "Backup Details" window listing exactly what the job covers — and confirm **AdGuard** and **Nginx Proxy Manager (NPM)** are in the selection. Selection mode **All** includes them automatically, but a hand-picked list is one careless edit from dropping the two guests you can least afford to lose: AdGuard is the household's DNS (Domain Name System), and NPM holds every reverse-proxy route and certificate. Restore everything *except* those two and the rest is unreachable until you rebuild them by hand.
-> 2. Glance at the job's **Retention** settings — **Keep Daily 7** and **Keep Weekly 4** (set when the backup job was created) are what prune old archives so the share does not fill forever. If the ZFS pool keeps climbing, confirm retention has not drifted to "keep all."
+> 1. Press its **Job Detail** button.
+> 2. Confirm **AdGuard** and **Nginx Proxy Manager (NPM)** are in the selection.
+> 3. Glance at the job's **Retention** settings — **Keep Daily 7** and **Keep Weekly 4**.
+>
+> **Job Detail** opens a "Backup Details" window listing exactly what the job covers. Selection mode **All** includes AdGuard and NPM automatically, but a hand-picked list is one careless edit from dropping the two guests you can least afford to lose: AdGuard is the household's DNS (Domain Name System), and NPM holds every reverse-proxy route and certificate — restore everything *except* those two and the rest is unreachable until you rebuild them by hand. The retention numbers (set when the backup job was created) are what prune old archives so the share does not fill forever; if the ZFS pool keeps climbing, confirm retention has not drifted to "keep all."
 
 ### Confirm last night's backup actually ran
 A backup job you assume is running is not a backup. The run history is **not** on the Datacenter → Backup screen (its **Job Detail** button shows the job's settings and included disks, no runs).
@@ -158,8 +181,9 @@ Four times a year, exercise the things that only matter when they are needed —
 
 1. In the Proxmox web UI, pick a recent archive from the backup storage.
 2. **Restore** it into a *spare, unused* VM/LXC ID.
-3. Boot it and confirm it comes up as expected.
-4. Delete it.
+3. Boot it.
+4. Confirm it comes up as expected.
+5. Delete it.
 
 The point is not the spare guest; it is proving the archives on the NAS (network-attached storage) are real and restorable, on a calm afternoon rather than a bad one.
 
@@ -182,7 +206,13 @@ Once a quarter, look at the machine, not just its dashboards:
 
 - **Dust** — an air-duster pass over the front intake filters and a look at the GPU fins through the glass; positive pressure delays dust, it does not repeal it.
 - **Fans** — all five visibly spinning, nothing newly audible. A stalled fan only flags itself in firmware at boot, and this box rarely boots.
-- **UPS battery** — in the node Shell, `upsc cyberpower@localhost` with the UPS at full charge; compare `battery.runtime` against the number from the UPS page's timed drill. Batteries live three to five years — a big slide in runtime, or `RB` appearing in `ups.status`, means a replacement pack, on your schedule rather than mid-outage.
+- **UPS battery** — with the UPS at full charge, in the node Shell run:
+
+  ```bash
+  upsc cyberpower@localhost
+  ```
+
+  Compare `battery.runtime` against the number from the UPS page's timed drill. Batteries live three to five years — a big slide in runtime, or `RB` appearing in `ups.status`, means a replacement pack, on your schedule rather than mid-outage.
 - **BIOS keepsakes** — if a BIOS update happened this quarter, re-save the `PVE-BASE` profile (ASUS version-locks profiles). And remember the board's coin cell is a consumable: a clock that resets or settings that vanish after an outage means a fresh CR2032 and a profile load, per the Hardware & BIOS page — cheaper found here than the morning TrueNAS refuses to start because VT-d silently reverted.
 
 ### Let the rest come to you

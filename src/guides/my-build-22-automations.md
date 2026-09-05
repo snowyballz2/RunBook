@@ -91,7 +91,13 @@ Why it works, top to bottom. The trigger lists every leak sensor under one roof,
 >       volume: 1.0
 > ```
 >
-> `interruption-level: critical` pierces Focus and silent mode; `critical: 1` on the sound forces it to play at the `volume` you set regardless of the ringer switch. iOS asks permission to deliver critical alerts when the companion app first requests notification access — if you declined it there, the alert that matters most arrives silently, with no second prompt; check **Settings → Apps → Home Assistant → Notifications → Critical Alerts** to fix it. Reserve this for things that genuinely cannot wait — leak, smoke, a security trip — and your critical alerts stay credible.
+> `interruption-level: critical` pierces Focus and silent mode; `critical: 1` on the sound forces it to play at the `volume` you set regardless of the ringer switch. iOS asks permission to deliver critical alerts when the companion app first requests notification access — if you declined it there, the alert that matters most arrives silently, with no second prompt.
+>
+> If that happened, fix it:
+>
+> 1. Go to **Settings → Apps → Home Assistant → Notifications → Critical Alerts** on the iPhone.
+>
+> Reserve this for things that genuinely cannot wait — leak, smoke, a security trip — and your critical alerts stay credible.
 
 > [!TIP]
 > The T1 clamps onto the quarter-turn **lever** main. Test with a real clean-water trip on a sensor and confirm the valve rotates the lever **fully closed** — not just that the entity flips to `closed`. The Third Reality 3RSP019BZ smart plugs near the sensor clusters and the valve are what keep the Zigbee mesh reaching them; a leak alert that cannot hop back to the ZBT-2 coordinator is worthless.
@@ -341,7 +347,12 @@ The first condition keeps you to `type: new`, so one person walking through does
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
 
 > [!NOTE]
-> A doorbell **press** is separate from person detection — intentional, and free of false alarms. But the press entity is **not** created by the go2rtc/Frigate setup from the Cameras page: that gives you a video feed and person detection, not the button's own entity. To get the press entity you must add the **Reolink Home Assistant integration** — **Settings → Devices & services → Add integration → Reolink** — which is the extra connection the Cameras page flagged as a possible dropout risk, so add it carefully and watch the Frigate logs after (its dialog asks three things: **Host** → `192.168.1.70`, plus the doorbell's **Username** and **Password**). Once it is in, the ring surfaces as a **"Visitor" binary sensor** (something like `binary_sensor.front_doorbell_visitor` — the integration exposes the press this way, not as an `event` entity), and the trigger is the same shape as everything else on this page: `trigger: state` on that sensor, `to: "on"`. Confirm the exact entity name under **Entities** before you reference it. If a press ever lands seconds late, know the delivery ladder: the integration prefers TCP push, then ONVIF push, then long polling, then plain 5-second polling — and Reolink hardware cannot push ONVIF events to an HTTPS address, one more reason HA stays plain HTTP inside the LAN. Many people wire both: soft awareness on approach, the full announcement on the actual ring. The speaker-on-doorbell announcement is the worked example in the next callout below — reuse that pattern with this trigger.
+> A doorbell **press** is separate from person detection — intentional, and free of false alarms. But the press entity is **not** created by the go2rtc/Frigate setup from the Cameras page: that gives you a video feed and person detection, not the button's own entity. To get the press entity you must add the **Reolink Home Assistant integration** — the extra connection the Cameras page flagged as a possible dropout risk, so add it carefully and watch the Frigate logs after:
+>
+> 1. Go to **Settings → Devices & services → Add integration → Reolink**.
+> 2. Fill in its dialog: **Host** → `192.168.1.70`, the doorbell's **Username**, and its **Password**.
+>
+> Once it is in, the ring surfaces as a **"Visitor" binary sensor** (something like `binary_sensor.front_doorbell_visitor` — the integration exposes the press this way, not as an `event` entity), and the trigger is the same shape as everything else on this page: `trigger: state` on that sensor, `to: "on"`. Confirm the exact entity name under **Entities** before you reference it. If a press ever lands seconds late, know the delivery ladder: the integration prefers TCP push, then ONVIF push, then long polling, then plain 5-second polling — and Reolink hardware cannot push ONVIF events to an HTTPS address, one more reason HA stays plain HTTP inside the LAN. Many people wire both: soft awareness on approach, the full announcement on the actual ring. The speaker-on-doorbell announcement is the worked example in the next callout below — reuse that pattern with this trigger.
 
 > [!DETAILS] Make a speaker greet a visitor
 > The same trigger can drive an announcement alongside the push. Home Assistant can only push audio to a media player it controls, which on this build means a **Google/Nest (Cast)** speaker added via **Settings → Devices & services → Add integration → Google Cast** so it surfaces as a `media_player.*` entity — the HomePod mini cannot be a target. This relies on the same Piper engine and Cast speaker the leak rule's spoken line does, both set up on the Voice page later in this build. Set the volume first as a kindness to a late-night visitor, then speak with the local Piper voice so it still announces if the internet is down:
@@ -400,7 +411,8 @@ Every PoE shade needs its **own Cat6 run** back to the switch.
 1. Join the motor's short **7.5-inch (19 cm) Ethernet pigtail** to the in-wall cable with a **Cat6A inline coupler**.
 2. Plan the **cable exit before the drywall closes**: **inside-mount** shades bring it out at the **head jamb**, **outside-mount** shades out the **rear of the motor cover**.
 3. Give each shade a dedicated run (a dual shade needs two); two motors *can* share one run through an Ethernet splitter, but a run per shade is cleaner.
-4. Terminate every run on the 48-port patch panel and patch across to the 24-port switch.
+4. Terminate every run on the 48-port patch panel.
+5. Patch each one across to the 24-port switch.
 
 > [!NOTE]
 > The motor is **802.3af/at** and draws about **5 W** (120–150 µA idle) over runs up to **100 m (328 ft)**, which is why a whole house of them barely dents the 320 W budget. SmartWings ships a full PoE wiring guide with the shades; this matches it.
@@ -409,10 +421,11 @@ Every PoE shade needs its **own Cat6 run** back to the switch.
 Both kinds land as `cover.*` entities, commissioned straight into Home Assistant's Matter controller — no Apple Home, no vendor app:
 
 - In the **Home Assistant companion app**:
-  1. Go to **Settings → Devices & services → Matter** and tap **Add device**.
-  2. Choose **"No, it's new."**
-  3. Scan the shade's QR pairing code (**More options…** takes a typed code instead).
-  4. Confirm **Add to Home Assistant**.
+  1. Go to **Settings → Devices & services → Matter**.
+  2. Tap **Add device**.
+  3. Choose **"No, it's new."**
+  4. Scan the shade's QR pairing code (**More options…** takes a typed code instead).
+  5. Confirm **Add to Home Assistant**.
 - Give each PoE shade a **DHCP reservation** so its address never moves.
 
 > [!NOTE]

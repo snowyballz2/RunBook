@@ -28,8 +28,11 @@ A script is the clean target for a spoken command.
 
 1. In Home Assistant go to **Settings → Automations & scenes → Scripts → Add script**.
 2. Give it a friendly, sayable name like "Movie night" or "Goodnight".
-3. Add the actions (dim the Lutron Caséta lights, lower the shades, lock the three Aqara U400 doors, set the ecobee thermostats back).
-4. Save.
+3. Add an action to dim the Lutron Caséta lights.
+4. Add an action to lower the shades.
+5. Add an action to lock the three Aqara U400 doors.
+6. Add an action to set the ecobee thermostats back.
+7. Save.
 
 The locks, the shades, the Caséta lights, and the ecobee are all already in Home Assistant from the earlier pages — the Caséta bridge came online on the Home Assistant & Zigbee2MQTT page — so the script just references them.
 
@@ -37,9 +40,10 @@ The locks, the shades, the Caséta lights, and the ecobee are all already in Hom
 > If the thing you want to say out loud is the *actions* of an automation you already wrote, you have two clean choices. Either lift those actions into a script and have the automation call the script too (one set of actions, two ways to fire it) — or skip the script and point Siri straight at the automation with the `automation.trigger` action below, which runs its actions on demand regardless of the normal trigger. The script route is tidier when a human says it often; `automation.trigger` is fine for a one-off.
 
 ### Build the Siri Shortcut
-1. Open Apple's **Shortcuts** app and create a new shortcut.
-2. Add one of the Home Assistant App Intents actions.
-3. Name the shortcut exactly what you intend to say.
+1. Open Apple's **Shortcuts** app.
+2. Create a new shortcut.
+3. Add one of the Home Assistant App Intents actions.
+4. Name the shortcut exactly what you intend to say.
 
 > [!NOTE]
 > The purpose-built ones are simplest: **Run Script** (pick your script), **Trigger Automation** (pick your automation), or **Activate Scene**. For anything they do not cover, **Perform Action** calls *any* Home Assistant action directly — the generic action that replaced the old "Call Service". Because Perform Action can reach any action, a single Shortcut can drive every script, scene, and automation in the house.
@@ -51,7 +55,12 @@ The locks, the shades, the Caséta lights, and the ecobee are all already in Hom
 That is the whole trick: **"Hey Siri, Movie night."** The Shortcut fires, Perform Action reaches the server over Tailscale, and the house responds. The same spoken name works from iPhone, iPad, and Apple Watch — and on the Watch, the Home Assistant app lists your scripts and scenes to tap straight from the wrist, no sentence needed; sort them into folders once the list grows. The watch face can also carry a **complication** showing a live sensor value — the indoor temperature, whether a door is unlocked — built from a small **Jinja2** template under **Settings → Companion app → Apple Watch** inside the app.
 
 > [!TIP]
-> For the handful of things you fire constantly, skip Siri entirely. Add a Home Assistant **widget** to the home or lock screen for one-tap scripts, and map a favorite Shortcut to the iPhone's **Action button** (or **Back Tap** on older phones without one). Physical-feeling "I'm leaving" and "Goodnight" without saying a word.
+> For the handful of things you fire constantly, skip Siri entirely.
+>
+> 1. Add a Home Assistant **widget** to the home or lock screen for one-tap scripts.
+> 2. Map a favorite Shortcut to the iPhone's **Action button** (or **Back Tap** on older phones without one).
+>
+> Physical-feeling "I'm leaving" and "Goodnight" without saying a word.
 
 ## Talk to the room: the HomeKit Bridge
 
@@ -86,7 +95,13 @@ The Thread border router on this build is **Home Assistant's own OTBR** (the sec
 If buying further into Apple Home for voice sits wrong with a build this self-hosted, the other fork owes nothing to Apple, Google, or Amazon. Home Assistant's built-in assistant — **Assist** — is **100% local**, keeps working during an internet outage, and unlike the Siri path can reach *every* entity and automation in the house, not just the scripts and scenes you chose to expose. The trade is real hardware and more setup. On this build that hardware already exists: the shared 1080 Ti.
 
 > [!TIP]
-> Try Assist for free, right now, before buying a thing. Open the companion app or the dashboard and tap the **Assist icon** (top right, the chat bubble). Type or speak a command and watch it act — the same engine the puck below speaks to.
+> Try Assist for free, right now, before buying a thing.
+>
+> 1. Open the companion app or the dashboard.
+> 2. Tap the **Assist icon** (top right, the chat bubble).
+> 3. Type or speak a command.
+>
+> Watch it act — the same engine the puck below speaks to.
 
 ### Understand the local pipeline
 A voice command takes four hops, and the reason Assist is so flexible is that **each hop is a separate, swappable stage** rather than one black box. A **wake word** engine (**microWakeWord** on the Voice Preview Edition puck, or **openWakeWord** elsewhere) listens for its name; **STT (speech-to-text)** turns the spoken sentence into text; Home Assistant's **intent engine** matches that text to a device, area, or automation; and **TTS (text-to-speech)** speaks the reply. The stages talk over the **Wyoming protocol** — a small networked standard — so any stage can run on any machine on the LAN. On this build: wake word on the puck, STT on a GPU-backed container, TTS on the Home Assistant VM.
@@ -127,11 +142,15 @@ These are the two containers the GPU/HBA Passthrough page deferred to this page 
 > [!WARNING]
 > **Current Ollama refuses to use the GPU on drivers older than 570** — its docs require driver ≥570 for compute-capability 5.0–6.2 cards, and the 1080 Ti is 6.1. This build pinned the host at `550.163.01` back on the GPU/HBA page (the newest branch at the time that built against the pinned 6.14 kernel). So this page starts with a **host driver move to the 580 branch** — the last branch supporting Pascal — using the same install procedure as the GPU/HBA page, and it is a coupled operation: **every container borrowing the card must have its userspace reinstalled at the new version in the same sitting** — Frigate's, then the two built below. Update the recorded `nvidia-driver-version` field when you do it; a mismatched container shows `Driver/library version mismatch` until its userspace is redone. Verify with `nvidia-smi` on the host and in the Frigate container before continuing.
 
-**Build the Ollama LXC.** The community-scripts helper is the cleanest path, the same download-read-run habit used for the Frigate container. In the Proxmox web interface, click the node, then **Shell**, and run:
+**Build the Ollama LXC.** The community-scripts helper is the cleanest path, the same download-read-run habit used for the Frigate container.
 
-```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/ollama.sh)"
-```
+1. In the Proxmox web interface, click the node.
+2. Click **Shell**.
+3. Run:
+
+   ```bash
+   bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/ollama.sh)"
+   ```
 
 Read the script before piping it into a root shell. Its Advanced walk is the same dialog sequence as every container in this build, with these answers:
 
@@ -185,7 +204,13 @@ It installs Ollama and exposes its HTTP API on port `11434`.
 >
 > The `--device cuda` flag needs the card, so the service only starts cleanly once the lend-the-card step below is done.
 
-**Lend each container the card.** Both LXCs borrow the 1080 Ti exactly as Frigate does — the host owns the driver; each container carries the NVIDIA device lines in **its own** config file. The **Ollama** container already has them — the wizard's GPU answer wrote every `devN:` line, so for it just verify: `grep ^dev /etc/pve/lxc/<ctid>.conf` on the host shows several `devN: /dev/nvidia…` lines. The hand-built **whisper** container gets them manually — edit its `/etc/pve/lxc/<ctid>.conf` (`<ctid>` is its ID):
+**Lend each container the card.** Both LXCs borrow the 1080 Ti exactly as Frigate does — the host owns the driver; each container carries the NVIDIA device lines in **its own** config file. The **Ollama** container already has them — the wizard's GPU answer wrote every `devN:` line, so for it just verify:
+
+```bash
+grep ^dev /etc/pve/lxc/<ctid>.conf
+```
+
+On the host, this should show several `devN: /dev/nvidia…` lines. The hand-built **whisper** container gets them manually — edit its `/etc/pve/lxc/<ctid>.conf` (`<ctid>` is its ID):
 
 ```bash
 nano /etc/pve/lxc/<ctid>.conf
@@ -212,7 +237,7 @@ sh NVIDIA-Linux-x86_64-<version>.run --no-kernel-module
 
 (The version placeholder is deliberate — the exact 580-branch build is chosen at the driver move, and this field then holds it. The same installer dialogs as the Frigate page appear: OK through the kernel-modules and X warnings, **No** to 32-bit libraries and `nvidia-xconfig`.)
 
-The `--no-kernel-module` flag is what makes this safe: containers share the host's kernel (and its DKMS-managed module), so only the userspace libraries install here — the host-side "never a `.run`" rule is about kernel modules and does not apply inside an LXC. Give each container its static — **`192.168.1.59/24`** for Ollama, **`192.168.1.60/24`** for faster-whisper, gateway `192.168.1.1`, set at creation like every other container in the static zone — and enable **Start at boot**.
+The `--no-kernel-module` flag is what makes this safe: containers share the host's kernel (and its DKMS-managed module), so only the userspace libraries install here — the host-side "never a `.run`" rule is about kernel modules and does not apply inside an LXC. Each container already has its static — **`192.168.1.59/24`** for Ollama, **`192.168.1.60/24`** for faster-whisper, gateway `192.168.1.1` — set at creation like every other container in the static zone. Enable **Start at boot** for each.
 
 > [!NOTE]
 > Home Assistant's native **Ollama** integration is what routes your spoken sentences through the model, and it needs **HA 2024.8 or later** — the release where local models gained the ability to actually *control* Home Assistant rather than only chat. The Home Assistant OS VM updates from inside itself — its own **Settings → System → Updates** screen — so keep it current; on an older core the model can talk but cannot turn anything on.
@@ -232,13 +257,20 @@ You should see the GTX 1080 Ti listed with a driver version. If it is missing, t
 **Piper** is the text-to-speech engine — it turns Home Assistant's replies (and the leak-alert announcement the Automations page writes) into spoken words, surfacing as the **`tts.piper`** entity. On the Home Assistant OS VM it installs as an app, not as a container.
 
 1. Go to **Settings → Apps → Install app**.
-2. Find **Piper**, install it, and **start** it.
-3. Under **Settings → Devices & services**, the **Wyoming** integration shows Piper as a **Discovered** card — press **Add** and confirm.
+2. Find **Piper**.
+3. Install it.
+4. Start it.
+5. Under **Settings → Devices & services**, press **Add** on the **Wyoming** integration's Piper **Discovered** card.
+6. Confirm.
 
 No host or port is typed (that is what discovery saved you), but the card does need the click; `tts.piper` appears once it is confirmed.
 
 > [!NOTE]
-> This is the `tts.piper` entity the leak-alert spoken announcement on the Automations page points at. That rule cannot speak until Piper exists — so before you rely on it, confirm `tts.piper` shows up under **Settings → Devices & services → Entities** (or that it autocompletes in a `tts.speak` action). The Automations page deferred this step here; this is where it is delivered.
+> This is the `tts.piper` entity the leak-alert spoken announcement on the Automations page points at. That rule cannot speak until Piper exists.
+>
+> 1. Confirm `tts.piper` shows up under **Settings → Devices & services → Entities** (or that it autocompletes in a `tts.speak` action).
+>
+> The Automations page deferred this step here; this is where it is delivered.
 
 ### Add the Google/Nest speakers as announce targets
 Piper makes the *words*; a speaker has to *play* them. The leak-alert announcement (and any other spoken `tts.speak` action) needs a `media_player.*` target, and on this build that target is a **Google/Nest Cast speaker**.
