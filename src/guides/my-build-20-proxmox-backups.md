@@ -16,7 +16,14 @@ This box runs a lot of machines: the Home Assistant and TrueNAS VMs (virtual mac
 ### Confirm the `backups` share is published on TrueNAS
 The 500GB NVMe (Non-Volatile Memory Express) boot drive holds the Proxmox OS and Frigate's cache — it is the last place backups belong, because a backup on the same disk as everything it protects dies with that disk. The natural home is the `backups` dataset on the TrueNAS ZFS (Zettabyte File System) mirror: different drives, a different failure domain, reached over SMB (Server Message Block). The **My Build: TrueNAS Storage** page created two datasets — `tank/files` and `tank/backups` — and published an SMB share for each.
 
-Before you point Proxmox at it, confirm the `backups` share actually exists. In the TrueNAS web interface, go to **Shares → Windows (SMB) Shares** and check that a share whose path is `tank/backups` is listed and enabled. If only `files` is there, add it now: click **Add** on that widget, set the path to the `tank/backups` dataset, save, and accept the prompt to restart the **SMB service** so the share goes live. Without this share, the `backups` entry will not appear in Proxmox's **Share** dropdown in the next step.
+Before you point Proxmox at it, confirm the `backups` share actually exists.
+
+1. In the TrueNAS web interface, go to **Shares → Windows (SMB) Shares**.
+2. Check that a share whose path is `tank/backups` is listed and enabled.
+3. If only `files` is there, click **Add** on that widget, set the path to the `tank/backups` dataset, save, and accept the prompt to restart the **SMB service** so the share goes live.
+
+> [!NOTE]
+> Without this share, the `backups` entry will not appear in Proxmox's **Share** dropdown in the next step.
 
 ### Add the TrueNAS share as backup storage
 In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacenter → Storage → Add → SMB/CIFS**:
@@ -72,10 +79,23 @@ The other three tabs, so nothing on them surprises you:
 > Snapshot mode backs up running guests with the least downtime — and for the Home Assistant and TrueNAS VMs, the QEMU guest agent briefly freezes the filesystem during backup for a cleaner, more consistent archive.
 
 > [!DETAILS] Mind the start order and the Frigate footage disk
-> Two build-specific notes. First, the household start/shutdown order is **Home Assistant VM before the Frigate LXC** because Frigate depends on HA's Mosquitto MQTT (MQ Telemetry Transport) broker — but vzdump backs each guest up independently, so the backup job does not disturb that ordering. Second, the Frigate LXC's *footage* lives on the third IronWolf on a motherboard SATA (Serial ATA) port, which is replaceable camera video. That disk is handed into the container as a bind mount of a host path, and vzdump skips bind mounts by default — so the job archives the container, not terabytes of recordings, with nothing to configure. Kick the first run off yourself with the **Run now** button on the Datacenter → Backup screen, then read the log in the task viewer that opens (or the node's **Task History** later): the Frigate entry should print the footage mount as **excluded**, and the task should end **TASK OK**.
+> Two build-specific notes. First, the household start/shutdown order is **Home Assistant VM before the Frigate LXC** because Frigate depends on HA's Mosquitto MQTT (MQ Telemetry Transport) broker — but vzdump backs each guest up independently, so the backup job does not disturb that ordering. Second, the Frigate LXC's *footage* lives on the third IronWolf on a motherboard SATA (Serial ATA) port, which is replaceable camera video. That disk is handed into the container as a bind mount of a host path, and vzdump skips bind mounts by default — so the job archives the container, not terabytes of recordings, with nothing to configure.
+>
+> Prove it once:
+>
+> 1. Click **Run now** on the Datacenter → Backup screen to kick off the first backup.
+> 2. Read the log in the task viewer that opens (or the node's **Task History** later).
+> 3. Confirm the Frigate entry prints the footage mount as **excluded** and the task ends **TASK OK**.
 
 > [!DETAILS] Choosing what to keep — retention
-> By default every backup is kept forever and slowly fills the share. The job's **Retention** tab shows a **Keep all backups** box above six keep fields (**Keep Last / Hourly / Daily / Weekly / Monthly / Yearly**). Clear **Keep all backups**, set **Keep Daily** `7` and **Keep Weekly** `4`, and leave the other four empty — a week of daily restore points plus a month of weekly ones, pruned automatically. Job-level retention overrides whatever the storage is configured to keep.
+> By default every backup is kept forever and slowly fills the share. The job's **Retention** tab shows a **Keep all backups** box above six keep fields (**Keep Last / Hourly / Daily / Weekly / Monthly / Yearly**):
+>
+> - **Keep all backups** → clear it
+> - **Keep Daily** → `7`
+> - **Keep Weekly** → `4`
+> - the other four fields → leave empty
+>
+> That's a week of daily restore points plus a month of weekly ones, pruned automatically. Job-level retention overrides whatever the storage is configured to keep.
 
 ### Make a failed backup able to reach you
 The job's Notifications tab said **"Use global notification settings"** — so check what those actually are, because out of the box they cannot deliver. The default is a **`mail-to-root` sendmail target**: the host's own postfix handing mail directly to your inbox's mail server, which residential ISPs — Verizon included — block at port 25. A failed nightly backup would be announced into a void, forever. And nothing else in this build catches it: Uptime Kuma watches whether *services answer*, not whether a 02:30 *task succeeded*.
@@ -89,7 +109,10 @@ Fix it once, at **Datacenter → Notifications**:
 The backup job needs no change after this — its "global settings" default now routes through a path that genuinely delivers. (Fields here that drift from your screen: true the guide against the screen, as always.)
 
 ### Know how to restore — and prove it
-Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's own **Backup** tab), select an archive, and click **Restore**. Every field in the dialog:
+1. Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's own **Backup** tab).
+2. Select an archive and click **Restore**.
+
+Every field in the dialog:
 
 - **Storage** → leave the default — this is where the restored disks land
 - **CT/VM ID** → editable only when you came in from the *storage's* Backups view, where it pre-fills the next free ID; from a guest's own tab it restores over that guest instead

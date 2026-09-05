@@ -229,7 +229,29 @@ This raises the forced-shutdown flag exactly as a critical battery would, and th
 > `upsmon -c fsd` is a real shutdown, not a simulation, and once the flag is set it cannot be withdrawn. Pick a quiet moment and warn the household first — this drops the cameras, locks' HA control, and AdGuard DNS (Domain Name System) for the duration.
 
 > [!DETAILS] Dry-running pieces of the drill without shutting down
-> If you want to validate parts of the chain without the irreversible `upsmon -c fsd`: `upsdrvctl -t shutdown` prints the UPS power-off sequence the drivers would run, without calling them. And to watch `upsmon` pull the trigger without rebooting, temporarily point `SHUTDOWNCMD` at something harmless — edit the `SHUTDOWNCMD` line in `/etc/nut/upsmon.conf` to, say, `SHUTDOWNCMD "/usr/bin/logger -t nut-test FSD-fired"`, then trigger and watch `journalctl -t nut-test`. The catch: `SHUTDOWNCMD` changes need a full `systemctl restart nut-monitor`, not a reload — both when you set the dummy and when you put the real `/sbin/shutdown -h +0` back. Do not leave the dummy in place.
+> If you want to validate parts of the chain without the irreversible `upsmon -c fsd`, `upsdrvctl -t shutdown` prints the UPS power-off sequence the drivers would run, without calling them.
+>
+> To watch `upsmon` pull the trigger without rebooting, point `SHUTDOWNCMD` at something harmless instead:
+>
+> 1. Edit `/etc/nut/upsmon.conf` and change the `SHUTDOWNCMD` line to something harmless, say:
+>
+> ```ini
+> SHUTDOWNCMD "/usr/bin/logger -t nut-test FSD-fired"
+> ```
+>
+> 2. Restart NUT so the change takes effect — a full restart, not a reload:
+>
+> ```bash
+> systemctl restart nut-monitor
+> ```
+>
+> 3. Trigger it, then watch the log:
+>
+> ```bash
+> journalctl -t nut-test
+> ```
+>
+> 4. Put the real command back (`SHUTDOWNCMD "/sbin/shutdown -h +0"`) and restart `nut-monitor` again. Do not leave the dummy in place.
 
 > [!TIP]
 > Once, ever, on a quiet day, pull the plug and let the battery actually drain until the CyberPower itself declares `OB LB` and triggers everything. The timed `upsmon -c fsd` drill above proves the *shutdown chain* runs cleanly, but it bypasses the CyberPower's own low-battery logic entirely — it never tests whether the device asserts `OB LB` before the battery is exhausted. This full drain is the only test that proves the real low-battery trigger fires with margin to spare, at the cost of one battery cycle — worth doing once so the timed drill has a real-world anchor.
@@ -259,7 +281,13 @@ Append to `/etc/nut/upsd.users` — a watch-only account for Home Assistant:
     password = a-different-long-password
 ```
 
-Then `systemctl restart nut-server nut-monitor`. In Home Assistant, go to **Settings → Devices & services** — the integration may already be waiting under discovered devices; otherwise add **Network UPS Tools (NUT)**:
+Restart NUT to apply the three edits:
+
+```bash
+systemctl restart nut-server nut-monitor
+```
+
+In Home Assistant, go to **Settings → Devices & services** — the integration may already be waiting under discovered devices; otherwise add **Network UPS Tools (NUT)**:
 
 - **Host** → `192.168.1.50`
 - **Port** → `3493`
@@ -282,4 +310,13 @@ The CyberPower appears as a device with **Battery charge**, **Status**, **Load**
 > Port 3493 stays on the LAN. Listing specific addresses instead of `0.0.0.0` keeps the daemon off interfaces it doesn't need, and Home Assistant gets its own low-privilege account regardless. Never port-forward 3493 to the internet — remote access is Tailscale's job.
 
 > [!DETAILS] Unblocking a connection that fails
-> The Cameras & Frigate page turned the Proxmox firewall **on** (to fence Frigate's unauthenticated port), and the host's input policy drops what is not allowed — so add the rule before the integration can connect: **Node `pve` → Firewall → Add** — Direction `in`, Action `ACCEPT`, protocol `tcp`, dest port `3493`, source `192.168.1.51`, and **tick Enable** — the dialog adds rules disabled by default. If the connection still fails afterwards, then check the usual suspects. Otherwise confirm the restart took (`systemctl status nut-server`), that `MODE=netserver` is really set, and that the `LISTEN` address matches the host's real IP. Buttons and switches (outlet control) would need an account with `instcmds` rights, which `hauser` deliberately lacks.
+> The Cameras & Frigate page turned the Proxmox firewall **on** (to fence Frigate's unauthenticated port), and the host's input policy drops what is not allowed — so add the rule before the integration can connect. At **Node `pve` → Firewall → Add**:
+>
+> - **Direction** → `in`
+> - **Action** → `ACCEPT`
+> - **Protocol** → `tcp`
+> - **Dest. port** → `3493`
+> - **Source** → `192.168.1.51`
+> - **Enable** → ticked — the dialog adds rules disabled by default
+>
+> If the connection still fails afterwards, check the usual suspects: confirm the restart took (`systemctl status nut-server`), that `MODE=netserver` is really set, and that the `LISTEN` address matches the host's real IP. Buttons and switches (outlet control) would need an account with `instcmds` rights, which `hauser` deliberately lacks.

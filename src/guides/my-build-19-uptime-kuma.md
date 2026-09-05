@@ -86,7 +86,14 @@ pct set 108 -onboot 1
 > This box already rides a CyberPower CP1500PFCLCD UPS (uninterruptible power supply), so brief power blips never reach the container. Start-at-boot covers the longer outages that drain the battery and force a clean shutdown — exactly when you most want the monitor back.
 
 ### Create your admin account
-The script prints the address when it finishes — `http://192.168.1.57:3001`. There are no default credentials. The first visit asks **"Which database would you like to use?"** — pick **SQLite**, described on the screen itself as "A simple database file, recommended for small-scale deployments" (the MariaDB alternative targets Docker installs). Then the **Create your admin account** form appears: a **Language** dropdown (prefilled — keep it) above **Username**, **Password**, and **Repeat Password**. This login will know about everything you run and send alerts on your behalf, so give it a strong password and store both in Vaultwarden.
+The script prints the address when it finishes — `http://192.168.1.57:3001`. There are no default credentials.
+
+1. At **"Which database would you like to use?"**, pick **SQLite** — described on the screen itself as "A simple database file, recommended for small-scale deployments" (the MariaDB alternative targets Docker installs).
+2. On the **Create your admin account** form, leave the prefilled **Language** dropdown as is.
+3. Fill in **Username**, **Password**, and **Repeat Password**.
+
+> [!NOTE]
+> This login will know about everything you run and send alerts on your behalf, so give it a strong password and store both in Vaultwarden.
 
 > [!INPUT] kuma-user | Uptime Kuma admin username
 
@@ -137,7 +144,13 @@ Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name
 > The types form a ladder. **Ping** proves the machine answers on the network; **TCP Port** proves something is listening on a port; **HTTP(s)** proves the actual service responds properly — by default it accepts status codes 200–299 and follows up to 10 redirects. Prefer the highest rung a service offers: a frozen app can still answer pings. The type list goes well beyond these — keyword, JSON, push, and Docker checks — but these three plus the DNS type cover everything this collection built.
 
 ### Watch the cameras too
-The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — the likeliest to drop unnoticed, and a doorbell that stopped recording is exactly the kind of silent failure this dashboard exists to catch. Add a **Ping** monitor for each, and one per EmpireTech turret at its static IP — wired cameras drop far less, but a per-camera ping is what tells you *which* one died if footage goes missing. Ping is right here because the cameras speak RTSP (Real-Time Streaming Protocol) and http-flv into Frigate rather than serving a plain web page, so a successful ping is the cleanest "it is still on the network" signal. The Ping form's advanced prefills — packet size `56`, a 2-second per-ping timeout, `3` pings per check — all stand.
+The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — the likeliest to drop unnoticed, and a doorbell that stopped recording is exactly the kind of silent failure this dashboard exists to catch.
+
+1. Add a **Ping** monitor for each — the doorbell, the RLC-510WA, and one per EmpireTech turret at its static IP.
+2. Leave the Ping form's advanced prefills as they are — packet size `56`, a 2-second per-ping timeout, `3` pings per check.
+
+> [!NOTE]
+> Wired cameras drop far less, but a per-camera ping is what tells you *which* one died if footage goes missing. Ping fits here because the cameras speak RTSP (Real-Time Streaming Protocol) and http-flv into Frigate rather than serving a plain web page, so a successful ping is the cleanest "it is still on the network" signal.
 
 > [!INPUT] doorbell-ip | Reolink doorbell IP | 192.168.1.70
 
@@ -147,7 +160,14 @@ The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — th
 > A separate **HTTP(s)** monitor on Frigate (above) tells you the NVR (Network Video Recorder) software is alive; the per-camera Ping monitors tell you which *camera* dropped if footage goes missing. Together they point straight at the culprit instead of leaving you guessing.
 
 ### Give the family a status page
-Your dashboard sits behind your login; a status page is the version everyone else in the household can check. Open **Status Pages → New Status Page**, give it a **Name** and a **Slug** (the form shows the `/status/` prefix live; a taken slug errors with "The slug is already taken."). Creating drops you straight into the page's **editor**: attach each monitor with the **Add a monitor** selector, leave the editor's **Refresh Interval** at `300` seconds, and press **Save**. Then share the address: `http://`-the-Kuma-IP-`:3001/status/`-your-slug. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
+Your dashboard sits behind your login; a status page is the version everyone else in the household can check.
+
+1. Open **Status Pages → New Status Page**, give it a **Name** and a **Slug** (the form shows the `/status/` prefix live; a taken slug errors with "The slug is already taken.").
+2. In the editor that opens, attach each monitor with the **Add a monitor** selector.
+3. Leave the editor's **Refresh Interval** at `300` seconds.
+4. Press **Save**.
+
+Then share the address: `http://`-the-Kuma-IP-`:3001/status/`-your-slug. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
 
 > [!NOTE]
 > Slugs accept lowercase letters, digits, and dashes — starting and ending alphanumeric, no doubled dashes. The slug `default` is special — `/status` with no slug points to it. Status pages lag the live dashboard slightly: the server caches them for five minutes, and each viewer's page re-fetches on the editor's Refresh Interval (the 300-second default). For "is it down, or is it just me", that is plenty.
@@ -162,7 +182,10 @@ If the Reverse Proxy page's eight hosts went in as one sitting, `status.kuzco.or
 - **Websockets Support** → **on**
 - **SSL tab → SSL Certificate** → the `*.kuzco.org` wildcard, and **Force SSL** → **on**
 
-Then the one step unique to Kuma, in the **Uptime Kuma UI** (`http://192.168.1.57:3001`): open **Settings → Reverse Proxy**, and under **HTTP Headers** switch **Trust Proxy** to **on** — without it every visitor arriving through the proxy is logged and rate-limited as the proxy's own `.54` address; with it, Kuma believes the real client address the proxy forwards. This is the step the Reverse Proxy page's service-side table points here for.
+Then, in the **Uptime Kuma UI** (`http://192.168.1.57:3001`), open **Settings → Reverse Proxy** and switch **Trust Proxy** (under **HTTP Headers**) to **on** — the one step unique to Kuma.
+
+> [!NOTE]
+> Without this, every visitor arriving through the proxy is logged and rate-limited as the proxy's own `.54` address; with it, Kuma believes the real client address the proxy forwards. This is the step the Reverse Proxy page's service-side table points here for.
 
 > [!TIP]
 > With names in play, one deliberate monitor earns its place: an **HTTP(s)** monitor pointed at a proxied name — `https://home.kuzco.org` is a good pick — which exercises the AdGuard rewrite, the proxy, and the certificate in a single check. Every *other* monitor stays on direct addresses on purpose, so an alert never leaves you guessing whether the service died or the proxy did.
