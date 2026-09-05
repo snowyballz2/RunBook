@@ -50,9 +50,19 @@ Lifting it is a planned window, not a wait: the **580 branch** builds on kernel 
 > Update the host *before* adding a new toy, never alongside one. If something misbehaves after a combined session, you cannot tell whether the upgrade or the new guest broke it. One change at a time keeps every failure traceable.
 
 ### Walk the guests, one at a time
-With the host current, give each guest its turn — and go strictly one at a time: snapshot first whenever an update looks major, update it, confirm it still answers, then move to the next. That order is what makes the walk safe: a breakage always has an obvious author, and the pre-update snapshot is the thing you fall back to when it does.
+With the host current, give each guest its turn — go strictly one at a time:
 
-- **Service LXCs** (AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, Uptime Kuma): these went up with the community helper scripts, so each updates with a single `update` typed in its **Console**. Three exceptions worth remembering — AdGuard's `update` command just tells you it updates from its own web UI instead; Vaultwarden's `update` opens a two-option menu — pick **1 Update VaultWarden + Web-Vault** — then *recompiles from source*, so give it the half-hour and the headroom it asks for; and Nextcloud splits in two: `apt` covers its Debian layer, but the Nextcloud app itself updates only through the NCP (NextcloudPi) panel on port 4443, per the Nextcloud page.
+1. Snapshot first whenever an update looks major.
+2. Update the guest.
+3. Confirm it still answers.
+4. Move to the next guest.
+
+That order is what makes the walk safe: a breakage always has an obvious author, and the pre-update snapshot is the thing you fall back to when it does.
+
+- **Service LXCs** (AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, Uptime Kuma) — these went up with the community helper scripts, so each updates with a single `update` typed in its **Console**. Three exceptions worth remembering:
+  - **AdGuard** — its `update` command just tells you it updates from its own web UI instead.
+  - **Vaultwarden** — its `update` opens a two-option menu; pick **1 Update VaultWarden + Web-Vault**, then it *recompiles from source*, so give it the half-hour and the headroom it asks for.
+  - **Nextcloud** — splits in two: `apt` covers its Debian layer, but the Nextcloud app itself updates only through the NCP (NextcloudPi) panel on port 4443, per the Nextcloud page.
 - **Frigate LXC**: a plain Debian container under the hood — `apt update && apt full-upgrade` in its Console for the OS. Frigate itself does not update in place — when a new release matters, follow the path from the Cameras, Doorbell & Frigate page: snapshot first, build a fresh container with the script, and copy `/config` across.
 - **Home Assistant OS (VM)**: updates from inside itself, on its **Settings → System → Updates** page — core, OS, and Apps (what Home Assistant called add-ons before 2026.2) each listed there. Each update's confirmation includes a **create a backup before updating** toggle — leave it on.
 - **TrueNAS (VM)**: updates under **System → Update** in its web UI. Two prompts arrived with TrueNAS 25.10: an **Update Profile** dropdown — pick **General**, the stable track — and a save-configuration dialog before install; tick **Export Password Secret Seed** and keep that file with the host-config backups. (On an older 25.x the screen is plainer; the update itself lands you on the new one.)
@@ -123,7 +133,10 @@ nvidia-smi
 The **temperature** is the early-warning line the Cooling page set up — a slow creep over months is how a drying pad or failing fan announces itself while it can still be serviced on your schedule. And the **process list** should show all three borrowers — Frigate, Ollama, and faster-whisper — because a missing one usually means a driver mismatch quietly benched it rather than anything crashing loudly.
 
 > [!TIP]
-> On the same pass, open **Datacenter → Backup** and check the job — the **Job Detail** button opens a "Backup Details" window listing exactly what the job covers — confirming **AdGuard** and **Nginx Proxy Manager (NPM)** are in the selection. Selection mode **All** includes them automatically, but a hand-picked list is one careless edit from dropping the two guests you can least afford to lose: AdGuard is the household's DNS (Domain Name System), and NPM holds every reverse-proxy route and certificate. Restore everything *except* those two and the rest is unreachable until you rebuild them by hand. While the job is open, glance at its **Retention** settings too — **Keep Daily 7** and **Keep Weekly 4** (set when the backup job was created) are what prune old archives so the share does not fill forever. If the ZFS pool keeps climbing, confirm retention is still set on the job and has not drifted to "keep all."
+> On the same pass, open **Datacenter → Backup** and check the job:
+>
+> 1. Press its **Job Detail** button — it opens a "Backup Details" window listing exactly what the job covers — and confirm **AdGuard** and **Nginx Proxy Manager (NPM)** are in the selection. Selection mode **All** includes them automatically, but a hand-picked list is one careless edit from dropping the two guests you can least afford to lose: AdGuard is the household's DNS (Domain Name System), and NPM holds every reverse-proxy route and certificate. Restore everything *except* those two and the rest is unreachable until you rebuild them by hand.
+> 2. Glance at the job's **Retention** settings — **Keep Daily 7** and **Keep Weekly 4** (set when the backup job was created) are what prune old archives so the share does not fill forever. If the ZFS pool keeps climbing, confirm retention has not drifted to "keep all."
 
 ### Confirm last night's backup actually ran
 A backup job you assume is running is not a backup. The run history is **not** on the Datacenter → Backup screen (its **Job Detail** button shows the job's settings and included disks, no runs).

@@ -47,13 +47,25 @@ The metapackage pulls in both halves: `nut-server` (the `usbhid-ups` driver plus
 ### Write the four config files
 NUT's behaviour lives in `/etc/nut/`. Four small edits: switch it on, name the UPS, create an account, and point the watcher at it.
 
-Open `/etc/nut/nut.conf` and change the existing `MODE=` line to:
+Open `/etc/nut/nut.conf`:
+
+```bash
+nano /etc/nut/nut.conf
+```
+
+Change the existing `MODE=` line to:
 
 ```ini
 MODE=standalone
 ```
 
-Append at the end of `/etc/nut/ups.conf`:
+Open `/etc/nut/ups.conf`:
+
+```bash
+nano /etc/nut/ups.conf
+```
+
+Append this at the end:
 
 ```ini
 [cyberpower]
@@ -62,7 +74,13 @@ Append at the end of `/etc/nut/ups.conf`:
     desc = "CyberPower CP1500PFCLCD"
 ```
 
-Append to `/etc/nut/upsd.users` — the account `upsmon` signs in with:
+Open `/etc/nut/upsd.users`:
+
+```bash
+nano /etc/nut/upsd.users
+```
+
+Append the account `upsmon` signs in with:
 
 ```ini
 [admin]
@@ -70,7 +88,13 @@ Append to `/etc/nut/upsd.users` — the account `upsmon` signs in with:
     upsmon primary
 ```
 
-Append to `/etc/nut/upsmon.conf` — watch that UPS, same password:
+Open `/etc/nut/upsmon.conf`:
+
+```bash
+nano /etc/nut/upsmon.conf
+```
+
+Append the line to watch that UPS, same password:
 
 ```ini
 MONITOR cyberpower@localhost 1 admin pick-a-long-password primary
@@ -113,7 +137,13 @@ A healthy answer is a screenful of live variables. Three are worth knowing by na
 CyberPower units, this model included, have a well-documented habit: the `usbhid-ups` driver loses the USB device under load or after a glitch and never reconnects on its own. `upsc` starts answering "Driver not connected" or the data goes stale, and a UPS the host can no longer hear is a UPS that will not trigger a shutdown when it matters — the silent failure this whole page exists to prevent. Three settings make the driver resilient, and a watchdog catches the case where it still wedges.
 
 ### Make the driver reconnect itself
-Edit `/etc/nut/ups.conf` so the `[cyberpower]` section gains three lines — the driver then polls steadily and re-grabs the device when the kernel re-enumerates it:
+Open `/etc/nut/ups.conf`:
+
+```bash
+nano /etc/nut/ups.conf
+```
+
+Give the `[cyberpower]` section three more lines — the driver then polls steadily and re-grabs the device when the kernel re-enumerates it:
 
 ```ini
 [cyberpower]
@@ -152,6 +182,12 @@ chmod +x /usr/local/bin/nut-watchdog.sh
 
 Then create `/etc/systemd/system/nut-watchdog.service`:
 
+```bash
+nano /etc/systemd/system/nut-watchdog.service
+```
+
+Give it this content:
+
 ```ini
 [Unit]
 Description=Restart NUT driver if the CyberPower USB link drops
@@ -161,6 +197,10 @@ ExecStart=/usr/local/bin/nut-watchdog.sh
 ```
 
 And `/etc/systemd/system/nut-watchdog.timer`, which fires it every two minutes:
+
+```bash
+nano /etc/systemd/system/nut-watchdog.timer
+```
 
 ```ini
 [Unit]
@@ -189,14 +229,29 @@ From here the sequence is already wired, and it is deliberately patient. When th
 > [!NOTE]
 > Who decides "low"? The CyberPower does — the threshold is set in the device by its vendor, and `usbhid-ups` falls back to 30% only if the UPS reports nothing. The patience is by design: every extra minute on battery is another minute in which the power might return without anything having to stop.
 
+Set the shutdown order so Frigate stops before Home Assistant and TrueNAS outlasts the service containers:
+
+1. In each guest's **Options** tab, find **Start/Shutdown order** — shutdown runs the startup order in reverse, so order 1 boots first and goes down last.
+2. Give **TrueNAS** the lowest order.
+3. Give **Home Assistant** a lower order than **Frigate**.
+4. Leave every other guest with no order set.
+5. If a guest genuinely needs longer than the default to stop cleanly, set its **Shutdown timeout** in the same **Options** tab.
+
 > [!WARNING]
-> Order matters for this build. The Home Assistant VM holds the Mosquitto-dependent automations, and the Frigate LXC (Linux container) talks to it over MQTT (MQ Telemetry Transport) — so the **Frigate LXC must go down before the HA VM** (its MQTT broker must outlast it), and the TrueNAS VM should outlast the service containers that may still be flushing to its shares. Set this with each guest's **Start/Shutdown order** in its **Options** tab: shutdown runs the startup order in reverse, so order 1 boots first and goes down last. Give TrueNAS the lowest order, HA a lower order than Frigate. One catch: **guests with no order set shut down before any numbered guest** — which is what you want here, since a service container still writing to a share finishes and stops before the numbered TrueNAS VM goes down; only a guest that must outlast one of the numbered three needs an explicit order of its own. Each guest's **Shutdown timeout** lives in the same **Options** tab, if one genuinely needs longer than the default to stop cleanly.
+> Order matters for this build. The Home Assistant VM holds the Mosquitto-dependent automations, and the Frigate LXC (Linux container) talks to it over MQTT (MQ Telemetry Transport) — so the **Frigate LXC must go down before the HA VM** (its MQTT broker must outlast it), and the TrueNAS VM should outlast the service containers that may still be flushing to its shares. One catch: **guests with no order set shut down before any numbered guest** — which is what you want here, since a service container still writing to a share finishes and stops before the numbered TrueNAS VM goes down; only a guest that must outlast one of the numbered three needs an explicit order of its own.
 
 > [!DETAILS] Shutting down earlier than the UPS would
 > If the CyberPower calls low battery later than you'd like, NUT documents two routes. One: in the `[cyberpower]` section, add `ignorelb` with `override.battery.charge.low = 50` (and/or `override.battery.runtime.low = 600`) so NUT judges "low" by your numbers instead of the device's flag — note some CyberPower models round the reported charge, so verify `upsc` shows a sane figure first. Two: an `upssched` timer started by the on-battery event that runs `upsmon -c fsd` after a fixed number of minutes. Either way, shutting down early throws away runtime during which the power might have returned.
 
 ### Teach it to come back
-After the shutdown the UPS cuts its outlets, and when mains returns it switches them back on — but a powered outlet only boots the server if the firmware agrees. You set this on the Hardware & BIOS page with the other firmware toggles; confirm it stuck before trusting it: reboot the server, press **Del** at POST, and check **Advanced → APM Configuration → Restore AC Power Loss** reads **Power On** (if it does not, set it and **F10**). NUT recommends "always power on" over "last state": the UPS shutdown was clean, so "last state" can remember *off* and leave the server dark in a powered house.
+After the shutdown the UPS cuts its outlets, and when mains returns it switches them back on — but a powered outlet only boots the server if the firmware agrees. You set this on the Hardware & BIOS page with the other firmware toggles; confirm it stuck before trusting it:
+
+1. Reboot the server and press **Del** at POST.
+2. Check **Advanced → APM Configuration → Restore AC Power Loss** reads **Power On**.
+3. If it does not, set it and press **F10**.
+
+> [!NOTE]
+> NUT recommends "always power on" over "last state": the UPS shutdown was clean, so "last state" can remember *off* and leave the server dark in a powered house.
 
 > [!TIP]
 > With this set, the stack reassembles itself: the host boots when the outlets wake, and every guest marked to start at boot returns in its startup order — TrueNAS first, then the rest, with the HA VM ahead of the Frigate LXC. Nobody has to be home for the house to recover.
@@ -209,9 +264,7 @@ After the shutdown the UPS cuts its outlets, and when mains returns it switches 
 > **A rare trip is not a benign one.** Intermittent is the normal signature of an arcing fault — it needs conditions to line up (a cold night, a humidity swing) rather than a heavy load, so a fault that fires monthly is the same fault that fires daily, just earlier in its life. It is also the hardest kind to diagnose, because nothing is wrong while the electrician is standing there. So **keep a log**: date, time, outdoor temperature, and what was running. A handful of entries turns "it trips sometimes" into a pattern someone can act on, and it is the only evidence that survives between visits. Conveniently, most of that log writes itself once this page is done — every transfer to battery lands in the host's journal (`journalctl -u nut-monitor`) and, once the Home Assistant integration below is wired up, in HA's history as a timestamped state change on the UPS status sensor. A trip at 3 am that nobody witnessed still gets recorded to the minute. One habit the automation cannot cover: on the next trip, **read the breaker before resetting it** — most modern AFCIs blink a diagnostic code afterwards saying whether they saw an arc, a ground fault, or an overload, and resetting clears it. Cross-check the timestamps against the UPS's own periodic **battery self-test** schedule too — that transfer to battery and back is a switching transient, and if the trips line up with it, that is your answer. One trap to avoid: moving the server to a different circuit fixes *your* uptime and nothing else. If the fault is a damaged cable in a wall, it is still there, still arcing, just no longer inconveniencing you enough to chase.
 
 ### Rehearse the outage
-Two rehearsals, gentle then real. First the gentle one — pull the CyberPower's plug from the wall for half a minute while everything runs:
-
-Run this before pulling the plug, then again while on battery:
+Two rehearsals, gentle then real. First the gentle one — pull the CyberPower's plug from the wall for half a minute while everything runs. Run this before pulling the plug, then again while on battery:
 
 ```bash
 upsc cyberpower@localhost ups.status
@@ -233,7 +286,13 @@ This raises the forced-shutdown flag exactly as a critical battery would, and th
 >
 > To watch `upsmon` pull the trigger without rebooting, point `SHUTDOWNCMD` at something harmless instead:
 >
-> 1. Edit `/etc/nut/upsmon.conf` and change the `SHUTDOWNCMD` line to something harmless, say:
+> 1. Open `/etc/nut/upsmon.conf`:
+>
+> ```bash
+> nano /etc/nut/upsmon.conf
+> ```
+>
+> Change the `SHUTDOWNCMD` line to something harmless, say:
 >
 > ```ini
 > SHUTDOWNCMD "/usr/bin/logger -t nut-test FSD-fired"
@@ -261,20 +320,38 @@ This raises the forced-shutdown flag exactly as a critical battery would, and th
 ### Open the UPS to the LAN
 So far `upsd` speaks only to the host. Three edits open it to the LAN, read-only, and Home Assistant's native NUT integration does the rest.
 
-In `/etc/nut/nut.conf`, change `MODE` once more:
+Open `/etc/nut/nut.conf`:
+
+```bash
+nano /etc/nut/nut.conf
+```
+
+Change `MODE` once more:
 
 ```ini
 MODE=netserver
 ```
 
-Append to `/etc/nut/upsd.conf` — keep localhost, add the host's LAN address:
+Open `/etc/nut/upsd.conf`:
+
+```bash
+nano /etc/nut/upsd.conf
+```
+
+Append this — keep localhost, add the host's LAN address:
 
 ```ini
 LISTEN 127.0.0.1 3493
 LISTEN 192.168.1.50 3493
 ```
 
-Append to `/etc/nut/upsd.users` — a watch-only account for Home Assistant:
+Open `/etc/nut/upsd.users`:
+
+```bash
+nano /etc/nut/upsd.users
+```
+
+Append a watch-only account for Home Assistant:
 
 ```ini
 [hauser]

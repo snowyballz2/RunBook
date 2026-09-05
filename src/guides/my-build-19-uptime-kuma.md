@@ -16,11 +16,18 @@ It is the lightest guest on the i7-8700K — a single Node.js application with a
 ## Create the container
 
 ### Run the install script
-In the Proxmox web interface at `https://192.168.1.50:8006`, click the node (the ASUS ROG Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Read the script first, then paste and press Return. On the **Community-Scripts Options** menu pick **Advanced Install** — the static IP in the next step is set there; every other prompt keeps its prefilled default:
+
+1. In the Proxmox web interface at `https://192.168.1.50:8006`, click the node (the ASUS ROG Maximus X Hero server) in the left tree.
+2. Click **Shell**.
+3. Read the script below, then paste it in and press Return.
+4. On the **Community-Scripts Options** menu, pick **Advanced Install**.
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/uptimekuma.sh)"
 ```
+
+> [!NOTE]
+> The Shell runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Advanced Install is where the static IP in the next step gets set; every other prompt keeps its prefilled default.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The host these containers live on. Open the web UI at `https://`-this-ip-`:8006` and log in as **root@pam** to reach the node Shell.
@@ -48,7 +55,8 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 - **IPv6** → **Fully Disabled** — this LAN runs IPv4
 - **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
 - **Tags** → keep the offered tag
-- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **SSH KEY SOURCE** → **none / No keys**
+- **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
 - **FUSE SUPPORT** → **No**
 - **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
 - **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
@@ -60,7 +68,8 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 - **DEVICE NODE CREATION** → **No**, the default
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
-- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and press **Create LXC**
+- **VERBOSE MODE** → **No**
+- Review **CONFIRM SETTINGS**, then press **Create LXC**
 - **Which storage pool?** (two radiolists — container, then template — shown only when more than one pool qualifies; this host's stock local/local-lvm split auto-selects silently) → **local-lvm** for the container, **local** for the template
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
 - **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
@@ -105,7 +114,12 @@ The script prints the address when it finishes — `http://192.168.1.57:3001`. T
 ## Watch everything you built
 
 ### Add a monitor per service
-For each row below: click **Add New Monitor** (top left of the dashboard), set the **Monitor Type**, the **Friendly Name**, and the address, tick any option listed, then **Save**.
+For each row below:
+
+1. Click **Add New Monitor** (top left of the dashboard).
+2. Set the **Monitor Type**, the **Friendly Name**, and the address.
+3. Tick any option listed.
+4. Press **Save**.
 
 | Friendly Name | Monitor Type | URL | Options |
 |---|---|---|---|
@@ -237,7 +251,17 @@ For this LAN-only build with no port-forwards, the workaround that fits is a sec
 > If you do run a second instance, it must have its own database — at most one Uptime Kuma per SQLite file. Two full installs, each watching the other; never two pointed at one data folder.
 
 ### Update on purpose, back up the one folder
-Take a Proxmox snapshot first — the snapshot-before-changes habit from earlier — then update **from inside the container**: open its **Console** in Proxmox and type `update`. It compares your installed version against the latest release, stops the service, lays the new version over `/opt/uptime-kuma` without touching your data, and starts it again.
+
+1. Take a Proxmox snapshot first — the snapshot-before-changes habit from earlier.
+2. From inside the container, open its **Console** in Proxmox.
+3. Run:
+
+```bash
+update
+```
+
+> [!NOTE]
+> This compares your installed version against the latest release, stops the service, lays the new version over `/opt/uptime-kuma` without touching your data, and starts it again.
 
 > [!WARNING]
 > Do not re-run the install one-liner on the Proxmox *host* to update — on the host, that command begins the create-a-new-container flow. Inside the container, the short `update` command — pre-installed by the script — is what updates in place.

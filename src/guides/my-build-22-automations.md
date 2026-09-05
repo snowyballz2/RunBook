@@ -280,7 +280,14 @@ actions:
 
 The last block is why the sliding glass door gets a **MYGGBETT** contact sensor. The three deadbolts lock themselves on the line above, but the slider has no smart hardware and cannot be closed remotely — so the only useful action is to tell you before you are too far away to turn around. Confirm the entity's real name under **Entities** after you pair it; the guide assumes you renamed it to `binary_sensor.sliding_door`.
 
-Coming home is the easy half — trigger on the first phone reaching `home`, no conditions needed. Mirror the above with `to: "home"`, then turn on `light.entryway` and set the ecobee back to **70**. Both numbers are **Fahrenheit** — this install runs US units, so `temperature:` values are °F (a °C-configured install would use 17 and 21; a Celsius value on this one would clamp the thermostat to its floor).
+Coming home is the easy half — no conditions needed.
+
+1. Mirror the rule above, but trigger on the first phone reaching `home`.
+2. Turn on `light.entryway`.
+3. Set the ecobee back to **70**.
+
+> [!NOTE]
+> Both numbers are **Fahrenheit** — this install runs US units, so `temperature:` values are °F (a °C-configured install would use 17 and 21; a Celsius value on this one would clamp the thermostat to its floor).
 
 ## Comfort and awareness
 
@@ -401,8 +408,15 @@ Every PoE shade needs its **own Cat6 run** back to the switch.
 ### Onboard the shades
 Both kinds land as `cover.*` entities, commissioned straight into Home Assistant's Matter controller — no Apple Home, no vendor app:
 
-- In the **Home Assistant companion app**, go to **Settings → Devices & services → Matter**, tap **Add device**, choose **"No, it's new."**, and scan the shade's QR pairing code (**More options…** takes a typed code instead), then confirm **Add to Home Assistant**. (**Add integration → Matter** is only the one-time server setup, done back on the Matter Locks page — it dead-ends on an already-configured integration.) A **PoE (Ethernet) shade** joins over the wired LAN; a **battery (Thread) shade** joins over Home Assistant's OpenThread Border Router — the phone's Bluetooth does the handshake and hands over the Thread credentials, exactly like the locks.
+- In the **Home Assistant companion app**:
+  1. Go to **Settings → Devices & services → Matter** and tap **Add device**.
+  2. Choose **"No, it's new."**
+  3. Scan the shade's QR pairing code (**More options…** takes a typed code instead).
+  4. Confirm **Add to Home Assistant**.
 - Give each PoE shade a **DHCP reservation** so its address never moves.
+
+> [!NOTE]
+> **Add integration → Matter** is only the one-time server setup, done back on the Matter Locks page — it dead-ends on an already-configured integration. A **PoE (Ethernet) shade** joins over the wired LAN; a **battery (Thread) shade** joins over Home Assistant's OpenThread Border Router — the phone's Bluetooth does the handshake and hands over the Thread credentials, exactly like the locks.
 
 ### Group them and drive them as one
 Make one group so PoE-vs-battery stops mattering, then automate the group.

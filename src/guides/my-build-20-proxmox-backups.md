@@ -20,7 +20,13 @@ Before you point Proxmox at it, confirm the `backups` share actually exists.
 
 1. In the TrueNAS web interface, go to **Shares → Windows (SMB) Shares**.
 2. Check that a share whose path is `tank/backups` is listed and enabled.
-3. If only `files` is there, click **Add** on that widget, set the path to the `tank/backups` dataset, save, and accept the prompt to restart the **SMB service** so the share goes live.
+
+If only `files` is there:
+
+1. Click **Add** on that widget.
+2. Set the path to the `tank/backups` dataset.
+3. Save.
+4. Accept the prompt to restart the **SMB service** so the share goes live.
 
 > [!NOTE]
 > Without this share, the `backups` entry will not appear in Proxmox's **Share** dropdown in the next step.
@@ -70,7 +76,13 @@ The other three tabs, so nothing on them surprises you:
 
 - **Notifications** → keep **"Use global notification settings"** — the legacy sendmail radio reveals Recipients and When fields this build does not use
 - **Note Template** → keep the default `{{guestname}}`
-- **Advanced** → every default stands: Job ID autogenerates, Bandwidth Limit empty, Zstd Threads `1`, IO-Workers `16`, **Fleecing** off (a write buffer for slow backup targets; the NAS over gigabit is not one), and **Repeat missed** off — deliberately, so a 02:30 run missed while the box was powered off does not fire the moment it next boots; the nightly cadence self-heals the following night
+- **Advanced** → every default stands:
+  - **Job ID** → autogenerates
+  - **Bandwidth Limit** → empty
+  - **Zstd Threads** → `1`
+  - **IO-Workers** → `16`
+  - **Fleecing** → off — a write buffer for slow backup targets; the NAS over gigabit is not one
+  - **Repeat missed** → off — deliberately, so a 02:30 run missed while the box was powered off does not fire the moment it next boots; the nightly cadence self-heals the following night
 
 > [!WARNING]
 > Proxmox offers `local` as a storage choice out of the box — but `local` is a directory on the **NVMe boot disk**, the exact disk holding the Proxmox OS and Frigate's cache that everything on this page is meant to survive. A backup job pointed at `local` dies with the disk it is supposed to protect. Make sure **Storage** reads `nas-backups`, never `local`.
@@ -102,7 +114,11 @@ The job's Notifications tab said **"Use global notification settings"** — so c
 
 Fix it once, at **Datacenter → Notifications**:
 
-1. Under **Notification Targets**, click **Add → SMTP** and fill it like the TrueNAS email on the Protect Your Data page: your provider's SMTP server, port **587** with **STARTTLS**, the full address as username, an **app-specific password** (iCloud senders generate one at appleid.apple.com), your real inbox as recipient.
+1. Under **Notification Targets**, click **Add → SMTP** and fill it like the TrueNAS email on the Protect Your Data page:
+   - your provider's SMTP server, port **587** with **STARTTLS**
+   - the full address as username
+   - an **app-specific password** (iCloud senders generate one at appleid.apple.com)
+   - your real inbox as recipient
 2. Select the new target and press its **Test** button — do not move on until the test mail lands.
 3. Under **Notification Matchers**, edit the default matcher and point its target at the SMTP entry instead of `mail-to-root`.
 
@@ -200,10 +216,15 @@ After a boot-disk failure, the order matters: bring the host back knowing its ha
 
 1. **Reinstall Proxmox** fresh on a new NVMe — same version, and re-enter the host IP, hostname, and root password from your records.
 2. **Redo the BIOS groundwork** if the board was reset: VT-d (Intel's IOMMU) and Virtualization (VMX) enabled, and the bottom `PCIEX4_3` slot set to x4 — the HBA's clean IOMMU group depends on it.
-3. **Restore the `/etc` bits** from the host-config tarball — including `/etc/default/grub` with its `intel_iommu=on iommu=pt` flags (or re-add them by hand, as on the **My Build: Install Proxmox** page) — then run `update-grub` as well as `update-initramfs -u -k all` so the kernel flags and the VFIO bind both take. Reboot, and confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
+3. **Restore the `/etc` bits** from the host-config tarball, including `/etc/default/grub` with its `intel_iommu=on iommu=pt` flags (or re-add them by hand, as on the **My Build: Install Proxmox** page):
+   1. Run `update-grub`.
+   2. Run `update-initramfs -u -k all` so the kernel flags and the VFIO bind both take.
+   3. Reboot.
+   4. Confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
 4. **Reinstall the NVIDIA driver on the host** and confirm `nvidia-smi`, so the GPU `dev0:` shares into Frigate, Ollama, and faster-whisper work once those containers return.
-5. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage), then **restore the guests** from vzdump. Each archive carries its guest's config, so once the TrueNAS VM is restored, confirm its **Hardware** tab (or `/etc/pve/qemu-server/<id>.conf`) still shows the `hostpci0` HBA line — re-run your saved `qm set ... -hostpci0` command only if it is somehow missing.
-6. **Mind the dependency order on first boot**: start the Home Assistant VM before the Frigate LXC so the MQTT broker is up first.
+5. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage), then **restore the guests** from vzdump.
+6. Once the TrueNAS VM is restored, confirm its **Hardware** tab (or `/etc/pve/qemu-server/<id>.conf`) still shows the `hostpci0` HBA line — re-run your saved `qm set ... -hostpci0` command only if it is somehow missing.
+7. **Mind the dependency order on first boot**: start the Home Assistant VM before the Frigate LXC so the MQTT broker is up first.
 
 > [!TIP]
 > The honest test of this whole page is a host you have never lost. Once a year, read the rebuild list top to bottom and confirm each piece still exists where it says — the host-config tarball is recent, the `qm set` notes match the live config, and a guest restores into a spare ID. A recovery plan you have rehearsed is calm; one you are reading for the first time mid-disaster is not.

@@ -159,6 +159,10 @@ It installs Ollama and exposes its HTTP API on port `11434`.
 >
 > Then give it a small systemd unit so it listens on `10300` and survives reboots. Create `/etc/systemd/system/wyoming-faster-whisper.service`:
 >
+> ```bash
+> nano /etc/systemd/system/wyoming-faster-whisper.service
+> ```
+>
 > ```ini
 > [Unit]
 > Description=Wyoming faster-whisper STT
@@ -181,7 +185,13 @@ It installs Ollama and exposes its HTTP API on port `11434`.
 >
 > The `--device cuda` flag needs the card, so the service only starts cleanly once the lend-the-card step below is done.
 
-**Lend each container the card.** Both LXCs borrow the 1080 Ti exactly as Frigate does — the host owns the driver; each container carries the NVIDIA device lines in **its own** config file. The **Ollama** container already has them — the wizard's GPU answer wrote every `devN:` line, so for it just verify: `grep ^dev /etc/pve/lxc/<ctid>.conf` on the host shows several `devN: /dev/nvidia…` lines. The hand-built **whisper** container gets them manually — edit its `/etc/pve/lxc/<ctid>.conf` (`<ctid>` is its ID) and add:
+**Lend each container the card.** Both LXCs borrow the 1080 Ti exactly as Frigate does — the host owns the driver; each container carries the NVIDIA device lines in **its own** config file. The **Ollama** container already has them — the wizard's GPU answer wrote every `devN:` line, so for it just verify: `grep ^dev /etc/pve/lxc/<ctid>.conf` on the host shows several `devN: /dev/nvidia…` lines. The hand-built **whisper** container gets them manually — edit its `/etc/pve/lxc/<ctid>.conf` (`<ctid>` is its ID):
+
+```bash
+nano /etc/pve/lxc/<ctid>.conf
+```
+
+Add:
 
 ```ini
 dev0: /dev/nvidia0,gid=44
