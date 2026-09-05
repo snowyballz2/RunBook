@@ -61,7 +61,12 @@ Proxmox mounts it under `/mnt/pve/nas-backups`.
 ## Schedule the guest backups
 
 ### Schedule automatic vzdump of every guest
-Still in the Proxmox web UI, go to **Datacenter → Backup** and click **Add**. The window is five tabs — **General**, **Notifications**, **Retention**, **Note Template**, **Advanced** — and only General and Retention need your hands. On **General**:
+Still in the Proxmox web UI:
+
+1. Go to **Datacenter → Backup**.
+2. Click **Add**.
+
+The window is five tabs — **General**, **Notifications**, **Retention**, **Note Template**, **Advanced** — and only General and Retention need your hands. On **General**:
 
 - **Node** → leave **-- All --**
 - **Storage** → `nas-backups` — never `local` (the warning below)
@@ -114,19 +119,24 @@ The job's Notifications tab said **"Use global notification settings"** — so c
 
 Fix it once, at **Datacenter → Notifications**:
 
-1. Under **Notification Targets**, click **Add → SMTP** and fill it like the TrueNAS email on the Protect Your Data page:
+1. Under **Notification Targets**, click **Add → SMTP**.
+2. Fill it out like the TrueNAS email on the Protect Your Data page:
    - your provider's SMTP server, port **587** with **STARTTLS**
    - the full address as username
    - an **app-specific password** (iCloud senders generate one at appleid.apple.com)
    - your real inbox as recipient
-2. Select the new target and press its **Test** button — do not move on until the test mail lands.
-3. Under **Notification Matchers**, edit the default matcher and point its target at the SMTP entry instead of `mail-to-root`.
+3. Select the new target.
+4. Press its **Test** button — do not move on until the test mail lands.
+5. Under **Notification Matchers**, edit the default matcher.
+6. Point its target at the SMTP entry instead of `mail-to-root`.
 
 The backup job needs no change after this — its "global settings" default now routes through a path that genuinely delivers. (Fields here that drift from your screen: true the guide against the screen, as always.)
 
 ### Know how to restore — and prove it
-1. Open `nas-backups` in the left tree and go to its **Backups** view (or a guest's own **Backup** tab).
-2. Select an archive and click **Restore**.
+1. Open `nas-backups` in the left tree.
+2. Go to its **Backups** view (or a guest's own **Backup** tab).
+3. Select an archive.
+4. Click **Restore**.
 
 Every field in the dialog:
 
@@ -214,17 +224,33 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 ### Walk the rebuild order
 After a boot-disk failure, the order matters: bring the host back knowing its hardware *before* the guests land on it, so the restored VMs and containers find what they expect.
 
-1. **Reinstall Proxmox** fresh on a new NVMe — same version, and re-enter the host IP, hostname, and root password from your records.
-2. **Redo the BIOS groundwork** if the board was reset: VT-d (Intel's IOMMU) and Virtualization (VMX) enabled, and the bottom `PCIEX4_3` slot set to x4 — the HBA's clean IOMMU group depends on it.
-3. **Restore the `/etc` bits** from the host-config tarball, including `/etc/default/grub` with its `intel_iommu=on iommu=pt` flags (or re-add them by hand, as on the **My Build: Install Proxmox** page):
-   1. Run `update-grub`.
-   2. Run `update-initramfs -u -k all` so the kernel flags and the VFIO bind both take.
-   3. Reboot.
-   4. Confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
-4. **Reinstall the NVIDIA driver on the host** and confirm `nvidia-smi`, so the GPU `dev0:` shares into Frigate, Ollama, and faster-whisper work once those containers return.
-5. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage), then **restore the guests** from vzdump.
-6. Once the TrueNAS VM is restored, confirm its **Hardware** tab (or `/etc/pve/qemu-server/<id>.conf`) still shows the `hostpci0` HBA line — re-run your saved `qm set ... -hostpci0` command only if it is somehow missing.
-7. **Mind the dependency order on first boot**: start the Home Assistant VM before the Frigate LXC so the MQTT broker is up first.
+1. **Reinstall Proxmox** fresh on a new NVMe — same version.
+2. Re-enter the host IP, hostname, and root password from your records.
+3. **Redo the BIOS groundwork** if the board was reset:
+   - VT-d (Intel's IOMMU) and Virtualization (VMX) → enabled
+   - the bottom `PCIEX4_3` slot → set to x4 — the HBA's clean IOMMU group depends on it
+4. **Restore the `/etc` bits** from the host-config tarball, including `/etc/default/grub` with its `intel_iommu=on iommu=pt` flags (or re-add them by hand, as on the **My Build: Install Proxmox** page).
+5. Update the boot loader:
+
+```bash
+update-grub
+```
+
+6. Rebuild the initramfs so the kernel flags and the VFIO bind both take:
+
+```bash
+update-initramfs -u -k all
+```
+
+7. Reboot.
+8. Confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
+9. **Reinstall the NVIDIA driver on the host**.
+10. Confirm `nvidia-smi` reports it, so the GPU `dev0:` shares into Frigate, Ollama, and faster-whisper work once those containers return.
+11. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage).
+12. **Restore the guests** from vzdump.
+13. Once the TrueNAS VM is restored, confirm its **Hardware** tab (or `/etc/pve/qemu-server/<id>.conf`) still shows the `hostpci0` HBA line.
+14. If it is somehow missing, re-run your saved `qm set ... -hostpci0` command.
+15. **Mind the dependency order on first boot**: start the Home Assistant VM before the Frigate LXC so the MQTT broker is up first.
 
 > [!TIP]
 > The honest test of this whole page is a host you have never lost. Once a year, read the rebuild list top to bottom and confirm each piece still exists where it says — the host-config tarball is recent, the `qm set` notes match the live config, and a guest restores into a spare ID. A recovery plan you have rehearsed is calm; one you are reading for the first time mid-disaster is not.

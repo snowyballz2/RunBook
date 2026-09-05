@@ -129,7 +129,22 @@ upsc cyberpower@localhost
 A healthy answer is a screenful of live variables. Three are worth knowing by name: `ups.status` (`OL` means on line power), `battery.charge` (percent), and `battery.runtime` (the UPS's own estimate of seconds remaining at the current load). You can also ask for one at a time: `upsc cyberpower@localhost ups.status`.
 
 > [!DETAILS] Getting a stubborn driver going
-> If `upsc` has nothing to say, check `systemctl status nut-driver@cyberpower`. If that unit doesn't *exist* at all, the per-UPS service was never generated from your `ups.conf` entry — `systemctl restart nut-driver-enumerator` creates it, then check again. Errors like "No matching HID UPS found" or permission denied usually mean a USB problem instead: reseat the cable first, then run `lsusb` and look for the CyberPower's vendor:product ID (CyberPower units commonly show as `0764:`). Debian's shipped udev rules cover it, but after any cable change replug it (or run `udevadm trigger`) and restart the driver.
+> If `upsc` has nothing to say, check `systemctl status nut-driver@cyberpower`.
+>
+> If that unit doesn't *exist* at all, the per-UPS service was never generated from your `ups.conf` entry:
+>
+> ```bash
+> systemctl restart nut-driver-enumerator
+> ```
+>
+> That creates it — check again afterward.
+>
+> Errors like "No matching HID UPS found" or permission denied usually mean a USB problem instead:
+>
+> 1. Reseat the cable.
+> 2. Run `lsusb` and look for the CyberPower's vendor:product ID (CyberPower units commonly show as `0764:`).
+>
+> Debian's shipped udev rules cover it, but after any cable change, replug it (or run `udevadm trigger`) and restart the driver.
 
 ## Handle the CyberPower USB-drop quirk
 
@@ -241,14 +256,21 @@ Set the shutdown order so Frigate stops before Home Assistant and TrueNAS outlas
 > Order matters for this build. The Home Assistant VM holds the Mosquitto-dependent automations, and the Frigate LXC (Linux container) talks to it over MQTT (MQ Telemetry Transport) — so the **Frigate LXC must go down before the HA VM** (its MQTT broker must outlast it), and the TrueNAS VM should outlast the service containers that may still be flushing to its shares. One catch: **guests with no order set shut down before any numbered guest** — which is what you want here, since a service container still writing to a share finishes and stops before the numbered TrueNAS VM goes down; only a guest that must outlast one of the numbered three needs an explicit order of its own.
 
 > [!DETAILS] Shutting down earlier than the UPS would
-> If the CyberPower calls low battery later than you'd like, NUT documents two routes. One: in the `[cyberpower]` section, add `ignorelb` with `override.battery.charge.low = 50` (and/or `override.battery.runtime.low = 600`) so NUT judges "low" by your numbers instead of the device's flag — note some CyberPower models round the reported charge, so verify `upsc` shows a sane figure first. Two: an `upssched` timer started by the on-battery event that runs `upsmon -c fsd` after a fixed number of minutes. Either way, shutting down early throws away runtime during which the power might have returned.
+> If the CyberPower calls low battery later than you'd like, NUT documents two routes:
+>
+> - In the `[cyberpower]` section, add `ignorelb` with `override.battery.charge.low = 50` (and/or `override.battery.runtime.low = 600`) so NUT judges "low" by your numbers instead of the device's flag — some CyberPower models round the reported charge, so verify `upsc` shows a sane figure first.
+> - An `upssched` timer started by the on-battery event that runs `upsmon -c fsd` after a fixed number of minutes.
+>
+> Either way, shutting down early throws away runtime during which the power might have returned.
 
 ### Teach it to come back
 After the shutdown the UPS cuts its outlets, and when mains returns it switches them back on — but a powered outlet only boots the server if the firmware agrees. You set this on the Hardware & BIOS page with the other firmware toggles; confirm it stuck before trusting it:
 
-1. Reboot the server and press **Del** at POST.
-2. Check **Advanced → APM Configuration → Restore AC Power Loss** reads **Power On**.
-3. If it does not, set it and press **F10**.
+1. Reboot the server.
+2. Press **Del** at POST.
+3. Check **Advanced → APM Configuration → Restore AC Power Loss** reads **Power On**.
+4. If it does not, set it.
+5. Press **F10**.
 
 > [!NOTE]
 > NUT recommends "always power on" over "last state": the UPS shutdown was clean, so "last state" can remember *off* and leave the server dark in a powered house.
@@ -259,9 +281,28 @@ After the shutdown the UPS cuts its outlets, and when mains returns it switches 
 > That last sentence is a claim worth testing rather than trusting, because a guest can fail to boot *unattended* while booting perfectly whenever you happen to be watching — the TrueNAS VM's `Press any key to continue...` firmware halt (prevented by `rombar=0` on the GPU/HBA page) is exactly that trap. Before relying on any of this, cold-start each guest with its console closed and confirm it answers on its own.
 
 > [!WARNING]
-> One failure the self-heal cannot fix: a **tripped breaker** never resets itself, so the whole recovery story ends at the panel. Check what kind of breaker feeds the server's outlet — a **TEST button** means AFCI or GFCI (the label says which), and both have nuisance modes with exactly this equipment: AFCIs can read a big PSU's power-on inrush or a UPS charger as an arc (this build tripped one during setup), and GFCIs can trip on the summed ground leakage of many switching supplies. If the server's permanent circuit nuisance-trips, have an electrician look at it — a worn breaker can be replaced in kind, or the server can get a dedicated circuit. Never swap an AFCI/GFCI for a plain breaker to stop the trips; it is fire and shock protection required by code. Day to day: power the UPS first, let it settle, then the server — one strip slamming everything on at once is the sharpest inrush spike.
+> One failure the self-heal cannot fix: a **tripped breaker** never resets itself, so the whole recovery story ends at the panel.
 >
-> **A rare trip is not a benign one.** Intermittent is the normal signature of an arcing fault — it needs conditions to line up (a cold night, a humidity swing) rather than a heavy load, so a fault that fires monthly is the same fault that fires daily, just earlier in its life. It is also the hardest kind to diagnose, because nothing is wrong while the electrician is standing there. So **keep a log**: date, time, outdoor temperature, and what was running. A handful of entries turns "it trips sometimes" into a pattern someone can act on, and it is the only evidence that survives between visits. Conveniently, most of that log writes itself once this page is done — every transfer to battery lands in the host's journal (`journalctl -u nut-monitor`) and, once the Home Assistant integration below is wired up, in HA's history as a timestamped state change on the UPS status sensor. A trip at 3 am that nobody witnessed still gets recorded to the minute. One habit the automation cannot cover: on the next trip, **read the breaker before resetting it** — most modern AFCIs blink a diagnostic code afterwards saying whether they saw an arc, a ground fault, or an overload, and resetting clears it. Cross-check the timestamps against the UPS's own periodic **battery self-test** schedule too — that transfer to battery and back is a switching transient, and if the trips line up with it, that is your answer. One trap to avoid: moving the server to a different circuit fixes *your* uptime and nothing else. If the fault is a damaged cable in a wall, it is still there, still arcing, just no longer inconveniencing you enough to chase.
+> 1. Check what kind of breaker feeds the server's outlet — a **TEST button** means AFCI or GFCI (the label says which).
+> 2. If the server's permanent circuit nuisance-trips, have an electrician look at it.
+>
+> Both have nuisance modes with exactly this equipment: AFCIs can read a big PSU's power-on inrush or a UPS charger as an arc (this build tripped one during setup), and GFCIs can trip on the summed ground leakage of many switching supplies — a worn breaker can be replaced in kind, or the server can get a dedicated circuit. Never swap an AFCI/GFCI for a plain breaker to stop the trips; it is fire and shock protection required by code.
+>
+> Day to day:
+>
+> 1. Power the UPS first.
+> 2. Let it settle.
+> 3. Then the server.
+>
+> One strip slamming everything on at once is the sharpest inrush spike.
+>
+> **A rare trip is not a benign one.** Intermittent is the normal signature of an arcing fault — it needs conditions to line up (a cold night, a humidity swing) rather than a heavy load, so a fault that fires monthly is the same fault that fires daily, just earlier in its life. It is also the hardest kind to diagnose, because nothing is wrong while the electrician is standing there.
+>
+> 1. **Keep a log**: date, time, outdoor temperature, and what was running.
+> 2. One habit the automation cannot cover: on the next trip, **read the breaker before resetting it** — most modern AFCIs blink a diagnostic code afterwards saying whether they saw an arc, a ground fault, or an overload, and resetting clears it.
+> 3. Cross-check the timestamps against the UPS's own periodic **battery self-test** schedule too — that transfer to battery and back is a switching transient, and if the trips line up with it, that is your answer.
+>
+> A handful of log entries turns "it trips sometimes" into a pattern someone can act on, and it is the only evidence that survives between visits. Conveniently, most of that log writes itself once this page is done — every transfer to battery lands in the host's journal (`journalctl -u nut-monitor`) and, once the Home Assistant integration below is wired up, in HA's history as a timestamped state change on the UPS status sensor. A trip at 3 am that nobody witnessed still gets recorded to the minute. One trap to avoid: moving the server to a different circuit fixes *your* uptime and nothing else. If the fault is a damaged cable in a wall, it is still there, still arcing, just no longer inconveniencing you enough to chase.
 
 ### Rehearse the outage
 Two rehearsals, gentle then real. First the gentle one — pull the CyberPower's plug from the wall for half a minute while everything runs. Run this before pulling the plug, then again while on battery:
@@ -364,7 +405,8 @@ Restart NUT to apply the three edits:
 systemctl restart nut-server nut-monitor
 ```
 
-In Home Assistant, go to **Settings → Devices & services** — the integration may already be waiting under discovered devices; otherwise add **Network UPS Tools (NUT)**:
+1. In Home Assistant, go to **Settings → Devices & services**.
+2. If **Network UPS Tools (NUT)** is not already waiting under discovered devices, add it:
 
 - **Host** → `192.168.1.50`
 - **Port** → `3493`
@@ -396,4 +438,10 @@ The CyberPower appears as a device with **Battery charge**, **Status**, **Load**
 > - **Source** → `192.168.1.51`
 > - **Enable** → ticked — the dialog adds rules disabled by default
 >
-> If the connection still fails afterwards, check the usual suspects: confirm the restart took (`systemctl status nut-server`), that `MODE=netserver` is really set, and that the `LISTEN` address matches the host's real IP. Buttons and switches (outlet control) would need an account with `instcmds` rights, which `hauser` deliberately lacks.
+> If the connection still fails afterwards, check the usual suspects:
+>
+> 1. Confirm the restart took (`systemctl status nut-server`).
+> 2. Confirm `MODE=netserver` is really set.
+> 3. Confirm the `LISTEN` address matches the host's real IP.
+>
+> Buttons and switches (outlet control) would need an account with `instcmds` rights, which `hauser` deliberately lacks.
