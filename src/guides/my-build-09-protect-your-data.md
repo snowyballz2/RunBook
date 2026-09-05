@@ -129,8 +129,9 @@ A NAS (network-attached storage) that notices a dying IronWolf but has no way to
 > [!NOTE]
 > The Email dialog enforces one prerequisite: the admin account needs an address on file, or it refuses with *"No e-mail address is set for root user or any other local administrator."*
 
-1. In the TrueNAS UI, go to **Credentials → Users**, edit **`truenas_admin`**, fill in its **Email** field with the inbox you actually read, and save.
-2. Go to **System → General Settings** and click **Settings** on the **Email** widget:
+1. In the TrueNAS UI, go to **Credentials → Users** and edit **`truenas_admin`**.
+2. Fill in its **Email** field with the inbox you actually read, and save.
+3. Go to **System → General Settings** and click **Settings** on the **Email** widget:
 
 - **Send Mail Method** → **SMTP** (Simple Mail Transfer Protocol) — the general path for this mostly-iCloud household; **GMail OAuth** / **Outlook OAuth** spare app-password wrangling if you have one of those accounts
 - **Email Recipients** → the inbox you actually read
@@ -199,10 +200,26 @@ When a mirror IronWolf fails, the pool drops to **Degraded** — the dashboard p
 
 The drill:
 
-1. On the **Storage** dashboard, click **View VDEVs** on the pool's VDEVs widget. Expand the vdev (the pool's disk group), click the failed disk (often shown as **REMOVED**), and click **Offline** on its **ZFS Info** widget.
-2. **Verify the serial before you pull anything.** Note the failed disk's serial from its **Disk Info** widget (or the alert email), then confirm `lsblk -o +MODEL,SERIAL` — run from the **TrueNAS shell** (System → Shell), since the passed-through HBA means the Proxmox host cannot see these disks — maps that serial to the device you are about to remove. The serial-to-tray map recorded on the TrueNAS Storage page (the `mirror-a-serial` / `mirror-b-serial` fields) tells you which bay to open. A dead-enough disk may not report anything anymore — so the bulletproof identification is **by elimination**: `lsblk` can only show the *survivor*, match its serial to the map, and the failed disk is the other tray. That works even when the dead drive cannot say a word, and it is the reason the map was recorded while both disks were healthy. The two ST4000VN006 drives are identical at a glance — pull the *healthy* one and a degraded mirror goes straight to dead. The drives sit in the View 71's fixed rear trays behind the motherboard tray, so check the label there too.
-3. Shut the TrueNAS VM (virtual machine) down, swap the physical drive, and boot. Because the whole HBA is passed through, there is no per-disk passthrough line to rewire — TrueNAS simply sees the new drive on the controller.
-4. Back in TrueNAS, click **Replace** on the disk's **Disk Info** widget, pick the new drive from **Member Disk**, and click **Replace Disk**. Two bookkeeping updates while the resilver runs: the new drive has a new serial, so update its `mirror-…-serial` field above, and update the **self-test cron jobs** — their `/dev/disk/by-id/` path died with the old disk.
+1. On the **Storage** dashboard, click **View VDEVs** on the pool's VDEVs widget.
+2. Expand the vdev (the pool's disk group) and click the failed disk (often shown as **REMOVED**).
+3. Click **Offline** on its **ZFS Info** widget.
+4. **Verify the serial before you pull anything** — note the failed disk's serial from its **Disk Info** widget (or the alert email).
+5. From the **TrueNAS shell** (**System → Shell**), confirm `lsblk -o +MODEL,SERIAL` maps that serial to the device you are about to remove.
+6. Shut the TrueNAS VM down.
+7. Swap the physical drive.
+8. Boot the VM back up.
+9. Back in TrueNAS, click **Replace** on the disk's **Disk Info** widget.
+10. Pick the new drive from **Member Disk** and click **Replace Disk**.
+11. While the resilver runs, update the new drive's serial in its `mirror-…-serial` field above.
+12. Update the **self-test cron jobs** too — their `/dev/disk/by-id/` path died with the old disk.
+
+> [!WARNING]
+> The passed-through HBA means the Proxmox host cannot see these disks, which is why step 5 runs from the TrueNAS shell, not Proxmox. The serial-to-tray map recorded on the TrueNAS Storage page (the `mirror-a-serial` / `mirror-b-serial` fields) tells you which bay to open. A dead-enough disk may not report anything anymore, so the bulletproof identification is **by elimination**: `lsblk` can only show the *survivor* — match its serial to the map, and the failed disk is the other tray. That works even when the dead drive cannot say a word, and it is the reason the map was recorded while both disks were healthy.
+>
+> The two ST4000VN006 drives are identical at a glance — pull the *healthy* one and a degraded mirror goes straight to dead. The drives sit in the View 71's fixed rear trays behind the motherboard tray, so check the label there too.
+
+> [!NOTE]
+> Because the whole HBA is passed through, there is no per-disk passthrough line to rewire when you swap the drive (steps 6–8) — TrueNAS simply sees the new drive on the controller.
 
 The replacement must be the same 4TB capacity or larger, and TrueNAS wipes it. Replacing triggers a **resilver** — ZFS copying the survivor's data onto the newcomer — which takes a while on a full pool; the share stays online throughout, just slower.
 
@@ -255,7 +272,13 @@ The scorecard is **3-2-1**: three copies of anything that matters, on at least t
 > - **Encryption Password / Encryption Salt** → set both, and record them in the fields below *before the first run* and in your password manager — lose them and the offsite copy is unreadable by anyone, including you
 > - **Filename Encryption** → off — current docs advise against it
 >
-> **The drill:** an encrypted backup fails silently — a wrong password looks identical to a good backup until the day you reach for it. So once at setup and once a year, run a one-off **PULL** task: same credential and remote folder, local folder pointed at an empty scratch dataset (`restore-test`, deleted afterward), the password and salt re-entered under Advanced Options — that re-entry is the part being tested. Open a recovered photo and confirm it is the file, not scrambled bytes.
+> **The drill:** an encrypted backup fails silently — a wrong password looks identical to a good backup until the day you reach for it. So once at setup and once a year, run a one-off **PULL** task:
+>
+> - **Credential** and **remote folder** → same as the push task
+> - **Local folder** → an empty scratch dataset (`restore-test`, deleted afterward)
+> - **Password / Salt** (Advanced Options) → re-entered by hand — that re-entry is the part being tested
+>
+> Open a recovered photo and confirm it is the file, not scrambled bytes.
 >
 > The other automated route, no subscription: **Replication** (**Data Protection → Replication Tasks**) ships ZFS snapshots over SSH (Secure Shell) to a second ZFS box — ideally another TrueNAS at a relative's house — incremental after the first run, and it preserves point-in-time history a file-level copy cannot.
 

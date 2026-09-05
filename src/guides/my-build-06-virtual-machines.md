@@ -25,7 +25,7 @@ Both were done on the Install Proxmox page.
 > The HBA is **not** bound to vfio-pci yet, and it is **not** attached to any VM — that is a separate later step on the GPU Sharing & HBA Passthrough page. So you build the TrueNAS VM here with **no HBA attached**; the controller gets passed through afterward, and only then do its disks appear for the pool. Neither VM ever gets the GPU.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
-> The web UI answers at `https://`-this-IP-`:8006`. Log in as `root@pam`.
+> The web UI answers at `https://192.168.1.50:8006`. Log in as `root@pam`.
 
 > [!INPUT] proxmox-user | Proxmox web UI username | | root
 > Not a choice — `root` is Proxmox's built-in administrator; the `@pam` suffix on the login screen just names its realm.
@@ -55,13 +55,18 @@ TrueNAS ships as a standard installer **ISO**, and the server fetches it itself 
 ### Walk the Create VM wizard
 Click **Create VM** (top right) and step through the tabs with these values:
 
-- **General** — name it `truenas`. Accept the suggested VM ID (VMs and containers share one pool of ID numbers; the suggestion is the next free one).
-- **OS** — pick the TrueNAS ISO you downloaded into local storage.
-- **System** — set **Machine** to **q35** (the modern chipset; Proxmox only supports native-PCIe passthrough on q35, so this is what lets the HBA arrive as a true PCIe device later) and tick **Qemu Agent** so Proxmox can read the VM's IP address and shut it down cleanly later. Leave the rest, including the BIOS choice, at the defaults.
-- **Disks** — a **32 GB** boot disk on the NVMe is plenty; TrueNAS keeps its OS small and its data on the pool.
-- **CPU** — **1 socket, 2 cores**. Sockets stay at 1 on any single-CPU machine; only the core count is a real choice.
-- **Memory** — **8192 MiB** (the field is in MiB, so that reads as 8 GB — TrueNAS's own minimum). ZFS leans on RAM for its read cache, so this is the one VM worth feeding generously. Expand **Advanced** on this tab and **untick Ballooning Device**: ballooning lets the host claw RAM back from a guest under pressure, which is fine for most VMs and wrong for ZFS — the cache assumes it owns its memory outright.
-- **Network** — leave it on bridge **vmbr0** so the VM sits on the LAN like any other device.
+- **General → Name** → `truenas`
+- **General → VM ID** → accept the suggested value — VMs and containers share one pool of ID numbers, so it's already the next free one
+- **OS** → the TrueNAS ISO you downloaded into local storage
+- **System → Machine** → `q35` — the modern chipset; Proxmox only supports native-PCIe passthrough on q35, so this is what lets the HBA arrive as a true PCIe device later
+- **System → Qemu Agent** → ticked — so Proxmox can read the VM's IP address and shut it down cleanly later
+- **Disks** → a `32 GB` boot disk on the NVMe — TrueNAS keeps its OS small and its data on the pool
+- **CPU** → `1 socket, 2 cores` — sockets stay at 1 on any single-CPU machine; only the core count is a real choice
+- **Memory** → `8192 MiB` (8 GB — TrueNAS's own minimum) — ZFS leans on RAM for its read cache, so this is the one VM worth feeding generously
+- **Advanced → Ballooning Device** → unticked — fine for most VMs, but wrong for ZFS: the cache assumes it owns its memory outright, and ballooning lets the host claw it back under pressure
+- **Network** → bridge `vmbr0` — so the VM sits on the LAN like any other device
+
+Leave the rest, including the BIOS choice, at the defaults.
 
 Confirm — and do **not** add the HBA on this page. The TrueNAS install needs only the 32 GB boot disk; the data controller is attached later.
 
@@ -94,15 +99,48 @@ It installs to the **32 GB boot disk** (the only disk it can see right now, whic
 > Set during install — this is the web UI login.
 
 ### Eject the installer ISO
-Once TrueNAS boots from its own disk, open the VM's **Hardware** tab, double-click the **CD/DVD Drive**, and choose **Do not use any media**. Otherwise it tries to boot the installer at every restart.
+Once TrueNAS boots from its own disk:
+
+1. Open the VM's **Hardware** tab.
+2. Double-click the **CD/DVD Drive**.
+3. Choose **Do not use any media**.
+
+Otherwise it tries to boot the installer at every restart.
 
 ### Give it its permanent address
-The storage server is the one machine half this build leans on by address — backups, shares, Frigate's footage path — so it gets a device-set static in the protected zone, not a DHCP lease. Browse to the temporary address the console showed (`http://` that IP), log in as `truenas_admin`, then:
+The storage server is the one machine half this build leans on by address — backups, shares, Frigate's footage path — so it gets a device-set static in the protected zone, not a DHCP lease.
 
-1. Open **Network**, and on the **Interfaces** card click the interface itself (the VM's single virtual NIC, `enp…`) to edit it: untick **DHCP**, add **`192.168.1.20/24`** under **Aliases**, and save. Not the **Static Routes** card beside it — its Add button looks inviting, but routes are for reaching *other* networks, and an entry there does not give this machine an address.
-2. TrueNAS offers **Test Changes** with a rollback timer, and confirming it is a race you have to win: the old tab can never reconnect (its address just vanished), so **park a second tab at `http://192.168.1.20` before you click**. Click **Test Changes**, jump to the parked tab, reload until the login appears, log in, and click **Save Changes** — all inside the countdown. Lose the race and a "Network Reconnection Issue" dialog announces the rollback; nothing is broken, just try again.
-3. The no-race alternative, and the sturdier path if the browser dance keeps rolling back: the **VM console menu, option 1 (Configure network interfaces)**. Console changes apply without the test/rollback countdown — pick the interface, remove current settings when asked (a momentary blip), answer DHCP **no**, IPv4 **yes**, enter `192.168.1.20/24`, IPv6 no. The menu header updates to `.20` and the job is done.
-4. Still under **Network**, open **Global Configuration** and set the **default gateway** (`192.168.1.1`) and a **DNS nameserver** (the router, or `1.1.1.1`) — a static interface does not inherit these from DHCP, and without them TrueNAS cannot fetch updates or send alert emails. While in that dialog, change **Domain** from `local` to `home.arpa` — the same reasoning as the Proxmox hostname: `.local` is mDNS's turf on a LAN full of Apple devices.
+1. Browse to the temporary address the console showed (`http://` that IP) and log in as `truenas_admin`.
+2. Open **Network**, then on the **Interfaces** card click the interface itself (the VM's single virtual NIC, `enp…`) to edit it.
+3. Untick **DHCP**.
+4. Add **`192.168.1.20/24`** under **Aliases**.
+5. Save.
+6. Park a second browser tab at `http://192.168.1.20` — the rollback countdown starts the moment you click **Test Changes** next.
+7. Click **Test Changes**.
+8. Jump to the parked tab and reload until the login appears.
+9. Log in, then click **Save Changes** — all inside the countdown.
+10. Still under **Network**, open **Global Configuration** and set the **default gateway** (`192.168.1.1`) and a **DNS nameserver** (the router, or `1.1.1.1`).
+11. In the same dialog, change **Domain** from `local` to `home.arpa`.
+
+> [!TIP]
+> Step 2 means the interface itself, not the **Static Routes** card beside it — its Add button looks inviting, but routes are for reaching *other* networks, and an entry there does not give this machine an address.
+
+> [!WARNING]
+> Confirming **Test Changes** is a race you have to win: the moment you click, the old tab's address vanishes and it can never reconnect, so the second tab must already be parked first. Lose the race and a "Network Reconnection Issue" dialog announces the rollback; nothing is broken, just try again.
+
+> [!DETAILS] If the browser dance keeps rolling back
+> The sturdier path, without a test/rollback countdown, is the **VM console menu, option 1 (Configure network interfaces)**:
+>
+> 1. Pick the interface.
+> 2. Remove current settings when asked (a momentary blip).
+> 3. Answer DHCP **no**.
+> 4. Answer IPv4 **yes** and enter `192.168.1.20/24`.
+> 5. Answer IPv6 **no**.
+>
+> The menu header updates to `.20` and the job is done.
+
+> [!NOTE]
+> A static interface does not inherit the gateway or DNS from DHCP, and without them TrueNAS cannot fetch updates or send alert emails. The domain change is the same reasoning as the Proxmox hostname: `.local` is mDNS's turf on a LAN full of Apple devices.
 
 From here on, every page that asks for the TrueNAS IP means this address.
 
@@ -128,7 +166,16 @@ qm set 100 -onboot 1 -protection 1
 `100` is the VM ID the wizard assigned, shown next to the VM's name in the left tree. Every later guest gets this same setting on the page that builds it.
 
 > [!WARNING]
-> **Prove unattended boot, do not assume it.** Some keypresses at the console are harmless — Enter at TrueNAS's boot menu only skips a countdown that expires by itself, and a key in a quiet console just wakes the blanked display. But one is fatal to the whole outage-recovery story: once the HBA is passed through on the GPU/HBA page, the VM's SeaBIOS can halt at `Press any key to continue...` after an option-ROM fault, and there it waits for a human that a 3 a.m. power cut does not provide. That page's `rombar=0` prevents it. Either way, prove it: stop the VM, start it, **leave the console closed**, and load the web UI a couple of minutes later. If it answers, the VM boots with nobody watching — which is what an outage recovery actually requires.
+> **Prove unattended boot, do not assume it.** Some keypresses at the console are harmless — Enter at TrueNAS's boot menu only skips a countdown that expires by itself, and a key in a quiet console just wakes the blanked display. But one is fatal to the whole outage-recovery story: once the HBA is passed through on the GPU/HBA page, the VM's SeaBIOS can halt at `Press any key to continue...` after an option-ROM fault, and there it waits for a human that a 3 a.m. power cut does not provide. That page's `rombar=0` prevents it.
+>
+> Either way, prove it:
+>
+> 1. Stop the VM.
+> 2. Start it.
+> 3. Leave the console closed.
+> 4. Load the web UI a couple of minutes later.
+>
+> If it answers, the VM boots with nobody watching — which is what an outage recovery actually requires.
 
 ### Set the Start/Shutdown order
 Set **Start/Shutdown order** to **1** in the same **Options** panel, or run it from the host shell:
@@ -173,4 +220,10 @@ Both VMs make the guest-side half easy on this build. For TrueNAS the host-side 
 > HAOS detects the larger disk and expands its own data partition on boot.
 
 > [!DETAILS] If a guest does not grow on its own
-> Most appliance OSes (HAOS, TrueNAS) handle the in-guest expansion themselves. A plain Linux guest does not — there you would grow the partition with `parted` or `fdisk`, then the filesystem (`resize2fs` for ext4, or `pvresize` then `lvresize --resizefs` for LVM); `lsblk` shows which layout you have. This build has no such guests, so you should not need these by hand — but they are the fallback if a disk shows the new size at the host but not inside.
+> Most appliance OSes (HAOS, TrueNAS) handle the in-guest expansion themselves. A plain Linux guest does not, so you would need to:
+>
+> 1. Run `lsblk` to see which layout the guest uses.
+> 2. Grow the partition with `parted` or `fdisk`.
+> 3. Grow the filesystem: `resize2fs` for ext4, or `pvresize` then `lvresize --resizefs` for LVM.
+>
+> This build has no such guests, so you should not need these by hand — but they are the fallback if a disk shows the new size at the host but not inside.

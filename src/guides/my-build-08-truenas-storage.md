@@ -57,7 +57,8 @@ So this page picks up after both of those: it confirms the raw disks arrived, th
 
 You should see both **mirror Seagate IronWolf ST4000VN006 4 TB** drives by their real model and serial, each reporting genuine SMART — exactly as if TrueNAS were running on bare metal. The third (footage) IronWolf sits on a motherboard SATA port with the host, so it does not — and should not — appear here.
 
-While the serials are on screen, record them — with **which physical tray each one sits in** (the drives are identical at a glance, and the dead-disk drill on the next page keys on serial). The footage disk's serial is on the Proxmox side instead: in the Proxmox web UI, click the **`pve`** node, then **Disks** in its menu.
+1. While the mirror serials are on screen, record each one below — with **which physical tray each one sits in** (the drives are identical at a glance, and the dead-disk drill on the next page keys on serial).
+2. For the footage disk's serial, switch to the Proxmox web UI, click the **`pve`** node, then **Disks** in its menu, and record it below too.
 
 > [!INPUT] mirror-a-serial | Mirror disk A — serial + tray position
 
@@ -69,7 +70,19 @@ While the serials are on screen, record them — with **which physical tray each
 > Because the whole controller is passed through, SMART reaches TrueNAS directly. There is no "monitor from the host" blind spot like per-disk passthrough has — TrueNAS's own Drive Health Management watches these disks.
 
 > [!DETAILS] If a disk is missing from the list
-> A drive that does not appear is almost always a cabling or power miss, not a TrueNAS fault. Power the VM fully off, then check: the breakout cable is seated in the HBA port, the SATA-power lead reaches every drive, and the disk is one of the two on the HBA (the footage disk lives on a motherboard port and will *not* show here — that is correct). On the Proxmox host, `lspci -nnk | grep -A3 -i -e LSI -e SAS -e Broadcom` shows the card with `Kernel driver in use: vfio-pci`, confirming it is bound for passthrough to the VM.
+> A drive that does not appear is almost always a cabling or power miss, not a TrueNAS fault.
+>
+> 1. Power the VM fully off.
+> 2. Check the breakout cable is seated in the HBA port.
+> 3. Check the SATA-power lead reaches every drive.
+> 4. Check the disk is one of the two on the HBA (the footage disk lives on a motherboard port and will *not* show here — that is correct).
+> 5. On the Proxmox host, confirm the card is bound for passthrough:
+>
+> ```bash
+> lspci -nnk | grep -A3 -i -e LSI -e SAS -e Broadcom
+> ```
+>
+> It should show `Kernel driver in use: vfio-pci`.
 
 ## Build the pool
 
@@ -98,13 +111,21 @@ The **third** ST4000VN006 is **not** part of `tank`. It is the dedicated **Friga
 Datasets are the folders-with-superpowers inside a pool — each carries its own settings, and snapshot tasks target them individually. Still in the TrueNAS UI, go to **Datasets**, select the `tank` root dataset, click **Add Dataset**, and create:
 
 - **`files`** — general household storage. Set **Dataset Preset → SMB (Server Message Block)** so it gets case-insensitive names and NFSv4 ACLs, the permission style SMB expects.
-- **`backups`** — a separate dataset (also SMB preset) so the build's safety copies stay out of your file snapshots. **Re-select the `tank` root before clicking Add Dataset for this one** — after creating `files`, the selection stays on `files`, and Add Dataset then nests the new one *inside* it as `tank/files/backups`. If that happens: select the nested dataset, delete it (the dialog has you type its full path to confirm — it is empty, so this is safe), then create it again from the root.
+- **`backups`** — a separate dataset (also SMB preset) so the build's safety copies stay out of your file snapshots. **Re-select the `tank` root before clicking Add Dataset for this one.**
+
+> [!WARNING]
+> After creating `files`, the selection stays on `files` — Add Dataset then nests the new one *inside* it as `tank/files/backups` unless you re-select `tank` first. If that happens: select the nested dataset, delete it (the dialog has you type its full path to confirm — it is empty, so this is safe), then create it again from the root.
 
 > [!NOTE]
 > The SMB preset tunes a dataset for network sharing — case-insensitive filenames and NFSv4 ACLs. Both datasets here get exposed over the network (the `backups` dataset receives the Proxmox vzdump archives over SMB), so SMB is the right choice for both. If you ever add a dataset that stays internal and is never shared, pick the **Generic** preset instead.
 
 > [!NOTE]
-> Two prompts pop up around dataset creation; both have one-word answers. Asked to **start/enable the SMB service** → yes, that is the service the shares need. The **"Set ACL for this dataset"** dialog → **Return to pool list**, skipping the ACL Manager: the SMB preset already applied the right default permissions, including what the SMB user created below needs to read and write. The ACL Manager is for per-person carve-outs this build does not use.
+> Two prompts pop up around dataset creation; both have one-word answers.
+>
+> - Asked to **start/enable the SMB service** → **Yes** — that is the service the shares need.
+> - **"Set ACL for this dataset"** dialog → **Return to pool list**, skipping the ACL Manager — the SMB preset already applied the right default permissions, including what the SMB user created below needs to read and write.
+>
+> The ACL Manager is for per-person carve-outs this build does not use.
 
 ## Share it
 
@@ -155,7 +176,14 @@ smb://192.168.1.20
 3. Click **Finish**.
 
 > [!WARNING]
-> Do not give the mapping a letter anywhere near the local disks (`C:` through `H:`). Windows lets a network drive take a letter a local volume already owns, and after the next reboot that local drive comes back **with no letter at all** — it disappears from File Explorer while remaining perfectly healthy — and the mapping fails too, because the letter is contested. One collision, two mysteries. If it has already happened: **Win+X → Disk Management**, find the volume listed as Healthy with no letter, right-click → **Change Drive Letter and Paths → Add**, give it its letter back, then re-map the share at `Z:`.
+> Do not give the mapping a letter anywhere near the local disks (`C:` through `H:`). Windows lets a network drive take a letter a local volume already owns, and after the next reboot that local drive comes back **with no letter at all** — it disappears from File Explorer while remaining perfectly healthy — and the mapping fails too, because the letter is contested. One collision, two mysteries.
+
+> [!DETAILS] If it has already happened
+> 1. Open **Disk Management** (`Win+X → Disk Management`).
+> 2. Find the volume listed as **Healthy** with no letter.
+> 3. Right-click it → **Change Drive Letter and Paths → Add**.
+> 4. Give it its letter back.
+> 5. Re-map the share at `Z:`.
 
 Map **`files`** only.
 
@@ -165,7 +193,15 @@ Map **`files`** only.
 Open `files` on each machine and confirm you can drop a file in.
 
 > [!WARNING]
-> On the credential prompt Windows shows next, click **More choices → Use a different account** — otherwise it aims your **Microsoft account** at TrueNAS (a sign-in/certificate picker appears) and the password is rejected, because the NAS has never heard of that account. Enter the plain SMB username with no prefix; if Windows keeps prepending the PC's name, force the local scope by typing `192.168.1.20\<smb-user>` instead. And if it fails once, Windows caches the bad attempt and replays it forever: open **Credential Manager → Windows Credentials**, delete every `192.168.1.20` entry, run `net use * /delete` in Command Prompt, and map again.
+> On the credential prompt Windows shows next, click **More choices → Use a different account** — otherwise it aims your **Microsoft account** at TrueNAS (a sign-in/certificate picker appears) and the password is rejected, because the NAS has never heard of that account. Enter the plain SMB username with no prefix; if Windows keeps prepending the PC's name, force the local scope by typing `192.168.1.20\<smb-user>` instead.
+
+> [!DETAILS] If it fails once and keeps failing
+> Windows caches the bad attempt and replays it forever:
+>
+> 1. Open **Credential Manager → Windows Credentials**.
+> 2. Delete every `192.168.1.20` entry.
+> 3. Run `net use * /delete` in Command Prompt.
+> 4. Map again.
 
 > [!TIP]
 > If the drive shows a red X after every reboot but connects the moment you click it, the mapping is losing a race at login rather than failing outright. Two usual causes: a VPN client that auto-connects at startup and blocks the LAN before the mapping restores (the same trap as reaching the server from a VPN'd machine — turn on its allow-LAN setting), or credentials that were never persisted. For the latter, pre-store them: **Credential Manager → Windows Credentials → Add a Windows credential**, address `192.168.1.20`, with the SMB username and password.

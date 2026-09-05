@@ -66,13 +66,24 @@ proxmox-boot-tool kernel pin 6.14.11-9-pve
 reboot
 ```
 
-The TrueNAS VM rides every reboot on this page by itself — Start at boot, previous page. Back in the Shell afterwards, `uname -r` must print the pinned version.
+The TrueNAS VM rides every reboot on this page by itself — Start at boot, previous page. Back in the Shell afterwards, confirm the pinned version took:
+
+```bash
+uname -r
+```
 
 > [!INPUT] pinned-kernel | Pinned Proxmox kernel | 6.14.11-9-pve
 > A deliberate hold, recorded here so it is never a mystery later: newer kernels keep installing with normal updates but are not booted. When a driver that builds on kernel 7 ships (watch Debian's `nvidia-driver` changelog or the Proxmox forum's kernel threads), `proxmox-boot-tool kernel unpin` plus a reboot lifts the hold — and after any unpin, confirm `nvidia-smi` still answers before trusting the box again.
 
 > [!NOTE]
-> **If the driver was installed before the pin** (this build did it in that order, and paid for it): DKMS keeps trying to build for every kernel whose *headers* are installed, so the leftover kernel-7 headers make every `apt` run end in the same "exit status 10" even while the running 6.14 module is fine. Clear it by purging the 7.0 headers — DKMS skips kernels without headers, and the kernel itself can stay as a boot fallback — then finish the half-configured packages: `apt purge -y proxmox-headers-7.0.14-8-pve` (match the version to yours), then `dpkg --configure -a`.
+> **If the driver was installed before the pin** (this build did it in that order, and paid for it): DKMS keeps trying to build for every kernel whose *headers* are installed, so the leftover kernel-7 headers make every `apt` run end in the same "exit status 10" even while the running 6.14 module is fine. Clear it by purging the 7.0 headers — DKMS skips kernels without headers, and the kernel itself can stay as a boot fallback — then finish the half-configured packages:
+>
+> ```bash
+> apt purge -y proxmox-headers-7.0.14-8-pve
+> dpkg --configure -a
+> ```
+>
+> Match the version in the first command to yours.
 
 ### Install the driver and record the version
 
@@ -120,7 +131,13 @@ The host now owns a working driver. Each container that needs the card borrows i
 - **Frigate** — on the Cameras, Doorbell & Frigate page.
 - **Ollama** and **faster-whisper** — on the Voice page.
 
-So there is nothing to edit right now. Keep this recipe; you will come back to it. When each container is built, edit its config file on the host (`/etc/pve/lxc/<ctid>.conf`, where `<ctid>` is that container's ID) and add the same three NVIDIA device nodes, using the `dev0:` device syntax rather than hand-writing `lxc.cgroup2` lines — `dev0:` is what Proxmox officially supports and it survives upgrades:
+So there is nothing to edit right now. Keep this recipe; you will come back to it. When each container is built, edit its config file on the host (`<ctid>` is that container's ID):
+
+```bash
+nano /etc/pve/lxc/<ctid>.conf
+```
+
+Add the same three NVIDIA device nodes, using the `dev0:` device syntax rather than hand-writing `lxc.cgroup2` lines — `dev0:` is what Proxmox officially supports and it survives upgrades:
 
 ```ini
 dev0: /dev/nvidia0,gid=44
