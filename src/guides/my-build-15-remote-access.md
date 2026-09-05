@@ -390,12 +390,17 @@ In Home Assistant:
 11. Under **Trusted proxies**, add `127.0.0.1` alongside the `192.168.1.54` entry from the Reverse Proxy page.
 12. **Save**, then confirm the new network settings within five minutes when Home Assistant asks, exactly as on the Reverse Proxy page.
 
+On the [Machines page](https://login.tailscale.com/admin/machines) — the same silent-expiry guard the host got above:
+
+13. Open the **⋯** menu on the new **homeassistant** row.
+14. Select **Disable Key Expiry**.
+
 On the phone, on cellular:
 
-13. Browse to `https://homeassistant.<tailnet>.ts.net` — the login, with a padlock.
-14. In the companion app, go to **Settings → Companion app → (your server)**.
-15. Set **External URL** → `https://homeassistant.<tailnet>.ts.net`.
-16. Leave **Internal URL** at `http://192.168.1.51:8123`, with your home Wi-Fi listed as the **Home Network Wi-Fi SSID** — the app uses the LAN address at home and the tailnet address everywhere else.
+15. Browse to `https://homeassistant.<tailnet>.ts.net` — the login, with a padlock.
+16. In the companion app, go to **Settings → Companion app → (your server)**.
+17. Set **External URL** → `https://homeassistant.<tailnet>.ts.net`.
+18. Leave **Internal URL** at `http://192.168.1.51:8123`, with your home Wi-Fi listed as the **Home Network Wi-Fi SSID** — the app uses the LAN address at home and the tailnet address everywhere else.
 
 > [!NOTE]
 > `<tailnet>` is the *Tailnet name* field recorded above (the `tailXXXX.ts.net` suffix from the DNS page); `homeassistant` is the VM's machine name on the tailnet. Serve is tailnet-only — nothing here is on the internet, and the `funnel` value of the same option, which would be, stays unused. The app store recommends doing the sign-in step from a desktop browser if the phone's browser struggles with it.
