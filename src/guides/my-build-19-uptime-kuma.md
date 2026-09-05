@@ -19,8 +19,7 @@ It is the lightest guest on the i7-8700K — a single Node.js application with a
 
 1. In the Proxmox web interface at `https://192.168.1.50:8006`, click the node (the ASUS ROG Maximus X Hero server) in the left tree.
 2. Click **Shell**.
-3. Read the script below, then paste it in and press Return.
-4. On the **Community-Scripts Options** menu, pick **Advanced Install**.
+3. Paste this and press Return:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/uptimekuma.sh)"
@@ -83,7 +82,11 @@ A monitor that wanders to a new address after a power cut is worse than none —
 
 ### Start it at boot
 
-- **Options → Start at boot** → **Yes** — select the container in the left tree; or from the node Shell, swapping `108` for the ID shown next to the container's name:
+1. In the left tree, select the container.
+2. Open **Options**.
+3. Set **Start at boot** → **Yes**.
+
+Or from the node Shell, swapping `108` for the ID shown next to the container's name:
 
 ```bash
 pct set 108 -onboot 1
@@ -109,7 +112,13 @@ The script prints the address when it finishes — `http://192.168.1.57:3001`. T
 > [!SECRET] kuma-password | Uptime Kuma admin password
 
 > [!NOTE]
-> For a second factor: **Settings → Security**, press the **2FA Settings** button, and **Enable 2FA** sits inside the dialog it opens — codes from an authenticator app.
+> For a second factor:
+>
+> 1. Go to **Settings → Security**.
+> 2. Press **2FA Settings**.
+> 3. Click **Enable 2FA** in the dialog that opens.
+>
+> Codes come from an authenticator app.
 
 ## Watch everything you built
 
@@ -219,11 +228,15 @@ Then, in the **Uptime Kuma UI** (`http://192.168.1.57:3001`), open **Settings �
 ## Keep it honest
 
 ### Make alerts find your phone
-A red bar on a dashboard nobody has open is not an alert. Go to **Settings → Notifications**, click **Set Up Notification**:
+A red bar on a dashboard nobody has open is not an alert.
 
-- **Notification Type** → **ntfy** — the easy first one; install the ntfy app on your iPhone and subscribe to a topic
+1. Install the ntfy app on your iPhone.
+2. Subscribe to a topic — make it long and random; on the default server, knowing the topic name *is* the access.
+3. In Kuma, go to **Settings → Notifications** and click **Set Up Notification**:
+
+- **Notification Type** → **ntfy** — the easy first one
 - **Friendly Name** → the auto-filled "My ntfy Alert (1)" is fine — it names the notifier in Kuma, not the message
-- **ntfy Topic** → that same topic — make it long and random; on the default server, knowing the topic name *is* the access
+- **ntfy Topic** → that same topic
 - **Server URL** → keep the prefilled **`https://ntfy.sh`** — the phone app must subscribe to the topic on this same server
 - **Priority** (and **Priority when down**) → keep the defaults
 - **Authentication Method** → **None** — the random topic name is the access control here
@@ -266,4 +279,12 @@ update
 > [!WARNING]
 > Do not re-run the install one-liner on the Proxmox *host* to update — on the host, that command begins the create-a-new-container flow. Inside the container, the short `update` command — pre-installed by the script — is what updates in place.
 
-Everything that matters — monitors, their history, notification settings, the SQLite database — lives in `/opt/uptime-kuma/data`. The Proxmox vzdump job set up on the next page (Proxmox Backups) will capture the whole container in one pass, so this monitor joins the same on-site backup routine as every other guest. (Those guest archives stay on the NAS; only the irreplaceable files dataset goes offsite to Backblaze B2, not the container backups.) If you ever copy that folder by hand, stop the service first (`systemctl stop uptime-kuma`) so the database file is consistent. The project's own migration guide repeats "backup your `data` directory" three times in a row — take the hint.
+Everything that matters — monitors, their history, notification settings, the SQLite database — lives in `/opt/uptime-kuma/data`. The Proxmox vzdump job set up on the next page (Proxmox Backups) will capture the whole container in one pass, so this monitor joins the same on-site backup routine as every other guest. (Those guest archives stay on the NAS; only the irreplaceable files dataset goes offsite to Backblaze B2, not the container backups.)
+
+If you ever copy that folder by hand, stop the service first so the database file is consistent:
+
+```bash
+systemctl stop uptime-kuma
+```
+
+The project's own migration guide repeats "backup your `data` directory" three times in a row — take the hint.

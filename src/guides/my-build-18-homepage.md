@@ -13,17 +13,67 @@ This is one more small service **LXC (Linux Container)** on the Proxmox host, al
 ## Create the container
 
 ### Run the install script
-The quickest path is the Proxmox community helper script, the same routine used for AdGuard and the other service containers. In the Proxmox web interface, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Paste this and press Return:
+The quickest path is the Proxmox community helper script, the same routine used for AdGuard and the other service containers.
+
+1. In the Proxmox web interface, click the node (the Maximus X Hero server) in the left tree.
+2. Click **Shell**.
+3. Paste this and press Return:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/homepage.sh)"
 ```
 
+> [!NOTE]
+> The Shell runs on the Proxmox host itself, not inside a container or a VM (virtual machine).
+
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The host these containers live on. Open the web UI at `https://`-this-ip-`:8006` and log in as **root@pam** to reach the node Shell.
 
 > [!NOTE]
-> Installing from afar, over Tailscale on a flaky link? A dropped session kills the script with it. Stalled during the settings dialogs, nothing was created — `pct list` to confirm, then simply re-run. But a drop during the long build phase leaves a half-made container (`pct destroy` its ID, re-run). On an unreliable connection, run the whole install inside tmux (`apt install tmux -y`, then `tmux`, then the script) — after a disconnect, reopen the Shell and `tmux attach` resumes as if nothing happened.
+> Installing from afar, over Tailscale on a flaky link? A dropped session kills the script with it.
+>
+> If it stalled during the settings dialogs, nothing was created:
+>
+> 1. Confirm no new container appeared:
+>
+> ```bash
+> pct list
+> ```
+>
+> 2. Re-run the script.
+>
+> If it dropped during the long build phase, a half-made container is left behind:
+>
+> 1. Destroy it by its ID (`107` here; confirm against `pct list`):
+>
+> ```bash
+> pct destroy 107
+> ```
+>
+> 2. Re-run the script.
+>
+> On an unreliable connection, run the whole install inside tmux instead:
+>
+> 1. Install tmux:
+>
+> ```bash
+> apt install tmux -y
+> ```
+>
+> 2. Start a session:
+>
+> ```bash
+> tmux
+> ```
+>
+> 3. Paste and run the script as before.
+> 4. If the connection drops, reopen the Shell and reattach — the script is still running:
+>
+> ```bash
+> tmux attach
+> ```
+>
+> After a disconnect, reopen the Shell and run `tmux attach` to resume as if nothing happened.
 
 > [!NOTE]
 > Read any script before piping it into a root shell — the same download-read-run habit used throughout this build. These are the well-regarded successor to the tteck scripts, but the habit stands regardless of source.
@@ -77,8 +127,12 @@ The static address matters doubly here: the installer bakes it into Homepage's s
 > Node.js and the pnpm package manager; the source of the latest Homepage release unpacked to `/opt/homepage`; then a full `pnpm install` and `pnpm build` — the compile step is why the RAM default is a generous 4 GB and the install is slow. It runs as a systemd service named `homepage` on port 3000, seeds starter config into `/opt/homepage/config/`, and writes one more file worth remembering: `/opt/homepage/.env`, containing `HOMEPAGE_ALLOWED_HOSTS=localhost:3000,`-your-IP-`:3000`. That is the allow-list from the warning above, and it comes back when you wire in a proxy name.
 
 ### Confirm it loaded, then set it to start at boot
-1. Browse to `http://192.168.1.55:3000`. The default page with its sample tiles proves the install succeeded — everything below edits that into your own page.
-2. In the Proxmox left tree select the container, open **Options**, and set **Start at boot** → **Yes**.
+1. Browse to `http://192.168.1.55:3000`.
+2. In the Proxmox left tree, select the container.
+3. Open **Options**.
+4. Set **Start at boot** → **Yes**.
+
+The default page with its sample tiles proves the install succeeded — everything below edits that into your own page.
 
 The same setting from the node Shell instead, if you prefer (`107` is this build's next free ID after Vaultwarden's `106`; confirm against the left tree):
 
@@ -166,7 +220,10 @@ Paste the build itself — two groups, one tile per service:
         siteMonitor: http://192.168.1.56:8000
 ```
 
-Save and exit, then click the refresh icon — the page is suddenly worth bookmarking.
+1. Save and exit.
+2. Click the refresh icon.
+
+The page is suddenly worth bookmarking.
 
 > [!NOTE]
 > One rule decides every `href`: the proxy name wherever the Reverse Proxy page made one — a padlock and no port number for the household — and the plain address only where no name exists (AdGuard Home and Nginx Proxy Manager). Vaultwarden could never take its address anyway: its login needs the secure context only the proxied name provides. Home Assistant's name works once the Reverse Proxy page's trusted-proxy step is done (Home Assistant 2026.8 or newer); until then `http://192.168.1.51:8123` is the link. Every `siteMonitor` stays on the direct address, so the dots keep telling the truth even when the proxy itself is what broke. And one dot stays red on purpose: Uptime Kuma's, until the next page builds it.
@@ -209,9 +266,10 @@ Any tile can grow a `widget:` block showing live numbers, at the cost of pasting
 **Proxmox** — VM and container counts plus real host CPU and RAM. It needs a dedicated **read-only API (application programming interface) token**, never the root password. In the Proxmox UI:
 
 1. **Datacenter → Permissions → Users → Add** — user `api`, realm Linux PAM.
-2. **API Tokens → Add** — user `api@pam`, Token ID `homepage`, Privilege Separation ticked. Copy the secret the dialog shows — it appears once — into Vaultwarden and the field below.
-3. **Permissions → Add** — the **PVEAuditor** role at path `/`, Propagate ticked — once for the user *and* once for the token.
-4. Under the Proxmox tile:
+2. **API Tokens → Add** — user `api@pam`, Token ID `homepage`, Privilege Separation ticked.
+3. Copy the secret the dialog shows — it appears once — into Vaultwarden and the field below.
+4. **Permissions → Add** — the **PVEAuditor** role at path `/`, Propagate ticked — once for the user *and* once for the token.
+5. Under the Proxmox tile:
 
 ```yaml
         widget:
@@ -225,9 +283,12 @@ Any tile can grow a `widget:` block showing live numbers, at the cost of pasting
 
 **Home Assistant** — people home, lights on, switches on. In Home Assistant:
 
-1. Click your name at the bottom of the left sidebar to open your profile, then the **Security** tab.
-2. At the bottom, under **Long-lived access tokens**, click **Create token**, name it `homepage`, and copy the token — it is shown once and never again (it stays valid for ten years).
-3. Under the Home Assistant tile:
+1. Click your name at the bottom of the left sidebar.
+2. Click the **Security** tab.
+3. Under **Long-lived access tokens**, click **Create token**.
+4. Name it `homepage`.
+5. Copy the token — it is shown once and never again (it stays valid for ten years).
+6. Under the Home Assistant tile:
 
 ```yaml
         widget:
@@ -240,8 +301,10 @@ Any tile can grow a `widget:` block showing live numbers, at the cost of pasting
 
 **TrueNAS** — load, uptime, alerts, and the pool. In the TrueNAS UI at `http://192.168.1.20`:
 
-1. Click the user icon (top right) → **My API Keys** → **Add**. Name it `homepage` and save — the key string is shown once, in the confirmation dialog.
-2. Under the TrueNAS tile:
+1. Click the user icon (top right) → **My API Keys** → **Add**.
+2. Name it `homepage`.
+3. Save — the key string is shown once, in the confirmation dialog.
+4. Under the TrueNAS tile:
 
 ```yaml
         widget:
@@ -294,13 +357,15 @@ Any tile can grow a `widget:` block showing live numbers, at the cost of pasting
           password: the-npm-admin-password
 ```
 
-**Nextcloud** — free space, active users, files, shares. Nextcloud's server-info API takes a dedicated token rather than a login. In **Proxmox → 105 (nextcloudpi) → Console**, generate one, store it in Nextcloud, and print it, in one go:
+**Nextcloud** — free space, active users, files, shares. Nextcloud's server-info API takes a dedicated token rather than a login. In **Proxmox → 105 (nextcloudpi) → Console**, run this to generate, store, and print the token in one go:
 
 ```bash
 T=$(openssl rand -hex 32); sudo -E -u www-data php /var/www/nextcloud/occ config:app:set serverinfo token --value "$T"; echo "$T"
 ```
 
-Copy the printed token into the field below, then under the Nextcloud tile:
+Copy the printed token into the field below.
+
+Under the Nextcloud tile:
 
 ```yaml
         widget:
@@ -342,7 +407,8 @@ title: Home
 theme: dark
 ```
 
-Save, click the refresh icon, done.
+1. Save and exit.
+2. Click the refresh icon.
 
 ## Wire it into the build
 
@@ -362,11 +428,13 @@ The wildcard `*.kuzco.org` DNS rewrite in AdGuard already answers for any new na
 nano /opt/homepage/.env
 ```
 
-The allow-list is comma-separated with no spaces — add the new name to the end of the line, then save and exit:
+The allow-list is comma-separated with no spaces. Edit the line to match, adding the new name to the end:
 
 ```ini
 HOMEPAGE_ALLOWED_HOSTS=localhost:3000,192.168.1.55:3000,home.kuzco.org
 ```
+
+Save and exit.
 
 Restart:
 
@@ -377,7 +445,12 @@ systemctl restart homepage
 Then `https://home.kuzco.org` greets you with a padlock and your tiles.
 
 > [!WARNING]
-> Skip the `.env` edit and the new name answers with "Host validation failed. See logs for more details." That is not the proxy misbehaving — it is Homepage checking the browser's Host header against its allow-list, a deliberate safety feature. Add the host exactly as the error logs it, restart the service, done.
+> Skip the `.env` edit and the new name answers with "Host validation failed. See logs for more details." That is not the proxy misbehaving — it is Homepage checking the browser's Host header against its allow-list, a deliberate safety feature.
+>
+> If that happens:
+>
+> 1. Add the host exactly as the error logs it.
+> 2. Restart the service.
 
 ### Give the watcher a watcher
 Uptime Kuma is built on the next page. Once it exists, give it an HTTP monitor pointed at the direct address `http://192.168.1.55:3000` — the install's allow-list already admits that address, so the monitor works untouched, and the page that watches everything is itself watched. The next page's monitor list includes exactly this entry, so working in order covers it.
@@ -388,7 +461,11 @@ Uptime Kuma is built on the next page. Once it exists, give it an HTTP monitor p
 3. Expect one artifact: if `.env` carried no auth lines, the updater appends a few **commented-out `HOMEPAGE_AUTH_*` template lines**. Leave them commented — they belong to Homepage v2's optional login gate, which stays off unless deliberately filled in; the no-accounts design of this page holds.
 
 ### Make it the start page
-The actual point: on the family's devices, set `https://home.kuzco.org` — or the plain `http://192.168.1.55:3000` — as the browser's start page, or at least the first bookmark on the bar. The build now opens like an appliance.
+The actual point:
+
+1. On the family's devices, set `https://home.kuzco.org` — or the plain `http://192.168.1.55:3000` — as the browser's start page, or at least the first bookmark on the bar.
+
+The build now opens like an appliance.
 
 > [!NOTE]
 > Away from home, the dashboard works through the Tailscale tunnel exactly as-is: subnet routing delivers you to `192.168.1.55:3000`, which the allow-list already admits. The tiles' direct-address links just work; the pretty names also need your phone's DNS pointed back at AdGuard over the tunnel, which the remote-access setup already covers.
