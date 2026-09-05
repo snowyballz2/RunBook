@@ -26,7 +26,7 @@ Before you point Proxmox at it, confirm the `backups` share actually exists.
 > Without this share, the `backups` entry will not appear in Proxmox's **Share** dropdown in the next step.
 
 ### Add the TrueNAS share as backup storage
-In the Proxmox web interface at `https://`-the-host-IP-`:8006`, go to **Datacenter → Storage → Add → SMB/CIFS**:
+In the Proxmox web interface at `https://192.168.1.50:8006`, go to **Datacenter → Storage → Add → SMB/CIFS**:
 
 - **ID** → `nas-backups`
 - **Server** → `192.168.1.20`

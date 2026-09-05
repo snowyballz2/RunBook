@@ -16,7 +16,7 @@ It is the lightest guest on the i7-8700K — a single Node.js application with a
 ## Create the container
 
 ### Run the install script
-In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the ASUS ROG Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Read the script first, then paste and press Return. On the **Community-Scripts Options** menu pick **Advanced Install** — the static IP in the next step is set there; every other prompt keeps its prefilled default:
+In the Proxmox web interface at `https://192.168.1.50:8006`, click the node (the ASUS ROG Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine). Read the script first, then paste and press Return. On the **Community-Scripts Options** menu pick **Advanced Install** — the static IP in the next step is set there; every other prompt keeps its prefilled default:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/uptimekuma.sh)"
@@ -105,15 +105,27 @@ The script prints the address when it finishes — `http://192.168.1.57:3001`. T
 ## Watch everything you built
 
 ### Add a monitor per service
-Click **Add New Monitor** (top left of the dashboard), pick a monitor type, name it, give it an address, save, repeat. Work down the rack — these are the guests this collection built:
+For each row below: click **Add New Monitor** (top left of the dashboard), set the **Monitor Type**, the **Friendly Name**, and the address, tick any option listed, then **Save**.
 
-- **Proxmox itself** — type **HTTP(s)**, URL `https://`-the-host-IP-`:8006`. The web UI's certificate is self-signed, so tick **Ignore TLS/SSL errors for HTTPS websites** — otherwise this monitor reports down from day one.
-- **AdGuard** — what the house actually depends on is port 53, not the dashboard. Add a **DNS** monitor: put a real public name (say `apple.com`) in **Hostname**, and the AdGuard container's IP in **Resolver Server(s)** — that field is the one that matters, since it prefills a public resolver (`1.1.1.1`) and would happily pass with AdGuard dead. Its neighbors keep their prefills: **Port** `53`, **Resource Record Type** `A` — right for a plain name like apple.com. Add an **HTTP(s)** monitor for the dashboard at `http://`-the-AdGuard-IP as well.
-- **Home Assistant** — type **HTTP(s)**, URL `http://`-the-HA-IP-`:8123`.
-- **TrueNAS** — type **HTTP(s)**, at the address you use to reach its web UI; tick **Ignore TLS/SSL errors** if it serves HTTPS with a self-signed certificate.
-- **Frigate** — type **HTTP(s)**, URL `https://`-the-Frigate-IP-`:8971` — its self-signed TLS is on, the build-wide choice, so tick **Ignore TLS/SSL errors for HTTPS websites** (8971 is the authenticated UI port; 5000 is the internal one reserved for the Home Assistant integration).
-- **Nextcloud** — type **HTTP(s)**, at the Nextcloud LXC address; tick the toggle for its self-signed certificate.
-- **Vaultwarden, Homepage, Nginx Proxy Manager** — one **HTTP(s)** monitor each: Vaultwarden at `http://`-the-Vaultwarden-IP-`:8000` (it serves plain HTTP on 8000), Homepage at `http://`-the-Homepage-IP-`:3000`, and Nginx Proxy Manager at `http://`-the-proxy-IP-`:81` — the admin port, because port 80 hits the proxy's public side, not its admin UI.
+| Friendly Name | Monitor Type | URL | Options |
+|---|---|---|---|
+| Proxmox | HTTP(s) | `https://192.168.1.50:8006` | tick **Ignore TLS/SSL errors for HTTPS websites** — self-signed certificate |
+| Home Assistant | HTTP(s) | `http://192.168.1.51:8123` | — |
+| TrueNAS | HTTP(s) | `http://192.168.1.20` | — |
+| Frigate | HTTP(s) | `https://192.168.1.52:8971` | tick **Ignore TLS/SSL errors for HTTPS websites** — self-signed |
+| Nextcloud | HTTP(s) | `https://192.168.1.58` | tick **Ignore TLS/SSL errors for HTTPS websites** — self-signed on the direct address |
+| Vaultwarden | HTTP(s) | `http://192.168.1.56:8000` | — |
+| Homepage | HTTP(s) | `http://192.168.1.55:3000` | — |
+| Nginx Proxy Manager | HTTP(s) | `http://192.168.1.54:81` | — |
+
+AdGuard gets a different monitor type, because what the house depends on is port 53, not the dashboard:
+
+| Friendly Name | Monitor Type | Hostname | Resolver Server(s) | Port |
+|---|---|---|---|---|
+| AdGuard DNS | DNS | `apple.com` | `192.168.1.53` | `53` |
+
+> [!NOTE]
+> The **Resolver Server(s)** field is the one that matters on the DNS monitor: it prefills a public resolver (`1.1.1.1`) and would happily pass with AdGuard dead. Frigate's `8971` is the authenticated UI port; `5000` is the internal one reserved for the Home Assistant integration. Nginx Proxy Manager is watched on its admin port `81`, because port `80` hits the proxy's public side, not its admin UI.
 
 > [!INPUT] adguard-ip | AdGuard container IP | 192.168.1.53
 
@@ -167,7 +179,7 @@ Your dashboard sits behind your login; a status page is the version everyone els
 3. Leave the editor's **Refresh Interval** at `300` seconds.
 4. Press **Save**.
 
-Then share the address: `http://`-the-Kuma-IP-`:3001/status/`-your-slug. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
+Then share the address: `http://`192.168.1.57`:3001/status/`-your-slug. Day to day, reach it remotely over Tailscale like everything else here — no port-forward.
 
 > [!NOTE]
 > Slugs accept lowercase letters, digits, and dashes — starting and ending alphanumeric, no doubled dashes. The slug `default` is special — `/status` with no slug points to it. Status pages lag the live dashboard slightly: the server caches them for five minutes, and each viewer's page re-fetches on the editor's Refresh Interval (the 300-second default). For "is it down, or is it just me", that is plenty.
@@ -219,7 +231,7 @@ Every monitor — including ones you add later — now pushes straight to your p
 ### Know the one thing it cannot see
 One honest limit, baked into the architecture: Kuma runs on the very server it watches. If the whole i7-8700K dies — PSU (power supply unit) failure, kernel panic, someone trips over the cable — the monitor dies with everything it monitors, and no alert fires. There is no in-app cure — distributed monitoring is a long-standing feature request the maintainer has left deliberately unimplemented; one instance is the design.
 
-For this LAN-only build with no port-forwards, the workaround that fits is a second Uptime Kuma on separate always-on hardware — a Raspberry Pi, say — running a single monitor pointed at this one at `http://`-the-Kuma-IP-`:3001`. The UPS and the NUT (Network UPS Tools) shutdown handling set up on the UPS & Safe Shutdown page cover the *power-blip* case, but only a second box catches a hard crash of the main server.
+For this LAN-only build with no port-forwards, the workaround that fits is a second Uptime Kuma on separate always-on hardware — a Raspberry Pi, say — running a single monitor pointed at this one at `http://192.168.1.57:3001`. The UPS and the NUT (Network UPS Tools) shutdown handling set up on the UPS & Safe Shutdown page cover the *power-blip* case, but only a second box catches a hard crash of the main server.
 
 > [!WARNING]
 > If you do run a second instance, it must have its own database — at most one Uptime Kuma per SQLite file. Two full installs, each watching the other; never two pointed at one data folder.

@@ -19,7 +19,7 @@ The quickest path is the Proxmox community helper script, which builds a ready-t
 > [!NOTE]
 > The script shows its **Community-Scripts Options** menu almost as soon as it starts, so read the **Choose Advanced and pin a static IP** section below before you paste — the same Advanced-and-static-IP move every container in this build makes.
 
-1. In the Proxmox web interface at `https://`-the-host-IP-`:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine).
+1. In the Proxmox web interface at `https://192.168.1.50:8006`, click the node (the Maximus X Hero server) in the left tree, then click **Shell** — this runs on the Proxmox host itself, not inside a container or a VM (virtual machine).
 2. Paste this and press Return:
 
 ```bash
