@@ -246,7 +246,7 @@ Paste the build itself — the house's own controls first, then two groups, one 
 The page is suddenly worth bookmarking.
 
 > [!SECRET] household-calendar-url | Household calendar iCal URL
-> A private link — whichever calendar the household actually shares. **Google Calendar**: **Settings** → the calendar → **Integrate calendar** → copy the **Secret address in iCal format**. **Proton Calendar** (calendar.proton.me): **Settings → All settings → Calendars** → the calendar → **Share with anyone → Create link** with **Full view**, and copy the link. Either is a subscription URL Homepage refreshes on its own; Proton's can lag by a few hours.
+> This build's own: the `Household` calendar on Nextcloud — its **Share link** from the Nextcloud page's calendar step. If the household keeps a calendar elsewhere instead — **Google Calendar**: **Settings** → the calendar → **Integrate calendar** → copy the **Secret address in iCal format**. **Proton Calendar** (calendar.proton.me): **Settings → All settings → Calendars** → the calendar → **Share with anyone → Create link** with **Full view**, and copy the link. Either is a subscription URL Homepage refreshes on its own; Proton's can lag by a few hours.
 
 > [!NOTE]
 > The **Controls** tile opens the House dashboard the Automations page builds — the dashboard's address is shown in Home Assistant's sidebar once it exists; `dashboard-house` is what a dashboard titled *House* gets. The Calendar tile has no address of its own; its widget is the whole point.

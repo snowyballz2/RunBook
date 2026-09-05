@@ -397,6 +397,26 @@ Seeing it there confirms client, proxy and server all agree.
 > [!WARNING]
 > Away from home, reach Nextcloud over the Tailscale tunnel — never a router port-forward. A personal cloud full of the household's files and photos is exactly what you don't expose to the public internet.
 
+### The household calendar, on your own server
+Nextcloud ships its **Calendar** app — a CalDAV server, which both iPhones speak natively. One shared calendar here replaces the Google or Proton one for household events, and the Automations and Homepage pages read from it.
+
+In the web vault at `https://cloud.kuzco.org`, signed in as your own account:
+
+1. Open the **Calendar** app from the top bar. If it is missing, an administrator enables it under **Apps → Office & text → Calendar**.
+2. Click **+ New calendar**, name it `Household`, and confirm.
+3. Open the calendar's share menu (the icon beside its name), share it with the other household account, and tick **can edit**.
+4. In the same menu, click **+** next to **Share link** — that is the subscription link Homepage will use; copy it into the *Household calendar iCal URL* field on the Homepage page.
+
+Each phone subscribes with an app password rather than the account password — the Nextcloud client did the same on its first login:
+
+5. On the phone's browser at `https://cloud.kuzco.org`, open **Settings → Security → Devices & sessions**, type a name (`iPhone calendar`), and click **Create new app password**. Copy it — it is shown once.
+6. On the iPhone: **Settings → Apps → Calendar → Calendar Accounts → Add Account → Other → Add CalDAV Account**.
+7. **Server** → `cloud.kuzco.org`; **User Name** → the account's Nextcloud username; **Password** → the app password; **Next**.
+8. Open the iPhone's Calendar app and confirm `Household` appears under the new account, then repeat steps 5–8 on the other phone.
+
+> [!NOTE]
+> Events written on either phone land on the server within a minute, and the phones keep working offline. Nothing about this calendar leaves the house except through Tailscale — the same rule as every file in Nextcloud.
+
 ### Import an existing library — deduplicate first
 Bringing years of photos over from a Windows PC or a Mac is the first real use of this server, and doing it in the wrong order costs hours.
 

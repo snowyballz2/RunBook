@@ -802,13 +802,17 @@ Now fill the empty section — one **Tile** card per control, each with the feat
 12. **Tile** → `climate.downstairs` → feature **Target temperature**.
 13. **Tile** → the *Guest mode* toggle → feature **Toggle**.
 14. **Create section** for the cameras, then **Add card** → **Picture entity** → one per Frigate camera.
-15. **Save**.
+15. **Add card** → **Calendar** → the `Household` calendar entity from the note below.
+16. **Save**.
 
 Give the wall display its own login, so its default page never drags the phones along:
 
-16. **Settings → People → Users → Add user** — name `Tablet`, not an administrator, a password only the tablet knows.
-17. Sign the tablet in as that user, open **User profile → General → Dashboard**, and choose **House**.
-18. On an iPad, pin the companion app in place with **Guided Access** (Settings → Accessibility) so the page cannot wander.
+17. **Settings → People → Users → Add user** — name `Tablet`, not an administrator, a password only the tablet knows.
+18. Sign the tablet in as that user, open **User profile → General → Dashboard**, and choose **House**.
+19. On an iPad, pin the companion app in place with **Guided Access** (Settings → Accessibility) so the page cannot wander.
+
+> [!NOTE]
+> The calendar card needs Home Assistant to read the Nextcloud calendar first — once, before building the dashboard: **Settings → Devices & services → Add integration → CalDAV**, **URL** → `https://cloud.kuzco.org/remote.php/dav`, **Username** → your Nextcloud username, **Password** → an app password from Nextcloud's **Settings → Security → Devices & sessions**, **Verify SSL** on. Every calendar the account can see becomes a `calendar.*` entity — `Household` among them — usable on the card and in automations (a "no school today" condition, for one).
 
 > [!NOTE]
 > A default dashboard is per *user*, not per device — Home Assistant's docs warn that a phone and a tablet on the same login revert to one default together, which is why the tablet gets its own. The phones keep the Overview for the full house; the tablet wakes up on House.
