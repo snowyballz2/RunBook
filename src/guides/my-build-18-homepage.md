@@ -42,7 +42,8 @@ This happens *while the script runs*. On the **Community-Scripts Options** menu 
 - **IPv6** → **Fully Disabled** — this LAN runs IPv4
 - **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
 - **Tags** → keep the offered tag
-- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **SSH KEY SOURCE** → **none / No keys**
+- **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
 - **FUSE SUPPORT** → **No**
 - **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
 - **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
@@ -54,7 +55,8 @@ This happens *while the script runs*. On the **Community-Scripts Options** menu 
 - **DEVICE NODE CREATION** → **No**, the default
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
-- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and press **Create LXC**
+- **VERBOSE MODE** → **No**
+- Review **CONFIRM SETTINGS**, then press **Create LXC**
 - **Which storage pool?** (two radiolists — container, then template — shown only when more than one pool qualifies; this host's stock local/local-lvm split auto-selects silently) → **local-lvm** for the container, **local** for the template
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
 - **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
@@ -217,7 +219,17 @@ A search box and a clock are the two that earn their place:
 >           password: paste-the-token-secret
 > ```
 >
-> The others, one line each: `homeassistant` wants a long-lived access token from your Home Assistant profile page; `adguard` reuses the dashboard login (`type: adguard`, `url`, plus `username` and `password`); `truenas` an API key (add `version: 2` on TrueNAS Scale 25.04 or newer, which this build runs); `uptimekuma` the slug of a status page; `frigate` the admin login (`username` and `password` — this build's 8971 requires auth, and the credential-free internal port 5000 is fenced to Home Assistant and Kuma only), plus `enableRecentEvents: true` for a list of latest detections; `npm` the admin email and password; `nextcloud` the NC-Token from its **Settings → System** page. Exact recipes live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
+> The others, one line each:
+>
+> - `homeassistant` — a long-lived access token from your Home Assistant profile page
+> - `adguard` — reuses the dashboard login (`type: adguard`, `url`, plus `username` and `password`)
+> - `truenas` — an API key (add `version: 2` on TrueNAS Scale 25.04 or newer, which this build runs)
+> - `uptimekuma` — the slug of a status page
+> - `frigate` — the admin login (`username` and `password` — this build's 8971 requires auth, and the credential-free internal port 5000 is fenced to Home Assistant and Kuma only), plus `enableRecentEvents: true` for a list of latest detections
+> - `npm` — the admin email and password
+> - `nextcloud` — the NC-Token from its **Settings → System** page
+>
+> Exact recipes live at [gethomepage.dev/widgets](https://gethomepage.dev/widgets/).
 
 > [!SECRET] homepage-proxmox-token | Proxmox API token secret (api@pam!homepage)
 

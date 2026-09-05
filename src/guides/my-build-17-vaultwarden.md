@@ -44,7 +44,8 @@ When the script asks **Default or Advanced**, pick **Advanced**. Every dialog it
 - **IPv6** → **Fully Disabled** — this LAN runs IPv4
 - **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
 - **Tags** → keep the offered tag
-- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **SSH KEY SOURCE** → **none / No keys**
+- **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
 - **FUSE SUPPORT** → **No**
 - **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
 - **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
@@ -56,7 +57,8 @@ When the script asks **Default or Advanced**, pick **Advanced**. Every dialog it
 - **DEVICE NODE CREATION** → **No**, the default
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
-- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and answer **Yes** to create
+- **VERBOSE MODE** → **No**
+- Review **CONFIRM SETTINGS**, then answer **Yes** to create
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
 - **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
 
@@ -87,7 +89,8 @@ After the half-hour compile:
 1. Browse to `https://192.168.1.56:8000` — the `https://` is load-bearing; plain `http://` fails outright until the proxy handover below.
 2. Click through the self-signed certificate warning — expected; it is the install script's own certificate, replaced by a real one two steps from now.
 3. The Bitwarden web vault login screen appears. **Stop there — do not create an account yet.** Accounts made before the proxy handover are born with the wrong links.
-4. In the Proxmox left tree select the container, open **Options**, set **Start at boot** → **Yes**, and confirm **Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
+4. In the Proxmox left tree, select the container, open **Options**, and set **Start at boot** → **Yes**.
+5. Confirm **Protection** already shows **Yes** — the wizard answered it; tick it if it slipped.
 
 > [!NOTE]
 > `vault.kuzco.org` does not work yet either, if the Reverse Proxy page's eight hosts went in as one sitting: that host forwards plain HTTP to a port currently answering HTTPS — a mismatch the handover below resolves. Check aliveness by the direct address only.
@@ -177,7 +180,11 @@ From **your** web vault, with both accounts now existing:
 > An organization is not an account of its own — nobody logs in "as" Kuzco's House; it is a shared space your two existing accounts belong to, free of Bitwarden's paid seat limits. Both of you are Owners on purpose: a household of equals, so the shared entries are never stranded behind one person's account — the role only governs managing the organization. **Admin Console** here is the organization's management area *inside the web vault*, unlocked by that Owner role; no relation to the server's `/admin` panel, which stays off. And in the invite dialog, the top Permission dropdown is only a default for collections added later — the per-row permission is what counts, and equals take the top one (the lesser ones are read-only or hide passwords).
 
 > [!WARNING]
-> A row lingering under **Invited** — bare email, no name — means no account with that exact email exists: the account step above was skipped, or the address differs by a letter. Do not register into a pending invite; that trips an upstream bug (**"Error decoding JWT"**, [vaultwarden #6049](https://github.com/dani-garcia/vaultwarden/issues/6049)). Instead **Remove** the invite (the row's **⋮** → Remove), create the account in a browser, then invite again — landing on an existing account, it accepts instantly.
+> A row lingering under **Invited** — bare email, no name — means no account with that exact email exists: the account step above was skipped, or the address differs by a letter. Do not register into a pending invite; that trips an upstream bug (**"Error decoding JWT"**, [vaultwarden #6049](https://github.com/dani-garcia/vaultwarden/issues/6049)). Instead:
+>
+> 1. **Remove** the invite — the row's **⋮** → Remove.
+> 2. Create the account in a browser.
+> 3. Invite again — landing on an existing account, it accepts instantly.
 
 The split that keeps it tidy: personal accounts, personal cards, anything one person uses → own vault. Anything the *house* uses → the organization. The build's infrastructure credentials can go either way — in the organization both of you can reach them, which is the better failure mode.
 
@@ -262,13 +269,18 @@ Moving the build's real credentials in — Proxmox, TrueNAS, the cameras and doo
 > Away from home, the vault syncs through the same Tailscale tunnel as everything else on this build — never a port-forward; a password server has no business being reachable from the internet. One wrinkle: `vault.kuzco.org` only resolves where AdGuard answers DNS, so remote syncing needs the Tailscale-DNS wiring covered on the Reverse Proxy page (AdGuard's LAN IP entered on the Tailscale admin console's DNS page). Skip even that and nothing is lost day-to-day — the offline copies above carry you until you are home.
 
 > [!DETAILS] Instant sync between phones — the optional push relay
-> By default the apps sync on login, periodically while unlocked, and on demand — fine for a household. If you want an edit on one iPhone to appear on another within seconds, Vaultwarden can use Bitwarden's push relay: request a free installation id and key at [bitwarden.com/host](https://bitwarden.com/host/), then add three lines to `/opt/vaultwarden/.env` in the container's console and restart:
+> By default the apps sync on login, periodically while unlocked, and on demand — fine for a household. If you want an edit on one iPhone to appear on another within seconds, Vaultwarden can use Bitwarden's push relay:
+>
+> 1. Request a free installation id and key at [bitwarden.com/host](https://bitwarden.com/host/).
+> 2. Add three lines to `/opt/vaultwarden/.env` in the container's console:
 >
 > ```ini
 > PUSH_ENABLED=true
 > PUSH_INSTALLATION_ID=
 > PUSH_INSTALLATION_KEY=
 > ```
+>
+> 3. Restart the service.
 >
 > > [!INPUT] vaultwarden-push-id | Push relay installation id
 > > Only if you enable the relay — issued at bitwarden.com/host, tied to your email.

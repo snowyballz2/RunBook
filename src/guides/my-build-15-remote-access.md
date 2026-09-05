@@ -55,11 +55,11 @@ Fair question to ask here: why should a third party's identity sit between you a
 
 Do it now, while the console is open — Tailscale's *Admin account with passkey login* doc is the canonical walk:
 
-- In the **admin console → Users**, click **Invite external users**, set the role to **Admin** inside the invite, and use the **Copy invite link** tab — **Generate & copy invite link** — rather than emailing it
-- Open that link in a **private/incognito window** (Tailscale's docs say so explicitly — a normal window binds the invite to whatever account is already signed in) and choose to **sign up with a passkey**
-- Pick the username deliberately: it becomes permanent as `<name>@passkey` and can never be reused, and the invite itself expires after 30 days unused
-- Store its passkey with the same discipline as the Home Assistant backup key — the device keychain now, Vaultwarden when it exists later in the build
-- Sign in with it **once** to prove it works — an untested break-glass login is a decoration
+1. In the **admin console → Users**, click **Invite external users**, set the role to **Admin** inside the invite, and use the **Copy invite link** tab — **Generate & copy invite link** — rather than emailing it.
+2. Open that link in a **private/incognito window** (Tailscale's docs say so explicitly — a normal window binds the invite to whatever account is already signed in) and choose to **sign up with a passkey**.
+3. Pick the username deliberately: it becomes permanent as `<name>@passkey` and can never be reused, and the invite itself expires after 30 days unused.
+4. Store its passkey with the same discipline as the Home Assistant backup key — the device keychain now, Vaultwarden when it exists later in the build.
+5. Sign in with it **once** to prove it works — an untested break-glass login is a decoration.
 
 There is deliberately **no password field below for the passkey itself** — a passkey has no secret string to record. Its private key is generated inside the device's secure hardware and never leaves; Tailscale only ever holds the public half. What does need recording is the username, because it is permanent and you will be typing it on your worst day:
 
@@ -206,11 +206,22 @@ A phone on cellular data is the cleanest test: a device that is definitely not o
 ### Reach every service from anywhere
 Turn off Wi-Fi so the phone is genuinely on cellular, confirm the Tailscale app shows connected, then browse to each service on its normal LAN address — no Tailscale install needed on any of them, because the subnet route carries them all:
 
-- **Proxmox** — `https://192.168.1.50:8006`. Expect the same self-signed certificate warning as on the LAN, and know that **iOS Safari cannot reliably get past it**: on recent versions the *Show Details → visit this website* control is simply unresponsive, a known bug rather than anything you are doing wrong. Do not burn time on it — the warning appearing at all already proves the test, since Safari had to reach the host and receive its certificate to show one (a broken route times out instead). Confirm with an **HTTP** service below, and reach Proxmox by its proxied name once DNS is set at the end of this list.
+- **Proxmox** — `https://192.168.1.50:8006`. Expect the same self-signed certificate warning as on the LAN — **iOS Safari cannot reliably get past it**, so confirm with an **HTTP** service below instead, and reach Proxmox by its proxied name once DNS is set below.
 - **Home Assistant** — `http://192.168.1.51:8123`.
 - **TrueNAS** — `http://192.168.1.20`.
 - **Frigate and AdGuard** — `https://192.168.1.52:8971` and `http://192.168.1.53`, exactly as on the couch.
-- **Nginx Proxy Manager** — its admin UI at `http://192.168.1.54:81`. The `*.kuzco.org` hostnames it serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System): on the admin console's [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers** open **Add nameserver** and choose **Custom…** — every preset in that list (Google, Cloudflare, Quad9, Mullvad, NextDNS, Control D) is a public resolver, and you want your own. Enter AdGuard's LAN IP, `192.168.1.53`, and save; the **Override DNS servers** toggle stays greyed until a nameserver exists, then turn it **on**. After that, `https://proxmox.kuzco.org` and the rest work from anywhere too.
+- **Nginx Proxy Manager** — its admin UI at `http://192.168.1.54:81`.
+
+> [!NOTE]
+> **Proxmox's certificate warning is a known dead end on iOS Safari, not a sign anything is broken.** On recent versions the *Show Details → visit this website* control is simply unresponsive — a known bug rather than anything you are doing wrong. Do not burn time on it: the warning appearing at all already proves the test, since Safari had to reach the host and receive its certificate to show one (a broken route times out instead).
+
+The `*.kuzco.org` hostnames Nginx Proxy Manager serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System):
+
+1. On the admin console's [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers**, open **Add nameserver** and choose **Custom…** — every preset in that list (Google, Cloudflare, Quad9, Mullvad, NextDNS, Control D) is a public resolver, and you want your own.
+2. Enter AdGuard's LAN IP, `192.168.1.53`, and save.
+3. Turn the **Override DNS servers** toggle **on** — it stays greyed until a nameserver exists.
+
+After that, `https://proxmox.kuzco.org` and the rest work from anywhere too.
 
 > [!DETAILS] What the override actually changed, followed one query at a time
 > `proxmox.kuzco.org` does not exist on the internet — it is a rewrite living only inside AdGuard. At home that is invisible, because the router hands AdGuard out as the resolver. On cellular the phone uses the carrier's resolver, which has never heard of the name and never will.
@@ -271,19 +282,23 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 > Two add-ons, neither required and nothing later depends on them:
 >
 > - **Exit node** — `tailscale set --advertise-exit-node` on the host, approved on the Machines page like the subnet route. Selected on your iPhone, it routes *all* the phone's traffic through home — handy on hostile hotel Wi-Fi, off by default, separate from the subnet route. It is also the closest thing this build has to a consumer VPN; see below for how far that goes.
-> - **Quiet the Proxmox certificate warning over Tailscale** — Tailscale Serve fronts the web UI with a valid certificate. Run it in the host shell:
+> - **Quiet the Proxmox certificate warning over Tailscale** — Tailscale Serve fronts the web UI with a valid certificate.
 >
->   ```bash
->   tailscale serve --bg https+insecure://localhost:8006
->   ```
+> 1. Run this in the host shell:
 >
->   **The first run will refuse**, with `Serve is not enabled on your tailnet` and a `login.tailscale.com/f/serve?node=…` link. That is expected: Serve provisions a real Let's Encrypt certificate for the machine, so HTTPS certificates have to be switched on for the tailnet once. Follow the link, or do it on the [DNS page](https://login.tailscale.com/admin/dns) under **HTTPS Certificates → Enable HTTPS**, then run the command again. The result is `https://pve.<tailnet>.ts.net` with no warning to click past.
+>    ```bash
+>    tailscale serve --bg https+insecure://localhost:8006
+>    ```
 >
->   Enabling it publishes your **machine names** to the public Certificate Transparency ledger, as `pve.<tailnet>.ts.net` — the same ledger discussed when picking a domain on the Reverse Proxy page. Tailscale's own caution is simply not to enable it if machine names contain sensitive information; `pve` on a randomly generated tailnet string carries nothing worth hiding.
+> 2. **If it refuses** with `Serve is not enabled on your tailnet`, follow the `login.tailscale.com/f/serve?node=…` link it prints, or enable **HTTPS Certificates → Enable HTTPS** on the [DNS page](https://login.tailscale.com/admin/dns) — then run the command again. Serve provisions a real Let's Encrypt certificate for the machine, so HTTPS certificates have to be switched on for the tailnet once.
 >
->   **Worth doing even though the Reverse Proxy page already gives Proxmox a valid certificate**, because the two fail independently. `proxmox.kuzco.org` is a DNS rewrite inside AdGuard, and with **Override DNS servers** on, every lookup depends on AdGuard being alive. `pve.<tailnet>.ts.net` resolves through **MagicDNS**, handled by Tailscale itself, and Serve runs on the host rather than in a container. So on the day AdGuard or NPM is the broken thing — precisely when you need a shell — this name still opens Proxmox cleanly. Keep it bookmarked as the break-glass route.
+> The result is `https://pve.<tailnet>.ts.net` with no warning to click past.
 >
->   Tailscale's "on a Proxmox host" guide also documents a second route — installing a Tailscale-issued HTTPS certificate directly into Proxmox, kept current with a cron job. Serve is the simpler, self-contained option and is plenty here.
+> Enabling it publishes your **machine names** to the public Certificate Transparency ledger, as `pve.<tailnet>.ts.net` — the same ledger discussed when picking a domain on the Reverse Proxy page. Tailscale's own caution is simply not to enable it if machine names contain sensitive information; `pve` on a randomly generated tailnet string carries nothing worth hiding.
+>
+> **Worth doing even though the Reverse Proxy page already gives Proxmox a valid certificate**, because the two fail independently. `proxmox.kuzco.org` is a DNS rewrite inside AdGuard, and with **Override DNS servers** on, every lookup depends on AdGuard being alive. `pve.<tailnet>.ts.net` resolves through **MagicDNS**, handled by Tailscale itself, and Serve runs on the host rather than in a container. So on the day AdGuard or NPM is the broken thing — precisely when you need a shell — this name still opens Proxmox cleanly. Keep it bookmarked as the break-glass route.
+>
+> Tailscale's "on a Proxmox host" guide also documents a second route — installing a Tailscale-issued HTTPS certificate directly into Proxmox, kept current with a cron job. Serve is the simpler, self-contained option and is plenty here.
 
 > [!DETAILS] Does this replace a consumer VPN like NordVPN?
 > Half of one, better — and the other half not at all, so decide by what you actually bought it for.
@@ -312,13 +327,24 @@ The phone proved the tailnet reaches home from outside. The Mac is the machine y
 Take the **Standalone** build from [tailscale.com/download/macos](https://tailscale.com/download/macos) — Tailscale's own standing recommendation. The Mac App Store build runs fully sandboxed, which costs you the **Tailscale SSH server** and carries a documented conflict with **Screen Time web filters**; neither is worth inheriting on the machine you run the house from.
 
 > [!WARNING]
-> **Never have both builds installed.** Running the Standalone and App Store versions together prevents the Tailscale extension from launching at all — and on macOS 26 an orphaned App Store extension can block a later Standalone install outright. If the App Store one is already on this Mac: quit it, delete the app, **empty the Trash**, and **reboot** before installing Standalone. Emptying the Trash is not optional — the extension stays registered with the system until the bundle is genuinely gone.
+> **Never have both builds installed.** Running the Standalone and App Store versions together prevents the Tailscale extension from launching at all — and on macOS 26 an orphaned App Store extension can block a later Standalone install outright. If the App Store one is already on this Mac, before installing Standalone:
+>
+> 1. Quit it.
+> 2. Delete the app.
+> 3. Empty the Trash — not optional, since the extension stays registered with the system until the bundle is genuinely gone.
+> 4. Reboot.
 
 ### Take the two approval prompts
 First launch opens a **Required permissions** screen listing two rows, with **Next** greyed out until both read *Granted*. Neither is anything going wrong:
 
 - **VPN Configuration** — *"allows Tailscale to route traffic to other devices in your tailnet"*. macOS raises this one as a dialog on its own; choose **Allow** and the row goes green immediately. An app cannot create a network interface directly — Apple routes all tunnelling through the Network Extension framework, so every VPN app must register a configuration first. This is macOS describing the mechanism, not Tailscale asking to carry your browsing. Decline it and the app installs but can never connect to anything.
-- **System extension** — *"allows Tailscale to control the networking features of your Mac"*. This row stays red at **System Extension Approval Required** until you act on it: select its **Grant permissions** button, and macOS raises a *System Extension Blocked* dialog with **Open System Settings**. Approve it under **General → Login Items & Extensions → Network Extensions** — toggle **Tailscale Network Extension** on, authenticate with Touch ID, select **Done**. On macOS Sonoma 14 and earlier it surfaces instead as a blocked-software message under **System Settings → Privacy & Security** with an **Allow** button.
+- **System extension** — *"allows Tailscale to control the networking features of your Mac"*. This row stays red at **System Extension Approval Required** until you approve it:
+
+1. Select its **Grant permissions** button — macOS raises a *System Extension Blocked* dialog with **Open System Settings**.
+2. Under **General → Login Items & Extensions → Network Extensions**, toggle **Tailscale Network Extension** on.
+3. Authenticate with Touch ID, then select **Done**.
+
+On macOS Sonoma 14 and earlier it surfaces instead as a blocked-software message under **System Settings → Privacy & Security** with an **Allow** button.
 
 Back in the Tailscale window the red text flips to **Granted** and **Next** un-greys. If it does not update, click away from the window and back — it re-checks on focus.
 

@@ -33,7 +33,8 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 - **IPv6** → **Fully Disabled** — this LAN runs IPv4
 - **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
 - **Tags** → keep the offered tag
-- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **SSH KEY SOURCE** → **none / No keys**
+- **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
 - **FUSE SUPPORT** → **No**
 - **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
 - **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
@@ -45,7 +46,8 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 - **DEVICE NODE CREATION** → **No**, the default
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
-- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and press **Create LXC**
+- **VERBOSE MODE** → **No**
+- Review **CONFIRM SETTINGS**, then press **Create LXC**
 - **Which storage pool?** (two radiolists — container, then template — shown only when more than one pool qualifies; this host's stock local/local-lvm split auto-selects silently) → **local-lvm** for the container, **local** for the template
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
 - **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
@@ -125,13 +127,15 @@ On the panel's first load, an overlay offers its own wizard — **"Click to star
 3. A **welcome pop-up** offers the desktop and mobile client downloads — close it; the clients get installed properly later on this page. Every new account created below meets the same pop-up on its own first login.
 
 > [!DETAILS] Fixing "Access through untrusted domain"
-> Reach Nextcloud by any name or address it doesn't already know and it stops with that heading. It's a security check, not breakage: the `trusted_domains` setting lists the names and addresses this instance answers to, which prevents host-header poisoning. From the container's console, list what it trusts:
+> Reach Nextcloud by any name or address it doesn't already know and it stops with that heading. It's a security check, not breakage: the `trusted_domains` setting lists the names and addresses this instance answers to, which prevents host-header poisoning.
+>
+> 1. From the container's console, list what it trusts:
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:get trusted_domains
 > ```
 >
-> Count the entries — the list indexes from **0**, and reusing a taken number silently **overwrites** that entry instead of adding. NCP ships roughly eight, so the next free index is usually **8**:
+> 2. Count the entries — the list indexes from **0**, and reusing a taken number silently **overwrites** that entry instead of adding. NCP ships roughly eight, so the next free index is usually **8**. Set it:
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_domains 8 --value=cloud.kuzco.org
@@ -223,7 +227,7 @@ The TrueNAS VM already serves a `tank/files` SMB share, created with a dedicated
 
 Now hang the share inside Nextcloud:
 
-1. First raise PHP's memory limit to Nextcloud's recommended **512 MB** — NCP ships 128 MB, too small for the Apps page you are about to open. In the container console:
+1. Raise PHP's memory limit to Nextcloud's recommended **512 MB** — NCP ships 128 MB, too small for the Apps page you are about to open. In the container console:
 
    ```bash
    sed -i 's/^memory_limit = .*/memory_limit = 512M/' /etc/php/8.3/fpm/php.ini
@@ -233,9 +237,9 @@ Now hang the share inside Nextcloud:
    systemctl restart php8.3-fpm
    ```
 
-   Then under **Apps**, find **External storage support** and click **Enable** — it ships with the server and is simply switched off. (Apps from the store read **Download and enable** instead, fetching and installing in the same click, so a few seconds' pause on those is normal rather than a fault.)
-2. Go to **Administration settings → External storage**.
-3. Click **Add external storage** — an **Add storage** dialog opens. Every field, top to bottom:
+2. Under **Apps**, find **External storage support** and click **Enable** — it ships with the server and is simply switched off. (Apps from the store read **Download and enable** instead, fetching and installing in the same click, so a few seconds' pause on those is normal rather than a fault.)
+3. Go to **Administration settings → External storage**.
+4. Click **Add external storage** — an **Add storage** dialog opens. Every field, top to bottom:
    - **Folder name** → `Pool` — the folder name everyone sees in their Files
    - **Mount options** (expand the collapsible):
      - **Check filesystem changes** → keep **Once every direct access** — the Macs and the PC write this same share directly over SMB, and this setting is what makes their changes appear in Nextcloud
@@ -253,7 +257,7 @@ Now hang the share inside Nextcloud:
    - **Case sensitive file system** → **off**, as shipped — the `files` dataset's SMB preset made it case-insensitive on the TrueNAS Storage page, and this matches it
    - **Verify ACL access when listing files** → **off**, as shipped — a per-file permission re-check built for shares with per-user denials; the single household SMB user has full access, so there is nothing to verify
    - **Login / Password** (at the bottom, under Authentication) → the existing SMB credentials, per the share
-4. Click **Create**. A **green dot** at the new row's left edge means the mount works; red or yellow means Nextcloud could not connect — recheck host, share, and credentials.
+5. Click **Create**. A **green dot** at the new row's left edge means the mount works; red or yellow means Nextcloud could not connect — recheck host, share, and credentials.
 
 ### Settle the setup warnings
 **Administration settings → Overview** greets every fresh NCP with the same five *Security & setup warnings* — standing furniture on this install, not a reaction to anything you did. One of them is a real step. Do it now, in the container console — it moves the heavy nightly background jobs to 1 a.m. Eastern (the value is a UTC hour):
@@ -290,14 +294,21 @@ The share appears as a folder in everyone's files. Photo archives and media sit 
 2. **Server address** → **`https://cloud.kuzco.org`** — the proxied name, on every device without exception. Never the raw `https://192.168.1.58`: it raises a certificate warning and stops working the moment the device leaves the house, while the name follows it over Tailscale.
 3. **"Allow Nextcloud to find devices on local networks?"** (macOS) → **Allow** — the server is a local address, and denying this blocks the client with an error that looks nothing like a permissions problem.
 4. **Grant access** in the browser tab it opens — check the *"Currently logged in as"* line names the right account before clicking. This issues the device its own app password, revocable later under **Settings → Security**.
-5. It syncs into a local **Nextcloud** folder, and lives in the **menu bar** from then on — closing the window does not quit it, and re-opening the app shows nothing because it is still running. Click the menu-bar logo instead. On a notched MacBook that logo may never appear: macOS silently drops menu-bar icons that do not fit rather than collapsing them, so trim an item or two (or run an overflow manager) if it is missing. `killall Nextcloud && open -a Nextcloud` forces the window back meanwhile.
+5. It syncs into a local **Nextcloud** folder, and lives in the **menu bar** from then on — closing the window does not quit it, and re-opening the app shows nothing because it is still running. Click the menu-bar logo instead.
+
+> [!NOTE]
+> **On a notched MacBook, the menu-bar logo from step 5 may never appear.** macOS silently drops menu-bar icons that do not fit rather than collapsing them, so trim an item or two (or run an overflow manager) if it is missing. `killall Nextcloud && open -a Nextcloud` forces the window back meanwhile.
 
 > [!WARNING]
 > **Deselect `Pool` in the desktop client, or it syncs the whole archive onto the laptop.** The client treats an external storage mount like any other folder, so the terabytes on the ZFS mirror become a download queue against an SSD that cannot hold them. In the client's **Settings → the account → "Choose what to sync"**, untick **Pool**. The archive is meant to be reached through the browser or Finder on demand — the mirror is where it lives, not the laptop.
 
 Prove the sync works while you are here: drop any file into `~/Nextcloud` on the Mac and reload `https://cloud.kuzco.org` in the browser. Seeing it there confirms client, proxy and server all agree.
 
-**On each iPhone**, install Nextcloud from the App Store, sign in at the same address, then turn on **Auto upload** and point it at the camera roll — that is the Google-Photos replacement, and every photo lands on your server from then on.
+**On each iPhone:**
+
+1. Install Nextcloud from the App Store.
+2. Sign in at the same address.
+3. Turn on **Auto upload** and point it at the camera roll — that is the Google-Photos replacement, and every photo lands on your server from then on.
 
 > [!NOTE]
 > **Leave Auto upload on its default folder — do not point it at `Pool`.** Nextcloud is one file tree over two disks: most folders keep their bytes on the container's disk on the NVMe, while everything inside **Pool** lives on the 4 TB ZFS mirror. Pool is not a lesser tier — same UI, same apps — and photos ultimately belong there, on storage with snapshots, a weekly scrub and an offsite copy. But **the upload path into it is broken**: nextcloud/ios [#1788](https://github.com/nextcloud/ios/issues/1788) has been open since v4.1, and the failure is server-side, a parsing crash in the bundled SMB library (`Undefined array key "attributes"` in `files_external/3rdparty/icewind/smb/…/Parser.php`). Verified still unresolved as of this build.
@@ -371,7 +382,12 @@ This section is coverage, not a step: no commands to run today. Nextcloud's docs
 > The External Storage archive lives on the ZFS pool, so it is protected by the pool's own snapshots and the weekly scrub — not by the vzdump job, which only sees the container's local disk. That's the right split: the small, sync-critical data rides vzdump; the bulk archive rides the pool's protections. Photos you can't lose belong on the irreplaceable dataset that the Backblaze B2 push covers, so they also leave the property.
 
 > [!DETAILS] Copying Nextcloud off the server by hand
-> **Only for moving Nextcloud to different hardware** — not part of the routine, and not how photos move from the container's disk onto the mirror (that is a drag from `Photos/` into `Pool/` in the browser, no commands at all). The `/somewhere-safe/` below means another machine entirely. From `/var/www/nextcloud` in the container console: turn on maintenance mode (it locks logged-in sessions and blocks new logins so the database dump and folder copy stay consistent), dump the database, copy the folders, turn maintenance off.
+> **Only for moving Nextcloud to different hardware** — not part of the routine, and not how photos move from the container's disk onto the mirror (that is a drag from `Photos/` into `Pool/` in the browser, no commands at all). The `/somewhere-safe/` below means another machine entirely. From `/var/www/nextcloud` in the container console, in order:
+>
+> 1. Turn on maintenance mode — it locks logged-in sessions and blocks new logins so the database dump and folder copy stay consistent.
+> 2. Dump the database.
+> 3. Copy the folders.
+> 4. Turn maintenance off.
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ maintenance:mode --on

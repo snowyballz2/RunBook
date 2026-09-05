@@ -35,7 +35,8 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 - **IPv6** → **Fully Disabled** — this LAN runs IPv4
 - **MTU, DNS search domain, DNS server, MAC address, VLAN** → all blank — blank inherits the host's settings, which are right
 - **Tags** → keep the offered tag
-- **SSH KEY SOURCE** → **none / No keys**, then **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
+- **SSH KEY SOURCE** → **none / No keys**
+- **SSH ACCESS** → **No** — the container's **Console** in Proxmox covers every shell need
 - **FUSE SUPPORT** → **No**
 - **TUN/TAP SUPPORT** → **No** — Tailscale runs on the Proxmox host, not in containers
 - **NESTING SUPPORT** → **Yes**, the offered default — Debian 13's systemd can start degraded without it
@@ -47,7 +48,8 @@ On the **Community-Scripts Options** menu (**Default Install**, **Advanced Insta
 - **DEVICE NODE CREATION** → **No**, the default
 - **MOUNT FILESYSTEMS** → leave **empty**
 - **POST-INSTALL HOOK (HOST)** → leave **empty**
-- **VERBOSE MODE** → **No**, then review **CONFIRM SETTINGS** and press **Create LXC**
+- **VERBOSE MODE** → **No**
+- Review **CONFIRM SETTINGS**, then press **Create LXC**
 - **Which storage pool?** (two radiolists — container, then template — shown only when more than one pool qualifies; this host's stock local/local-lvm split auto-selects silently) → **local-lvm** for the container, **local** for the template
 - **Save advanced settings as default?** → **Yes** — presets a future rebuild; the root password is not saved
 - **"An update for the Proxmox LXC stack is available"** (if it appears) → **Ignore** — numbered **2**, or **3** in the four-option variant — host upgrades are the Maintenance page's deliberate job on this pinned-kernel build
@@ -69,7 +71,11 @@ The script finishes by printing `http://<IP>:81`. Before you open it, set **Opti
 > NPM's documentation describes three ports: **80** (its "Public HTTP Port"), **443** ("Public HTTPS Port"), and **81** (the "Admin Web Port"). "Public" there means "the side browsers connect to" — the docs assume some people host internet-facing sites and even suggest forwarding 80 and 443 at the router. You will not. Every port stays LAN-only, the certificate arrives over DNS later with nothing reachable from outside, and your router's settings never change. Port 81 is the admin interface, for you alone.
 
 > [!DETAILS] What's inside the container — and how to update it
-> Not Docker, despite most NPM tutorials. The script builds everything from source inside the Debian container: OpenResty (the nginx flavor that does the proxying), the NPM app on Node.js, and Certbot — the Let's Encrypt client with DNS plugins — running as the `openresty` and `npm` systemd services. Settings live in a SQLite file at `/data/database.sqlite`. Two consequences: Docker advice from the wider internet does not apply, and updating has its own command — open the container's **Console** and run `update`. Snapshot the container first.
+> Not Docker, despite most NPM tutorials. The script builds everything from source inside the Debian container: OpenResty (the nginx flavor that does the proxying), the NPM app on Node.js, and Certbot — the Let's Encrypt client with DNS plugins — running as the `openresty` and `npm` systemd services. Settings live in a SQLite file at `/data/database.sqlite`. Two consequences: Docker advice from the wider internet does not apply, and updating has its own procedure:
+>
+> 1. Snapshot the container first.
+> 2. Open the container's **Console**.
+> 3. Run `update`.
 
 ### Create your admin account
 Browse to the proxy at `http://192.168.1.54:81`. There is nothing to log in *with* yet — a fresh install opens on a **"Welcome!"** screen that says **"Get started by creating your admin account."**, with exactly three fields and a **Save** button:
@@ -98,7 +104,10 @@ Buy a real domain, used purely for naming and certificates. Nothing about it wil
 > Two other routes work. Run your own certificate authority with a tool like minica or step-ca and issue certificates for any name you like, fully offline — the catch is installing your authority's root certificate by hand on every Apple device in the house, and that it fails precisely where you need it most: Android apps ignore user-installed CAs by default, and the Bitwarden mobile apps are exactly the kind that refuse a certificate they do not trust. If phone sync for Vaultwarden is one of your reasons for wanting certificates, this route works against you. Or skip certificates entirely: plain-HTTP addresses on your own LAN, wrapped in the encrypted tunnel from remote access when you are away, is a defensible place to stop. This build buys a cheap domain because it is less chore than either.
 
 ### Get the domain — and DNS with an API
-What matters is not where you buy but where the domain's **DNS is hosted**: the next step needs NPM's built-in Certbot to publish a DNS record through an API (Application Programming Interface). NPM ships support for dozens of providers — Cloudflare, Porkbun, deSEC, Route 53, and more — so register somewhere on that list, or point the domain's nameservers at a host that is. Then create an **API token** scoped to edit only this domain's DNS, per your provider's docs.
+What matters is not where you buy but where the domain's **DNS is hosted**: the next step needs NPM's built-in Certbot to publish a DNS record through an API (Application Programming Interface). NPM ships support for dozens of providers — Cloudflare, Porkbun, deSEC, Route 53, and more.
+
+1. Register the domain somewhere on that list, or point its nameservers at a host that is.
+2. Create an **API token** scoped to edit only this domain's DNS, per your provider's docs.
 
 Two concrete picks, since "somewhere on that list" is not much help:
 
@@ -130,9 +139,7 @@ Eight things, ordered by what hurts most if skipped. Cloudflare splits these acr
 
 
 
-1. **Two-factor authentication** → **My Profile → Authentication**, the same profile menu as the API token below. The highest-value item on this page: that account controls DNS for the domain every certificate in the house depends on, so anyone inside it could redirect your names or issue certificates as you. TOTP or a hardware key, before anything else.
-
-   **If you signed up with Sign in with Apple (or Google), that page will not let you.** Cloudflare accounts authenticating through SSO **cannot configure 2FA at all** — a documented limitation, not a password problem. You are not unprotected: Apple mandates two-factor on Apple IDs and it is hardware-backed on your own devices, so the account has a second factor, just Apple's rather than Cloudflare's. That is the same posture the Remote Access page takes for the tailnet. Harden the identity that now carries the weight — confirm Apple ID two-factor is on, trusted numbers are current, and a **recovery key or recovery contacts** exist. The failure mode is slow rather than sudden: an Apple lockout would cost certificate renewals on their 90-day cycle and the domain at its annual one, leaving weeks to recover. If native 2FA matters more than that, the cheapest moment to move to an email-and-password account is now, while the account holds one domain and nothing else — though a new registration carries a 60-day ICANN transfer lock
+1. **Two-factor authentication** → **My Profile → Authentication**, the same profile menu as the API token below — TOTP or a hardware key, before anything else. The highest-value item on this page: that account controls DNS for the domain every certificate in the house depends on, so anyone inside it could redirect your names or issue certificates as you.
 2. **Auto-renew on** → **Domain Registration → Manage domains → your domain → Manage domain**, where the Auto-Renew status lives. Use a registrant email you will still read in three years — a lapsed domain breaks every hostname and every certificate at once, and presents as a network fault rather than an expiry
 3. **DNSSEC** → click the **domain**, then **DNS → Settings → Enable DNSSEC**. One click here and nothing else: because Cloudflare is both registrar and DNS host it **publishes the DS record itself**, which is the step that breaks DNSSEC for people whose registrar and DNS are separate
 4. **CAA record** → click the **domain** first (this is zone-level, which is why it looks missing from the account home), then **DNS → Records → Add record**, and fill the form:
@@ -141,8 +148,6 @@ Eight things, ordered by what hurts most if skipped. Cloudflare splits these acr
    - **Tag** → **"Only allow specific hostnames"** — Cloudflare's friendly label for the `issue` tag
    - **CA domain name** → **`letsencrypt.org`**
    - **TTL** → **Auto**, then **Save**
-
-   That one record is enough. It looks like a wildcard certificate would need a second rule, but the spec applies `issue` to wildcards whenever no wildcard-specific rule exists — so the dropdown's other options, *Only allow wildcards* (`issuewild`) and *Send violation reports to* (`iodef`), stay unused. The effect: no certificate authority other than Let's Encrypt can legitimately issue for your name
 5. **Declare that the domain sends no mail.** You will never send from it, which currently leaves it free for anyone to spoof in phishing. Three records on the same **DNS → Records** page close that permanently:
    - **TXT**, name `@`, content `v=spf1 -all`
    - **TXT**, name `_dmarc`, content `v=DMARC1; p=reject;`
@@ -151,8 +156,19 @@ Eight things, ordered by what hurts most if skipped. Cloudflare splits these acr
    - **Disable Universal SSL** — the button's warning that "visitors will be unable to access the domain over HTTPS" does not apply here: nothing is hosted at or proxied through Cloudflare, and the certificate this build actually uses comes from Let's Encrypt through NPM over the DNS API, entirely independently. Disabling stops certificates being minted in your name for a service you do not use, and makes the CAA record mean what it says
    - **Certificate Transparency Monitoring → on** — free, and it emails you whenever any authority issues a certificate for your domain. It is the natural partner to the CAA record: CAA *prevents* unauthorised issuance, this *tells you* when something was issued anyway. Your own renewals will generate a notice every couple of months, which is confirmation rather than noise
    - **Always Use HTTPS**, **HSTS**, **Automatic HTTPS Rewrites**, **Total TLS**, and anything gated behind Advanced Certificate Manager → leave them. All of them act on traffic proxied through Cloudflare, and none of your traffic is
-7. **Ignore the registrar's own recommendations.** Cloudflare will show a Recommendations panel urging you to add an A record so "visitors can reach" your domain, a `www` record, and MX records to receive mail. Every one of them assumes you are publishing a website, and acting on the A-record suggestion would point your domain at a real host on the public internet — exactly what this design forbids. The mail suggestion is already answered better than they propose: you are declaring that the domain sends and receives nothing, rather than configuring it to. The panel never goes away, and its persistence is confirmation the domain is doing its job
-8. **Verify what is already on** → the registrar **Settings** tab, where **WHOIS privacy** should read *data redaction is currently enabled* (the button offers *Disable*, which is the action, not the state) and **Transfer to another registrar** should be locked — on a fresh registration the Unlock control is greyed out with *domain created within the last 60 days*, which is ICANN's new-registration lock doing a transfer lock's job for you. Then **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance
+7. **Ignore the registrar's own recommendations** — the Recommendations panel that urges an A record, a `www` record, and MX records assumes you are publishing a website and receiving mail, neither of which applies here.
+8. **Verify WHOIS privacy** → the registrar **Settings** tab should read *data redaction is currently enabled* — the button offers *Disable*, which is the action, not the state.
+9. **Verify the transfer lock** → same tab, **Transfer to another registrar** should be locked — on a fresh registration the Unlock control is greyed out with *domain created within the last 60 days*, which is ICANN's new-registration lock doing a transfer lock's job for you.
+10. Check **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance.
+
+> [!WARNING]
+> **If you signed up with Sign in with Apple (or Google), the 2FA screen in step 1 will not let you.** Cloudflare accounts authenticating through SSO **cannot configure 2FA at all** — a documented limitation, not a password problem. You are not unprotected: Apple mandates two-factor on Apple IDs and it is hardware-backed on your own devices, so the account has a second factor, just Apple's rather than Cloudflare's. That is the same posture the Remote Access page takes for the tailnet. Harden the identity that now carries the weight instead — confirm Apple ID two-factor is on, trusted numbers are current, and a **recovery key or recovery contacts** exist. The failure mode is slow rather than sudden: an Apple lockout would cost certificate renewals on their 90-day cycle and the domain at its annual one, leaving weeks to recover. If native 2FA matters more than that, the cheapest moment to move to an email-and-password account is now, while the account holds one domain and nothing else — though a new registration carries a 60-day ICANN transfer lock.
+
+> [!NOTE]
+> **One CAA record from step 4 is enough.** It looks like a wildcard certificate would need a second rule, but the spec applies `issue` to wildcards whenever no wildcard-specific rule exists — so the dropdown's other options, *Only allow wildcards* (`issuewild`) and *Send violation reports to* (`iodef`), stay unused. The effect: no certificate authority other than Let's Encrypt can legitimately issue for your name.
+
+> [!NOTE]
+> **The Recommendations panel from step 7 never goes away — that persistence is confirmation, not a problem.** Cloudflare shows it urging you to add an A record so "visitors can reach" your domain, a `www` record, and MX records to receive mail. Every one of them assumes you are publishing a website, and acting on the A-record suggestion would point your domain at a real host on the public internet — exactly what this design forbids. The mail suggestion is already answered better than they propose: you are declaring that the domain sends and receives nothing, rather than configuring it to.
 
 That last check is the one the build's threat model rests on: a domain that resolves to nothing publicly is what stops a purchased name from becoming an attack surface.
 
@@ -173,7 +189,8 @@ On **Cloudflare**, this build's registrar:
 4. **Permissions** → the template sets **Zone · DNS · Edit**; leave it
 5. **Zone Resources** → **Include → Specific zone → your domain**. Not "All zones" — this token should reach exactly one thing
 6. **Client IP Address Filtering** and **TTL** → leave both empty; the container's address can change, and an expiring token means a renewal that fails silently months from now
-7. **Continue to summary → Create Token**, then copy the value into the field above and your password manager — it is shown **once**
+7. **Continue to summary → Create Token**
+8. Copy the value into the field above and your password manager — it is shown **once**
 
 > [!DETAILS] The better free path — deSEC
 > If the annual cost is the sticking point, **deSEC** beats DuckDNS on every axis and NPM supports it natively. It is run by a German non-profit, hands you a name like `yourname.dedyn.io`, and — unlike DuckDNS — gives you a **real DNS API with proper wildcard support and no one-TXT-record limit**, so certificates behave exactly as they would on a purchased domain. Still a borrowed name and still a third-party dependency, but without the compromises below. Take this over DuckDNS unless you have a specific reason not to.
@@ -353,28 +370,40 @@ Every remaining host is the **same dialog with four fields changed**. Nothing el
 > Frigate splits its two ports: **8971** is the authenticated UI and API that reverse proxies should use, while **5000** is internal, unauthenticated access treated as admin regardless of login. Proxying 5000 would hand admin to anything that can resolve the name. Use 8971, and leave 5000 as the internal address the Home Assistant integration talks to.
 
 > [!DETAILS] Frigate's "plain HTTP request was sent to HTTPS port"
-> If `frigate.kuzco.org` answers with a 400 carrying that phrase, the proxy host's **Scheme** got set to `http` while Frigate's own TLS sits on at 8971 — its default. Fix it in NPM: edit the proxy host, flip Scheme to `https`, save; Frigate itself needs no change. (Old write-ups instead disable Frigate's TLS with a `tls: enabled: false` config block. That works, but this build keeps Frigate's TLS on — the admin login then never crosses the LAN in the clear, and every page here points at `https://192.168.1.52:8971` consistently.)
+> If `frigate.kuzco.org` answers with a 400 carrying that phrase, the proxy host's **Scheme** got set to `http` while Frigate's own TLS sits on at 8971 — its default. Fix it in NPM:
+>
+> 1. Edit the proxy host.
+> 2. Flip **Scheme** to `https`.
+> 3. Save — Frigate itself needs no change.
+>
+> Old write-ups instead disable Frigate's TLS with a `tls: enabled: false` config block. That works, but this build keeps Frigate's TLS on — the admin login then never crosses the LAN in the clear, and every page here points at `https://192.168.1.52:8971` consistently.
 
 > [!DETAILS] Telling Nextcloud about its new name (for when you build it)
-> Nextcloud comes later in this build; keep this for then. Two settings, both from the Nextcloud container's console at `/var/www/nextcloud` via the `occ` tool.
+> Nextcloud comes later in this build; keep this for then. Two settings, both from the Nextcloud container's console at `/var/www/nextcloud` via the `occ` tool. Every hostname below is this build's real one, `kuzco.org` — the same value the *Your domain* field above records.
 >
-> Every hostname below is this build's real one, `kuzco.org` — the same value the *Your domain* field above records. The index is **not** a fixed number: run the `get` on its own first, count the entries it prints starting at **0**, and use the next number after the last one. A NextcloudPi install ships with roughly **eight** already (`localhost`, several `nextcloudpi` variants, the container IP, the detected public IP), so the next free index is usually **8** — reusing a number that is already listed silently overwrites that entry instead of adding yours.
+> 1. Check the current `trusted_domains` list:
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:get trusted_domains
 > ```
 >
-> Then, with the real domain and the index you just counted:
+> The index is **not** a fixed number: count the entries it prints starting at **0**, and use the next number after the last one. A NextcloudPi install ships with roughly **eight** already (`localhost`, several `nextcloudpi` variants, the container IP, the detected public IP), so the next free index is usually **8** — reusing a number that is already listed silently overwrites that entry instead of adding yours.
+>
+> 2. Set it, with the real domain and the index you just counted:
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_domains 8 --value=cloud.kuzco.org
 > ```
 >
-> Second, the reverse-proxy settings. **`trusted_proxies` is indexed the same way, and on NextcloudPi index `0` is already taken** — a fresh NCP install ships `127.0.0.1` at `0` and `::1` at `1`, both used by its own local plumbing, so the proxy goes at **`2`**. Confirm with a read first; if your list differs, use whatever number comes after the last one:
+> 3. Check the current `trusted_proxies` list the same way:
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:get trusted_proxies
 > ```
+>
+> **`trusted_proxies` is indexed the same way, and on NextcloudPi index `0` is already taken** — a fresh NCP install ships `127.0.0.1` at `0` and `::1` at `1`, both used by its own local plumbing, so the proxy goes at **`2`**. If your list differs, use whatever number comes after the last one.
+>
+> 4. Set the reverse-proxy settings:
 >
 > ```bash
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_proxies 2 --value=192.168.1.54
@@ -382,9 +411,7 @@ Every remaining host is the **same dialog with four fields changed**. Nothing el
 > sudo -E -u www-data php /var/www/nextcloud/occ config:system:set overwrite.cli.url --value=https://cloud.kuzco.org
 > ```
 >
-> Position does not matter for `trusted_domains` — Nextcloud tests membership of that list, not where an entry sits — so if a name lands at a different index than planned, nothing needs correcting.
->
-> Existing sync clients signed in against the IP keep working as long as that IP stays in `trusted_domains`; set up new devices with the new name.
+> Position does not matter for `trusted_domains` — Nextcloud tests membership of that list, not where an entry sits — so if a name lands at a different index than planned, nothing needs correcting. Existing sync clients signed in against the IP keep working as long as that IP stays in `trusted_domains`; set up new devices with the new name.
 
 > [!TIP]
 > When you later build Uptime Kuma and put it behind the proxy, tell it so: **Settings → Reverse Proxy**, and under HTTP Headers set **Trust Proxy** on — its logs and rate limiting then see real client IPs instead of the proxy's.
