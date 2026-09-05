@@ -41,20 +41,22 @@ The twelve **Third Reality 3RWS18BZ** leak sensors and the **Aqara Valve Control
 ```yaml
 alias: Water leak — shut off the main and alert
 triggers:
-  - trigger: state
-    entity_id:
-      - binary_sensor.water_heater_leak
-      - binary_sensor.washer_leak
-      - binary_sensor.dishwasher_leak
-      - binary_sensor.kitchen_sink_leak
-    to: "on"
+  - trigger: event
+    event_type: state_changed
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.event.data.new_state is not none
+         and trigger.event.data.new_state.state == 'on'
+         and trigger.event.data.new_state.attributes.device_class == 'moisture'
+         and (trigger.event.data.old_state is none or trigger.event.data.old_state.state != 'on') }}
 actions:
   - action: switch.turn_off
     target: { entity_id: switch.main_water }
   - action: notify.mobile_app_chris_iphone
     data:
       title: "💧 Water leak"
-      message: "Leak at {{ trigger.to_state.name }} — main water shut off."
+      message: "Leak at {{ trigger.event.data.new_state.name }} — main water shut off."
       data:
         push:
           interruption-level: critical
@@ -63,11 +65,11 @@ actions:
     target: { entity_id: tts.piper }
     data:
       media_player_entity_id: media_player.kitchen_speaker
-      message: "Water leak detected at {{ trigger.to_state.name }}. The main water has been shut off."
-mode: single
+      message: "Water leak detected at {{ trigger.event.data.new_state.name }}. The main water has been shut off."
+mode: parallel
 ```
 
-Why it works, top to bottom. The trigger lists every leak sensor under one roof, so any one going `on` (wet) fires the whole thing, and `trigger.to_state.name` carries *which* sensor into the alert — so the push and the spoken line both name the actual location without you writing twelve copies. The valve closes **first**, before any notification, because the point is to stop water, not to ask permission. Then two alerts fire in parallel: a **critical** push that reaches your iPhone wherever you are, and a `tts.speak` on a Google/Nest speaker so anyone home hears it out loud. The speech uses the **local Piper** TTS (text-to-speech) engine — installed as an app on the Home Assistant VM on the Voice page — rather than a cloud voice, so it still talks during the internet outage a burst pipe might cause.
+Why it works, top to bottom. The trigger watches every state change in the house, and the condition keeps only a **moisture**-class sensor turning `on` (wet) — so all twelve leak sensors, and any you pair later, are covered without naming one, and `trigger.event.data.new_state.name` carries *which* sensor into the alert, so the push and the spoken line both name the actual location. `mode: parallel` lets two rooms alert at once. The valve closes **first**, before any notification, because the point is to stop water, not to ask permission. Then two alerts fire in parallel: a **critical** push that reaches your iPhone wherever you are, and a `tts.speak` on a Google/Nest speaker so anyone home hears it out loud. The speech uses the **local Piper** TTS (text-to-speech) engine — installed as an app on the Home Assistant VM on the Voice page — rather than a cloud voice, so it still talks during the internet outage a burst pipe might cause.
 
 > [!NOTE]
 > The `notify.mobile_app_chris_iphone` action exists only after the Home Assistant companion app — the one you installed and signed in on the Matter Locks page of this build — has been **opened on the iPhone and granted notification permission**. It then surfaces as `notify.mobile_app_` plus the phone's name, underscored (so `chris_iphone` becomes `notify.mobile_app_chris_iphone`). Without that permission the entity does not exist and will not autocomplete in the editor — and if you paste the YAML anyway, Home Assistant saves it but the notify step errors when it runs. Grant it before building this rule, since every automation on this page leans on it.
@@ -76,7 +78,7 @@ Why it works, top to bottom. The trigger lists every leak sensor under one roof,
 > The spoken `tts.speak` step needs two things this build sets up later, on the Voice page: the **Piper** text-to-speech engine (which becomes the `tts.piper` entity) and a Google/Nest **Cast** speaker added to Home Assistant as a `media_player.*` entity. Until both exist, that one action fails silently while the valve-close and the critical push — the parts that actually matter — work from the moment you save. Build the rule the day the valve is paired; the spoken line starts working once you finish the Voice page. Your Google/Nest speakers are not in Home Assistant just because they are on the network — the Voice page adds them through **Settings → Devices & services → Add integration → Google Cast** so they surface as `media_player.*` targets (a HomePod cannot be a target — Home Assistant cannot push audio to it).
 
 > [!WARNING]
-> **No `conditions` block — on purpose.** A leak at 3 a.m. with everyone home, a leak while you are away, a leak during any "guest mode" — every one of them needs the water off. A safety action must never be suppressed by presence, time, or a toggle. Drive the valve straight off the raw sensors and resist the urge to be clever.
+> **No presence, time, or guest-mode condition — on purpose.** The rule's only condition is the moisture filter above. A leak at 3 a.m. with everyone home, a leak while you are away, a leak during any "guest mode" — every one of them needs the water off. A safety action must never be suppressed by presence, time, or a toggle. Drive the valve straight off the raw sensors and resist the urge to be clever.
 
 > [!DETAILS] The critical iOS notification recipe
 > A plain notify respects silent mode, Focus, and Do Not Disturb — exactly the modes your phone is in at 3 a.m., which is exactly when a leak cannot wait. The iOS companion app honours a small `push` override that bypasses all of it, and it is the block any safety alert on this build should reuse:
