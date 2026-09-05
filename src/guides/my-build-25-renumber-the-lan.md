@@ -121,7 +121,16 @@ tailscale set --advertise-routes=192.168.213.0/24
 7. **Datacenter → Storage → nas-backups → Edit**: **Server** → `192.168.213.20`. (It errors until TrueNAS moves, a few steps down — save it anyway.)
 
 ### The containers — AdGuard first
-Each LXC changes in the Proxmox UI: select the container → **Network** → double-click **net0** → **IPv4/CIDR** and **Gateway** → **OK** → then **Reboot** the container. In this order, because the rest resolve names through the first:
+For each container, in the Proxmox UI:
+
+1. Select the container in the left tree.
+2. Open **Network**.
+3. Double-click **net0**.
+4. Set **IPv4/CIDR** to the container's new address and **Gateway** to `192.168.213.1`.
+5. Click **OK**.
+6. **Reboot** the container.
+
+Take them in this order, because the rest resolve names through the first:
 
 1. **103 AdGuard** → `192.168.213.53/24`, gateway `192.168.213.1`.
 2. **104 Nginx Proxy Manager** → `192.168.213.54/24`.
