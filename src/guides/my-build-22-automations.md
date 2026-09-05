@@ -782,6 +782,17 @@ Then any automation's **Then do** can activate the scene with the `scene.turn_on
 > [!WARNING]
 > The scene editor is **live**: while you edit, it actually drives the real devices to the scene's states so you can see what you are building, and restores them when you leave. Do not panic when the room changes around you — that is the editor showing its work, not an automation firing.
 
+### Let Home Assistant read the household calendar
+The `Household` calendar lives on Nextcloud (the Nextcloud page built it). Home Assistant reads it over CalDAV — once — so it can sit on the dashboard and steer automations:
+
+1. In Nextcloud at `https://cloud.kuzco.org`, open **Settings → Security → Devices & sessions**, name a new entry `Home Assistant`, and click **Create new app password**. Copy it.
+2. In Home Assistant, go to **Settings → Devices & services → Add integration → CalDAV**.
+3. **URL** → `https://cloud.kuzco.org/remote.php/dav`.
+4. **Username** → your Nextcloud username; **Password** → the app password; leave **Verify SSL** on.
+5. **Submit**.
+
+Every calendar the account can see becomes a `calendar.*` entity — `Household` among them — usable on the card below and as an automation condition (a "no school today" check, for one).
+
 ### Put the house on a dashboard
 Automations run themselves; the things a person *chooses* — a scene, a script, the shades, a lock, Guest mode — need a page anyone in the house can tap. That is a Home Assistant dashboard, not Homepage: Homepage's **Controls** tile simply opens it. Build it once, from scratch:
 
@@ -812,8 +823,6 @@ Give the wall display its own login, so its default page never drags the phones 
 19. On an iPad, pin the companion app in place with **Guided Access** (Settings → Accessibility) so the page cannot wander.
 
 > [!NOTE]
-> The calendar card needs Home Assistant to read the Nextcloud calendar first — once, before building the dashboard: **Settings → Devices & services → Add integration → CalDAV**, **URL** → `https://cloud.kuzco.org/remote.php/dav`, **Username** → your Nextcloud username, **Password** → an app password from Nextcloud's **Settings → Security → Devices & sessions**, **Verify SSL** on. Every calendar the account can see becomes a `calendar.*` entity — `Household` among them — usable on the card and in automations (a "no school today" condition, for one).
-
 > [!NOTE]
 > A default dashboard is per *user*, not per device — Home Assistant's docs warn that a phone and a tablet on the same login revert to one default together, which is why the tablet gets its own. The phones keep the Overview for the full house; the tablet wakes up on House.
 
