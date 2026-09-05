@@ -139,6 +139,52 @@ It walks every sensor with a `battery` device class, keeps the ones under 20%, a
 > [!TIP]
 > A dead battery on a convenience sensor is an annoyance; a dead battery on a leak sensor quietly switches off the most important automation you own. Give the **leak sensors specifically** more runway: clone the sweep as a second automation whose templates list just the twelve leak-sensor battery entities (swap the `device_class` filter for their `entity_id`s) with the threshold raised to 40, so the warning on those arrives with months to spare.
 
+### Two more guards for the leak net
+A sensor that drops off the Zigbee mesh reads `unavailable`, not "low battery" — the sweep above never sees it, and the leak rule silently loses a room. This rule catches any moisture sensor that has been unreachable for an hour, by device class, so it covers all twelve without naming them:
+
+```yaml
+alias: Leak sensor offline
+triggers:
+  - trigger: template
+    value_template: >-
+      {{ states.binary_sensor | selectattr('attributes.device_class', 'eq', 'moisture')
+         | selectattr('state', 'eq', 'unavailable') | list | count > 0 }}
+    for: "01:00:00"
+actions:
+  - action: notify.mobile_app_chris_iphone
+    data:
+      title: "Leak sensor offline"
+      message: >-
+        {{ states.binary_sensor | selectattr('attributes.device_class', 'eq', 'moisture')
+           | selectattr('state', 'eq', 'unavailable') | map(attribute='name') | join(', ') }} — the leak rule cannot see it.
+mode: single
+```
+
+A motorised valve that never moves can seize, and the first time it is asked to close for real is the wrong time to find out. Once a month, at a quiet hour, close and reopen it:
+
+```yaml
+alias: Exercise the water valve monthly
+triggers:
+  - trigger: time
+    at: "10:00:00"
+conditions:
+  - condition: template
+    value_template: "{{ now().day == 1 }}"
+  - condition: state
+    entity_id: switch.main_water
+    state: "on"
+actions:
+  - action: switch.turn_off
+    target: { entity_id: switch.main_water }
+  - delay: "00:00:30"
+  - action: switch.turn_on
+    target: { entity_id: switch.main_water }
+  - action: notify.mobile_app_chris_iphone
+    data:
+      message: "Main water valve exercised — closed and reopened. If the pressure seems off today, check the valve."
+mode: single
+```
+
 ## Doors and presence
 
 ### Auto-lock the U400s and notify on unlock
@@ -147,46 +193,60 @@ The three **Aqara U400** deadbolts were commissioned directly into Home Assistan
 First, auto-lock a few minutes after the lock is opened — trigger on the lock holding `unlocked` for a few minutes, then re-lock it. This stands in for a door-closed sensor: if the deadbolt is left open, it secures itself.
 
 ```yaml
-alias: Auto-lock front door
+alias: Auto-lock any door
 triggers:
   - trigger: state
-    entity_id: lock.front_door
+    entity_id:
+      - lock.front_door
+      - lock.carport_door
+      - lock.basement_door
     to: "unlocked"
     for: "00:05:00"
 actions:
   - action: lock.lock
-    target: { entity_id: lock.front_door }
+    target:
+      entity_id: "{{ trigger.entity_id }}"
+mode: parallel
 ```
 
 Second, notify the moment a lock goes to `unlocked`, so an unexpected unlock reaches your phone right away:
 
 ```yaml
+alias: Door unlocked
 triggers:
   - trigger: state
-    entity_id: lock.front_door
+    entity_id:
+      - lock.front_door
+      - lock.carport_door
+      - lock.basement_door
     to: "unlocked"
 actions:
   - action: notify.mobile_app_chris_iphone
     data:
-      message: "Front door unlocked."
+      message: "{{ trigger.to_state.name }} unlocked."
+mode: parallel
 ```
 
 Third, a longer left-unlocked reminder — the same `unlocked` trigger held for, say, ten minutes, paired with a push so you get nudged (or just let the auto-lock above handle it silently). Pick whichever fits each door:
 
 ```yaml
-alias: Front door left unlocked
+alias: Door left unlocked
 triggers:
   - trigger: state
-    entity_id: lock.front_door
+    entity_id:
+      - lock.front_door
+      - lock.carport_door
+      - lock.basement_door
     to: "unlocked"
     for: "00:10:00"
 actions:
   - action: notify.mobile_app_chris_iphone
     data:
-      message: "Front door has been unlocked for 10 minutes."
+      message: "{{ trigger.to_state.name }} has been unlocked for 10 minutes."
+mode: parallel
 ```
 
-Repeat the patterns you want for `lock.carport_door` and `lock.basement_door` too — the Carport and Basement locks from the Matter Locks page (confirm your real entity IDs under **Entities**).
+All three doors sit in every trigger, and `trigger.entity_id` and `trigger.to_state.name` let one rule serve whichever door fired — `mode: parallel` lets two doors run their own timers at the same time.
 
 > [!TIP]
 > If you later add a door/window **contact sensor** and pair it (the same way you joined the leak sensors), you can swap the auto-lock trigger to fire on the *door* closing and holding (`binary_sensor.front_door_contact` reading `off` `for: "00:05:00"`) for a more natural "lock after the door is shut" behaviour. An Aqara contact on the **Zigbee** mesh is the safe choice, since Zigbee already has mains-powered routers here; IKEA's **MYGGBETT** at $8 is the cheaper option once the Thread mesh has routers of its own. The build does not ship one, so the lock-state version above is the default.
@@ -288,12 +348,130 @@ The last block is why the sliding glass door gets a **MYGGBETT** contact sensor.
 
 Coming home is the easy half — no conditions needed.
 
-1. Mirror the rule above, but trigger on the first phone reaching `home`.
-2. Turn on `light.entryway`.
-3. Set the ecobee back to **70**.
+```yaml
+alias: Somebody home
+triggers:
+  - trigger: state
+    entity_id: [device_tracker.chris_iphone, device_tracker.partner_iphone]
+    to: "home"
+actions:
+  - action: light.turn_on
+    target: { entity_id: light.entryway }
+  - action: climate.set_temperature
+    target: { entity_id: climate.downstairs }
+    data: { temperature: 70 }
+mode: single
+```
 
 > [!NOTE]
 > Both numbers are **Fahrenheit** — this install runs US units, so `temperature:` values are °F (a °C-configured install would use 17 and 21; a Celsius value on this one would clamp the thermostat to its floor).
+
+### The house at night and away
+Four rules that use the contacts, locks, and presence the pages above already set up. Bedtime locks every door and reports anything still open:
+
+```yaml
+alias: Goodnight lockdown
+triggers:
+  - trigger: time
+    at: "22:30:00"
+actions:
+  - action: lock.lock
+    target:
+      entity_id: [lock.front_door, lock.carport_door, lock.basement_door]
+  - if:
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: binary_sensor.front_door_contact
+            state: "on"
+          - condition: state
+            entity_id: binary_sensor.sliding_door
+            state: "on"
+          - condition: state
+            entity_id: binary_sensor.living_room_window
+            state: "on"
+    then:
+      - action: notify.mobile_app_chris_iphone
+        data:
+          title: "Still open at bedtime"
+          message: >-
+            {{ expand('binary_sensor.front_door_contact', 'binary_sensor.sliding_door', 'binary_sensor.living_room_window')
+               | selectattr('state', 'eq', 'on') | map(attribute='name') | join(', ') }}
+mode: single
+```
+
+With nobody home, any door or window opening — or any lock unlocking — is worth a critical alert, the same interruption level the leak rule uses. Guest mode is the off-switch for the evening a friend is house-sitting:
+
+```yaml
+alias: Away — door or window opened
+triggers:
+  - trigger: state
+    entity_id:
+      - binary_sensor.front_door_contact
+      - binary_sensor.sliding_door
+      - binary_sensor.living_room_window
+    to: "on"
+  - trigger: state
+    entity_id: [lock.front_door, lock.carport_door, lock.basement_door]
+    to: "unlocked"
+conditions:
+  - condition: state
+    entity_id: device_tracker.chris_iphone
+    state: "not_home"
+  - condition: state
+    entity_id: device_tracker.partner_iphone
+    state: "not_home"
+  - condition: state
+    entity_id: input_boolean.guest_mode
+    state: "off"
+actions:
+  - action: notify.mobile_app_chris_iphone
+    data:
+      title: "🚨 Nobody home"
+      message: "{{ trigger.to_state.name }} — {{ trigger.to_state.state }}."
+      data:
+        push:
+          interruption-level: critical
+          sound: { name: default, critical: 1, volume: 1.0 }
+mode: parallel
+```
+
+A door left open is a quieter problem — conditioned air leaving, or a door nobody remembers opening:
+
+```yaml
+alias: Door left open
+triggers:
+  - trigger: state
+    entity_id: [binary_sensor.front_door_contact, binary_sensor.sliding_door]
+    to: "on"
+    for: "00:10:00"
+actions:
+  - action: notify.mobile_app_chris_iphone
+    data:
+      message: "{{ trigger.to_state.name }} has been open for 10 minutes."
+mode: parallel
+```
+
+And the doorbell, which the Reolink integration exposes as a visitor sensor, reaches both your phone and the kitchen:
+
+```yaml
+alias: Doorbell pressed
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.front_doorbell_visitor
+    to: "on"
+actions:
+  - action: notify.mobile_app_chris_iphone
+    data:
+      title: "🔔 Front door"
+      message: "Someone pressed the doorbell."
+  - action: tts.speak
+    target: { entity_id: tts.piper }
+    data:
+      media_player_entity_id: media_player.kitchen_speaker
+      message: "Someone is at the front door."
+mode: single
+```
 
 ## Comfort and awareness
 

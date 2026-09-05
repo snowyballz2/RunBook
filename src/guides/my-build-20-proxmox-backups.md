@@ -162,10 +162,10 @@ Restoring over an existing guest returns it to the archived state — everything
 > qmrestore /mnt/pve/nas-backups/dump/vzdump-qemu-101-....vma.zst 901
 > ```
 >
-> A container backup — AdGuard (102) — into brand-new ID 900:
+> A container backup — AdGuard (103) — into brand-new ID 900:
 >
 > ```bash
-> pct restore 900 /mnt/pve/nas-backups/dump/vzdump-lxc-102-....tar.zst
+> pct restore 900 /mnt/pve/nas-backups/dump/vzdump-lxc-103-....tar.zst
 > ```
 >
 > Swap in the archive's real filename (the `....` is its timestamp). This is also how you test restores safely.
