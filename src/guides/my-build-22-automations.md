@@ -782,6 +782,37 @@ Then any automation's **Then do** can activate the scene with the `scene.turn_on
 > [!WARNING]
 > The scene editor is **live**: while you edit, it actually drives the real devices to the scene's states so you can see what you are building, and restores them when you leave. Do not panic when the room changes around you — that is the editor showing its work, not an automation firing.
 
+### Put the house on a dashboard
+Automations run themselves; the things a person *chooses* — a scene, a script, the shades, a lock, Guest mode — need a page anyone in the house can tap. That is a Home Assistant dashboard, not Homepage: Homepage's **Controls** tile simply opens it. Build it once, from scratch:
+
+1. Go to **Settings → Dashboards**.
+2. Click **Add dashboard**.
+3. Choose **New dashboard from scratch**.
+4. **Title** → `House`; pick an icon; leave **Admin only** off; keep **Show in sidebar** on.
+5. Click **Create**.
+6. Open **House** from the sidebar.
+7. Click the pencil (**Edit dashboard**), then add a view with **View type** → **Sections**, and **Save**.
+
+Now fill the empty section — one **Tile** card per control, each with the feature that gives it a real button:
+
+8. Click **Add card** → **Tile** → the *Movie night* script from the Voice page → add the **Button** feature, so the tile runs it on one tap.
+9. Repeat for every scene from the section above — **Tile** → the scene → **Button**.
+10. **Tile** → `cover.all_shades` → features **Cover open/close** and **Cover position**.
+11. **Tile** → each of `lock.front_door`, `lock.carport_door`, `lock.basement_door` → feature **Lock commands**.
+12. **Tile** → `climate.downstairs` → feature **Target temperature**.
+13. **Tile** → the *Guest mode* toggle → feature **Toggle**.
+14. **Create section** for the cameras, then **Add card** → **Picture entity** → one per Frigate camera.
+15. **Save**.
+
+Give the wall display its own login, so its default page never drags the phones along:
+
+16. **Settings → People → Users → Add user** — name `Tablet`, not an administrator, a password only the tablet knows.
+17. Sign the tablet in as that user, open **User profile → General → Dashboard**, and choose **House**.
+18. On an iPad, pin the companion app in place with **Guided Access** (Settings → Accessibility) so the page cannot wander.
+
+> [!NOTE]
+> A default dashboard is per *user*, not per device — Home Assistant's docs warn that a phone and a tablet on the same login revert to one default together, which is why the tablet gets its own. The phones keep the Overview for the full house; the tablet wakes up on House.
+
 ### Test without waiting for real events
 Two tools live in each automation's three-dot menu. **Run actions** executes the Then-do half immediately, skipping triggers and conditions — the fast way to confirm the valve, the critical push, and the spoken line all fire. **Traces** keeps a step-by-step record of the last few runs, drawn as a graph showing exactly which path ran and where it stopped; the first time a rule "didn't work," the trace almost always shows it worked precisely as written, just not as intended.
 

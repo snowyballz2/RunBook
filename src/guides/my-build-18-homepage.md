@@ -167,9 +167,29 @@ Empty and open the services file:
 : > /opt/homepage/config/services.yaml && nano /opt/homepage/config/services.yaml
 ```
 
-Paste the build itself — two groups, one tile per service:
+Paste the build itself — the house's own controls first, then two groups, one tile per service:
 
 ```yaml
+- House:
+    - Controls:
+        icon: home-assistant.png
+        href: https://ha.kuzco.org/dashboard-house
+        description: Scenes, locks, shades, thermostat — the tablet's page (built on the Automations page)
+    - Calendar:
+        icon: mdi-calendar
+        description: The household calendar
+        widget:
+          type: calendar
+          firstDayInWeek: sunday
+          view: agenda
+          maxEvents: 8
+          showTime: true
+          integrations:
+            - type: ical
+              url: paste-the-calendar-ics-url
+              name: Household
+              color: zinc
+
 - Infrastructure:
     - Proxmox:
         icon: proxmox.png
@@ -225,6 +245,12 @@ Paste the build itself — two groups, one tile per service:
 
 The page is suddenly worth bookmarking.
 
+> [!SECRET] household-calendar-url | Household calendar iCal URL
+> A private link. In **iCloud.com → Calendar**, open the household calendar's sharing (the icon beside its name), turn on **Public Calendar**, copy the link, and change its `webcal://` to `https://`. Google Calendar's equivalent is its *Secret address in iCal format*.
+
+> [!NOTE]
+> The **Controls** tile opens the House dashboard the Automations page builds — the dashboard's address is shown in Home Assistant's sidebar once it exists; `dashboard-house` is what a dashboard titled *House* gets. The Calendar tile has no address of its own; its widget is the whole point.
+
 > [!NOTE]
 > One rule decides every `href`: the proxy name wherever the Reverse Proxy page made one — a padlock and no port number for the household — and the plain address only where no name exists (AdGuard Home and Nginx Proxy Manager). Vaultwarden could never take its address anyway: its login needs the secure context only the proxied name provides. Home Assistant's name works once the Reverse Proxy page's trusted-proxy step is done (Home Assistant 2026.8 or newer); until then `http://192.168.1.51:8123` is the link. Every `siteMonitor` stays on the direct address, so the dots keep telling the truth even when the proxy itself is what broke. And one dot stays red on purpose: Uptime Kuma's, until the next page builds it.
 
@@ -255,7 +281,18 @@ A search box and a clock are the two that earn their place:
     text_size: xl
     format:
       timeStyle: short
+
+- openmeteo:
+    label: Home
+    latitude: paste-latitude
+    longitude: paste-longitude
+    units: imperial
+    cache: 5
 ```
+
+> [!INPUT] home-latitude | Home latitude (decimal) | 
+> [!INPUT] home-longitude | Home longitude (decimal) | 
+> Open-Meteo needs no account or key — only the coordinates. Copy them from Home Assistant's **Settings → System → General** map, or from any maps app: right-click the house, read the two decimals.
 
 > [!NOTE]
 > You will also see a `resources` widget in the samples — skip it. It reports the CPU and memory of the Homepage container itself, not the server. The real host numbers come from the Proxmox tile widget in the expandable below.
