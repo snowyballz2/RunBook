@@ -16,9 +16,9 @@ Voice is the convenience layer over everything the earlier pages built — the l
 ### Connect the companion app to home
 1. Install the **Home Assistant** app from the App Store on each iPhone.
 2. Sign in with the server's pinned address — the same `ha-ip` from the Home Assistant page, on port `8123`.
-3. Under **Settings → Companion app → (your server)**, point both the **Internal URL** and the **External URL** at that same address, so there is no separate away-URL to maintain.
+3. Under **Settings → Companion app → (your server)**, set **Internal URL** → `http://192.168.1.51:8123` and **External URL** → `https://homeassistant.<tailnet>.ts.net`, the collision-proof address the Remote Access page gave Home Assistant, with your home Wi-Fi as the **Home Network Wi-Fi SSID**.
 
-Because the remote-access work put the Proxmox host on Tailscale as a **subnet router**, the Home Assistant OS **VM (virtual machine)**'s one LAN address answers whether you are home or out — no Tailscale runs inside the VM itself.
+At home the app uses the LAN address directly. Away, it uses the Tailscale app inside the Home Assistant VM, which the Remote Access page set up so that a foreign Wi-Fi on `192.168.1.x` can never shadow the house.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 > The address the companion app, Shortcuts, and the HomeKit Bridge all reach. Pinned on the Home Assistant page.

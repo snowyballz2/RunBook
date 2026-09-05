@@ -369,6 +369,37 @@ Served to a phone nowhere near the house, through zero opened ports. Nextcloud, 
 >
 > **Either way, disconnect it while at home.** On your own LAN a consumer VPN buys only ISP opacity, and it costs you real things: it bypasses AdGuard's filtering, it stops the `*.kuzco.org` names from the Reverse Proxy page resolving on the machine you administer from, and it fights Tailscale for control of routing and DNS on macOS. Run one at a time.
 
+### Give Home Assistant an address no Wi-Fi can collide with
+The note above names the one hole in subnet routing: a foreign Wi-Fi on `192.168.1.x` shadows every LAN address, and the phone's most important remote service — Home Assistant, with the locks, the cameras' Frigate cards, and presence behind it — goes with them. Tailscale Serve on the host cannot help, because Serve only publishes a machine's *own* localhost services. So Home Assistant publishes itself: the official Tailscale app inside the VM has a built-in Serve mode that puts it at `https://homeassistant.<tailnet>.ts.net` — an address on the tailnet's own range, with a real certificate, that no coffee-shop router can shadow. Frigate rides along through Home Assistant's camera cards; Proxmox is already reachable at the host's `100.x` address; Vaultwarden and Nextcloud carry offline copies and resume syncing on cellular or at home.
+
+Once, on the tailnet — skip if the optional Proxmox Serve step above already switched it on:
+
+1. Open the [DNS page](https://login.tailscale.com/admin/dns).
+2. Under **HTTPS Certificates**, click **Enable HTTPS**.
+
+In Home Assistant:
+
+3. Go to **Settings → Apps → App store**.
+4. Search for **Tailscale** and click **Install**.
+5. On the app's **Configuration** tab, set **share_homeassistant** → `serve`.
+6. Leave **share_on_port** at `443`.
+7. **Save**.
+8. On the **Info** tab, turn on **Start on boot** and **Watchdog**, then click **Start**.
+9. Click **Open Web UI** and sign in to Tailscale — with the same Apple-ID login the host and phones use, never the passkey admin: this node becomes that user's device, like every other client (the Vaultwarden page explains why).
+10. Go to **Settings → System → Network**, scroll to **HTTP server**.
+11. Under **Trusted proxies**, add `127.0.0.1` alongside the `192.168.1.54` entry from the Reverse Proxy page.
+12. **Save**, then confirm the new network settings within five minutes when Home Assistant asks, exactly as on the Reverse Proxy page.
+
+On the phone, on cellular:
+
+13. Browse to `https://homeassistant.<tailnet>.ts.net` — the login, with a padlock.
+14. In the companion app, go to **Settings → Companion app → (your server)**.
+15. Set **External URL** → `https://homeassistant.<tailnet>.ts.net`.
+16. Leave **Internal URL** at `http://192.168.1.51:8123`, with your home Wi-Fi listed as the **Home Network Wi-Fi SSID** — the app uses the LAN address at home and the tailnet address everywhere else.
+
+> [!NOTE]
+> `<tailnet>` is the *Tailnet name* field recorded above (the `tailXXXX.ts.net` suffix from the DNS page); `homeassistant` is the VM's machine name on the tailnet. Serve is tailnet-only — nothing here is on the internet, and the `funnel` value of the same option, which would be, stays unused. The app store recommends doing the sign-in step from a desktop browser if the phone's browser struggles with it.
+
 ## Put Tailscale on the Mac you administer from
 
 ### Install the Standalone build, not the App Store one
