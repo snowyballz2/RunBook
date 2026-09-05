@@ -52,7 +52,10 @@ So this page picks up after both of those: it confirms the raw disks arrived, th
 > VFIO is for the HBA only. The GTX 1080 Ti is *shared* across the service containers from the host driver and must never be VFIO-bound or handed to a VM. Keep the two policies straight: the HBA locks to this one VM; the GPU never locks to anyone.
 
 ### Confirm the raw disks appear
-Boot the VM, then move to the **TrueNAS web UI at `192.168.1.20`** — a different site from the Proxmox interface you have been working in, which cannot see these disks at all. The Disks screen there is not a left-nav entry, which makes it easy to hunt for: click **Storage** in the left nav to open the Storage Dashboard, then the **Disks** button on that page (the *Disk Health* widget's **View Disks** link goes to the same place). Or skip the hunt entirely: `https://192.168.1.20/ui/storage/disks`. You should see both **mirror Seagate IronWolf ST4000VN006 4 TB** drives by their real model and serial, each reporting genuine SMART — exactly as if TrueNAS were running on bare metal. The third (footage) IronWolf sits on a motherboard SATA port with the host, so it does not — and should not — appear here.
+1. Boot the VM, then open the **TrueNAS web UI at `192.168.1.20`** — a different site from the Proxmox interface you have been working in, which cannot see these disks at all.
+2. The Disks screen there is not a left-nav entry, so click **Storage** in the left nav to open the Storage Dashboard, then the **Disks** button on that page (the *Disk Health* widget's **View Disks** link goes to the same place) — or skip the hunt entirely: `https://192.168.1.20/ui/storage/disks`.
+
+You should see both **mirror Seagate IronWolf ST4000VN006 4 TB** drives by their real model and serial, each reporting genuine SMART — exactly as if TrueNAS were running on bare metal. The third (footage) IronWolf sits on a motherboard SATA port with the host, so it does not — and should not — appear here.
 
 While the serials are on screen, record them — with **which physical tray each one sits in** (the drives are identical at a glance, and the dead-disk drill on the next page keys on serial). The footage disk's serial is on the Proxmox side instead: in the Proxmox web UI, click the **`pve`** node, then **Disks** in its menu.
 
@@ -106,7 +109,15 @@ Datasets are the folders-with-superpowers inside a pool — each carries its own
 ## Share it
 
 ### Create the SMB user
-SMB — served by Samba — is the network-drive protocol Macs speak natively, and TrueNAS requires at least one local SMB user before it will create any share. You cannot connect as root or a built-in account. In the TrueNAS UI, go to **Credentials → Users → Add**: a username, a strong password, and under **Allow Access** leave **SMB Access** ticked and everything else off — this account exists purely for share logins, so it deliberately gets no web UI, shell, or SSH access (`truenas_admin` covers administration). Full Name lives under Additional Details and is optional — skip it or not, nothing uses it. Save.
+SMB — served by Samba — is the network-drive protocol Macs speak natively, and TrueNAS requires at least one local SMB user before it will create any share. You cannot connect as root or a built-in account.
+
+In the TrueNAS UI, go to **Credentials → Users → Add**:
+
+- **Username** and **Password** — a strong password for share logins.
+- **Allow Access** → leave **SMB Access** ticked and everything else off. This account exists purely for share logins, so it deliberately gets no web UI, shell, or SSH access (`truenas_admin` covers administration).
+- **Full Name** (under Additional Details) → optional; nothing uses it.
+
+Save.
 
 > [!INPUT] smb-user | SMB share username
 > One shared household user is fine to start; add per-person users later.
@@ -137,12 +148,19 @@ smb://192.168.1.20
 \\192.168.1.20\files
 ```
 
-`\\192.168.1.20` alone is a *server*, not something Windows can mount; a drive letter must point at one share. Pick a letter from the **far end of the alphabet — `Z:` is the convention** — and tick **Reconnect at sign-in** *and* **Connect using different credentials**, then click Finish.
+`\\192.168.1.20` alone is a *server*, not something Windows can mount; a drive letter must point at one share.
+
+1. Pick a letter from the far end of the alphabet — **`Z:`** is the convention.
+2. Tick **Reconnect at sign-in** *and* **Connect using different credentials**.
+3. Click **Finish**.
 
 > [!WARNING]
 > Do not give the mapping a letter anywhere near the local disks (`C:` through `H:`). Windows lets a network drive take a letter a local volume already owns, and after the next reboot that local drive comes back **with no letter at all** — it disappears from File Explorer while remaining perfectly healthy — and the mapping fails too, because the letter is contested. One collision, two mysteries. If it has already happened: **Win+X → Disk Management**, find the volume listed as Healthy with no letter, right-click → **Change Drive Letter and Paths → Add**, give it its letter back, then re-map the share at `Z:`.
 
-Map **`files` only**. The `backups` share is for machines — the Proxmox host and the Home Assistant VM mount it themselves to write their archives — and a permanently mapped drive letter full of backups on a daily-driver PC is exactly what ransomware enumerates and encrypts. Proxmox also manages its own retention, so hand-deleting archives to reclaim space corrupts its bookkeeping; change the retention setting instead, and check backups ran from **Datacenter → Backup** rather than by browsing files. If you ever need a file out of an archive, map it for that one job and disconnect after.
+Map **`files`** only.
+
+> [!WARNING]
+> The `backups` share is for machines — the Proxmox host and the Home Assistant VM mount it themselves to write their archives — and a permanently mapped drive letter full of backups on a daily-driver PC is exactly what ransomware enumerates and encrypts. Proxmox also manages its own retention, so hand-deleting archives to reclaim space corrupts its bookkeeping; change the retention setting instead, and check backups ran from **Datacenter → Backup** rather than by browsing files. If you ever need a file out of an archive, map it for that one job and disconnect after.
 
 Open `files` on each machine and confirm you can drop a file in.
 

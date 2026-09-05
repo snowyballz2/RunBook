@@ -39,11 +39,16 @@ The pool's other guardian is already on duty. TrueNAS generated a default **scru
 ### Let the disk watchdog work
 Snapshots guard the data; S.M.A.R.T. watches the drives themselves. On current TrueNAS there is nothing to schedule — the old S.M.A.R.T. Tests service is gone, replaced by **Drive Health Management**, which polls every disk's S.M.A.R.T. data automatically (roughly every 90 minutes) and raises alerts that name the affected disk and what tripped. Check the **Disk Health** card on the **Storage** dashboard (its **View Disks** link opens the per-disk screen at `/ui/storage/disks`); active alerts land in the **Alerts** panel behind the bell icon, top right.
 
-Because the two mirror drives reach TrueNAS through the LSI 9300-8i HBA (host bus adapter) passed through whole with VFIO (Virtual Function I/O), TrueNAS talks to the real disks and its S.M.A.R.T. data is genuine — no QEMU emulation in the way. Deeper self-tests run from TrueNAS's own shell (**System → Shell**) — which signs you in as `truenas_admin`, not root, so the `smartctl` commands need their `sudo` (it asks for the `truenas_admin` password). First identify the two mirror drives — the `ST4000VN006` rows; the `QEMU HARDDISK` row is the 32 GB virtual boot disk, which speaks no SMART and answers any self-test with `unsupported scsi opcode`, so never point a test at it:
+Because the two mirror drives reach TrueNAS through the LSI 9300-8i HBA (host bus adapter) passed through whole with VFIO (Virtual Function I/O), TrueNAS talks to the real disks and its S.M.A.R.T. data is genuine — no QEMU emulation in the way.
+
+Deeper self-tests run from TrueNAS's own shell (**System → Shell**). First identify the two mirror drives:
 
 ```bash
 lsblk -o NAME,MODEL,SERIAL
 ```
+
+> [!NOTE]
+> The shell signs you in as `truenas_admin`, not root, so the `smartctl` commands need their `sudo` (it asks for the `truenas_admin` password). The two mirror drives are the `ST4000VN006` rows; the `QEMU HARDDISK` row is the 32 GB virtual boot disk, which speaks no SMART and answers any self-test with `unsupported scsi opcode`, so never point a test at it.
 
 A quick self-test finishes in under ten minutes:
 
@@ -79,7 +84,13 @@ ls /dev/disk/by-id/ | grep ST4000VN006
 
 That prints one `ata-ST4000VN006-…_<serial>` name per drive (ignore any `-partN` entries) — the serials match the `mirror-a-serial`/`mirror-b-serial` fields. Keep those two names on screen; they get pasted into the jobs below. **The shell's job is now done** — everything else happens in the TrueNAS web UI.
 
-In the TrueNAS UI, go to **System → Advanced Settings**, find the **Cron Jobs** widget, and click **Add** three times — one job per block below. Every job takes the same answers:
+In the TrueNAS UI:
+
+1. Go to **System → Advanced Settings**.
+2. Find the **Cron Jobs** widget.
+3. Click **Add** three times — one job per block below.
+
+Every job takes the same answers:
 
 - **Run As User** → `root`
 - **Enabled** → ticked
@@ -113,7 +124,13 @@ The scheduling has two deliberate offsets. The longs are **staggered two weeks a
 ## Make alerts reach you
 
 ### Teach TrueNAS to send email
-A NAS (network-attached storage) that notices a dying IronWolf but has no way to tell you is just a quieter failure. First a prerequisite the Email dialog enforces: the admin account needs an address on file, or the dialog refuses with *"No e-mail address is set for root user or any other local administrator."* In the TrueNAS UI, go to **Credentials → Users**, edit **`truenas_admin`**, fill in its **Email** field with the inbox you actually read, and save. Then go to **System → General Settings** and click **Settings** on the **Email** widget:
+A NAS (network-attached storage) that notices a dying IronWolf but has no way to tell you is just a quieter failure.
+
+> [!NOTE]
+> The Email dialog enforces one prerequisite: the admin account needs an address on file, or it refuses with *"No e-mail address is set for root user or any other local administrator."*
+
+1. In the TrueNAS UI, go to **Credentials → Users**, edit **`truenas_admin`**, fill in its **Email** field with the inbox you actually read, and save.
+2. Go to **System → General Settings** and click **Settings** on the **Email** widget:
 
 - **Send Mail Method** → **SMTP** (Simple Mail Transfer Protocol) — the general path for this mostly-iCloud household; **GMail OAuth** / **Outlook OAuth** spare app-password wrangling if you have one of those accounts
 - **Email Recipients** → the inbox you actually read
@@ -131,13 +148,16 @@ With email working, TrueNAS also sends a nightly status email that includes disk
 > - **Password** → for an iCloud sender, an app-specific password generated at appleid.apple.com — the account password will not authenticate
 
 ### Aim the alerts at your inbox — and test them
-In the TrueNAS UI, go to **System → Alert Settings**. Two rows ship by default under **Alert Services**: ignore **SNMP Trap** (it reports to enterprise monitoring servers — Zabbix and kin — that this build does not run, and with no destination configured it sends nothing; leave it untouched). The **E-Mail** entry is the one that matters — open it with the pencil/**Edit**:
+In the TrueNAS UI, go to **System → Alert Settings**. The **E-Mail** entry is the one that matters — open it with the pencil/**Edit**:
 
 - **Email Address** → the recipient
 - **Level** → keep the default **Warning** — alerts at that level and above are sent
 - **Send Test Alert** → click; save once the test arrives
 
 The built-in categories already cover what matters here: an unhealthy pool, a pool filling up, an IronWolf running hot or failing a self-test, and any failed snapshot, scrub, replication, or cloud sync task.
+
+> [!NOTE]
+> Two rows ship by default under **Alert Services**. Ignore **SNMP Trap** — it reports to enterprise monitoring servers (Zabbix and kin) that this build does not run, and with no destination configured it sends nothing; leave it untouched.
 
 > [!WARNING]
 > The two test buttons in this phase are the whole point — one per screen: **Send Test Mail** in the Email settings dialog (proves TrueNAS can send mail at all) and **Send Test Alert** in the Alert Services entry (proves the alert engine routes through that mail setup to your recipient — a different failure point, which is why both exist). An alert chain you have never tested is the exact silent failure you set it up to prevent — press both, confirm both land. Do it now, while you are looking at the screen, not in two years when a drive is already dying.
@@ -148,7 +168,17 @@ The built-in categories already cover what matters here: an unhealthy pool, a po
 ## Practice recovery
 
 ### Pull a file back from a snapshot
-Snapshots are only as good as your ability to use one under pressure, so rehearse the move before you need it. macOS Finder has no built-in previous-versions browser (that is a Windows-only SMB feature), so use one of two routes. Server-side — in the TrueNAS UI — go to **Datasets**, select the dataset, and click **Manage Snapshots** on its **Data Protection** widget — that screen lists, holds, clones, and rolls back snapshots. To grab a single file straight from a Mac, set the dataset's **Snapshot Directory** to **Visible**, then browse the hidden `.zfs/snapshot/` folder inside the mounted SMB (Server Message Block) share.
+Snapshots are only as good as your ability to use one under pressure, so rehearse the move before you need it. macOS Finder has no built-in previous-versions browser (that is a Windows-only SMB feature), so use one of two routes.
+
+**Server-side, in the TrueNAS UI:**
+
+1. Go to **Datasets** and select the dataset.
+2. Click **Manage Snapshots** on its **Data Protection** widget — that screen lists, holds, clones, and rolls back snapshots.
+
+**Straight from a Mac, to grab a single file:**
+
+1. Set the dataset's **Snapshot Directory** to **Visible**.
+2. Browse the hidden `.zfs/snapshot/` folder inside the mounted SMB (Server Message Block) share.
 
 > [!INPUT] smb-user | SMB share username
 
@@ -188,7 +218,13 @@ The replacement must be the same 4TB capacity or larger, and TrueNAS wipes it. R
 On this build the call is deliberately simple: **everything on the mirror is treated as irreplaceable.** No separate dataset to sort into, no judging photo by photo — the bulk that is *not* worth protecting (camera footage) was kept off the mirror by design, on Frigate's own disk. So the offsite target is simply `tank/files`, the household's whole file store, as-is. (The `backups` dataset stays local — its vzdump archives are rebuildable from the running system.)
 
 ### The offsite copy: a rotated USB drive
-The build's offsite leg is the free one. Plug an external drive into the Mac or the Windows PC, **encrypt it first** so a lost drive is not a leak — Mac: Disk Utility, erase as **APFS (Encrypted)**; Windows PC: **BitLocker To Go** — and record that password in your password manager. Then mount the `files` share (the connection saved on the TrueNAS Storage page) and copy the whole share onto the drive.
+The build's offsite leg is the free one.
+
+1. Plug an external drive into the Mac or the Windows PC.
+2. Encrypt it first, so a lost drive is not a leak — Mac: Disk Utility, erase as **APFS (Encrypted)**; Windows PC: **BitLocker To Go**.
+3. Record that password in your password manager.
+4. Mount the `files` share (the connection saved on the TrueNAS Storage page).
+5. Copy the whole share onto the drive.
 
 Store the drive **somewhere that is not this house** — a desk at work, a relative's — and refresh the copy on a rhythm: each Maintenance & Upkeep pass, or quarterly at worst. Low-tech is the feature: no account, no bill, no cloud, and stored off-property it genuinely closes the fire-and-theft gap.
 

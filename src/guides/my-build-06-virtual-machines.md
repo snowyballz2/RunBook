@@ -14,7 +14,15 @@ This build runs two full virtual machines (VMs) on Proxmox: **Home Assistant OS*
 ## Before you build
 
 ### Confirm the host is ready
-Log in to the Proxmox web UI and confirm the host is in the state the earlier pages left it: **IOMMU (Input/Output Memory Management Unit) is enabled** and the 9300-8i HBA sits alone in its own IOMMU group (both done on the Install Proxmox page). The HBA is **not** bound to vfio-pci yet, and it is **not** attached to any VM — that is a separate later step on the GPU Sharing & HBA Passthrough page. So you build the TrueNAS VM here with **no HBA attached**; the controller gets passed through afterward, and only then do its disks appear for the pool. Neither VM ever gets the GPU.
+Log in to the Proxmox web UI, then confirm the host is in the state the earlier pages left it:
+
+1. **IOMMU (Input/Output Memory Management Unit)** is enabled.
+2. The 9300-8i HBA sits alone in its own IOMMU group.
+
+Both were done on the Install Proxmox page.
+
+> [!NOTE]
+> The HBA is **not** bound to vfio-pci yet, and it is **not** attached to any VM — that is a separate later step on the GPU Sharing & HBA Passthrough page. So you build the TrueNAS VM here with **no HBA attached**; the controller gets passed through afterward, and only then do its disks appear for the pool. Neither VM ever gets the GPU.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The web UI answers at `https://`-this-IP-`:8006`. Log in as `root@pam`.
@@ -61,7 +69,11 @@ Confirm — and do **not** add the HBA on this page. The TrueNAS install needs o
 > The 9300-8i is still claimed by the host's SAS driver at this point — it has not been bound to vfio-pci yet, so adding it as a PCI device now would either fail to pass through or pull the host's driver out from under it. The binding, the **Hardware → Add → PCI Device → All Functions** step, and the power-cycle all happen on the **GPU Sharing & HBA Passthrough page**. The whole controller is passed through (rather than individual disks) so TrueNAS sees the **two** mirror IronWolf disks as raw bare-metal drives with genuine SMART and real serials — no per-disk `serial=` plumbing. Those disks appear, and the mirrored pool is built, on the **TrueNAS Storage page**, after the passthrough is done. (The third IronWolf is Frigate's footage drive on a motherboard SATA port, so it stays with the host and never appears in TrueNAS.)
 
 ### Install from the console
-Select the VM, click **Start**, then **Console**, and run the TrueNAS installer exactly as you would on physical hardware — it installs to the **32 GB boot disk** (the only disk it can see right now, which is correct).
+1. Select the VM.
+2. Click **Start**, then **Console**.
+3. Run the TrueNAS installer exactly as you would on physical hardware.
+
+It installs to the **32 GB boot disk** (the only disk it can see right now, which is correct).
 
 > [!DETAILS] Every prompt the installer shows, in order
 > 1. **Boot menu** — let it time out, or press Enter on the default entry.
@@ -119,16 +131,26 @@ qm set 100 -onboot 1 -protection 1
 > **Prove unattended boot, do not assume it.** Some keypresses at the console are harmless — Enter at TrueNAS's boot menu only skips a countdown that expires by itself, and a key in a quiet console just wakes the blanked display. But one is fatal to the whole outage-recovery story: once the HBA is passed through on the GPU/HBA page, the VM's SeaBIOS can halt at `Press any key to continue...` after an option-ROM fault, and there it waits for a human that a 3 a.m. power cut does not provide. That page's `rombar=0` prevents it. Either way, prove it: stop the VM, start it, **leave the console closed**, and load the web UI a couple of minutes later. If it answers, the VM boots with nobody watching — which is what an outage recovery actually requires.
 
 ### Set the Start/Shutdown order
-The same **Options** panel holds **Start/Shutdown order**, and on this build it is load-bearing: TrueNAS gets the **lowest number**, so the storage boots first and — because shutdown runs the order in reverse — goes down last, after the guests that write to its shares. Set it to **1** in the panel, or:
+Set **Start/Shutdown order** to **1** in the same **Options** panel, or run it from the host shell:
 
 ```bash
 qm set 100 -startup order=1
 ```
 
+> [!NOTE]
+> This is load-bearing: TrueNAS gets the **lowest number**, so the storage boots first and — because shutdown runs the order in reverse — goes down last, after the guests that write to its shares.
+
 That is all this page sets. The two guests that care about ordering take the next slots when their own pages build them — the Home Assistant VM becomes order=2 and Frigate order=3, so the broker Frigate depends on is always up first.
 
 ### Snapshot before anything risky
-Snapshots are instant and nearly free. Before an OS upgrade or a config experiment on either VM, select it in the left tree, open **Snapshots → Take Snapshot**, and name it for *what you're about to do* (`before-ha-core-upgrade`), not the date. For a running VM, tick **Include RAM** so a rollback returns it running exactly where it was. To undo, select the snapshot and click **Rollback** — everything since is discarded.
+Snapshots are instant and nearly free. Before an OS upgrade or a config experiment on either VM:
+
+1. Select it in the left tree.
+2. Open **Snapshots → Take Snapshot**.
+3. Name it for *what you're about to do* (`before-ha-core-upgrade`), not the date.
+4. For a running VM, tick **Include RAM** so a rollback returns it running exactly where it was.
+
+To undo, select the snapshot and click **Rollback** — everything since is discarded.
 
 > [!WARNING]
 > A snapshot is not a backup — it lives on the same disk as the VM. The off-box safety net is the Proxmox vzdump job that lands on the TrueNAS share (on the mirror, not the same NVMe as the VM); this build configures that once the mirror exists. Those guest archives stay on-site on the NAS — only the irreplaceable data gets pushed offsite later. Snapshots are for fast undo, not disaster recovery.
@@ -142,7 +164,13 @@ Check the disk name (`scsi0`, `virtio0`, …) in the VM's Hardware tab first, an
 qm disk resize <vmid> scsi0 +16G
 ```
 
-Both VMs make the guest-side half easy on this build. For TrueNAS the host-side resize is rarely needed at all — its data lives on the ZFS pool, not the boot disk. For Home Assistant OS, the guest-side step is essentially automatic: after the host-side `qm disk resize`, **reboot the VM** and HAOS detects the larger disk and expands its own data partition on boot. Confirm the new size landed under **Settings → System → Storage** in Home Assistant once it is back up.
+Both VMs make the guest-side half easy on this build. For TrueNAS the host-side resize is rarely needed at all — its data lives on the ZFS pool, not the boot disk. For Home Assistant OS, the guest-side step is essentially automatic:
+
+1. After the host-side `qm disk resize`, reboot the VM.
+2. Confirm the new size landed under **Settings → System → Storage** in Home Assistant once it is back up.
+
+> [!NOTE]
+> HAOS detects the larger disk and expands its own data partition on boot.
 
 > [!DETAILS] If a guest does not grow on its own
 > Most appliance OSes (HAOS, TrueNAS) handle the in-guest expansion themselves. A plain Linux guest does not — there you would grow the partition with `parted` or `fdisk`, then the filesystem (`resize2fs` for ext4, or `pvresize` then `lvresize --resizefs` for LVM); `lsblk` shows which layout you have. This build has no such guests, so you should not need these by hand — but they are the fallback if a disk shows the new size at the host but not inside.

@@ -21,13 +21,28 @@ Because of this, the driver lives on the **Proxmox host**, which owns the hardwa
 ### Prepare the driver's package sources
 The driver goes on the **host**, not inside any container, and it comes from Debian's package archive — never a `.run` installer downloaded from nvidia.com. The packaged driver builds its kernel module through **DKMS (Dynamic Kernel Module Support)** against the headers you install below and rebuilds itself automatically on every kernel update; a `.run` installer does not, and it silently breaks the card after the next Proxmox upgrade (exactly the "GPU vanished after an update" failure this page warns about). The server pulls everything over its own network connection — nothing to download on another PC.
 
-The driver lives in Debian package sections this host does not read yet: **non-free** and **non-free-firmware**. On this build's Proxmox 9, the Debian repo is defined in one file — `/etc/apt/sources.list.d/debian.sources` — and each repo entry inside it has a `Components:` line saying which sections to read. Turn the two extra sections on with one command, in the host shell — click **`pve`** in the left tree (nested under Datacenter), then **Shell** in the menu that appears; it is its own entry above the System section, and the terminal it opens is already logged in as root:
+The driver lives in Debian package sections this host does not read yet: **non-free** and **non-free-firmware**. On this build's Proxmox 9, the Debian repo is defined in one file — `/etc/apt/sources.list.d/debian.sources` — and each repo entry inside it has a `Components:` line saying which sections to read.
+
+Open the host shell:
+
+1. In the left tree, click **`pve`** (nested under Datacenter).
+2. Click **Shell** in the menu that appears — its own entry above the System section. The terminal opens already logged in as root.
+
+Turn the two extra sections on with one command:
 
 ```bash
 sed -i 's/^Components:.*/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
 ```
 
-That rewrites every `Components:` line in the file to `Components: main contrib non-free non-free-firmware`. There is no way to edit this from the web UI — Proxmox has no file editor — but there is a click path to *verify* it: **`pve` → Updates → Repositories** lists the Debian entries, and after the command their Components column shows `non-free non-free-firmware`. (To eyeball the file itself: `nano /etc/apt/sources.list.d/debian.sources`, Ctrl+X to leave.)
+That rewrites every `Components:` line in the file to `Components: main contrib non-free non-free-firmware`. There is no way to edit this from the web UI — Proxmox has no file editor — but there is a click path to *verify* it: **`pve` → Updates → Repositories** lists the Debian entries, and after the command their Components column shows `non-free non-free-firmware`.
+
+To eyeball the file itself:
+
+```bash
+nano /etc/apt/sources.list.d/debian.sources
+```
+
+Ctrl+X to leave.
 
 Finish this step with a refresh:
 
@@ -204,7 +219,11 @@ qm set 100 -hostpci0 0000:03:00,pcie=1,rombar=0
 
 **`rombar=0` is not optional on this build.** Without it, the VM's SeaBIOS tries to run the HBA's own **MPT option ROM** at every boot, that ROM faults inside the guest (`MPT BIOS Fault 02h … Firmware Fault Code: 2667h`), and the VM parks at `Press any key to continue...` — waiting for a human forever. It boots fine when you are watching and never boots after a power cut, which is the worst possible failure shape for a machine the whole outage-recovery plan depends on. The option ROM exists only to let a machine *boot from* disks on the card; this VM boots from its own 32 GB virtual disk and TrueNAS loads the `mpt3sas` driver itself once running, so hiding the ROM costs nothing.
 
-Power-cycle the TrueNAS VM — a full **stop and start**, not a guest reboot; the PCI device only attaches on a cold VM start. Watch this first boot in the **Console**: it should pass straight through SeaBIOS with no `Press any key` prompt. If that prompt appears, `rombar=0` did not take — re-run the command and cold-start again. Then confirm in the TrueNAS web UI at `http://192.168.1.20/ui/storage/disks` — the Disks screen, which is not a left-nav entry but a **Disks** button on the Storage Dashboard. The two mirror IronWolfs should be listed by their **real model (`ST4000VN…`) and real serial numbers** — the same serials as the stickers on the drives — alongside the 32 GB QEMU boot disk. Real model and serial is the proof the passthrough is genuine; the mirrored pool gets built from them on the TrueNAS Storage page.
+1. Power-cycle the TrueNAS VM — a full **stop and start**, not a guest reboot; the PCI device only attaches on a cold VM start.
+2. Watch this first boot in the **Console**. It should pass straight through SeaBIOS with no `Press any key` prompt — if that prompt appears, `rombar=0` did not take: re-run the command and cold-start again.
+3. Confirm in the TrueNAS web UI at `http://192.168.1.20/ui/storage/disks` — the Disks screen, which is not a left-nav entry but a **Disks** button on the Storage Dashboard. The two mirror IronWolfs should be listed by their **real model (`ST4000VN…`) and real serial numbers** — the same serials as the stickers on the drives — alongside the 32 GB QEMU boot disk.
+
+Real model and serial is the proof the passthrough is genuine; the mirrored pool gets built from them on the TrueNAS Storage page.
 
 > [!WARNING]
 > Use disks with nothing on them you care about — ZFS claims them entirely. And only the two mirror drives belong here; the Frigate footage disk stays on the host's motherboard SATA port.
