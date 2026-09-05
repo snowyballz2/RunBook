@@ -291,14 +291,31 @@ Moving the build's real credentials in — Proxmox, TrueNAS, the cameras and doo
 > The honest trade: notification events now route through Bitwarden's servers (the vault contents stay end-to-end encrypted). The one documented downside — F-Droid app builds do not support it — is moot here, since the household's phones run the official App Store Bitwarden apps. Skipping the relay costs nothing but immediacy.
 
 ### Demote the tailnet's Apple login
-The Remote Access page left a plan half-finished on purpose: the tailnet's break-glass **passkey admin** exists, but its passkey lives in iCloud Keychain — Apple custodies the secret even though it no longer owns the identity. Two facts shape the fix: a passkey cannot be copied between managers, and a Tailscale passkey account is tied to its single passkey forever (adding a second is an open request, [tailscale#15071](https://github.com/tailscale/tailscale/issues/15071)). So the move is a swap — retire the iCloud passkey user, mint its replacement with Bitwarden holding the key. On the Mac, in the browser with the **Bitwarden extension** installed and unlocked:
+The Remote Access page left a plan half-finished on purpose: the tailnet's break-glass **passkey admin** exists, but its passkey lives in iCloud Keychain — Apple custodies the secret even though it no longer owns the identity. Two facts shape the fix: a passkey cannot be copied between managers, and a Tailscale passkey account is tied to its single passkey forever (adding a second is an open request, [tailscale#15071](https://github.com/tailscale/tailscale/issues/15071)). So the move is a swap — retire the iCloud passkey user, mint its replacement with Bitwarden holding the key. Everything below happens on the Mac, in the browser that has the **Bitwarden extension** installed and unlocked.
 
-1. In Bitwarden, create a **New Login** item named `Tailscale`. **Username** — the passkey admin's email; **Password** and **Authenticator key** — blank (a passkey account has neither); under **Autofill options**, **Website** — `login.tailscale.com`. Save.
-2. In the Tailscale admin console (signed in with the Apple ID), open **Users** and remove the old passkey user — the Personal plan's three-user cap has no seat for a second passkey admin, and removing it frees its email for reuse. The Apple-ID owner keeps the tailnet reachable throughout the swap.
-3. Click **Invite users** → **Invite via link**, with the role set as high as offered — **Owner** if available, **Admin** otherwise; Admin covers every operation this build performs.
-4. Open the invite link in that same browser and choose the passkey signup. At the passkey prompt, the **Bitwarden extension offers to save it** — save into the `Tailscale` item. If the Apple iCloud sheet appears instead, cancel and retry with the extension unlocked.
-5. Sign out, then sign in to the admin console **once with the stored passkey** — untested custody is no custody.
-6. Back on **Users**, confirm the new admin's role — and keep the Apple-ID user as the spare key, not the daily door: with the passkey holding equal or higher rank, an Apple lockout no longer reaches the tailnet.
+In **Bitwarden** (the extension or the web vault):
+
+1. Create a **New Login** item and name it `Tailscale`.
+2. **Username** → the passkey admin's email.
+3. Leave **Password** and **Authenticator key** blank — a passkey account has neither.
+4. Under **Autofill options**, set **Website** → `login.tailscale.com`.
+5. **Save**.
+
+In the **Tailscale admin console**, signed in with the Apple ID:
+
+6. Open **Users**.
+7. Remove the old passkey user.
+8. Click **Invite users** → **Invite via link**.
+9. Set the role as high as offered — **Owner** if available, **Admin** otherwise.
+10. Open the invite link in the same browser.
+11. Choose the passkey signup.
+12. At the passkey prompt, accept the **Bitwarden extension's offer to save** and pick the `Tailscale` item.
+13. Sign out of the admin console.
+14. Sign in **once with the stored passkey** — untested custody is no custody.
+15. Back on **Users**, confirm the new admin's role.
+
+> [!NOTE]
+> The old passkey user goes first because the Personal plan's three-user cap has no seat for a second passkey admin, and removing it frees its email for reuse — the Apple-ID owner keeps the tailnet reachable throughout the swap. Admin covers every operation this build performs. If the Apple iCloud sheet appears at the passkey prompt instead of Bitwarden's, cancel and retry with the extension unlocked. Afterwards the Apple-ID user is the spare key, not the daily door: with the passkey holding equal or higher rank, an Apple lockout no longer reaches the tailnet.
 
 > [!NOTE]
 > Either login can do everything — Tailscale gives a role the same powers regardless of how it signs in. Use the passkey as the daily console door so the break-glass never rusts, and let the Apple ID rest. But the passkey signs in **in the browser only** — never into a device's Tailscale client. Every client (the Mac, the phones, the server) stays signed in as the Apple user: a client signed in as a passkey user becomes that user's device, and dies with it if that user is ever removed — the failure looks like a broken network on that one machine while every other device works. But the Apple-ID user never gets *deleted*: the enrolled devices — the Mac, the phones, the server — belong to it, and removing a Tailscale user removes their devices with them.
