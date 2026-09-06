@@ -95,7 +95,7 @@ ifreload -a
 The web UI drops. Reconnect at `https://192.168.213.50:8006`.
 
 ### The host's other addresses
-Still on the host, four things carry the old numbers:
+Still on the host, six things carry the old numbers:
 
 1. NUT's listener — open the file, change the `LISTEN 192.168.1.50 3493` line to `LISTEN 192.168.213.50 3493`, save and exit:
 
@@ -109,16 +109,28 @@ nano /etc/nut/upsd.conf
 systemctl restart nut-server nut-monitor
 ```
 
-3. The two firewall rules on **Node `pve` → Firewall**: the NUT rule's **Source** → `192.168.213.51`; the Frigate port-5000 fence's sources → the new Home Assistant and Kuma addresses. Edit each, change the field, save.
-4. The Tailscale subnet route:
+3. The three firewall rules on **Node `pve` → Firewall**: the NUT rule's **Source** → `192.168.213.51`; the Frigate port-5000 fence's sources → the new Home Assistant and Kuma addresses; the `NTP for cameras` rule's **Source** → `192.168.213.0/24`. Edit each, change the field, save.
+4. The time server the cameras pull from — open chrony's config, change its `allow 192.168.1.0/24` line to `allow 192.168.213.0/24`, save and exit:
+
+```bash
+nano /etc/chrony/chrony.conf
+```
+
+5. Restart it:
+
+```bash
+systemctl restart chrony
+```
+
+6. The Tailscale subnet route:
 
 ```bash
 tailscale set --advertise-routes=192.168.213.0/24
 ```
 
-5. On the [Machines page](https://login.tailscale.com/admin/machines), select **pve** → **Subnets** → **Edit**: tick `192.168.213.0/24`, untick the old route, **Save**.
-6. On the [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers**, replace `192.168.1.53` with `192.168.213.53`.
-7. **Datacenter → Storage → nas-backups → Edit**: **Server** → `192.168.213.20`. (It errors until TrueNAS moves, a few steps down — save it anyway.)
+7. On the [Machines page](https://login.tailscale.com/admin/machines), select **pve** → **Subnets** → **Edit**: tick `192.168.213.0/24`, untick the old route, **Save**.
+8. On the [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers**, replace `192.168.1.53` with `192.168.213.53`.
+9. **Datacenter → Storage → nas-backups → Edit**: **Server** → `192.168.213.20`. (It errors until TrueNAS moves, a few steps down — save it anyway.)
 
 ### The containers — AdGuard first
 For each container, in the Proxmox UI:
@@ -157,7 +169,9 @@ Each camera keeps its number and gains the new prefix, through the old-range ali
 
 1. The five turrets, at `http://192.168.1.72` through `.76`: **Network Settings → TCP/IP** — **IP Address** → `192.168.213.7x`, **Default Gateway** → `192.168.213.98`, **Preferred DNS** → `192.168.213.98`. Save; the camera re-addresses.
 2. The Reolink pair, at `http://192.168.1.70` and `.71`: **Device Settings → Network → General** — **IP** → `192.168.213.70` / `.71`, **Gateway** → `192.168.213.98`. Save.
-3. Frigate's config, from the node Shell — one substitution across every camera URL and the MQTT host, then a restart:
+3. Each camera's time source, now at its new address — turrets: **System → General → Date & Time → NTP → Server** → `192.168.213.50`; Reolink pair: **Network → Advanced → NTP Settings → Set Up** → server `192.168.213.50`. Save.
+4. On both phones, the Reolink app still holds the cameras by their old addresses: remove each entry and add it again by the new address (**⊕ → Manual Input**), the admin login as before.
+5. Frigate's config, from the node Shell — one substitution across every camera URL and the MQTT host, then a restart:
 
 ```bash
 pct exec 102 -- sed -i 's/192\.168\.1\./192.168.213./g' /config/config.yml
@@ -170,10 +184,10 @@ pct reboot 102
 ### Every service that stores an address
 1. **AdGuard** at `http://192.168.213.53`: **Filters → DNS rewrites** → edit the `*.kuzco.org` rewrite → `192.168.213.54`.
 2. **Nginx Proxy Manager** at `http://192.168.213.54:81`: **Hosts → Proxy Hosts** → each of the eight hosts → **Edit** → **Forward Hostname / IP** → the same last number on the new prefix → **Save**.
-3. **Homepage** — the allow-list and every monitor and widget address, from the node Shell:
+3. **Homepage** — the allow-list, every monitor and widget address, and the router bookmark, from the node Shell:
 
 ```bash
-pct exec 107 -- sed -i 's/192\.168\.1\./192.168.213./g' /opt/homepage/.env /opt/homepage/config/services.yaml
+pct exec 107 -- sed -i 's/192\.168\.1\./192.168.213./g' /opt/homepage/.env /opt/homepage/config/services.yaml /opt/homepage/config/bookmarks.yaml
 ```
 
 ```bash
@@ -203,10 +217,11 @@ sudo -E -u www-data php /var/www/nextcloud/occ config:system:get trusted_proxies
 sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_proxies 2 --value=192.168.213.54
 ```
 
-6. **Vaultwarden** — nothing: it lives by its name.
-7. **The Caséta Pro bridge**, in the Lutron app: **Settings → Advanced → Integration → Network Settings** → `192.168.213.61`, gateway `192.168.213.1`, DNS `192.168.213.53`. Then reload the Lutron Caséta integration in Home Assistant; remove and re-add it if the lights stay unavailable.
-8. **SMB shares** — on the Mac, **Finder → Go → Connect to Server** → `smb://192.168.213.20/files`; on the Windows PC, map the drive letter again to `\\192.168.213.20\files`.
-9. Remove the Mac's old-range alias:
+6. **Nextcloud's external storage** — at `https://cloud.kuzco.org`, **Settings → Administration → External storage** → the TrueNAS share's row → **Host** → `192.168.213.20`; the row's dot goes green again when it reconnects.
+7. **Vaultwarden** — nothing: it lives by its name.
+8. **The Caséta Pro bridge**, in the Lutron app: **Settings → Advanced → Integration → Network Settings** → `192.168.213.61`, gateway `192.168.213.1`, DNS `192.168.213.53`. Then reload the Lutron Caséta integration in Home Assistant; remove and re-add it if the lights stay unavailable.
+9. **SMB shares** — on the Mac, **Finder → Go → Connect to Server** → `smb://192.168.213.20/files`; on the Windows PC, map the drive letter again to `\\192.168.213.20\files`.
+10. Remove the Mac's old-range alias:
 
 ```bash
 sudo ifconfig en0 -alias 192.168.1.200
@@ -218,7 +233,7 @@ One check per service, in the order things depend on each other:
 
 1. AdGuard resolves: browse to `http://proxmox.kuzco.org` — the rewrite now points at the new proxy address.
 2. Every proxied name loads with its padlock: `proxmox.`, `ha.`, `nas.`, `frigate.`, `cloud.`, `vault.`, `home.`, `status.`.
-3. Frigate shows all seven cameras live.
+3. Frigate shows all seven cameras live, and each camera's clock still agrees with the phone — NTP from the host is flowing again.
 4. Home Assistant: the Frigate cards, the NUT sensor, and a lock command all answer.
 5. Uptime Kuma is green across the board; Homepage's dots agree.
 6. Nextcloud and Bitwarden sync on the phone.
