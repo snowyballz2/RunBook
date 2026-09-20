@@ -29,7 +29,7 @@ nvidia-smi
 systemctl status go2rtc frigate --no-pager
 ```
 
-4. If both are `active`, read what ffmpeg is complaining about:
+4. If both are `active`, read what ffmpeg is complaining about — if it prints the card in step 1 but this log shows `cuInit(0) failed`, jump to the next entry:
 
 ```bash
 journalctl -u frigate -n 60 --no-pager
@@ -42,6 +42,48 @@ journalctl -u frigate -n 60 --no-pager
 ```bash
 systemctl restart go2rtc frigate
 ```
+
+### The Frigate log says `cuInit(0) failed -> CUDA_ERROR_UNKNOWN` while `nvidia-smi` works
+Seen here after the first host reboot since the container was built. `nvidia-smi` needs two device nodes; CUDA needs a third, `/dev/nvidia-uvm`, which nothing recreated at boot — so every decoder and the detector failed, ffmpeg crash-looped every second, nothing recorded for sixteen days, and the loop's leak had the OOM killer restarting Frigate every three days. In the **Proxmox node Shell**:
+
+1. Check for the node:
+
+```bash
+ls -l /dev/nvidia-uvm*
+```
+
+2. If it is missing, load the module:
+
+```bash
+modprobe nvidia_uvm
+```
+
+3. Create the nodes:
+
+```bash
+nvidia-modprobe -c0 -u
+```
+
+4. Check the container config carries them:
+
+```bash
+grep nvidia-uvm /etc/pve/lxc/102.conf
+```
+
+5. If nothing prints, add them on the next free `devN` numbers:
+
+```bash
+pct set 102 -protection 0 && pct set 102 -dev3 /dev/nvidia-uvm,gid=44 -dev4 /dev/nvidia-uvm-tools,gid=44 && pct set 102 -protection 1
+```
+
+6. Reboot the container:
+
+```bash
+pct reboot 102
+```
+
+7. Make it permanent — the *Make the CUDA device node exist at every boot* step on the GPU Sharing & HBA Passthrough page, if it was never done.
+8. Prove it a minute later, in the container's console: `nvidia-smi` shows hundreds of MiB in use, and the last lines of `/dev/shm/logs/frigate/current` show the model loaded with no `cuInit` errors.
 
 ## Locks
 

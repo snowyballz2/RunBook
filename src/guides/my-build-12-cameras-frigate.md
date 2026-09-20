@@ -254,17 +254,38 @@ The 1080 Ti is **shared** into this LXC from the host's NVIDIA driver — it is 
 grep ^dev /etc/pve/lxc/102.conf
 ```
 
-(`102` is this container's ID, shown next to its name in the sidebar.) Expect several `devN: /dev/nvidia…,gid=44` lines — the script binds every NVIDIA node it finds, a superset of the three the GPU Sharing & HBA Passthrough page's lending recipe names, which is fine. If the list comes back **empty** — the dialog answered No, or a container built before it existed — fall back to that recipe:
+(`102` is this container's ID, shown next to its name in the sidebar.) Expect several `devN: /dev/nvidia…,gid=44` lines — the script binds every NVIDIA node it finds. If the list comes back **empty** — the dialog answered No, or a container built before it existed — fall back to the lending recipe:
 
-1. Edit the same file and add the three lines below.
+1. Edit the same file and add the four lines below.
 
 ```ini
 dev0: /dev/nvidia0,gid=44
 dev1: /dev/nvidiactl,gid=44
 dev2: /dev/nvidia-uvm,gid=44
+dev3: /dev/nvidia-uvm-tools,gid=44
 ```
 
 2. Restart the container.
+
+If the list has lines, check it for the one that matters: the installer binds only the nodes that existed on the host at install time, and CUDA needs **`/dev/nvidia-uvm`** — `nvidia-smi` does not, and without it every decoder and the detector fail. If no `nvidia-uvm` line prints:
+
+1. Confirm the host has the node — the *Make the CUDA device node exist at every boot* step on the GPU Sharing & HBA Passthrough page created it:
+
+```bash
+ls -l /dev/nvidia-uvm*
+```
+
+2. Add both nodes to the container, on the next free `devN` numbers (`dev3` and `dev4` on this build), with protection off for the edit and back on after:
+
+```bash
+pct set 102 -protection 0 && pct set 102 -dev3 /dev/nvidia-uvm,gid=44 -dev4 /dev/nvidia-uvm-tools,gid=44 && pct set 102 -protection 1
+```
+
+3. Restart the container:
+
+```bash
+pct reboot 102
+```
 
 The script also attempts the **in-container userspace driver** itself — its output shows `NVIDIA GPU passthrough detected`, and on this build a `Version-pinned install failed - trying unpinned` fallback, which lands whatever version its source offers rather than the host's. One command in the container's **Console** settles whether it matched:
 
@@ -322,6 +343,9 @@ nvidia-smi
 ```
 
 You should see the GTX 1080 Ti listed with a driver version. If the command is missing or the card is absent, the share did not take — recheck the `dev0:` lines in the container's config on the host and that the in-container userspace driver matches the host's version exactly.
+
+> [!NOTE]
+> `nvidia-smi` proves the card is visible, not that CUDA works — it never touches `/dev/nvidia-uvm`. The CUDA proof comes once Frigate is running, later on this page: `nvidia-smi` inside the container shows hundreds of MiB in use (an idle card shows 2 MiB), and Frigate's log shows the model loaded with no `cuInit` errors.
 
 > [!WARNING]
 > The card is shared across containers, not handed to one guest — Frigate detection now, the Ollama LLM (large language model) and faster-whisper STT (speech-to-text) voice stack later. Keep `nvidia-persistenced` enabled on the host and the host/in-container driver versions matched. VFIO is reserved for the HBA (host bus adapter) feeding the TrueNAS VM; the GPU stays shared. The moment the GPU is VFIO-bound, every container loses detection at once.

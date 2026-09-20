@@ -147,6 +147,45 @@ apt install -y nvidia-persistenced
 
 Then run the `enable --now` command above again.
 
+### Make the CUDA device node exist at every boot
+`nvidia-smi` needs two device nodes; CUDA — every decoder and detector in the containers — needs a third, `/dev/nvidia-uvm`, and the driver does not create it at boot on its own. Skip this and the card works until the first host reboot, after which every CUDA program in every container fails with `CUDA_ERROR_UNKNOWN` while `nvidia-smi` keeps smiling — this build lost sixteen days of camera recordings to exactly that. In the node **Shell**:
+
+1. Load the module now:
+
+```bash
+modprobe nvidia_uvm
+```
+
+2. Create its device nodes:
+
+```bash
+nvidia-modprobe -c0 -u
+```
+
+3. Confirm both exist:
+
+```bash
+ls -l /dev/nvidia-uvm*
+```
+
+4. Load both modules at every boot:
+
+```bash
+printf 'nvidia\nnvidia_uvm\n' > /etc/modules-load.d/nvidia.conf
+```
+
+5. Recreate the nodes whenever the modules load:
+
+```bash
+printf 'KERNEL=="nvidia", RUN+="/bin/bash -c '"'"'/usr/bin/nvidia-smi -L && /bin/chmod 666 /dev/nvidia*'"'"'"\nKERNEL=="nvidia_uvm", RUN+="/bin/bash -c '"'"'/usr/bin/nvidia-modprobe -c0 -u && /bin/chmod 0666 /dev/nvidia-uvm*'"'"'"\n' > /etc/udev/rules.d/70-nvidia.rules
+```
+
+6. Print the rule back — two lines, each starting `KERNEL==`:
+
+```bash
+cat /etc/udev/rules.d/70-nvidia.rules
+```
+
 ### The dev0: lending recipe (applied when each container is built)
 The host now owns a working driver. Each container that needs the card borrows it by adding three device lines to **its own** config file — but **none of those containers exist yet at this stage**. You will apply this recipe as you create each one later in the build:
 
@@ -159,12 +198,13 @@ So there is nothing to edit right now. Keep this recipe; you will come back to i
 nano /etc/pve/lxc/<ctid>.conf
 ```
 
-Add the same three NVIDIA device nodes, using the `dev0:` device syntax rather than hand-writing `lxc.cgroup2` lines — `dev0:` is what Proxmox officially supports and it survives upgrades:
+Add the four NVIDIA device nodes, using the `dev0:` device syntax rather than hand-writing `lxc.cgroup2` lines — `dev0:` is what Proxmox officially supports and it survives upgrades:
 
 ```ini
 dev0: /dev/nvidia0,gid=44
 dev1: /dev/nvidiactl,gid=44
 dev2: /dev/nvidia-uvm,gid=44
+dev3: /dev/nvidia-uvm-tools,gid=44
 ```
 
 Restart that container after editing its config. Inside it, `nvidia-smi` should then show the same card the host sees.
