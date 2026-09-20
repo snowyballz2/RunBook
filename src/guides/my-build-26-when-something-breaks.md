@@ -22,22 +22,32 @@ One camera failing is that camera. All of them at once — the Wi-Fi doorbell in
 nvidia-smi
 ```
 
-2. If it errors — `Driver/library version mismatch`, or `couldn't communicate with the NVIDIA driver` — the container's driver no longer matches the host's kernel module; a host or container update since the last reboot does this. Run the driver fix under *Lend the GPU into the container* on the Cameras page, then restart both services (step 5).
+2. If it errors — `Driver/library version mismatch`, or `couldn't communicate with the NVIDIA driver` — the container's driver no longer matches the host's kernel module; a host or container update since the last reboot does this. Run the driver fix under *Lend the GPU into the container* on the Cameras page, then come back to step 6.
 3. If it prints the card, check the two services:
 
 ```bash
 systemctl status go2rtc frigate --no-pager
 ```
 
-4. If both are `active`, read what ffmpeg is complaining about — if it prints the card in step 1 but this log shows `cuInit(0) failed`, jump to the next entry:
+4. If both are `active`, read what ffmpeg is complaining about — in this install Frigate's own output goes to a file, not to the journal, so `journalctl` shows only starts, stops and OOM kills:
 
 ```bash
-journalctl -u frigate -n 60 --no-pager
+tail -n 40 /dev/shm/logs/frigate/current
 ```
 
-`cuda` or `hwaccel` lines mean the GPU (step 2); `Connection refused` on `127.0.0.1:8554` means go2rtc (step 5); `401` means a camera password changed.
+5. Read the restreamer's log the same way:
 
-5. Restart both services — go2rtc is its own service in this install, and the config editor's Save & Restart never touches it:
+```bash
+tail -n 15 /dev/shm/logs/go2rtc/current
+```
+
+> [!WARNING]
+> go2rtc's log prints every stream URL with the camera password in clear — `url=rtsp://admin:PASSWORD@192.168.1.73:554/…`. Blank the password before that log goes anywhere: a forum post, a screenshot, a chat.
+
+> [!NOTE]
+> Reading the two logs: `cuInit(0) failed` with a working step 1 is the next entry; any other `cuda` or `hwaccel` line is the driver (step 2); `Connection refused` on `127.0.0.1:8554` is go2rtc (step 6). In the go2rtc log, `i/o timeout` means that camera is unreachable — its cable, PoE port or the switch — and `401` means its password changed.
+
+6. Restart both services — go2rtc is its own service in this install, and the config editor's Save & Restart never touches it:
 
 ```bash
 systemctl restart go2rtc frigate
