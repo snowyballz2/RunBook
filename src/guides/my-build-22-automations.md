@@ -53,7 +53,7 @@ conditions:
 actions:
   - action: switch.turn_off
     target: { entity_id: switch.main_water }
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       title: "💧 Water leak"
       message: "Leak at {{ trigger.event.data.new_state.name }} — main water shut off."
@@ -72,7 +72,7 @@ mode: parallel
 Why it works, top to bottom. The trigger watches every state change in the house, and the condition keeps only a **moisture**-class sensor turning `on` (wet) — so all twelve leak sensors, and any you pair later, are covered without naming one, and `trigger.event.data.new_state.name` carries *which* sensor into the alert, so the push and the spoken line both name the actual location. `mode: parallel` lets two rooms alert at once. The valve closes **first**, before any notification, because the point is to stop water, not to ask permission. Then two alerts fire in parallel: a **critical** push that reaches your iPhone wherever you are, and a `tts.speak` on a Google/Nest speaker so anyone home hears it out loud. The speech uses the **local Piper** TTS (text-to-speech) engine — installed as an app on the Home Assistant VM on the Voice page — rather than a cloud voice, so it still talks during the internet outage a burst pipe might cause.
 
 > [!NOTE]
-> The `notify.mobile_app_chris_iphone` action exists only after the Home Assistant companion app — the one you installed and signed in on the Matter Locks page of this build — has been **opened on the iPhone and granted notification permission**. It then surfaces as `notify.mobile_app_` plus the phone's name, underscored (so `chris_iphone` becomes `notify.mobile_app_chris_iphone`). Without that permission the entity does not exist and will not autocomplete in the editor — and if you paste the YAML anyway, Home Assistant saves it but the notify step errors when it runs. Grant it before building this rule, since every automation on this page leans on it.
+> The `notify.mobile_app_naps_phone` action exists only after the Home Assistant companion app — the one you installed and signed in on the Matter Locks page of this build — has been **opened on the iPhone and granted notification permission**. It then surfaces as `notify.mobile_app_` plus the phone's name, underscored (so `chris_iphone` becomes `notify.mobile_app_naps_phone`). Without that permission the entity does not exist and will not autocomplete in the editor — and if you paste the YAML anyway, Home Assistant saves it but the notify step errors when it runs. Grant it before building this rule, since every automation on this page leans on it.
 
 > [!NOTE]
 > The spoken `tts.speak` step needs two things this build sets up later, on the Voice page: the **Piper** text-to-speech engine (which becomes the `tts.piper` entity) and a Google/Nest **Cast** speaker added to Home Assistant as a `media_player.*` entity. Until both exist, that one action fails silently while the valve-close and the critical push — the parts that actually matter — work from the moment you save. Build the rule the day the valve is paired; the spoken line starts working once you finish the Voice page. Your Google/Nest speakers are not in Home Assistant just because they are on the network — the Voice page adds them through **Settings → Devices & services → Add integration → Google Cast** so they surface as `media_player.*` targets (a HomePod cannot be a target — Home Assistant cannot push audio to it).
@@ -121,7 +121,7 @@ conditions:
          | map(attribute='state') | map('float')
          | select('lt', 20) | list | count > 0 }}
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       title: "🔋 Low battery"
       message: >-
@@ -153,7 +153,7 @@ triggers:
          | selectattr('state', 'eq', 'unavailable') | list | count > 0 }}
     for: "01:00:00"
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       title: "Leak sensor offline"
       message: >-
@@ -181,7 +181,7 @@ actions:
   - delay: "00:00:30"
   - action: switch.turn_on
     target: { entity_id: switch.main_water }
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       message: "Main water valve exercised — closed and reopened. If the pressure seems off today, check the valve."
 mode: single
@@ -223,7 +223,7 @@ triggers:
       - lock.basement_door
     to: "unlocked"
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       message: "{{ trigger.to_state.name }} unlocked."
 mode: parallel
@@ -242,7 +242,7 @@ triggers:
     to: "unlocked"
     for: "00:10:00"
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       message: "{{ trigger.to_state.name }} has been unlocked for 10 minutes."
 mode: parallel
@@ -265,7 +265,7 @@ triggers:
     event: start
 actions:
   - delay: "00:03:00"
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       title: Home Assistant restarted
       message: >-
@@ -288,7 +288,7 @@ triggers:
     to: unavailable
     for: "00:10:00"
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       title: "Lock offline: {{ trigger.to_state.attributes.friendly_name }}"
       message: Unavailable for 10 minutes. Matter → Reload usually revives it; the keypad works regardless.
@@ -307,7 +307,7 @@ triggers:
     topic: frigate/available
     payload: "offline"
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       title: "📹 Frigate crashed"
       message: >-
@@ -337,7 +337,7 @@ actions:
   - choose:
       - conditions: "{{ trigger.id == 'on_battery' }}"
         sequence:
-          - action: notify.mobile_app_chris_iphone
+          - action: notify.mobile_app_naps_phone
             data:
               title: "⚡ Power out"
               message: "The UPS is on battery. NUT shuts the server down cleanly if it runs low."
@@ -346,7 +346,7 @@ actions:
                   interruption-level: time-sensitive
       - conditions: "{{ trigger.id == 'restored' }}"
         sequence:
-          - action: notify.mobile_app_chris_iphone
+          - action: notify.mobile_app_naps_phone
             data:
               message: "Power restored — the UPS is back on line power."
 mode: queued
@@ -377,11 +377,11 @@ Build two mirror-image rules. Everybody-left triggers when *either* phone leaves
 alias: Everybody left
 triggers:
   - trigger: state
-    entity_id: [device_tracker.chris_iphone, device_tracker.partner_iphone]
+    entity_id: [device_tracker.naps_phone, device_tracker.partner_iphone]
     to: "not_home"
 conditions:
   - condition: state
-    entity_id: device_tracker.chris_iphone
+    entity_id: device_tracker.naps_phone
     state: "not_home"
   - condition: state
     entity_id: device_tracker.partner_iphone
@@ -399,7 +399,7 @@ actions:
         entity_id: binary_sensor.sliding_door
         state: "on"
     then:
-      - action: notify.mobile_app_chris_iphone
+      - action: notify.mobile_app_naps_phone
         data:
           message: "Sliding door is open and nobody is home."
 ```
@@ -412,7 +412,7 @@ Coming home is the easy half — no conditions needed.
 alias: Somebody home
 triggers:
   - trigger: state
-    entity_id: [device_tracker.chris_iphone, device_tracker.partner_iphone]
+    entity_id: [device_tracker.naps_phone, device_tracker.partner_iphone]
     to: "home"
 actions:
   - action: light.turn_on
@@ -451,7 +451,7 @@ actions:
             entity_id: binary_sensor.living_room_window
             state: "on"
     then:
-      - action: notify.mobile_app_chris_iphone
+      - action: notify.mobile_app_naps_phone
         data:
           title: "Still open at bedtime"
           message: >-
@@ -476,7 +476,7 @@ triggers:
     to: "unlocked"
 conditions:
   - condition: state
-    entity_id: device_tracker.chris_iphone
+    entity_id: device_tracker.naps_phone
     state: "not_home"
   - condition: state
     entity_id: device_tracker.partner_iphone
@@ -485,7 +485,7 @@ conditions:
     entity_id: input_boolean.guest_mode
     state: "off"
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       title: "🚨 Nobody home"
       message: "{{ trigger.to_state.name }} — {{ trigger.to_state.state }}."
@@ -506,7 +506,7 @@ triggers:
     to: "on"
     for: "00:10:00"
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       message: "{{ trigger.to_state.name }} has been open for 10 minutes."
 mode: parallel
@@ -521,7 +521,7 @@ triggers:
     entity_id: binary_sensor.front_doorbell_visitor
     to: "on"
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       title: "🔔 Front door"
       message: "Someone pressed the doorbell."
@@ -569,7 +569,7 @@ conditions:
   - condition: template
     value_template: "{{ trigger.payload_json['after']['label'] == 'person' }}"
 actions:
-  - action: notify.mobile_app_chris_iphone
+  - action: notify.mobile_app_naps_phone
     data:
       title: "Frigate"
       message: >-
