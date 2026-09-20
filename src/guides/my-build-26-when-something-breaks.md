@@ -42,10 +42,10 @@ tail -n 15 /dev/shm/logs/go2rtc/current
 ```
 
 > [!WARNING]
-> go2rtc's log prints every stream URL with the camera password in clear — `url=rtsp://admin:PASSWORD@192.168.1.73:554/…`. Blank the password before that log goes anywhere: a forum post, a screenshot, a chat.
+> go2rtc's log prints every stream URL with the camera password in clear — `url=rtsp://admin:PASSWORD@192.168.1.73:554/…`. Blank the password before that log goes anywhere: a forum post, a screenshot, a chat. If it has already gone out, *Change the EmpireTech camera password* on the Maintenance page is the fix.
 
 > [!NOTE]
-> Reading the two logs: `cuInit(0) failed` with a working step 1 is the next entry; any other `cuda` or `hwaccel` line is the driver (step 2); `Connection refused` on `127.0.0.1:8554` is go2rtc (step 6). In the go2rtc log, `i/o timeout` means that camera is unreachable — its cable, PoE port or the switch — and `401` means its password changed.
+> Reading the two logs: `cuInit(0) failed` with a working step 1 is the next entry; any other `cuda` or `hwaccel` line is the driver (step 2); `Connection refused` on `127.0.0.1:8554` is go2rtc (step 6). In the go2rtc log, `i/o timeout` means that camera is unreachable — its cable, PoE port or the switch. A camera that is reachable but whose stream never starts is a password question: log in to its web UI with the password from the config, and a rejected login is the answer.
 
 6. Restart both services — go2rtc is its own service in this install, and the config editor's Save & Restart never touches it:
 

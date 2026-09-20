@@ -223,3 +223,49 @@ Once a quarter, look at the machine, not just its dashboards:
 
 ### Let the rest come to you
 Everything not on these two lists is event-driven, and you already built the events. Uptime Kuma shouts when a service dies, TrueNAS emails when a disk or scrub complains, and the NUT (Network UPS Tools) shutdown drill on the CyberPower UPS (uninterruptible power supply) proved a power cut handles itself. The Home Assistant leak automations already make the Third Reality sensors announce a wet floor on the Nest speakers. If no alert fires between passes, the server needs exactly none of your attention — which is the entire point of the build.
+
+## When a password has to change
+
+### Change the EmpireTech camera password
+The password lives in the camera; Frigate only carries a copy, in the ten `rtsp://admin:…` lines of its `go2rtc: streams:` map. So it changes in the cameras first, then in that map, then in the two records. All five turrets share one login — keep it that way, or the map needs two passwords.
+
+> [!NOTE]
+> Dahua's rule for the new password: at least eight characters, with an uppercase letter, a lowercase letter, a number and a symbol. The Vaultwarden generator makes one that qualifies.
+
+In a browser, one camera at a time:
+
+1. Open `http://192.168.1.72`.
+2. Log in as `admin` with the current password.
+3. Open the **System** menu in the top bar.
+4. Select **Account** in the sidebar.
+5. Select the **User** tab.
+6. Click the pencil beside `admin`.
+7. Switch **Change Password** on.
+8. Fill **Old Password**, **New Password** and **Confirm Password**.
+9. Click **OK** — *Modify User Succeeded* confirms it.
+10. Repeat steps 1–9 at `.73`, `.74` and `.76` — and at `.75` once the chimney turret is powered; until then it keeps the old password, and its stanza stays `enabled: false` anyway.
+
+> [!NOTE]
+> The **ONVIF User** tab holds a separate `admin` whose password does not follow this one. Nothing in this build logs in over ONVIF, so it can stay; change it there too if the old password must be gone entirely.
+
+Then Frigate:
+
+11. Open the config editor at `https://192.168.1.52:8971/config`.
+12. Press **⌘⌥F** for find-and-replace (**⌘F** opens plain find; the arrow at its left expands it).
+13. Replace the old password with the new one — ten matches, all in the `go2rtc: streams:` map.
+14. **Save & Restart**.
+15. Restart the restreamer too, in **Proxmox → 102 (frigate) → Console** as `root` — its streams hold the password, and Save & Restart never touches it:
+
+```bash
+systemctl restart go2rtc frigate
+```
+
+16. Prove it a minute later: every turret is live on Frigate's home page. One that still says *No frames* has the old password — its camera step was missed.
+
+Then the records:
+
+17. Update the **EmpireTech cameras admin password** field on this app's Credentials page, in the **Cameras & Frigate** section.
+18. Update the EmpireTech entry in Vaultwarden.
+
+> [!NOTE]
+> The changed `/config/config.yml` rides the nightly Proxmox backup of container 102 — the Proxmox Backups page's job covers every guest and excludes only the footage mount — so there is nothing extra to copy.
