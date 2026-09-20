@@ -199,7 +199,7 @@ The point is not the spare guest; it is proving the archives on the NAS (network
 ### Confirm the offsite copy and the disks
 While you are in the quarterly mood, check the two long-game protections:
 
-- **Offsite to Backblaze B2** — in TrueNAS **Data Protection**, confirm the Cloud Sync task's recent runs succeeded. The encrypted offsite copy of the irreplaceable files is the one backup you cannot eyeball, so its run history is the only proof it is moving. Once a year, also do the end-to-end pull-and-decrypt drill — that is the only test of the B2 encryption secret, the value most likely to have rotted by the time you reach for it.
+- **The offsite drive** — refreshed this pass? The rotated USB drive from the Protect Your Data page is the one copy that leaves the house: mount it, copy the `files` share across again, open a few files straight from the drive, and take it back off the property. A copy that never leaves is not offsite, and one you never read back is a hope.
 - **Disk health** — on the **Storage** dashboard, the pool's **Storage Health** card carries the scrub story (**Last Scan**, Last Scan Errors, Last Scan Duration — the Sunday scrub should be the most recent scan), and the **Disk Health** card carries S.M.A.R.T.: since 25.10, TrueNAS's Drive Health Management polls S.M.A.R.T. on its own every 90 minutes and raises Alerts, replacing the old hand-scheduled periodic tests. The two mirror IronWolfs report genuine S.M.A.R.T. data because the whole HBA is passed through to TrueNAS with VFIO (Virtual Function I/O), so there is no emulation in the way. Watch Frigate's footage disk from the Proxmox **Disks** view, since it lives on the host side, not on the HBA.
 
 > [!INPUT] mirror-a-serial | Mirror disk A — serial + tray position

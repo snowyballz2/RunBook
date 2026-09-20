@@ -310,4 +310,4 @@ Map **`files`** only.
 > macOS re-mounts it at every login.
 
 > [!NOTE]
-> The `backups` share you just created is the landing zone for the build's safety copies — the Proxmox vzdump archives and the host-config backup point at it once the storage is up. Snapshots, scrubs, disk-health alerts, and the offsite copy to Backblaze B2 get their own steps later in this collection.
+> The `backups` share you just created is the landing zone for the build's safety copies — the Proxmox vzdump archives and the host-config backup point at it once the storage is up. Snapshots, scrubs, disk-health alerts, and the offsite USB-drive copy get their own steps later in this collection.

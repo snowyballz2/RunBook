@@ -293,7 +293,7 @@ update
 > [!WARNING]
 > Do not re-run the install one-liner on the Proxmox *host* to update — on the host, that command begins the create-a-new-container flow. Inside the container, the short `update` command — pre-installed by the script — is what updates in place.
 
-Everything that matters — monitors, their history, notification settings, the SQLite database — lives in `/opt/uptime-kuma/data`. The Proxmox vzdump job set up on the next page (Proxmox Backups) will capture the whole container in one pass, so this monitor joins the same on-site backup routine as every other guest. (Those guest archives stay on the NAS; only the irreplaceable files dataset goes offsite to Backblaze B2, not the container backups.)
+Everything that matters — monitors, their history, notification settings, the SQLite database — lives in `/opt/uptime-kuma/data`. The Proxmox vzdump job set up on the next page (Proxmox Backups) will capture the whole container in one pass, so this monitor joins the same on-site backup routine as every other guest. (Those guest archives stay on the NAS; only the irreplaceable files dataset goes offsite on the rotated drive, not the container backups.)
 
 If you ever copy that folder by hand, stop the service first so the database file is consistent:
 

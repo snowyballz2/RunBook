@@ -325,7 +325,7 @@ The scorecard is **3-2-1**: three copies of anything that matters, on at least t
 > - **Encryption Password / Encryption Salt** → set both — lose them and the offsite copy is unreadable by anyone, including you
 > - **Filename Encryption** → off — current docs advise against it
 >
-> Record both password and salt **before the first run** — in the fields below, and in your password manager.
+> Record both password and salt **before the first run** in Vaultwarden — they are the only way back into the offsite copy.
 >
 > **The drill:** an encrypted backup fails silently — a wrong password looks identical to a good backup until the day you reach for it. So once at setup and once a year, run a one-off **PULL** task:
 >
@@ -338,8 +338,3 @@ The scorecard is **3-2-1**: three copies of anything that matters, on at least t
 >
 > The other automated route, no subscription: **Replication** (**Data Protection → Replication Tasks**) ships ZFS snapshots over SSH (Secure Shell) to a second ZFS box — ideally another TrueNAS at a relative's house — incremental after the first run, and it preserves point-in-time history a file-level copy cannot.
 
-> [!SECRET] b2-encryption-password | Backblaze B2 remote-encryption password
-> Only used if the optional B2 route above is ever taken — set before its first run.
-
-> [!SECRET] b2-encryption-salt | Backblaze B2 remote-encryption salt
-> Only used if the optional B2 route above is ever taken.

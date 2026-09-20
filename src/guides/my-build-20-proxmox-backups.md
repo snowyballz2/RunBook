@@ -56,7 +56,7 @@ Proxmox mounts it under `/mnt/pve/nas-backups`.
 > [!SECRET] smb-password | SMB share password
 
 > [!WARNING]
-> The TrueNAS VM lives *on this same server*. Its disks survive a Proxmox boot-disk failure — so guest backups landing there are still restorable after a fresh install — but anything that takes out the whole machine takes them too. That is exactly why the offsite copy to Backblaze B2 exists for the irreplaceable files; the guest archives here are the on-site, fast-restore tier.
+> The TrueNAS VM lives *on this same server*. Its disks survive a Proxmox boot-disk failure — so guest backups landing there are still restorable after a fresh install — but anything that takes out the whole machine takes them too. That is exactly why the offsite copy — the rotated USB drive — exists for the irreplaceable files; the guest archives here are the on-site, fast-restore tier.
 
 ## Schedule the guest backups
 

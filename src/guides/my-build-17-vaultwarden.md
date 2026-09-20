@@ -6,7 +6,7 @@ order: 17
 accent: rose
 ---
 
-Every page in this build has told you to put a value in your password manager — the Proxmox root password, the TrueNAS admin login, the camera and doorbell credentials, the MQTT (MQ Telemetry Transport) users, the Backblaze encryption secrets. **Vaultwarden** is where all of that finally lives. It is a lightweight, fully compatible Bitwarden server, so the official Bitwarden apps and browser extensions on every iPhone, iPad, Mac, and the Windows PC in this household sync against this box instead of someone else's cloud. End-to-end encrypted, autofill everywhere, two-factor codes included — and the features Bitwarden sells as Premium work here, because Vaultwarden simply implements them with nothing to license. This is the synced secret store the rest of the build assumed all along.
+Every page in this build has told you to put a value in your password manager — the Proxmox root password, the TrueNAS admin login, the camera and doorbell credentials, the MQTT (MQ Telemetry Transport) users, the offsite drive's encryption password. **Vaultwarden** is where all of that finally lives. It is a lightweight, fully compatible Bitwarden server, so the official Bitwarden apps and browser extensions on every iPhone, iPad, Mac, and the Windows PC in this household sync against this box instead of someone else's cloud. End-to-end encrypted, autofill everywhere, two-factor codes included — and the features Bitwarden sells as Premium work here, because Vaultwarden simply implements them with nothing to license. This is the synced secret store the rest of the build assumed all along.
 
 > [!NOTE]
 > One gate before anything else: the moment passwords move in, you become the household's backup department. The nightly Proxmox vzdump job to the TrueNAS share — set up later in this build, on the Proxmox Backups page — must be running and have produced at least one archive you have actually seen before you trust real credentials to this vault. If you have not reached that page yet, you can stand the container up now, but do not move secrets in until that backup job exists and has proven itself. A vault with no proven backup is a single drive away from a household lockout.
@@ -322,7 +322,7 @@ That file is every password in plaintext, the most dangerous thing on the device
 > [!NOTE]
 > Importing before the backup gate is fine: an import *copies*, the browser keeps everything it had, and nothing becomes vault-exclusive. The gate below is about the build's infrastructure secrets, whose only home will be the vault.
 
-Moving the build's real credentials in — Proxmox, TrueNAS, the cameras and doorbell, the MQTT users, the Backblaze encryption password and salt — waits for the backup gate at the top of this page; on a first pass through the build, come back and do it after the Proxmox Backups page has produced its first proven archive.
+Moving the build's real credentials in — Proxmox, TrueNAS, the cameras and doorbell, the MQTT users — waits for the backup gate at the top of this page; on a first pass through the build, come back and do it after the Proxmox Backups page has produced its first proven archive.
 
 > [!NOTE]
 > Every signed-in device keeps a complete encrypted copy of the vault. Server down? The apps keep working in read-only mode — reading, autofill, even TOTP codes, since the seeds live in the cached vault — so you can still look up the Proxmox root password to go fix the server holding it. The one rule: **lock, never log out.** Unlocking is local; logging back *in* needs the server.
@@ -416,7 +416,7 @@ Add one layer the server cannot take down with it. From the web vault, go to **T
 
 Then:
 
-1. Save the file onto the TrueNAS mirror, in with the irreplaceable files the nightly Backblaze B2 Cloud Sync task pushes offsite — a vault whose only copies sit in one house is not finished.
+1. Save the file onto the TrueNAS mirror, in with the irreplaceable files the rotated offsite drive carries off the property — a vault whose only copies sit in one house is not finished.
 2. Repeat after big additions; the export is a snapshot, not a feed.
 
 > [!WARNING]
