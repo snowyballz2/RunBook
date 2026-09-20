@@ -48,6 +48,9 @@ Lifting it is a planned window, not a wait: the **580 branch** builds on kernel 
 4. Reinstall the matching userspace driver inside the Frigate, Ollama, and faster-whisper containers, in the same sitting (per the note below) — the driver version changed.
 
 > [!NOTE]
+> After any host reboot — this one or an unplanned one — run the *Prove the return* list on the UPS & Safe Shutdown page. A dashboard that is green proves the pages are up, not that the cameras are recording.
+
+> [!NOTE]
 > When you do reboot the host for any reason, pick a kind moment — it takes every guest down and back up, and the startup order reasserts itself on the way back: the Home Assistant VM (virtual machine) before the Frigate LXC (Linux Container), since Frigate publishes to the Mosquitto broker that lives with HA.
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50

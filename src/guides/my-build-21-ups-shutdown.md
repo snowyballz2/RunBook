@@ -356,6 +356,22 @@ This raises the forced-shutdown flag exactly as a critical battery would, and th
 > [!TIP]
 > Once, ever, on a quiet day, pull the plug and let the battery actually drain until the CyberPower itself declares `OB LB` and triggers everything. The timed `upsmon -c fsd` drill above proves the *shutdown chain* runs cleanly, but it bypasses the CyberPower's own low-battery logic entirely — it never tests whether the device asserts `OB LB` before the battery is exhausted. This full drain is the only test that proves the real low-battery trigger fires with margin to spare, at the cost of one battery cycle — worth doing once so the timed drill has a real-world anchor.
 
+### Prove the return
+The drill above proves the stack comes back *up*; this proves it comes back *working*. A dependency that only exists at boot can only be found by booting — this build's first unplanned reboot cost sixteen days of camera recordings to one, while every dashboard stayed green. Run this list after every reboot, planned or not:
+
+1. In Proxmox, every guest shows **running**.
+2. At `https://status.kuzco.org`, every monitor is green — including **Frigate frames**, the one that watches the cameras rather than Frigate's page.
+3. Frigate shows live video on every tile.
+4. In **Proxmox → 102 (frigate) → Console**, the card is doing work — hundreds of MiB in use, not 2 MiB:
+
+```bash
+nvidia-smi
+```
+
+5. In the Home Assistant app, lock a door and unlock it again.
+6. On the Mac, open the TrueNAS `files` share.
+7. Browse to `https://proxmox.kuzco.org` — a padlock, so DNS and the proxy are back.
+
 ## Watch it from Home Assistant
 
 ### Open the UPS to the LAN

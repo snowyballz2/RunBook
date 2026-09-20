@@ -150,6 +150,20 @@ AdGuard gets a different monitor type, because what the house depends on is port
 > [!NOTE]
 > The **Resolver Server(s)** field is the one that matters on the DNS monitor: it prefills a public resolver (`1.1.1.1`) and would happily pass with AdGuard dead. Frigate's `8971` is the authenticated UI port; `5000` is the internal one reserved for the Home Assistant integration. Nginx Proxy Manager is watched on its admin port `81`, because port `80` hits the proxy's public side, not its admin UI.
 
+### Watch the frames, not the page
+Frigate's web page stays up while every camera is dead — this build proved it for sixteen days. Frigate's stats endpoint reports each camera's live frame rate, and Uptime Kuma can evaluate it:
+
+1. Click **Add New Monitor**.
+2. **Monitor Type** → **HTTP(s) - Json Query**.
+3. **Friendly Name** → `Frigate frames`.
+4. **URL** → `http://192.168.1.52:5000/api/stats` — the internal port, which the Cameras page's firewall rule already opens to this container.
+5. **Json Query** → `$count(cameras.*.camera_fps[$ > 0]) >= 5` — true while at least five cameras are delivering frames.
+6. **Expected Value** → `true`.
+7. **Save**.
+
+> [!NOTE]
+> The `5` is the number of cameras installed today — the doorbell and four turrets. When the RLC-510WA and the chimney turret come online, raise it to `7`. One camera dying drops the count below the line, so this single monitor covers the fleet, and the decoder failure on the Cameras page — page up, every frame rate at zero — is exactly what it catches.
+
 > [!INPUT] adguard-ip | AdGuard container IP | 192.168.1.53
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51

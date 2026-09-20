@@ -86,7 +86,7 @@ pct reboot 102
 8. Prove it a minute later, in the container's console: `nvidia-smi` shows hundreds of MiB in use, and the last lines of `/dev/shm/logs/frigate/current` show the model loaded with no `cuInit` errors.
 
 > [!NOTE]
-> How you hear about the next one: the *Frigate went down* rule on the Automations page pushes within seconds of any crash. To see the history, in the container's console:
+> How you hear about the next one: the *Frigate went down* rule on the Automations page pushes within seconds of any crash, and the *Frigate frames* monitor on the Uptime Kuma page goes red when frames stop while the page stays up. To see the history, in the container's console:
 >
 > ```bash
 > journalctl -u frigate --no-pager | grep -i "oom\|Failed with result"
