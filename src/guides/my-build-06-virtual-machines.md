@@ -80,6 +80,9 @@ Click **Create VM** (top right) and step through the tabs with these values:
 - **Advanced → Ballooning Device** → unticked — fine for most VMs, but wrong for ZFS: the cache assumes it owns its memory outright, and ballooning lets the host claw it back under pressure
 - **Network** → bridge `vmbr0` — so the VM sits on the LAN like any other device
 
+> [!NOTE]
+> Expect Proxmox to show this VM at **100% memory** for the rest of its life — those two settings doing their jobs, not a fault. ZFS's read cache (the ARC) grows to fill whatever RAM it is given, on purpose: to a file server, free memory is wasted memory, and the cache hands pages back the moment a service needs them. And with the balloon device off, Proxmox cannot ask the guest how much it "really" uses, so it shows the host's view instead — the QEMU process holding all 8 GiB plus a few percent of its own overhead, which is why the gauge can read a hair *over* 100%. The honest picture lives inside TrueNAS: **Dashboard → Memory**, split into **Free**, **ZFS Cache**, and **Services**. A big ZFS Cache slice is health; pressure looks like Services growing while Free sits at zero.
+
 Leave the rest, including the BIOS choice, at the defaults.
 
 Click **Confirm** to create the VM.

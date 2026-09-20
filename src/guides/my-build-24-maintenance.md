@@ -69,6 +69,9 @@ With the host current, give each guest its turn — go strictly one at a time:
 
 That order is what makes the walk safe: a breakage always has an obvious author, and the pre-update snapshot is the thing you fall back to when it does.
 
+> [!NOTE]
+> One gauge on that walk is always red and never a finding: the TrueNAS VM's **Memory usage** in Proxmox sits at 100% — or a hair over — by design. ZFS caches with every byte it is given, and with ballooning off (the Virtual Machines page's choice) Proxmox only sees the host side. Its real memory picture is TrueNAS's own **Dashboard → Memory** widget: Free, ZFS Cache, Services.
+
 - **Service LXCs** (AdGuard, Nextcloud, Vaultwarden, Homepage, Nginx Proxy Manager, Uptime Kuma) — these went up with the community helper scripts, so each updates with a single `update` typed in its **Console**. Three exceptions worth remembering:
   - **AdGuard** — its `update` command just tells you it updates from its own web UI instead.
   - **Vaultwarden** — its `update` opens a two-option menu; pick **1 Update VaultWarden + Web-Vault**, then it *recompiles from source*, so give it the half-hour and the headroom it asks for.
