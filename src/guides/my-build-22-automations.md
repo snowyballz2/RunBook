@@ -297,6 +297,27 @@ mode: parallel
 
 `mode: parallel` lets two doors alert independently instead of the second swallowing the first. The honest limit, stated plainly: the offline watchdog cannot see the connected-but-stale mode — that entity never reads unavailable — which is why the restart watchdog exists; power events are that mode's known trigger. The outage itself already has a voice from the UPS & Safe Shutdown page; these two cover its aftermath. And through all of it, the keypads never depended on Home Assistant — the codes live in the locks.
 
+### Know within seconds when Frigate dies
+Frigate's own docs make this one easy: the broker publishes `offline` on `frigate/available` automatically — an MQTT last-will — the instant Frigate disconnects unexpectedly, while a deliberate stop or restart publishes `stopped`. So the rule keys on the topic itself, cannot mistake a Save & Restart for a crash, and fires faster than any monitor's polling interval:
+
+```yaml
+alias: Frigate went down
+triggers:
+  - trigger: mqtt
+    topic: frigate/available
+    payload: "offline"
+actions:
+  - action: notify.mobile_app_chris_iphone
+    data:
+      title: "📹 Frigate crashed"
+      message: >-
+        Frigate dropped off MQTT at {{ now().strftime('%H:%M') }} and is restarting itself.
+        If this repeats, check journalctl -u frigate for oom-kill — the When Something Breaks page has the ladder.
+mode: queued
+```
+
+This build learned the need the hard way: Frigate was being killed and restarted every three days for two weeks, and nothing said a word.
+
 ### Give the power outage a voice
 The UPS & Safe Shutdown page taught NUT to shut the server down cleanly; this tells your phone the moment the house loses power, and again when it comes back.
 

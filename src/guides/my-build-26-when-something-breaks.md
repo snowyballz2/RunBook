@@ -85,6 +85,15 @@ pct reboot 102
 7. Make it permanent — the *Make the CUDA device node exist at every boot* step on the GPU Sharing & HBA Passthrough page, if it was never done.
 8. Prove it a minute later, in the container's console: `nvidia-smi` shows hundreds of MiB in use, and the last lines of `/dev/shm/logs/frigate/current` show the model loaded with no `cuInit` errors.
 
+> [!NOTE]
+> How you hear about the next one: the *Frigate went down* rule on the Automations page pushes within seconds of any crash. To see the history, in the container's console:
+>
+> ```bash
+> journalctl -u frigate --no-pager | grep -i "oom\|Failed with result"
+> ```
+>
+> If `oom-kill` keeps appearing with CUDA healthy, the container's 4 GB cap is genuinely too small — raise it in Proxmox under **102 → Resources → Memory** to 8 GB.
+
 ## Locks
 
 ### A lock shows connected, reports a stale state, and times out on lock and unlock
