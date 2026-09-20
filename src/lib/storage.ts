@@ -4,6 +4,7 @@
  * still works in private-mode browsers where storage can throw.
  */
 
+import { migrateLegacyCredentials } from "./credentials";
 import { parseGuide } from "./parseGuide";
 import type { Guide } from "./types";
 
@@ -150,7 +151,14 @@ const CREDENTIALS_KEY = `${NS}:credentials`;
 const CREDENTIALS_EVENT = "runbook:credentials-changed";
 
 export function getCredentials(): Record<string, string> {
-  return read<Record<string, string>>(CREDENTIALS_KEY, {});
+  const all = read<Record<string, string>>(CREDENTIALS_KEY, {});
+  // Values saved under retired keys follow their successors — see
+  // LEGACY_CREDENTIAL_KEYS. Nothing is ever discarded.
+  if (migrateLegacyCredentials(all)) {
+    if (Object.keys(all).length === 0) remove(CREDENTIALS_KEY);
+    else write(CREDENTIALS_KEY, all);
+  }
+  return all;
 }
 
 export function getCredential(key: string): string {

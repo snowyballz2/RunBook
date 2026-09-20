@@ -268,7 +268,7 @@ serial:
 > [!SECRET] z2m-network-values | Zigbee network identity — PAN ID, Extended PAN ID, Network key
 > From the onboarding wizard's **Network** panel. These are also inside Home Assistant's own backups and the Proxmox vzdump, so this field is belt-and-braces — but recreating a Zigbee network without them means re-pairing every device by hand.
 
-> [!INPUT] mqtt-host | Mosquitto broker address (for external clients) | 192.168.1.51
+> [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 > Z2M uses `mqtt://core-mosquitto:1883` internally, but **Frigate is a separate container off-box** — it connects to the broker at this LAN address with its `mqtt-user` login, on the Cameras, Doorbell & Frigate page.
 
 ### Surface Z2M in Home Assistant

@@ -202,9 +202,9 @@ While you are in the quarterly mood, check the two long-game protections:
 - **Offsite to Backblaze B2** — in TrueNAS **Data Protection**, confirm the Cloud Sync task's recent runs succeeded. The encrypted offsite copy of the irreplaceable files is the one backup you cannot eyeball, so its run history is the only proof it is moving. Once a year, also do the end-to-end pull-and-decrypt drill — that is the only test of the B2 encryption secret, the value most likely to have rotted by the time you reach for it.
 - **Disk health** — on the **Storage** dashboard, the pool's **Storage Health** card carries the scrub story (**Last Scan**, Last Scan Errors, Last Scan Duration — the Sunday scrub should be the most recent scan), and the **Disk Health** card carries S.M.A.R.T.: since 25.10, TrueNAS's Drive Health Management polls S.M.A.R.T. on its own every 90 minutes and raises Alerts, replacing the old hand-scheduled periodic tests. The two mirror IronWolfs report genuine S.M.A.R.T. data because the whole HBA is passed through to TrueNAS with VFIO (Virtual Function I/O), so there is no emulation in the way. Watch Frigate's footage disk from the Proxmox **Disks** view, since it lives on the host side, not on the HBA.
 
-> [!INPUT] zfs-mirror-disk1-serial | IronWolf mirror disk 1 serial
+> [!INPUT] mirror-a-serial | Mirror disk A — serial + tray position
 
-> [!INPUT] zfs-mirror-disk2-serial | IronWolf mirror disk 2 serial
+> [!INPUT] mirror-b-serial | Mirror disk B — serial + tray position
 > Knowing the two mirror serials in advance turns a degraded-pool panic into a careful swap — the ST4000VN006s are identical at a glance, so the serial is the only safe way to tell which one to pull from the screw-plate mounts behind the View 71's motherboard tray.
 
 ### The physical quarter-hour

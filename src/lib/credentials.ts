@@ -76,6 +76,107 @@ export function collectCredentialFields<T extends { guide: Guide }>(
   return fields;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Sections — a field lives with its subject, not with the first page that    */
+/* happened to mention it. Several build pages touch one system (the TrueNAS  */
+/* VM is created on Virtual Machines, configured on TrueNAS Storage, backed up */
+/* on Protect Your Data), so those pages share one section. Guides not listed */
+/* keep their own title.                                                      */
+/* -------------------------------------------------------------------------- */
+
+const SECTION_BY_GUIDE_TITLE: Record<string, string> = {
+  "Start Here": "Proxmox host",
+  "Hardware & BIOS": "Proxmox host",
+  "Cooling Refresh": "Proxmox host",
+  "Install Proxmox": "Proxmox host",
+  Containers: "Proxmox host",
+  "GPU Sharing & HBA Passthrough": "Proxmox host",
+  "Proxmox Backups": "Proxmox host",
+  "Maintenance & Upkeep": "Proxmox host",
+  "Renumber the LAN": "Proxmox host",
+  "When Something Breaks": "Proxmox host",
+  "Virtual Machines": "TrueNAS & storage",
+  "TrueNAS Storage": "TrueNAS & storage",
+  "Protect Your Data": "TrueNAS & storage",
+  "Home Assistant & Zigbee2MQTT": "Home Assistant",
+  "Matter Locks": "Home Assistant",
+  Automations: "Home Assistant",
+  "Cameras, Doorbell & Frigate": "Cameras & Frigate",
+  "Reverse Proxy": "Proxy, domain & remote access",
+  "Remote Access": "Proxy, domain & remote access",
+};
+
+export type CredentialSection = {
+  id: string;
+  title: string;
+  /** The guide whose accent colours the section — the first one seen. */
+  accentGuideId: string;
+  fields: CredentialField[];
+};
+
+export function sectionTitleFor(guideTitle: string): string {
+  return SECTION_BY_GUIDE_TITLE[guideTitle] ?? guideTitle;
+}
+
+/** Group fields into sections, merging guides that share a subject, in the
+ *  order each section is first seen. Field order within a section is kept. */
+export function groupCredentialSections(fields: CredentialField[]): CredentialSection[] {
+  const sections: CredentialSection[] = [];
+  const byTitle = new Map<string, CredentialSection>();
+  for (const f of fields) {
+    const title = sectionTitleFor(f.guideTitle);
+    let section = byTitle.get(title);
+    if (!section) {
+      section = {
+        id: title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+        title,
+        accentGuideId: f.guideId,
+        fields: [],
+      };
+      byTitle.set(title, section);
+      sections.push(section);
+    }
+    section.fields.push(f);
+  }
+  return sections;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Retired keys — when two fields turned out to record the same fact, one key */
+/* survives and the other's saved value moves across. Nothing is discarded.  */
+/* -------------------------------------------------------------------------- */
+
+export const LEGACY_CREDENTIAL_KEYS: Record<string, string> = {
+  // The mirror-disk serials were declared twice: once on Hardware & BIOS, once
+  // (with tray position) on TrueNAS Storage. The TrueNAS pair survives.
+  "zfs-mirror-disk1-serial": "mirror-a-serial",
+  "zfs-mirror-disk2-serial": "mirror-b-serial",
+  // The Mosquitto broker lives on the Home Assistant VM — same address.
+  "mqtt-host": "ha-ip",
+};
+
+/**
+ * Move values saved under retired keys to their successors, in place.
+ * A retired key is dropped only once its successor holds the same value; if
+ * both hold different values, both stay. Returns true when anything changed.
+ */
+export function migrateLegacyCredentials(all: Record<string, string>): boolean {
+  let changed = false;
+  for (const [oldKey, newKey] of Object.entries(LEGACY_CREDENTIAL_KEYS)) {
+    const old = all[oldKey];
+    if (old == null) continue;
+    if ((all[newKey] ?? "").trim() === "") {
+      all[newKey] = old;
+      changed = true;
+    }
+    if (all[newKey] === old) {
+      delete all[oldKey];
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 /**
  * How many fields have a usable value: something the user saved, or a
  * pre-filled default (a fixed login like `root` counts as filled).

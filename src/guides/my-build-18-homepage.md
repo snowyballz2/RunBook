@@ -290,8 +290,9 @@ A search box and a clock are the two that earn their place:
     cache: 5
 ```
 
-> [!INPUT] home-latitude | Home latitude (decimal) | 
-> [!INPUT] home-longitude | Home longitude (decimal) | 
+> [!INPUT] home-latitude | Home latitude (decimal)
+
+> [!INPUT] home-longitude | Home longitude (decimal)
 > Open-Meteo needs no account or key — only the coordinates. Copy them from Home Assistant's **Settings → System → General** map, or from any maps app: right-click the house, read the two decimals.
 
 > [!NOTE]

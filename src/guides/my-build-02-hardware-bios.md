@@ -155,11 +155,7 @@ Here is the tray plate itself — traced from the actual part, hole for hole. Th
 > 1. Label the two mirror drives now.
 > 2. Record their serials below.
 >
-> ZFS identifies disks by serial, and you will want to know which physical drive is which when one eventually fails. The footage drive can stay unlabelled — it is the lone one on a board SATA port.
-
-> [!INPUT] zfs-mirror-disk1-serial | IronWolf mirror disk 1 serial
-
-> [!INPUT] zfs-mirror-disk2-serial | IronWolf mirror disk 2 serial
+> ZFS identifies disks by serial, and you will want to know which physical drive is which when one eventually fails. The footage drive can stay unlabelled — it is the lone one on a board SATA port. Record the two mirror serials on the TrueNAS Storage page, where its Disks screen shows each serial beside its tray — those two fields are the build's record of which drive is which.
 
 ### Fit the radio, switch, and UPS
 These are not slot-related, but they go in with the build:

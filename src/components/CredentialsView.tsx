@@ -4,12 +4,13 @@ import {
   collectCredentialFields,
   countFilled,
   countSaved,
+  groupCredentialSections,
   STANDALONE_SCOPE,
 } from "../lib/credentials";
 import * as store from "../lib/storage";
 import type { Theme } from "../lib/storage";
 import { CredentialInput } from "./CredentialInput";
-import { ArrowLeft, Key, Trash } from "./Icons";
+import { ArrowLeft, ChevronDown, Key, Trash } from "./Icons";
 import type { LibraryItem } from "./LibraryView";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -34,30 +35,30 @@ export function CredentialsView({ items, scope, theme, onToggleTheme, onBack }: 
     return collectCredentialFields(scoped);
   }, [items, scope]);
 
-  const computeCounts = () => {
-    const saved = store.getCredentials();
-    return {
-      filled: countFilled(fields, saved),
-      saved: countSaved(fields, saved),
-    };
-  };
-  const [counts, setCounts] = useState(computeCounts);
-  useEffect(() => {
-    setCounts(computeCounts());
-    return store.onCredentialsChange(() => setCounts(computeCounts()));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fields]);
+  // One section per subject, not per page — see groupCredentialSections.
+  const sections = useMemo(() => groupCredentialSections(fields), [fields]);
 
-  // Group consecutive fields by their declaring guide, preserving order.
-  const groups = useMemo(() => {
-    const byGuide: { guideId: string; guideTitle: string; fields: typeof fields }[] = [];
-    for (const f of fields) {
-      const last = byGuide[byGuide.length - 1];
-      if (last && last.guideId === f.guideId) last.fields.push(f);
-      else byGuide.push({ guideId: f.guideId, guideTitle: f.guideTitle, fields: [f] });
-    }
-    return byGuide;
+  // The saved map drives every count (header and per-section); refresh it on
+  // any change from an input here or inside a guide.
+  const [saved, setSaved] = useState<Record<string, string>>(() => store.getCredentials());
+  useEffect(() => {
+    setSaved(store.getCredentials());
+    return store.onCredentialsChange(() => setSaved(store.getCredentials()));
   }, [fields]);
+  const filledTotal = countFilled(fields, saved);
+  const savedTotal = countSaved(fields, saved);
+
+  // Sections start condensed; the page is long, and a header row that reads
+  // "6/9" says most of what a section needs to say.
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
+  const toggle = (id: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const allOpen = sections.length > 0 && sections.every((s) => open.has(s.id));
 
   const accentFor = (guideId: string) =>
     accentStyle(items.find((i) => i.guide.id === guideId)?.guide.accent, theme);
@@ -92,7 +93,7 @@ export function CredentialsView({ items, scope, theme, onToggleTheme, onBack }: 
             </h1>
             <p className="mt-0.5 truncate font-mono text-[11px] tabular-nums text-ink-soft">
               {scope ? `${scopeLabel} · ` : ""}
-              {counts.filled}/{fields.length} filled in
+              {filledTotal}/{fields.length} filled in
             </p>
           </div>
 
@@ -104,7 +105,7 @@ export function CredentialsView({ items, scope, theme, onToggleTheme, onBack }: 
               className="btn btn-quiet h-9 w-9 !px-0"
               aria-label="Clear saved credentials"
               title="Clear saved credentials"
-              disabled={counts.saved === 0}
+              disabled={savedTotal === 0}
             >
               <Trash size={17} />
             </button>
@@ -135,34 +136,77 @@ export function CredentialsView({ items, scope, theme, onToggleTheme, onBack }: 
             </p>
           </div>
         ) : (
-          groups.map((group) => (
-            <section
-              key={group.guideId}
-              aria-label={`${group.guideTitle} credentials`}
-              className="mt-8"
-              style={accentFor(group.guideId)}
-            >
-              <div className="mb-3 flex items-center gap-2 px-1">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent" />
-                <h2 className="font-display text-[1.05rem] font-semibold leading-none text-ink">
-                  {group.guideTitle}
-                </h2>
-              </div>
-              <div className="space-y-2.5">
-                {group.fields.map((f) => (
-                  <CredentialInput
-                    key={f.key}
-                    fieldKey={f.key}
-                    label={f.label}
-                    placeholder={f.placeholder}
-                    defaultValue={f.defaultValue}
-                    secret={f.secret}
-                    compact
-                  />
-                ))}
-              </div>
-            </section>
-          ))
+          <>
+            <div className="mt-6 flex items-center justify-between px-1">
+              <span className="font-mono text-[11px] tabular-nums text-ink-faint">
+                {sections.length} sections
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setOpen(allOpen ? new Set() : new Set(sections.map((s) => s.id)))
+                }
+                className="btn btn-quiet h-8 px-2 text-[12px] font-medium"
+              >
+                {allOpen ? "Collapse all" : "Expand all"}
+              </button>
+            </div>
+
+            {sections.map((section) => {
+              const isOpen = open.has(section.id);
+              const filled = countFilled(section.fields, saved);
+              const bodyId = `cred-section-${section.id}`;
+              return (
+                <section
+                  key={section.id}
+                  aria-label={`${section.title} credentials`}
+                  className="mt-3 rounded-2xl border border-line bg-surface/40"
+                  style={accentFor(section.accentGuideId)}
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggle(section.id)}
+                    aria-expanded={isOpen}
+                    aria-controls={bodyId}
+                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors hover:bg-surface-2/50"
+                  >
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent" />
+                    <span className="min-w-0 flex-1 truncate font-display text-[1.05rem] font-semibold leading-tight text-ink">
+                      {section.title}
+                    </span>
+                    <span
+                      className={`shrink-0 font-mono text-[11px] tabular-nums ${
+                        filled === section.fields.length ? "text-accent" : "text-ink-soft"
+                      }`}
+                    >
+                      {filled}/{section.fields.length}
+                    </span>
+                    <ChevronDown
+                      size={18}
+                      className={`shrink-0 text-ink-faint transition-transform duration-300 ${
+                        isOpen ? "" : "-rotate-90"
+                      }`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div id={bodyId} className="space-y-2.5 px-3 pb-3">
+                      {section.fields.map((f) => (
+                        <CredentialInput
+                          key={f.key}
+                          fieldKey={f.key}
+                          label={f.label}
+                          placeholder={f.placeholder}
+                          defaultValue={f.defaultValue}
+                          secret={f.secret}
+                          compact
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </>
         )}
       </main>
     </div>
