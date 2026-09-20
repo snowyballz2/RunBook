@@ -140,6 +140,13 @@ export function CredentialInput({
           autoComplete="off"
           autoCapitalize="off"
           spellCheck={false}
+          // These are the build's own records, not a website login: tell the
+          // password managers to leave them alone — no inline menu, no offer
+          // to save them as a login for this site.
+          data-bwignore="true"
+          data-1p-ignore="true"
+          data-lpignore="true"
+          data-form-type="other"
           aria-readonly={locked || undefined}
           className={`min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 font-mono text-[13px] outline-none placeholder:text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)] ${
             locked ? "cursor-default text-ink-soft" : "text-ink"
