@@ -38,7 +38,6 @@ type Props = {
 const CELL_W = 40;
 const CELL_H = 44;
 const PITCH = 44;
-const MAX_LABEL = 14;
 /** Advance of one rotated 11px mono glyph, in viewBox units. */
 const CHAR_W = 6.6;
 
@@ -69,14 +68,15 @@ type Face = {
   cellH: number;
 };
 
-const clip = (label: string) =>
-  label.length > MAX_LABEL ? `${label.slice(0, MAX_LABEL - 1)}…` : label;
-
-/** Height of a label zone: just enough for the longest label it holds, near nothing when empty. */
+/**
+ * Height of a label zone: just enough for the longest label it holds, near
+ * nothing when empty. Labels are never clipped — a long one simply costs
+ * height, so the fix for a tall zone is a shorter label.
+ */
 function zoneFor(cells: Cell[], above: boolean): number {
   const longest = cells
     .filter((c) => c.above === above && c.label.trim())
-    .reduce((m, c) => Math.max(m, clip(c.label).length), 0);
+    .reduce((m, c) => Math.max(m, c.label.trim().length), 0);
   return longest === 0 ? 14 : 18 + longest * CHAR_W;
 }
 
@@ -249,7 +249,7 @@ function Jack({ cell, w, h }: { cell: Cell; w: number; h: number }) {
 }
 
 function RotLabel({ cell, w, chassis }: { cell: Cell; w: number; chassis: Face["chassis"] }) {
-  const text = clip(cell.label);
+  const text = cell.label.trim();
   // rotate(-90) runs the text upward; shift right so the glyphs sit centered on the port.
   const x = cell.x + w / 2 + 4;
   if (cell.above) {
@@ -578,7 +578,7 @@ export function PortMapView({ theme, onToggleTheme, onBack }: Props) {
 
       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 px-1 text-[12px] text-ink-soft" aria-label="Legend">
         {ROLES.map((r) => (
-          <li key={r.role} className="flex items-center gap-1.5">
+          <li key={r.role} title={r.hint} className="flex cursor-help items-center gap-1.5">
             <span
               aria-hidden
               className="inline-block h-2.5 w-2.5 rounded-sm"

@@ -25,14 +25,29 @@ export const PANEL_KINDS: { kind: PanelKind; title: string }[] = [
   { kind: "jack", title: "Jack" },
 ];
 
-export const ROLES: { role: PortRole; title: string; color: string }[] = [
-  { role: "camera", title: "PoE camera", color: "#f43f5e" },
-  { role: "shade", title: "PoE shade", color: "#f59e0b" },
-  { role: "trunk", title: "Trunk · router ↔ rack", color: "#8b5cf6" },
-  { role: "jack", title: "Wall jack", color: "#10b981" },
-  { role: "direct", title: "Direct cable · no panel", color: "#0ea5e9" },
-  { role: "wan", title: "WAN", color: "#64748b" },
-  { role: "spare", title: "Spare", color: "" },
+export const ROLES: { role: PortRole; title: string; color: string; hint: string }[] = [
+  { role: "camera", title: "PoE camera", color: "#f43f5e", hint: "An in-wall run that ends at a camera." },
+  { role: "shade", title: "PoE shade", color: "#f59e0b", hint: "An in-wall run that ends at a shade motor." },
+  {
+    role: "trunk",
+    title: "Trunk · router ↔ rack",
+    color: "#8b5cf6",
+    hint: "The one in-wall run between the router and the rack — everything on the switches reaches the internet through it.",
+  },
+  {
+    role: "jack",
+    title: "Wall jack",
+    color: "#10b981",
+    hint: "An ordinary room outlet: a wall plate whose run lands on the panel, with whatever gets plugged in behind it.",
+  },
+  {
+    role: "direct",
+    title: "Direct cable · no panel",
+    color: "#0ea5e9",
+    hint: "A cable straight into a switch or the router that never touches the panel.",
+  },
+  { role: "wan", title: "WAN", color: "#64748b", hint: "The router's line to the Fios ONT." },
+  { role: "spare", title: "Spare", color: "", hint: "Nothing patched here." },
 ];
 
 export const roleColor = (role: PortRole): string =>
@@ -100,7 +115,7 @@ export const PANEL_DEFAULTS: Record<number, PanelEntry> = {
   26: { label: "Chimney cam", feeds: "chimney_turret · 192.168.1.75", kind: "camera", to: hubKey("gs308", 1) },
   27: { label: "Back shed cam", feeds: "shed_turret · 192.168.1.72", kind: "camera", to: hubKey("gs308", 2) },
   28: { label: "Carport cam", feeds: "carport_turret · 192.168.1.73", kind: "camera", to: hubKey("gs308", 3) },
-  29: { label: "Sliding door cam", feeds: "patio_turret · 192.168.1.74", kind: "camera", to: hubKey("gs308", 4) },
+  29: { label: "Sliding dr cam", feeds: "patio_turret · 192.168.1.74", kind: "camera", to: hubKey("gs308", 4) },
   30: { label: "Indoor cam", feeds: "kitchen_turret · 192.168.1.76", kind: "camera", to: hubKey("gs308", 5) },
 };
 
