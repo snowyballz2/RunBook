@@ -1,107 +1,119 @@
 import { describe, expect, it } from "vitest";
 import {
   HUBS,
-  countLabeled,
-  isDefaultEntry,
-  migrateLegacyPorts,
-  normPanel,
-  panelRuns,
-  portKey,
-  resolvePort,
+  PANEL_DEFAULTS,
+  countHubUsed,
+  countPanelLabeled,
+  hubEntry,
+  hubKey,
+  hubPortView,
+  isDefaultHub,
+  isDefaultPanel,
+  linksByHubPort,
+  migratePorts,
+  panelEntry,
+  panelKey,
+  panelRole,
+  parseHubKey,
 } from "./ports";
 import type { PortMap } from "./ports";
 
-const hub = (id: string) => HUBS.find((h) => h.id === id)!;
-const def = (id: "vimin" | "gs308" | "router", n: number) => hub(id).ports.find((p) => p.n === n)!;
+const hub = (id: "vimin" | "gs308" | "router") => HUBS.find((h) => h.id === id)!;
+const port = (id: "vimin" | "gs308" | "router", n: number) => hub(id).ports.find((p) => p.n === n)!;
 
-describe("port defaults follow the build's panel convention", () => {
-  it("maps VIMIN 1–24 onto panel 10–33, the GS308EPP onto 02–09, and the trunk onto 01", () => {
-    expect(def("vimin", 1).panel).toBe("10");
-    expect(def("vimin", 24).panel).toBe("33");
-    expect(def("gs308", 1).panel).toBe("02");
-    expect(def("vimin", 25).panel).toBe("01");
-    expect(def("router", 2).panel).toBe("01");
+describe("panel defaults", () => {
+  it("carry what is punched down today, panel 25–30", () => {
+    expect(panelEntry(25, {}).label).toBe("Router uplink");
+    expect(panelEntry(25, {}).to).toBe(hubKey("vimin", 25));
+    expect(panelEntry(26, {}).kind).toBe("camera");
+    expect(panelEntry(30, {}).to).toBe(hubKey("gs308", 5));
+    expect(panelEntry(1, {})).toEqual({ label: "", feeds: "", kind: "jack", to: "" });
   });
 
-  it("gives direct cables no panel port", () => {
-    expect(def("vimin", 26).panel).toBe("");
-    expect(def("gs308", 8).panel).toBe("");
-    expect(def("router", 1).panel).toBe("");
-  });
-});
-
-describe("resolvePort / isDefaultEntry", () => {
-  it("returns the default until an entry overrides it", () => {
-    const d = def("gs308", 1);
-    expect(resolvePort(d, {}, "gs308")).toEqual({ label: "Shed", feeds: d.feeds, panel: "02" });
-    const map: PortMap = { [portKey("gs308", 1)]: { label: "Front", feeds: "", panel: "02" } };
-    expect(resolvePort(d, map, "gs308").label).toBe("Front");
-  });
-
-  it("treats '2' and '02' as the same panel port", () => {
-    const d = def("gs308", 1);
-    expect(isDefaultEntry(d, { label: "Shed", feeds: d.feeds, panel: "2" })).toBe(true);
-    expect(normPanel(" 7 ")).toBe("07");
-    expect(normPanel("A3")).toBe("A3");
-    expect(normPanel("")).toBe("");
+  it("are recognised so matching entries are not stored", () => {
+    expect(isDefaultPanel(27, { ...PANEL_DEFAULTS[27] })).toBe(true);
+    expect(isDefaultPanel(27, { ...PANEL_DEFAULTS[27], to: hubKey("vimin", 3) })).toBe(false);
+    expect(isDefaultHub(hubKey("gs308", 8), hubEntry(hubKey("gs308", 8), {}))).toBe(true);
+    expect(isDefaultHub(hubKey("vimin", 3), { label: "", feeds: "", role: "direct" })).toBe(true);
   });
 });
 
-describe("countLabeled", () => {
-  it("counts default labels and user labels alike", () => {
-    // 5 cameras + GS308EPP 8 + VIMIN 25/26 + the router's four.
-    expect(countLabeled({})).toBe(12);
-    expect(countLabeled({ [portKey("vimin", 3)]: { label: "LR-1", feeds: "", panel: "12" } })).toBe(13);
-  });
-});
-
-describe("panelRuns", () => {
-  it("reads the panel back from the hubs, switch side first", () => {
-    const runs = panelRuns({});
-    const p01 = runs.get("01");
-    expect(p01?.kind === "hub" && p01.hub.id).toBe("vimin");
-    const p02 = runs.get("02");
-    expect(p02?.kind === "hub" && p02.def.n).toBe(1);
-    expect(runs.get("09")).toBeUndefined();
-    expect(runs.get("34")).toBeUndefined();
+describe("hubs read the panel back", () => {
+  it("shows a linked panel run on its switch port, with the panel number", () => {
+    const v = hubPortView(hub("gs308"), port("gs308", 1), {});
+    expect(v).toEqual({ label: "Chimney cam", feeds: "chimney_turret · 192.168.1.75", role: "camera", panel: 26 });
   });
 
-  it("keeps legacy panel rows that belong to no switch", () => {
-    const runs = panelRuns({ "panel:40": { label: "", feeds: "office jack", panel: "40" } });
-    expect(runs.get("40")?.kind).toBe("legacy");
-  });
-});
-
-describe("migrateLegacyPorts", () => {
-  it("moves a panel-keyed row to the switch port the convention gives it", () => {
-    const all: Record<string, unknown> = { "12": { feeds: "LR shade", switchPort: "3" } };
-    expect(migrateLegacyPorts(all)).toBe(true);
-    expect(all).toEqual({
-      [portKey("vimin", 3)]: { label: "", feeds: "LR shade · switch port 3", panel: "12" },
-    });
+  it("keeps direct cables on the hub and leaves the rest spare", () => {
+    expect(hubPortView(hub("vimin"), port("vimin", 26), {}).role).toBe("direct");
+    expect(hubPortView(hub("vimin"), port("vimin", 3), {}).role).toBe("spare");
+    expect(hubPortView(hub("router"), port("router", 4), {}).role).toBe("wan");
   });
 
-  it("keeps a row past the mapped bands as a panel row, and drops empty ones", () => {
-    const all: Record<string, unknown> = { "40": { feeds: "office jack", switchPort: "" }, "41": { feeds: "", switchPort: "" } };
-    expect(migrateLegacyPorts(all)).toBe(true);
-    expect(all).toEqual({ "panel:40": { label: "", feeds: "office jack", panel: "40" } });
-  });
-
-  it("never overwrites a newer entry, folding the old detail in instead", () => {
-    const all: Record<string, unknown> = {
-      [portKey("gs308", 1)]: { label: "Shed", feeds: "north corner", panel: "02" },
-      "2": { feeds: "shed cam", switchPort: "1" },
+  it("gives the lowest panel port a double-booked switch port", () => {
+    const map: PortMap = {
+      [panelKey(3)]: { label: "LR-1", feeds: "", kind: "shade", to: hubKey("gs308", 1) },
     };
-    migrateLegacyPorts(all);
-    expect(all[portKey("gs308", 1)]).toEqual({
-      label: "Shed",
-      feeds: "north corner · shed cam · switch port 1",
-      panel: "02",
-    });
+    expect(linksByHubPort(map).get(hubKey("gs308", 1))).toBe(3);
+    expect(hubPortView(hub("gs308"), port("gs308", 1), map).label).toBe("LR-1");
   });
 
-  it("is a no-op on the new format", () => {
-    const all: Record<string, unknown> = { [portKey("vimin", 1)]: { label: "x", feeds: "", panel: "10" } };
-    expect(migrateLegacyPorts(all)).toBe(false);
+  it("colours a panel port by its kind once anything is recorded", () => {
+    expect(panelRole(25, {})).toBe("trunk");
+    expect(panelRole(7, {})).toBe("spare");
+    expect(panelRole(7, { [panelKey(7)]: { label: "", feeds: "", kind: "shade", to: hubKey("vimin", 1) } })).toBe("shade");
+  });
+});
+
+describe("counts", () => {
+  it("count labeled panel ports and used hub ports, defaults included", () => {
+    expect(countPanelLabeled({})).toBe(6);
+    // 6 linked + VIMIN 26, GS308EPP 8, router LAN 1–3 and WAN.
+    expect(countHubUsed({})).toBe(12);
+  });
+});
+
+describe("parseHubKey", () => {
+  it("resolves real hub ports and rejects the rest", () => {
+    expect(parseHubKey(hubKey("vimin", 25))?.port.name).toBe("25");
+    expect(parseHubKey("vimin:99")).toBeNull();
+    expect(parseHubKey("nope")).toBeNull();
+  });
+});
+
+describe("migratePorts", () => {
+  it("turns a first-version panel row into a panel entry, keeping the typed switch port", () => {
+    const all: Record<string, unknown> = { "12": { feeds: "LR shade", switchPort: "3" } };
+    expect(migratePorts(all)).toBe(true);
+    expect(all).toEqual({ [panelKey(12)]: { label: "", feeds: "LR shade · switch port 3", kind: "jack", to: "" } });
+  });
+
+  it("turns a second-version hub row with a panel number into a linked panel entry", () => {
+    const all: Record<string, unknown> = { [hubKey("vimin", 3)]: { label: "LR-1", feeds: "", panel: "12" } };
+    expect(migratePorts(all)).toBe(true);
+    expect(all).toEqual({ [panelKey(12)]: { label: "LR-1", feeds: "", kind: "shade", to: hubKey("vimin", 3) } });
+  });
+
+  it("keeps a second-version hub row without a panel number on the hub", () => {
+    const all: Record<string, unknown> = { [hubKey("gs308", 7)]: { label: "AP", feeds: "ceiling AP", panel: "" } };
+    migratePorts(all);
+    expect(all).toEqual({ [hubKey("gs308", 7)]: { label: "AP", feeds: "ceiling AP", role: "direct" } });
+  });
+
+  it("folds two rows landing on one panel port without losing either", () => {
+    const all: Record<string, unknown> = {
+      [panelKey(12)]: { label: "", feeds: "office", kind: "jack", to: "" },
+      "12": { feeds: "old note", switchPort: "" },
+    };
+    migratePorts(all);
+    expect(all[panelKey(12)]).toEqual({ label: "", feeds: "office · old note", kind: "jack", to: "" });
+  });
+
+  it("is a no-op on the current shape", () => {
+    const all: Record<string, unknown> = {
+      [panelKey(1)]: { label: "x", feeds: "", kind: "jack", to: "" },
+      [hubKey("gs308", 7)]: { label: "AP", feeds: "", role: "direct" },
+    };
+    expect(migratePorts(all)).toBe(false);
   });
 });

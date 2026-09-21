@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
 import {
   HUBS,
+  PANEL_KINDS,
   PANEL_PORTS,
   ROLES,
-  TOTAL_PORTS,
-  countLabeled,
-  isDefaultEntry,
+  TOTAL_HUB_PORTS,
+  countHubUsed,
+  countPanelLabeled,
+  hubEntry,
+  hubKey,
+  hubPortView,
+  isDefaultHub,
+  isDefaultPanel,
+  linksByHubPort,
   pad,
-  panelRuns,
-  portKey,
-  resolvePort,
+  panelEntry,
+  panelKey,
+  panelRole,
   roleColor,
 } from "../lib/ports";
-import type { Hub, PanelRun, PortDef, PortEntry, PortMap, PortRole } from "../lib/ports";
+import type { Hub, HubEntry, HubPort, PanelEntry, PanelKind, PortMap, PortRole } from "../lib/ports";
 import * as store from "../lib/storage";
 import type { Theme } from "../lib/storage";
 import { ArrowLeft, Trash } from "./Icons";
@@ -25,7 +32,7 @@ type Props = {
 };
 
 /* -------------------------------------------------------------------------- */
-/* Faces — each hub drawn as its own front panel, ports where they really are */
+/* Faces — the panel and each hub drawn as its own front, ports where they are */
 /* -------------------------------------------------------------------------- */
 
 const CELL_W = 40;
@@ -90,8 +97,10 @@ function finish(
   };
 }
 
+type CellOf = (port: HubPort) => { label: string; role: PortRole };
+
 /** The VIMIN: three blocks of four columns, odd ports on top, uplinks 25 over 26. */
-function viminFace(hub: Hub, labelOf: (d: PortDef) => string): Face {
+function viminFace(hub: Hub, cellOf: CellOf): Face {
   const chassisH = 144;
   const x0 = 200;
   const gap = 16;
@@ -99,24 +108,18 @@ function viminFace(hub: Hub, labelOf: (d: PortDef) => string): Face {
   const rowY = [26, 26 + CELL_H + 8];
   const blockW = 3 * groupW + 2 * gap;
   const uplinkX = x0 + blockW + 26;
-  const cells: Cell[] = hub.ports.map((d) => {
-    if (d.n <= 24) {
-      const idx = d.n - 1;
+  const cells: Cell[] = hub.ports.map((port) => {
+    const { label, role } = cellOf(port);
+    if (port.n <= 24) {
+      const idx = port.n - 1;
       const group = Math.floor(idx / 8);
       const within = idx % 8;
       const col = Math.floor(within / 2);
       const row = within % 2;
-      return {
-        name: d.name,
-        role: d.role,
-        x: x0 + group * (groupW + gap) + col * PITCH,
-        y: rowY[row],
-        above: row === 0,
-        label: labelOf(d),
-      };
+      return { name: port.name, role, x: x0 + group * (groupW + gap) + col * PITCH, y: rowY[row], above: row === 0, label };
     }
-    const row = d.n === 25 ? 0 : 1;
-    return { name: d.name, role: d.role, x: uplinkX, y: rowY[row], above: row === 0, label: labelOf(d) };
+    const row = port.n === 25 ? 0 : 1;
+    return { name: port.name, role, x: uplinkX, y: rowY[row], above: row === 0, label };
   });
   return finish(cells, uplinkX + CELL_W + 26, chassisH, {
     fields: [
@@ -137,14 +140,15 @@ function viminFace(hub: Hub, labelOf: (d: PortDef) => string): Face {
 /** A single row of ports with the labels below — the GS308EPP and the router. */
 function rowFace(
   hub: Hub,
-  labelOf: (d: PortDef) => string,
+  cellOf: CellOf,
   opts: { brand: string; model: string; x0: number; gapBefore?: number; caption?: string },
 ): Face {
   const chassisH = 92;
   let x = opts.x0;
-  const cells: Cell[] = hub.ports.map((d, i) => {
+  const cells: Cell[] = hub.ports.map((port, i) => {
     if (opts.gapBefore === i) x += 24;
-    const cell: Cell = { name: d.name, role: d.role, x, y: 24, above: false, label: labelOf(d) };
+    const { label, role } = cellOf(port);
+    const cell: Cell = { name: port.name, role, x, y: 24, above: false, label };
     x += PITCH;
     return cell;
   });
@@ -159,19 +163,19 @@ function rowFace(
   });
 }
 
-function buildFace(hub: Hub, labelOf: (d: PortDef) => string): Face {
+function buildFace(hub: Hub, cellOf: CellOf): Face {
   switch (hub.id) {
     case "vimin":
-      return viminFace(hub, labelOf);
+      return viminFace(hub, cellOf);
     case "gs308":
-      return rowFace(hub, labelOf, { brand: "NETGEAR", model: "GS308EPP", x0: 150, caption: "PoE+ · 1–8" });
+      return rowFace(hub, cellOf, { brand: "NETGEAR", model: "GS308EPP", x0: 150, caption: "PoE+ · 1–8" });
     case "router":
-      return rowFace(hub, labelOf, { brand: "verizon", model: "CR1000A", x0: 140, gapBefore: 3 });
+      return rowFace(hub, cellOf, { brand: "verizon", model: "CR1000A", x0: 140, gapBefore: 3 });
   }
 }
 
-/** The 48-port panel, read back from the hubs: 1–24 on top, 25–48 below, in blocks of eight. */
-function panelFace(runs: Map<string, PanelRun>): Face {
+/** The 48-port panel: 1–24 on top, 25–48 below, in blocks of eight. */
+function panelFace(map: PortMap): Face {
   const cellW = 28;
   const cellH = 40;
   const pitch = 31;
@@ -184,10 +188,7 @@ function panelFace(runs: Map<string, PanelRun>): Face {
     const row = p <= 24 ? 0 : 1;
     const col = (p - 1) % 24;
     const x = x0 + col * pitch + Math.floor(col / 8) * gap;
-    const run = runs.get(pad(p));
-    const role: PortRole = run?.kind === "hub" ? run.def.role : "spare";
-    const label = run ? run.entry.label.trim() || (run.kind === "legacy" ? run.entry.feeds : "") : "";
-    cells.push({ name: String(p), role, x, y: rowY[row], above: row === 0, label });
+    cells.push({ name: String(p), role: panelRole(p, map), x, y: rowY[row], above: row === 0, label: panelEntry(p, map).label });
   }
   const groupW = 8 * pitch - (pitch - cellW);
   const lastRight = x0 + 2 * (8 * pitch + gap) + groupW;
@@ -312,106 +313,217 @@ function FaceSvg({ face, title }: { face: Face; title: string }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Sections                                                                   */
+/* Tables                                                                     */
 /* -------------------------------------------------------------------------- */
 
 const inputCls =
   "rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[13px] text-ink outline-none placeholder:text-ink-faint hover:border-line focus-visible:border-accent";
+const selectCls =
+  "rounded-md border border-transparent bg-transparent py-1 pl-1 pr-5 text-[13px] text-ink outline-none hover:border-line focus-visible:border-accent";
+const thCls = "px-1 py-1 font-medium";
 
-function HubSection({
-  hub,
-  map,
-  onChange,
-}: {
-  hub: Hub;
-  map: PortMap;
-  onChange: (hub: Hub, def: PortDef, patch: Partial<PortEntry>) => void;
-}) {
-  const face = buildFace(hub, (d) => resolvePort(d, map, hub.id).label);
+function RoleDot({ role }: { role: PortRole }) {
+  const color = roleColor(role);
   return (
-    <section aria-label={`${hub.name} ports`}>
-      <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 px-1">
-        <h2 className="font-display text-[1.05rem] font-semibold leading-none text-ink">{hub.name}</h2>
-        <span className="font-mono text-[11px] text-ink-faint">{hub.model}</span>
-      </div>
+    <span
+      aria-hidden
+      className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle"
+      style={color ? { background: color } : { boxShadow: "inset 0 0 0 1px var(--color-line-strong)" }}
+    />
+  );
+}
+
+function SectionTitle({ title, meta }: { title: string; meta: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 px-1">
+      <h2 className="font-display text-[1.05rem] font-semibold leading-none text-ink">{title}</h2>
+      <span className="font-mono text-[11px] text-ink-faint">{meta}</span>
+    </div>
+  );
+}
+
+/** The panel: what is in the walls, and where each run is patched. Editable, and the record the hubs read. */
+function PanelSection({ map, links }: { map: PortMap; links: Map<string, number> }) {
+  const face = panelFace(map);
+
+  const update = (port: number, patch: Partial<PanelEntry>) => {
+    const next = { ...panelEntry(port, map), ...patch };
+    store.setPortEntry(panelKey(port), isDefaultPanel(port, next) ? null : next);
+  };
+
+  // Every hub port a run can be patched to; a port another panel run already
+  // holds is shown but cannot be picked twice.
+  const options = HUBS.flatMap((hub) =>
+    hub.ports
+      .filter((port) => !(hub.id === "router" && port.n === 4))
+      .map((port) => {
+        const key = hubKey(hub.id, port.n);
+        const takenBy = links.get(key);
+        const local = hubEntry(key, map);
+        return {
+          key,
+          text: `${hub.name} ${port.name}`,
+          takenBy: takenBy ?? null,
+          note: takenBy != null ? `panel ${pad(takenBy)}` : local.label.trim() || "",
+        };
+      }),
+  );
+
+  return (
+    <section aria-label="Patch panel">
+      <SectionTitle title="Patch panel" meta="48 · what is in the walls, and the switch port each run goes to" />
       <div className="mt-2">
-        <FaceSvg face={face} title={`${hub.name} front panel`} />
+        <FaceSvg face={face} title="Patch panel, 48 ports" />
       </div>
       <div className="mt-2 overflow-x-auto">
-      <table className="w-full min-w-[520px] border-collapse text-[13px]">
-        <thead>
-          <tr className="text-left text-[10.5px] uppercase tracking-[0.08em] text-ink-faint">
-            <th className="w-16 px-1 py-1 font-medium">Port</th>
-            <th className="w-14 px-1 py-1 font-medium">Panel</th>
-            <th className="w-32 px-1 py-1 font-medium">Label</th>
-            <th className="px-1 py-1 font-medium">Feeds</th>
-          </tr>
-        </thead>
-        <tbody>
-          {hub.ports.map((def) => {
-            const entry = resolvePort(def, map, hub.id);
-            const color = roleColor(def.role);
-            return (
-              <tr key={def.n} className="border-t border-line">
-                <td className="whitespace-nowrap px-1 py-0.5 font-mono text-ink-soft">
-                  <span
-                    aria-hidden
-                    className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle"
-                    style={
-                      color
-                        ? { background: color }
-                        : { boxShadow: "inset 0 0 0 1px var(--color-line-strong)" }
-                    }
-                  />
-                  {def.name}
-                </td>
-                <td className="px-1 py-0.5">
-                  <input
-                    value={entry.panel}
-                    onChange={(e) => onChange(hub, def, { panel: e.target.value })}
-                    placeholder="—"
-                    aria-label={`${hub.name} ${def.name} — panel port`}
-                    className={`${inputCls} w-12 text-center font-mono`}
-                  />
-                </td>
-                <td className="px-1 py-0.5">
-                  <input
-                    value={entry.label}
-                    onChange={(e) => onChange(hub, def, { label: e.target.value })}
-                    placeholder="label"
-                    aria-label={`${hub.name} ${def.name} — label`}
-                    className={`${inputCls} w-full font-mono`}
-                  />
-                </td>
-                <td className="px-1 py-0.5">
-                  <input
-                    value={entry.feeds}
-                    onChange={(e) => onChange(hub, def, { feeds: e.target.value })}
-                    placeholder="room · device · address"
-                    aria-label={`${hub.name} ${def.name} — feeds`}
-                    className={`${inputCls} w-full`}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+        <table className="w-full min-w-[600px] border-collapse text-[13px]">
+          <thead>
+            <tr className="text-left text-[10.5px] uppercase tracking-[0.08em] text-ink-faint">
+              <th className={`${thCls} w-12`}>Port</th>
+              <th className={`${thCls} w-24`}>Kind</th>
+              <th className={`${thCls} w-36`}>Label</th>
+              <th className={thCls}>Feeds</th>
+              <th className={`${thCls} w-40`}>Switch port</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: PANEL_PORTS }, (_, i) => i + 1).map((port) => {
+              const e = panelEntry(port, map);
+              return (
+                <tr key={port} className="border-t border-line">
+                  <td className="whitespace-nowrap px-1 py-0.5 font-mono text-ink-soft">
+                    <RoleDot role={panelRole(port, map)} />
+                    {pad(port)}
+                  </td>
+                  <td className="px-1 py-0.5">
+                    <select
+                      value={e.kind}
+                      onChange={(ev) => update(port, { kind: ev.target.value as PanelKind })}
+                      aria-label={`Panel ${pad(port)} — kind`}
+                      className={selectCls}
+                    >
+                      {PANEL_KINDS.map((k) => (
+                        <option key={k.kind} value={k.kind}>
+                          {k.title}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-1 py-0.5">
+                    <input
+                      value={e.label}
+                      onChange={(ev) => update(port, { label: ev.target.value })}
+                      placeholder="label"
+                      aria-label={`Panel ${pad(port)} — label`}
+                      className={`${inputCls} w-full font-mono`}
+                    />
+                  </td>
+                  <td className="px-1 py-0.5">
+                    <input
+                      value={e.feeds}
+                      onChange={(ev) => update(port, { feeds: ev.target.value })}
+                      placeholder="room · device · address"
+                      aria-label={`Panel ${pad(port)} — feeds`}
+                      className={`${inputCls} w-full`}
+                    />
+                  </td>
+                  <td className="px-1 py-0.5">
+                    <select
+                      value={e.to}
+                      onChange={(ev) => update(port, { to: ev.target.value })}
+                      aria-label={`Panel ${pad(port)} — switch port`}
+                      className={`${selectCls} w-full font-mono`}
+                    >
+                      <option value="">—</option>
+                      {options.map((o) => (
+                        <option key={o.key} value={o.key} disabled={o.takenBy != null && o.takenBy !== port}>
+                          {o.text}
+                          {o.note && o.takenBy !== port ? ` · ${o.note}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </section>
   );
 }
 
-function PanelSection({ map }: { map: PortMap }) {
-  const face = panelFace(panelRuns(map));
+/** A hub: its face and table read the panel's links; only cables that never meet the panel are typed here. */
+function HubSection({ hub, map, links }: { hub: Hub; map: PortMap; links: Map<string, number> }) {
+  const view = (port: HubPort) => hubPortView(hub, port, map, links);
+  const face = buildFace(hub, (port) => {
+    const v = view(port);
+    return { label: v.label, role: v.role };
+  });
+
+  // A linked port's label and detail belong to the panel run, so editing them
+  // here edits that run; an unlinked port keeps its own entry.
+  const update = (port: HubPort, patch: { label?: string; feeds?: string }) => {
+    const v = view(port);
+    if (v.panel != null) {
+      const next = { ...panelEntry(v.panel, map), ...patch };
+      store.setPortEntry(panelKey(v.panel), isDefaultPanel(v.panel, next) ? null : next);
+      return;
+    }
+    const key = hubKey(hub.id, port.n);
+    const next: HubEntry = { ...hubEntry(key, map), ...patch };
+    store.setPortEntry(key, isDefaultHub(key, next) ? null : next);
+  };
+
   return (
-    <section aria-label="Patch panel">
-      <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 px-1">
-        <h2 className="font-display text-[1.05rem] font-semibold leading-none text-ink">Patch panel</h2>
-        <span className="font-mono text-[11px] text-ink-faint">48 · read from the switch tables below</span>
-      </div>
+    <section aria-label={`${hub.name} ports`}>
+      <SectionTitle title={hub.name} meta={hub.model} />
       <div className="mt-2">
-        <FaceSvg face={face} title="Patch panel, 48 ports" />
+        <FaceSvg face={face} title={`${hub.name} front panel`} />
+      </div>
+      <div className="mt-2 overflow-x-auto">
+        <table className="w-full min-w-[520px] border-collapse text-[13px]">
+          <thead>
+            <tr className="text-left text-[10.5px] uppercase tracking-[0.08em] text-ink-faint">
+              <th className={`${thCls} w-16`}>Port</th>
+              <th className={`${thCls} w-14`}>Panel</th>
+              <th className={`${thCls} w-36`}>Label</th>
+              <th className={thCls}>Feeds</th>
+            </tr>
+          </thead>
+          <tbody>
+            {hub.ports.map((port) => {
+              const v = view(port);
+              return (
+                <tr key={port.n} className="border-t border-line">
+                  <td className="whitespace-nowrap px-1 py-0.5 font-mono text-ink-soft">
+                    <RoleDot role={v.role} />
+                    {port.name}
+                  </td>
+                  <td className="px-1 py-0.5 text-center font-mono text-ink-soft">{v.panel != null ? pad(v.panel) : "—"}</td>
+                  <td className="px-1 py-0.5">
+                    <input
+                      value={v.label}
+                      onChange={(ev) => update(port, { label: ev.target.value })}
+                      placeholder="label"
+                      aria-label={`${hub.name} ${port.name} — label`}
+                      className={`${inputCls} w-full font-mono`}
+                    />
+                  </td>
+                  <td className="px-1 py-0.5">
+                    <input
+                      value={v.feeds}
+                      onChange={(ev) => update(port, { feeds: ev.target.value })}
+                      placeholder={v.panel != null ? "" : "direct cable · device"}
+                      aria-label={`${hub.name} ${port.name} — feeds`}
+                      className={`${inputCls} w-full`}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </section>
   );
@@ -425,12 +537,9 @@ export function PortMapView({ theme, onToggleTheme, onBack }: Props) {
   const [map, setMap] = useState<PortMap>(() => store.getPortMap());
   useEffect(() => store.onPortMapChange(() => setMap(store.getPortMap())), []);
 
-  const labeled = countLabeled(map);
-
-  const onChange = (hub: Hub, def: PortDef, patch: Partial<PortEntry>) => {
-    const next = { ...resolvePort(def, map, hub.id), ...patch };
-    store.setPortEntry(portKey(hub.id, def.n), isDefaultEntry(def, next) ? null : next);
-  };
+  const links = linksByHubPort(map);
+  const panelLabeled = countPanelLabeled(map);
+  const hubUsed = countHubUsed(map);
 
   return (
     <div className="mx-auto min-h-dvh max-w-3xl px-4 pb-24 pt-5 sm:px-6">
@@ -447,7 +556,7 @@ export function PortMapView({ theme, onToggleTheme, onBack }: Props) {
           <div>
             <h1 className="font-display text-xl font-semibold leading-none text-ink">Port Map</h1>
             <p className="mt-1 font-mono text-xs text-ink-faint">
-              {labeled} of {TOTAL_PORTS} labeled · this device only
+              {panelLabeled}/{PANEL_PORTS} panel · {hubUsed}/{TOTAL_HUB_PORTS} switch ports · this device only
             </p>
           </div>
         </div>
@@ -481,9 +590,9 @@ export function PortMapView({ theme, onToggleTheme, onBack }: Props) {
       </ul>
 
       <main className="mt-6 space-y-10">
-        <PanelSection map={map} />
+        <PanelSection map={map} links={links} />
         {HUBS.map((hub) => (
-          <HubSection key={hub.id} hub={hub} map={map} onChange={onChange} />
+          <HubSection key={hub.id} hub={hub} map={map} links={links} />
         ))}
       </main>
     </div>

@@ -6,8 +6,8 @@
 
 import { migrateLegacyCredentials } from "./credentials";
 import { parseGuide } from "./parseGuide";
-import { countLabeled, migrateLegacyPorts } from "./ports";
-import type { PortEntry, PortMap } from "./ports";
+import { countPanelLabeled, migratePorts } from "./ports";
+import type { HubEntry, PanelEntry, PortMap } from "./ports";
 import type { Guide } from "./types";
 
 const NS = "runbook";
@@ -200,20 +200,21 @@ export function onCredentialsChange(fn: () => void): () => void {
 /*                                                                           */
 /* Not guide-derived: which cable lands where is a fact about the house, not */
 /* a build step, so the rows are owned here rather than declared in markdown. */
-/* Keyed by hub and switch port ("vimin:12"); an entry overrides that port's */
-/* default from src/lib/ports.ts and is dropped again when it matches it.    */
+/* Keyed by panel port ("panel:25") or hub port ("vimin:26"); an entry       */
+/* overrides that port's default from src/lib/ports.ts and is dropped again  */
+/* when it matches it.                                                       */
 /* -------------------------------------------------------------------------- */
 
 const PORTS_KEY = `${NS}:ports`;
 const PORTS_EVENT = "runbook:ports-changed";
 
-export type { PortEntry, PortMap } from "./ports";
+export type { HubEntry, PanelEntry, PortMap } from "./ports";
 
 export function getPortMap(): PortMap {
   const all = read<PortMap>(PORTS_KEY, {});
-  // Rows from the panel-keyed first version follow their switch port — see
-  // migrateLegacyPorts. Nothing is ever discarded.
-  if (migrateLegacyPorts(all)) {
+  // Rows from the two earlier shapes become panel entries — see migratePorts.
+  // Nothing is ever discarded.
+  if (migratePorts(all)) {
     if (Object.keys(all).length === 0) remove(PORTS_KEY);
     else write(PORTS_KEY, all);
   }
@@ -221,7 +222,7 @@ export function getPortMap(): PortMap {
 }
 
 /** Record one port; pass null to fall back to the port's default. */
-export function setPortEntry(key: string, entry: PortEntry | null): void {
+export function setPortEntry(key: string, entry: PanelEntry | HubEntry | null): void {
   const all = getPortMap();
   if (entry) all[key] = entry;
   else delete all[key];
@@ -230,9 +231,9 @@ export function setPortEntry(key: string, entry: PortEntry | null): void {
   window.dispatchEvent(new CustomEvent(PORTS_EVENT));
 }
 
-/** Ports carrying a label, defaults included. */
+/** Panel ports carrying a label, defaults included. */
 export function countLabeledPorts(): number {
-  return countLabeled(getPortMap());
+  return countPanelLabeled(getPortMap());
 }
 
 export function clearPortMap(): void {

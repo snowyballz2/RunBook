@@ -6,7 +6,7 @@ import {
   countFilled,
   STANDALONE_SCOPE,
 } from "../lib/credentials";
-import { TOTAL_PORTS } from "../lib/ports";
+import { PANEL_PORTS } from "../lib/ports";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
 import { BookOpen, ChevronDown, Key, More, Plug, Plus, Search, Sitemap, Trash } from "./Icons";
@@ -315,7 +315,7 @@ function PortMapCard({ onOpen }: { onOpen: () => void }) {
           Port Map
         </span>
         <span className="mt-0.5 block text-[13px] leading-snug text-ink-soft">
-          {labeled} of {TOTAL_PORTS} ports labeled · switches, router, panel
+          {labeled} of {PANEL_PORTS} panel ports labeled · the switches read from it
         </span>
       </span>
       <ChevronDown size={17} className="shrink-0 -rotate-90 text-ink-faint" />
