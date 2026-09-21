@@ -6,6 +6,8 @@
 
 import { migrateLegacyCredentials } from "./credentials";
 import { parseGuide } from "./parseGuide";
+import { countLabeled, migrateLegacyPorts } from "./ports";
+import type { PortEntry, PortMap } from "./ports";
 import type { Guide } from "./types";
 
 const NS = "runbook";
@@ -194,38 +196,43 @@ export function onCredentialsChange(fn: () => void): () => void {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Port mapping — the patch panel's record. Device-local, like credentials.  */
+/* Port map — the rack's record. Device-local, like credentials.             */
 /*                                                                           */
-/* Not guide-derived: a panel is a fact about the house, not a build step, so */
-/* these rows are owned here rather than declared in markdown. Keyed by port  */
-/* number so a row survives being renamed or reordered.                      */
+/* Not guide-derived: which cable lands where is a fact about the house, not */
+/* a build step, so the rows are owned here rather than declared in markdown. */
+/* Keyed by hub and switch port ("vimin:12"); an entry overrides that port's */
+/* default from src/lib/ports.ts and is dropped again when it matches it.    */
 /* -------------------------------------------------------------------------- */
 
 const PORTS_KEY = `${NS}:ports`;
 const PORTS_EVENT = "runbook:ports-changed";
 
-/** What one patch-panel port feeds, and where it patches to. */
-export type PortRow = { feeds: string; switchPort: string };
-
-export type PortMap = Record<string, PortRow>;
+export type { PortEntry, PortMap } from "./ports";
 
 export function getPortMap(): PortMap {
-  return read<PortMap>(PORTS_KEY, {});
+  const all = read<PortMap>(PORTS_KEY, {});
+  // Rows from the panel-keyed first version follow their switch port — see
+  // migrateLegacyPorts. Nothing is ever discarded.
+  if (migrateLegacyPorts(all)) {
+    if (Object.keys(all).length === 0) remove(PORTS_KEY);
+    else write(PORTS_KEY, all);
+  }
+  return all;
 }
 
-export function setPortRow(port: number, row: PortRow): void {
+/** Record one port; pass null to fall back to the port's default. */
+export function setPortEntry(key: string, entry: PortEntry | null): void {
   const all = getPortMap();
-  const key = String(port);
-  if (row.feeds.trim() || row.switchPort.trim()) all[key] = row;
+  if (entry) all[key] = entry;
   else delete all[key];
   if (Object.keys(all).length === 0) remove(PORTS_KEY);
   else write(PORTS_KEY, all);
   window.dispatchEvent(new CustomEvent(PORTS_EVENT));
 }
 
-/** Ports with anything recorded against them. */
-export function countMappedPorts(): number {
-  return Object.keys(getPortMap()).length;
+/** Ports carrying a label, defaults included. */
+export function countLabeledPorts(): number {
+  return countLabeled(getPortMap());
 }
 
 export function clearPortMap(): void {

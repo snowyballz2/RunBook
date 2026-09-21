@@ -6,6 +6,7 @@ import {
   countFilled,
   STANDALONE_SCOPE,
 } from "../lib/credentials";
+import { TOTAL_PORTS } from "../lib/ports";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
 import { BookOpen, ChevronDown, Key, More, Plug, Plus, Search, Sitemap, Trash } from "./Icons";
@@ -294,10 +295,10 @@ function NetworkMapCard({ onOpen }: { onOpen: () => void }) {
  * declare for you. Shown once per collection, since there is one panel.
  */
 function PortMapCard({ onOpen }: { onOpen: () => void }) {
-  const [mapped, setMapped] = useState(() => store.countMappedPorts());
+  const [labeled, setLabeled] = useState(() => store.countLabeledPorts());
   useEffect(() => {
-    setMapped(store.countMappedPorts());
-    return store.onPortMapChange(() => setMapped(store.countMappedPorts()));
+    setLabeled(store.countLabeledPorts());
+    return store.onPortMapChange(() => setLabeled(store.countLabeledPorts()));
   }, []);
 
   return (
@@ -311,10 +312,10 @@ function PortMapCard({ onOpen }: { onOpen: () => void }) {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-display text-[1rem] font-semibold leading-snug text-ink">
-          Port Mapping
+          Port Map
         </span>
         <span className="mt-0.5 block text-[13px] leading-snug text-ink-soft">
-          {mapped} of 48 mapped · every in-wall run and where it lands
+          {labeled} of {TOTAL_PORTS} ports labeled · switches, router, panel
         </span>
       </span>
       <ChevronDown size={17} className="shrink-0 -rotate-90 text-ink-faint" />
