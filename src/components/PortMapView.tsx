@@ -408,7 +408,7 @@ function PanelSection({ map }: { map: PortMap }) {
     <section aria-label="Patch panel">
       <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 px-1">
         <h2 className="font-display text-[1.05rem] font-semibold leading-none text-ink">Patch panel</h2>
-        <span className="font-mono text-[11px] text-ink-faint">48 · read from the tables above</span>
+        <span className="font-mono text-[11px] text-ink-faint">48 · read from the switch tables below</span>
       </div>
       <div className="mt-2">
         <FaceSvg face={face} title="Patch panel, 48 ports" />
@@ -481,10 +481,10 @@ export function PortMapView({ theme, onToggleTheme, onBack }: Props) {
       </ul>
 
       <main className="mt-6 space-y-10">
+        <PanelSection map={map} />
         {HUBS.map((hub) => (
           <HubSection key={hub.id} hub={hub} map={map} onChange={onChange} />
         ))}
-        <PanelSection map={map} />
       </main>
     </div>
   );
