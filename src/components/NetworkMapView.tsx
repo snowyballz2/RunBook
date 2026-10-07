@@ -48,6 +48,7 @@ const GUESTS: Row[] = [
   { ip: "192.168.1.58", name: "Nextcloud (NCP)", id: "LXC 105", reach: "https://{ip}", proxied: "cloud.", credKey: "nextcloud-ip", note: "NCP panel on 4443" },
   { ip: "192.168.1.59", name: "Ollama", id: "LXC", reach: "port 11434", credKey: "ollama-ip", note: "Voice page — no web UI" },
   { ip: "192.168.1.60", name: "faster-whisper", id: "LXC", reach: "port 10300", credKey: "whisper-ip", note: "Voice page — no web UI" },
+  { ip: "192.168.1.62", name: "Valheim server", id: "LXC 109", reach: "UDP 2456", credKey: "valheim-ip", note: "Valheim page — optional, no web UI" },
 ];
 
 const TAILNET: Row[] = [

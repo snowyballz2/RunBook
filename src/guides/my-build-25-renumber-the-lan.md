@@ -26,6 +26,7 @@ Only the prefix changes. Every value below follows from the addressing plan on t
 | `.52` `.53` `.54` `.55` `.56` `.57` `.58` | same last numbers | Frigate, AdGuard, NPM, Homepage, Vaultwarden, Kuma, Nextcloud |
 | `.59` `.60` | same | Ollama and faster-whisper, if the Voice page is built |
 | `.61` | `192.168.213.61` | Caséta Pro bridge |
+| `.62` | `192.168.213.62` | Valheim, if the Valheim Server page is built |
 | `.70`–`.76` | same | the seven cameras |
 | `.98` | `192.168.213.98` | the cameras' dead-end gateway — still not a device |
 
@@ -152,6 +153,7 @@ Take them in this order, because the rest resolve names through the first:
 6. **107 Homepage** → `192.168.213.55/24`.
 7. **108 Uptime Kuma** → `192.168.213.57/24`.
 8. The Voice page's Ollama and faster-whisper containers, if they exist → `.59` and `.60`.
+9. **109 Valheim**, if it exists → `192.168.213.62/24` — and if friends join through the router's port-forward, that rule's destination moves to `192.168.213.62` as well; a Tailscale share needs nothing.
 
 ### Home Assistant
 1. At `http://192.168.1.51:8123` (through the alias), go to **Settings → System → Network**, expand the interface, and set **IP address** → `192.168.213.51/24`, **Gateway** → `192.168.213.1`, **DNS** → `192.168.213.1`. **Save**.
@@ -194,7 +196,7 @@ pct exec 107 -- sed -i 's/192\.168\.1\./192.168.213./g' /opt/homepage/.env /opt/
 pct exec 107 -- systemctl restart homepage
 ```
 
-4. **Uptime Kuma** at `http://192.168.213.57:3001`: each of the nine monitors → **Edit** → the URL, or the DNS monitor's **Resolver Server** → the new prefix → **Save**.
+4. **Uptime Kuma** at `http://192.168.213.57:3001`: every monitor whose address starts `192.168.1.` → **Edit** → the URL, the Ping hostname, or the DNS monitor's **Resolver Server** → the new prefix → **Save**.
 5. **Nextcloud**, in **Proxmox → 105 (nextcloudpi) → Console** — list the trusted entries and note which index holds `192.168.1.58`:
 
 ```bash

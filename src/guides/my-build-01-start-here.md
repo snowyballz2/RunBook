@@ -251,6 +251,7 @@ Every fixed address in the build, in one place — and the same list lives in th
 | `.58` | Nextcloud (NCP) LXC | 105 | `https://192.168.1.58` | `cloud.` |
 | `.59` | Ollama LXC | — | port `11434`, no UI | — |
 | `.60` | faster-whisper LXC | — | port `10300`, no UI | — |
+| `.62` | Valheim LXC (optional) | 109 | UDP `2456`, no UI | — |
 
 Three of those ports are not web UIs and matter anyway: AdGuard answers **DNS on 53**, the proxy serves the house on **80 and 443** (81 is only its admin), and Frigate keeps an unauthenticated **5000** fenced to Home Assistant and Uptime Kuma alone. The last two rows arrive on the Voice page; every other guest is built by page 19.
 
@@ -455,5 +456,8 @@ The pages are numbered in the exact sequence to build in. Do not skip ahead — 
 22. **Automations** — the leak-to-valve safety rule, presence, locks, and climate logic.
 23. **Voice — Siri & Local Assist** — both the Apple/Siri path and the fully-local voice assistant.
 24. **Maintenance & Upkeep** — the monthly and quarterly routine that keeps it boring.
+25. **Renumber the LAN** — move the house off `192.168.1.x`, once backups and snapshots exist.
+26. **When Something Breaks** — symptom-first ladders for the built house.
+27. **Valheim Server** — optional: a game server on the rack, reached over Tailscale or a port-forward.
 
 When you are ready, move on to **Hardware & BIOS** to seat the cards and prepare the firmware.
