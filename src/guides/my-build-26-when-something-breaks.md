@@ -131,6 +131,45 @@ That Wi-Fi is on `192.168.1.x` too, and a network you are standing in beats the 
 2. Read the signed-in account at the top of that menu. If it is the passkey admin, sign out and sign in with the Apple ID — the passkey is a browser-only login, and a client signed in as a removed user dies alone while every other device works.
 3. In the Mac app's settings, confirm **Use Tailscale DNS settings** is on.
 
+## Valheim
+
+### Nobody can join the Valheim server
+Three things can be wrong, in this order: the server itself, the path in, or the game version. In **Proxmox → 109 (valheim) → Console**:
+
+1. Check the server is running:
+
+```bash
+docker ps --format '{{.Names}} {{.Status}}'
+```
+
+2. If `valheim-server` is missing or not `Up`, read its last lines — an update in progress says so, a crash shows the reason:
+
+```bash
+docker logs --tail 30 valheim-server
+```
+
+3. Start it if it is stopped:
+
+```bash
+docker start valheim-server
+```
+
+4. From a PC at home, join `192.168.1.62:2456` through **Join IP** — if that fails too, the problem is the server, not the path in, and the log above is where it shows.
+5. For a Tailscale share, print the container's own view of the tailnet — it should show itself online, and the friend's Tailscale app should list `valheim` without a warning:
+
+```bash
+tailscale status
+```
+
+6. For a port-forward, compare the address friends are using with the current one:
+
+```bash
+curl -4 https://ifconfig.me
+```
+
+> [!NOTE]
+> Reading the results: a share the friend no longer sees was revoked, or its invite link went unused for 30 days — share it again from the Machines page. A public address that moved is the usual port-forward failure; the Renumber the LAN page is the other one, since the router rule still points at the old container address afterwards. A join screen that says the version is incompatible means the game patched before the server did — with nobody connected the server updates itself within fifteen minutes, and `docker restart valheim-server` makes it check at once.
+
 ## Not a fault
 Gauges that look wrong by design — check the list before debugging:
 

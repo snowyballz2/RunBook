@@ -36,13 +36,18 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 > Read any script before piping it into a root shell — the same download-read-run habit used for the rest of this build. This helper builds an unprivileged Debian 13 container and installs the Docker engine in it; the game server is a Docker image that goes in afterwards.
 
 ### Choose Advanced — every dialog answered
-On the **Community-Scripts Options** menu, pick **Advanced Install**. The prompts, in order:
+This helper asks one question before the usual menu:
+
+1. **Choose the container OS** → **Debian** — the Alpine choice is smaller, but every other container here is Debian, and the Maintenance walk assumes it.
+2. On the **Community-Scripts Options** menu, pick **Advanced Install**.
+
+The prompts, in order:
 
 - **Container type** → **Unprivileged**, as offered
 - **Set Root Password** → set one, recorded below
 - **Container ID** → accept the offered next-free number — `109` on this build unless the Voice page's containers came first; it is the ID every command below uses
 - **Hostname** → `valheim`
-- **Disk size** → `16` — the game server download is about 2 GB, and world backups accumulate beside it
+- **Disk size** → `16` — the game server download is about 1 GB, and world backups accumulate beside it
 - **CPU cores** → `4`
 - **RAM** → `6144` — a cap, not a reservation; the server idles near 3 GB
 - **Network bridge** → **`vmbr0`**
@@ -56,8 +61,7 @@ On the **Community-Scripts Options** menu, pick **Advanced Install**. The prompt
 - **TUN/TAP SUPPORT** → **Yes** for Option A — Tailscale inside the container needs the TUN device; **No** for Option B
 - **NESTING SUPPORT** → **Yes** — Docker needs it
 - **GPU PASSTHROUGH** → **No**
-
-The install itself asks one more question: **Expose Docker TCP socket (insecure)?** → **n**.
+- **Expose Docker TCP socket (insecure)?** — the install's own question, after the container exists → **n**
 
 > [!INPUT] valheim-ct-id | Valheim container ID | 109
 
@@ -97,7 +101,7 @@ EOF
 ```
 
 > [!WARNING]
-> Valheim's own rules for the join password: at least **five** characters, and it must not appear inside the server name. `SERVER_PUBLIC=false` keeps the server out of Steam's public browser — friends join by address, which both options below provide.
+> Valheim's own rules for the join password: at least **five** characters, and it must not appear inside the server name or the world name. `SERVER_PUBLIC=false` keeps the server out of Steam's public browser — friends join by address, which both options below provide.
 
 > [!INPUT] valheim-server-name | Valheim server name | Kuzco
 
@@ -111,7 +115,7 @@ EOF
 bash /root/valheim-run.sh
 ```
 
-4. Watch the first start — it downloads the server from Steam, about 2 GB:
+4. Watch the first start — it downloads the server from Steam, about 1 GB:
 
 ```bash
 docker logs -f valheim-server
@@ -294,11 +298,15 @@ docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run
 ```
 
 ### Updates
-The game updates itself — the fifteen-minute Steam check in the container, applied only while nobody is connected — so a Valheim patch never strands friends on a mismatched version. The container's Debian layer updates in the Maintenance page's walk like every other guest. The server image itself changes rarely; when its project page announces a release worth having:
+
+> [!NOTE]
+> Three layers update three ways. The game updates itself — the fifteen-minute Steam check in the container, applied only while nobody is connected — so a Valheim patch never strands friends on a mismatched version. The container's Debian layer updates in the Maintenance page's walk like every other guest. The server image itself changes rarely, and only matters when its project page announces a release worth having.
+
+Pull the new image and rebuild the server from the same start script:
 
 ```bash
 docker pull ghcr.io/community-valheim-tools/valheim-server && docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run.sh
 ```
 
 > [!NOTE]
-> Backups come from two directions. The image writes a world backup every hour under `/root/valheim-server/config/backups`, kept seven days — restoring one is copying its `.db` and `.fwl` back into `/root/valheim-server/config/worlds_local` with the server stopped. And the Proxmox Backups page's nightly job covers the whole container, world included. If the LAN is ever renumbered, the Renumber the LAN page carries this container's new address; Option B's router rule needs the new destination too, while Option A's tailnet address never changes.
+> Backups come from two directions. The image writes a world backup every hour as a zip under `/root/valheim-server/config/backups`, kept seven days — restoring one means stopping the server, unzipping that file, and copying the world's `.db` and `.fwl` back into `/root/valheim-server/config/worlds_local`. And the Proxmox Backups page's nightly job covers the whole container, world included. If the LAN is ever renumbered, the Renumber the LAN page carries this container's new address; Option B's router rule needs the new destination too, while Option A's tailnet address never changes. When nobody can join, the When Something Breaks page has the ladder.
