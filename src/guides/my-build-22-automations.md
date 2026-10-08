@@ -656,18 +656,26 @@ Every PoE shade needs its **own Cat6 run** back to the switch.
 > The motor is **802.3af/at** and draws about **5 W** (120–150 µA idle) over runs up to **100 m (328 ft)**, which is why a whole house of them barely dents the 320 W budget. SmartWings ships a full PoE wiring guide with the shades; this matches it.
 
 ### Onboard the shades
-Both kinds land as `cover.*` entities, commissioned straight into Home Assistant's Matter controller — no Apple Home, no vendor app:
+Both kinds land as `cover.*` entities, commissioned straight into Home Assistant's Matter controller — no Apple Home, no vendor app. A motor only advertises itself for pairing while it is in **pairing mode**: a shade that has been running from its remote is silent, and Home Assistant's search finds nothing until the motor is woken. At the shade first:
 
-- In the **Home Assistant companion app**:
-  1. Go to **Settings → Devices & services → Matter**.
-  2. Tap **Add device**.
-  3. Choose **"No, it's new."**
-  4. Scan the shade's QR pairing code (**More options…** takes a typed code instead).
-  5. Confirm **Add to Home Assistant**.
-- Give each PoE shade a **DHCP reservation** so its address never moves.
+1. Set the shade's upper and lower limits with the remote, if that is not done yet — SmartWings' rule is limits first, then smart pairing; red and green flashing alternately means they are missing.
+2. Press and hold the **P** button on the motor head for six seconds.
+3. Release it after the second jog — the red light stays on, and the motor is in pairing mode within about ninety seconds.
+
+> [!DETAILS] Pairing mode from the remote instead
+> With the remote showing the shade's channel: press **SETTING (P)** — the motor jogs once; press **UP** — it jogs once; press **SETTING (P)** again — it jogs twice with a brief pause, or the red light stays on, depending on the motor. Same pairing mode, from SmartWings' Matter getting-started sheet. Pairing the remote itself is separate and stays paired either way.
+
+Then, within a few minutes, in the **Home Assistant companion app**:
+
+1. Go to **Settings → Devices & services → Matter**.
+2. Tap **Add device**.
+3. Choose **"No, it's new."**
+4. Scan the shade's QR pairing code (**More options…** takes a typed code instead).
+5. Confirm **Add to Home Assistant**.
+6. Give each PoE shade a **DHCP reservation** so its address never moves.
 
 > [!NOTE]
-> **Add integration → Matter** is only the one-time server setup, done back on the Matter Locks page — it dead-ends on an already-configured integration. A **PoE (Ethernet) shade** joins over the wired LAN; a **battery (Thread) shade** joins over Home Assistant's OpenThread Border Router — the phone's Bluetooth does the handshake and hands over the Thread credentials, exactly like the locks.
+> **Add integration → Matter** is only the one-time server setup, done back on the Matter Locks page — it dead-ends on an already-configured integration. A **PoE (Ethernet) shade** joins over the wired LAN; a **battery (Thread) shade** joins over Home Assistant's OpenThread Border Router — the phone's Bluetooth does the handshake and hands over the Thread credentials, exactly like the locks. That means the phone must hold this network's credentials: the Matter Locks page's **Send credentials** step. A phone that commissioned the locks already has them.
 
 ### Group them and drive them as one
 Make one group so PoE-vs-battery stops mattering, then automate the group.
