@@ -11,6 +11,37 @@ The build pages say how to stand each piece up. They do not say what to do six m
 > [!NOTE]
 > Two habits before any ladder. Uptime Kuma at `https://status.kuzco.org` tells you *what* is down, so start there rather than guessing. And the Maintenance page's rule holds: snapshot before any change that is more than a restart.
 
+## Host
+
+### Everything is down, and Task History shows a run of "Bulk start VMs and Containers" lines minutes apart
+Each **Bulk start VMs and Containers** line is one boot — starting every guest is the last step of booting — so a run of them minutes apart is the host rebooting over and over, and the red CT start errors beside them are starts cut off by the next reboot, not failed containers. Seen here on 2026-10-14: fifteen boots in forty-two minutes, five of them dead within a second. In **pve → Shell**:
+
+1. List the boots — one row each, with its first and last timestamp; a row lasting seconds died while still booting:
+
+```bash
+journalctl --list-boots | tail -15
+```
+
+2. Read how the previous boot ended:
+
+```bash
+journalctl -b -1 -n 40 --no-pager
+```
+
+3. If it ends in ordinary startup or running lines with no shutdown request, the power was cut or the hardware reset itself — software never ends a journal mid-sentence — so carry on at step 5.
+4. If it ends with `upsmon`, `Forced shutdown` or `Reached target Power-Off`, something asked for the shutdown — NUT, when the UPS reports low battery on line power, or a person — and NUT's own reason is in its log:
+
+```bash
+journalctl -b -1 -u nut-monitor --no-pager | tail -20
+```
+
+5. Find out whether the whole house flickered — the router's uptime on its status page, the GS308EPP's uptime, a stove clock, or a gap across every camera's recordings at once.
+6. If the house flickered, the server is riding unprotected power, or a UPS whose battery can no longer carry it — move it to the UPS's battery-side outlets, and run the UPS page if it is not done.
+7. If nothing else reset, the fault is inside the box — reseat the 24-pin and CPU power cables, and treat the power supply as the suspect.
+
+> [!NOTE]
+> The BIOS's **Restore AC Power Loss → Power On** is what brings the host back after every cut; it is doing its job, not causing the loop. And the containers were never the problem: once the reboots stop, the last boot's Bulk start finishes on its own, and every guest shows running within a few minutes.
+
 ## Cameras
 
 ### Every camera says "No frames have been received"
