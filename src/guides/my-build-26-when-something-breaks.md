@@ -70,6 +70,38 @@ nvidia-smi --query-gpu=temperature.gpu,power.draw --format=csv
 > [!NOTE]
 > A thermal trip usually announces itself with a **CPU Over Temperature Error** at the next POST, and a kernel panic hangs rather than reboots, so a machine that silently resets and comes straight back is almost always power — the wall, the supply, or a short — before it is anything else.
 
+## Names
+
+### A service loads by address but not by its kuzco.org name
+Seen here after the host's reboot storm, with every guest running again. The `kuzco.org` names exist only inside AdGuard, so this is the chain from the Mac to AdGuard breaking somewhere — and two lookups find where. On the Mac, in Terminal:
+
+1. Ask the way the house normally asks, through the router:
+
+```bash
+nslookup home.kuzco.org
+```
+
+2. Ask AdGuard directly:
+
+```bash
+nslookup home.kuzco.org 192.168.1.53
+```
+
+3. If the first says `No answer` or `NXDOMAIN` and the second answers `192.168.1.54`, AdGuard is fine and the router stopped asking it — carry on at step 5.
+4. If the second fails too, AdGuard's service did not survive the restart even though its container runs — in **Proxmox → 103 (adguard) → Console**:
+
+```bash
+systemctl restart AdGuardHome
+```
+
+5. Check the router's setting survived, at `http://192.168.1.1` → **Advanced → Network Settings → Network Connections → Broadband Connection (Ethernet) → Settings**: **IPv4 DNS Address 1** should still read `192.168.1.53`.
+6. If it changed, set it back and click **Apply**.
+7. If it is unchanged, restart the router — pull its power for ten seconds; the house loses internet for about two minutes.
+8. Repeat step 1 — `192.168.1.54` means the chain is whole again.
+
+> [!NOTE]
+> Why the router drifts: with AdGuard dark for an hour, the CR1000A either fell back to Verizon's resolvers and stayed there, or cached the "no such name" answer a public resolver gave it and kept serving that after AdGuard returned. A restart clears both. If the Mac's own cache is the last thing holding a stale answer, flush it with `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`.
+
 ## Cameras
 
 ### Every camera says "No frames have been received"
