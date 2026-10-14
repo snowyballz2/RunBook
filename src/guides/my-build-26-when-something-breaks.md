@@ -37,10 +37,38 @@ journalctl -b -1 -u nut-monitor --no-pager | tail -20
 
 5. Find out whether the whole house flickered — the router's uptime on its status page, the GS308EPP's uptime, a stove clock, or a gap across every camera's recordings at once.
 6. If the house flickered, the server is riding unprotected power, or a UPS whose battery can no longer carry it — move it to the UPS's battery-side outlets, and run the UPS page if it is not done.
-7. If nothing else reset, the fault is inside the box — reseat the 24-pin and CPU power cables, and treat the power supply as the suspect.
+7. If nothing else reset, the fault is the server's own power feed or something inside the box — work down the list in the next entry.
 
 > [!NOTE]
 > The BIOS's **Restore AC Power Loss → Power On** is what brings the host back after every cut; it is doing its job, not causing the loop. And the containers were never the problem: once the reboots stop, the last boot's Bulk start finishes on its own, and every guest shows running within a few minutes.
+
+### The server resets by itself and nothing else in the house does
+A hard reset with no shutdown in the journal is power or hardware, so the suspects are the feed into the box and the box itself — cheapest test first, and only one change at a time, so the cure names the cause. First, the one piece of software evidence that exists: every boot's kernel errors in one list, where machine-check (`mce`), thermal, or NVIDIA `Xid` lines before a reset point at the CPU, the cooling, or the card:
+
+```bash
+journalctl -k -p err --no-pager | tail -40
+```
+
+1. Note what else was running on the server's circuit during each episode — an air conditioner, dryer, vacuum, microwave or space heater cycling on the same circuit sags the voltage enough to drop a power supply while the router on another circuit never notices.
+2. Move the server's plug to the UPS's battery-side outlets, or to a different circuit — the UPS rides through sags even before the UPS page configures it.
+3. If it still resets, unplug the case's **RESET SW** lead from the motherboard's front-panel header — a reset switch or its lead pinched during the cooling work shorts at random and produces exactly this.
+4. If it still resets, reseat the 24-pin, the CPU 8-pin, and both GPU power cables at both ends.
+5. Check the cooling is alive — the AIO pump's RPM and the CPU temperature in BIOS at POST, or from the host:
+
+```bash
+cat /sys/class/thermal/thermal_zone*/type /sys/class/thermal/thermal_zone*/temp
+```
+
+6. Check the card the same way:
+
+```bash
+nvidia-smi --query-gpu=temperature.gpu,power.draw --format=csv
+```
+
+7. Still resetting with clean temperatures and cables: the power supply is next, and a memory test overnight after that.
+
+> [!NOTE]
+> A thermal trip usually announces itself with a **CPU Over Temperature Error** at the next POST, and a kernel panic hangs rather than reboots, so a machine that silently resets and comes straight back is almost always power — the wall, the supply, or a short — before it is anything else.
 
 ## Cameras
 
