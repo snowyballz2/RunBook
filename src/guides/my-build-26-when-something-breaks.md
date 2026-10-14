@@ -126,6 +126,22 @@ That Wi-Fi is on `192.168.1.x` too, and a network you are standing in beats the 
 2. Open Home Assistant at `https://homeassistant.<tailnet>.ts.net` — the collision-proof address from the Remote Access page.
 3. For anything else, turn Wi-Fi off for the visit. The Renumber the LAN page is the permanent fix.
 
+### Every site fails while Tailscale is on, and works the moment it is off
+Not an internet problem — a DNS one, and a designed cost. The tailnet's DNS override sends every lookup from your phone and Mac to AdGuard at home, so when the house is unreachable — the server down, the home internet down, or the tunnel itself broken — those two devices have no DNS at all while everyone else's internet is fine. Tailscale off means the carrier's DNS, which is why everything returns at once.
+
+1. Turn Tailscale off on the device.
+2. Test whether the house itself is reachable — on cellular, with Tailscale back on for the test, browse to the host's tailnet address, `https://100.x.y.z:8006`, the one recorded on the Remote Access page; an address needs no DNS.
+3. If it loads, the house is up and the fault is on the phone's side — carry on at step 5.
+4. If it does not load, the house is down: at home, check the host's power light and the UPS display, and the UPS page's return-from-outage list; away, there is nothing to do until someone at home can.
+5. Open the Tailscale app's **Warnings** screen — a **MagicSock function not running** warning means the app's own networking has stopped, a known client bug that a VPN toggle does not clear.
+6. On the Mac, quit Tailscale from the menu bar and relaunch it from Applications.
+7. On the iPhone, restart the phone.
+8. Update the Tailscale app on both if an update is waiting.
+9. Turn Tailscale back on once the house answers.
+
+> [!NOTE]
+> The way to never have this again is the Remote Access page's **split DNS** alternative: scope AdGuard to `kuzco.org` instead of overriding every lookup, so a down house costs the phone only your own names, not the internet. The trade is losing AdGuard's ad-blocking away from home.
+
 ### The Mac cannot reach home while the phone can
 1. Menu bar → Tailscale: confirm it shows connected; if not, click **Connect**.
 2. Read the signed-in account at the top of that menu. If it is the passkey admin, sign out and sign in with the Apple ID — the passkey is a browser-only login, and a client signed in as a removed user dies alone while every other device works.
