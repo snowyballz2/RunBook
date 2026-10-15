@@ -56,6 +56,8 @@ export type Guide = {
   order?: number;
   /** Optional palette accent override from frontmatter. */
   accent?: string;
+  /** Frontmatter `search: true` — a symptom-first page: the reader opens with its search box showing. */
+  search?: boolean;
   /** Content before the first phase heading. */
   intro?: Block[];
   phases: Phase[];

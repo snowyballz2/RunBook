@@ -65,6 +65,7 @@ type Frontmatter = {
   accent?: string;
   collection?: string;
   order?: number;
+  search?: boolean;
 };
 
 function extractFrontmatter(lines: string[]): {
@@ -105,7 +106,7 @@ function extractFrontmatter(lines: string[]): {
     else if (key === "order") {
       const n = Number.parseInt(value, 10);
       if (Number.isFinite(n)) meta.order = n;
-    }
+    } else if (key === "search") meta.search = /^(true|yes|1)$/i.test(value);
   }
   return { meta, rest: lines.slice(end + 1) };
 }
@@ -366,6 +367,7 @@ export function parseGuide(markdown: string, opts: ParseOptions = {}): Guide {
   if (meta.accent) guide.accent = meta.accent;
   if (meta.collection) guide.collection = meta.collection;
   if (meta.order !== undefined) guide.order = meta.order;
+  if (meta.search) guide.search = true;
   if (intro.length) guide.intro = intro;
 
   return guide;

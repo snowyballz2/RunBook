@@ -4,6 +4,7 @@ subtitle: Symptom-first ladders for a house that is already built — what to ch
 collection: My Build
 order: 26
 accent: spruce
+search: true
 ---
 
 The build pages say how to stand each piece up. They do not say what to do six months later when a tile goes red, and they should not — a build page is a build. This page is for the later day: find what you *see* in the headings below, run its ladder top to bottom, and stop at the first step that fixes it. Every ladder here was added the day this house actually needed it.

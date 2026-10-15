@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { accentStyle } from "../lib/accents";
+import { buildSearchIndex, searchIndex } from "../lib/search";
 import * as store from "../lib/storage";
 import type { Theme } from "../lib/storage";
 import type { Guide, Phase, Step } from "../lib/types";
 import { Blocks } from "./Blocks";
-import { ArrowLeft, ChevronDown, Printer, Refresh, Rows, Stack } from "./Icons";
+import { ArrowLeft, ChevronDown, Printer, Refresh, Rows, Search, Stack, X } from "./Icons";
 import { SpineCell } from "./ProgressSpine";
 import { StepCard } from "./StepCard";
 import { SwipeView } from "./SwipeView";
@@ -26,6 +27,8 @@ function useIsPhone(): boolean {
 
 type Props = {
   guide: Guide;
+  /** Open scrolled to this step — the library's step-level search lands here. */
+  initialStepId?: string;
   theme: Theme;
   onToggleTheme: () => void;
   onBack: () => void;
@@ -53,17 +56,19 @@ type PhaseView = {
   steps: StepView[];
 };
 
-export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
+export function ReaderView({ guide, initialStepId, theme, onToggleTheme, onBack }: Props) {
   const [done, setDone] = useState<Set<string>>(() => store.getProgress(guide.id));
   const [collapsed, setCollapsed] = useState<Set<string>>(() =>
     initialCollapsed(guide, store.getProgress(guide.id), store.getCollapsed(guide.id)),
   );
 
   // Phones default to the one-step-at-a-time deck; the header button swaps
-  // back to the long page, and the choice sticks.
+  // back to the long page, and the choice sticks. A deep link to a step opens
+  // the long page regardless, so the step can be scrolled into view.
   const isPhone = useIsPhone();
-  const [readerMode, setReaderMode] = useState(() => store.getReaderMode());
-  const swipeActive = isPhone && readerMode === "swipe" && guide.totalSteps > 0;
+  const [readerMode, setReaderMode] = useState(() =>
+    initialStepId ? "scroll" : store.getReaderMode(),
+  );
   const toggleReaderMode = () => {
     setReaderMode((m) => {
       const next = m === "swipe" ? "scroll" : "swipe";
@@ -71,6 +76,20 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
       return next;
     });
   };
+
+  // Search: a symptom-first page (frontmatter `search: true`) opens with the
+  // box showing; every other guide has it behind the header's magnifier.
+  // While a query is live, only matching steps render, every phase open.
+  const [searchOpen, setSearchOpen] = useState(Boolean(guide.search));
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const index = useMemo(() => buildSearchIndex(guide), [guide]);
+  const q = query.trim();
+  const hits = useMemo(
+    () => (q ? new Set(searchIndex(index, q).map((e) => e.stepId)) : null),
+    [index, q],
+  );
+  const swipeActive = isPhone && readerMode === "swipe" && guide.totalSteps > 0 && !hits;
 
   // Persist whenever progress/collapse changes.
   useEffect(() => store.saveProgress(guide.id, done), [guide.id, done]);
@@ -80,18 +99,35 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
   const { phaseViews, doneCount, total, frontierId, guideComplete } = view;
   const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
-  // Resume: on open, scroll to the first unchecked step (once, on mount).
-  // The swipe deck does its own resuming, so skip when it owns the screen.
-  const didResume = useRef(false);
+  // Resume: on open, scroll to the linked step if there is one, otherwise to
+  // the first unchecked step (once, on mount). The swipe deck does its own
+  // resuming, so skip when it owns the screen. No "already ran" ref here:
+  // StrictMode's development double-mount would set it on the first pass,
+  // cancel that pass's pending scroll in cleanup, and skip the second.
   useEffect(() => {
-    if (didResume.current || swipeActive) return;
-    didResume.current = true;
-    // Only jump when there's progress to resume; a fresh guide opens at the top.
-    if (!frontierId || done.size === 0) return;
+    if (swipeActive) return;
+    let target: string | null = null;
+    if (initialStepId && guide.phases.some((p) => p.steps.some((s) => s.id === initialStepId))) {
+      target = initialStepId;
+      const phase = guide.phases.find((p) => p.steps.some((s) => s.id === initialStepId));
+      if (phase)
+        setCollapsed((c) => {
+          const next = new Set(c);
+          next.delete(phase.id);
+          return next;
+        });
+    } else if (frontierId && done.size > 0) {
+      // Only jump when there's progress to resume; a fresh guide opens at the top.
+      target = frontierId;
+    }
+    if (!target) return;
+    // A linked step is a jump, not a resume: land on it instantly, so neither
+    // a long page nor a mid-flight re-render can leave the scroll short.
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const instant = target === initialStepId || reduce;
     const t = setTimeout(() => {
-      const el = document.getElementById(`step-${frontierId}`);
-      el?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+      const el = document.getElementById(`step-${target}`);
+      el?.scrollIntoView({ behavior: instant ? "auto" : "smooth", block: "center" });
     }, 80);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,7 +173,7 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
     // so the content folding away is above the viewport; Safari has no scroll
     // anchoring, and would otherwise land the reader well past the next phase.
     // The header sits above the fold, so its position is already final.
-    if (completesPhase) {
+    if (completesPhase && !hits) {
       setCollapsed((c) => new Set(c).add(phase.id));
       const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
       document
@@ -164,6 +200,25 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
     store.resetProgress(guide.id);
     setDone(new Set());
   };
+
+  const toggleSearch = () => {
+    setSearchOpen((open) => {
+      if (open) setQuery("");
+      return !open;
+    });
+  };
+  useEffect(() => {
+    if (searchOpen && !guide.search) searchRef.current?.focus();
+  }, [searchOpen, guide.search]);
+
+  // What the long page shows: everything, or only the steps the query hits.
+  const shownViews = useMemo(() => {
+    if (!hits) return phaseViews;
+    return phaseViews
+      .map((pv) => ({ ...pv, steps: pv.steps.filter((sv) => hits.has(sv.step.id)) }))
+      .filter((pv) => pv.steps.length > 0);
+  }, [phaseViews, hits]);
+  const hitCount = hits ? hits.size : 0;
 
   const rootStyle = accentStyle(guide.accent, theme);
 
@@ -212,6 +267,18 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
             {guide.totalSteps > 0 && (
               <button
                 type="button"
+                onClick={toggleSearch}
+                className="btn btn-quiet h-9 w-9 !px-0"
+                aria-label={searchOpen ? "Hide search" : "Search this guide"}
+                aria-pressed={searchOpen}
+                title={searchOpen ? "Hide search" : "Search this guide"}
+              >
+                <Search size={17} />
+              </button>
+            )}
+            {guide.totalSteps > 0 && (
+              <button
+                type="button"
                 onClick={toggleReaderMode}
                 className="btn btn-quiet h-9 w-9 !px-0 sm:hidden"
                 aria-label={
@@ -246,6 +313,43 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
             </button>
           </div>
         </div>
+
+        {searchOpen && guide.totalSteps > 0 && (
+          <div className="mx-auto max-w-3xl px-4 pb-2.5">
+            <div className="relative">
+              <Search
+                size={16}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint"
+              />
+              <input
+                ref={searchRef}
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={guide.search ? "Search symptoms — rescue mode, no frames, cannot join…" : "Find in this guide…"}
+                aria-label={guide.search ? "Search symptoms" : "Find in this guide"}
+                className="w-full rounded-xl border border-line bg-surface py-2 pl-9 pr-24 text-sm text-ink outline-none placeholder:text-ink-faint focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
+              />
+              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+                {hits && (
+                  <span className="font-mono text-[11px] tabular-nums text-ink-faint" aria-live="polite">
+                    {hitCount} of {total}
+                  </span>
+                )}
+                {q && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    className="btn btn-quiet h-7 w-7 !px-0"
+                    aria-label="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Body -------------------------------------------------------------- */}
@@ -258,30 +362,36 @@ export function ReaderView({ guide, theme, onToggleTheme, onBack }: Props) {
         />
       ) : (
         <main className="mx-auto max-w-3xl px-4 pb-28 pt-6 [overflow-anchor:none]">
-          {guide.subtitle && (
+          {!hits && guide.subtitle && (
             <p className="mb-6 text-[15px] leading-relaxed text-ink-soft">
               {guide.subtitle}
             </p>
           )}
 
-          {guide.intro && guide.intro.length > 0 && (
+          {!hits && guide.intro && guide.intro.length > 0 && (
             <div className="mb-8 rounded-2xl border border-line bg-surface-2/60 px-5 py-4">
               <Blocks blocks={guide.intro} />
             </div>
           )}
 
-          {guideComplete && (
+          {!hits && guideComplete && (
             <div className="animate-rise mb-6 flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-medium text-accent">
               <span aria-hidden>✓</span> Every step complete. Nicely done.
             </div>
           )}
 
-          {phaseViews.map((pv, pi) => (
+          {hits && shownViews.length === 0 && (
+            <p className="mt-10 text-center text-sm text-ink-soft">
+              Nothing in this guide matches “{q}”.
+            </p>
+          )}
+
+          {shownViews.map((pv, pi) => (
             <PhaseSection
               key={pv.phase.id}
               pv={pv}
               isFirst={pi === 0}
-              collapsed={collapsed.has(pv.phase.id)}
+              collapsed={!hits && collapsed.has(pv.phase.id)}
               guideComplete={guideComplete}
               doneSet={done}
               onTogglePhase={() => togglePhase(pv.phase.id)}
@@ -383,7 +493,7 @@ function PhaseSection({
                 </div>
               </>
             )}
-            {pv.steps.map((sv, i) => (
+            {pv.steps.map((sv) => (
               <SpineRow key={sv.step.id}>
                 <SpineCell
                   variant="node"
@@ -399,7 +509,7 @@ function PhaseSection({
                     step={sv.step}
                     done={doneSet.has(sv.step.id)}
                     active={sv.current}
-                    index={i}
+                    index={phase.steps.indexOf(sv.step)}
                     onToggle={() => onToggleStep(sv.step)}
                   />
                 </div>

@@ -7,6 +7,8 @@ import {
   STANDALONE_SCOPE,
 } from "../lib/credentials";
 import { PANEL_PORTS } from "../lib/ports";
+import { buildSearchIndex, searchIndex } from "../lib/search";
+import type { SearchEntry } from "../lib/search";
 import * as store from "../lib/storage";
 import type { Guide, GuideOrigin } from "../lib/types";
 import { BookOpen, ChevronDown, Key, More, Plug, Plus, Search, Sitemap, Trash } from "./Icons";
@@ -29,6 +31,8 @@ type Props = {
   onOpenCredentials: (scope: string) => void;
   /** Open the Port Mapping view — the patch panel's own record. */
   onOpenPorts: () => void;
+  /** Open a guide scrolled to one step — a step-level search result. */
+  onOpenStep: (id: string, stepId: string) => void;
   /** Open the Addressing Plan view — every guest, camera and port. */
   onOpenNetwork: () => void;
   onAdd: () => void;
@@ -43,6 +47,7 @@ export function LibraryView({
   onOpen,
   onOpenCredentials,
   onOpenPorts,
+  onOpenStep,
   onOpenNetwork,
   onAdd,
   onReset,
@@ -54,6 +59,22 @@ export function LibraryView({
   );
   const showSearch = items.length > 5;
   const q = query.trim().toLowerCase();
+
+  // Step-level search: every guide's steps are indexed once, and a query
+  // surfaces the matching steps under each guide's card.
+  const indexes = useMemo(
+    () => new Map(items.map((i) => [i.guide.id, buildSearchIndex(i.guide)])),
+    [items],
+  );
+  const matches = useMemo(() => {
+    const m = new Map<string, SearchEntry[]>();
+    if (!q) return m;
+    for (const i of items) {
+      const hits = searchIndex(indexes.get(i.guide.id) ?? [], q);
+      if (hits.length > 0) m.set(i.guide.id, hits.slice(0, 4));
+    }
+    return m;
+  }, [q, items, indexes]);
 
   const toggleSection = (name: string) => {
     setCollapsed((prev) => {
@@ -73,10 +94,11 @@ export function LibraryView({
             (i) =>
               i.guide.title.toLowerCase().includes(q) ||
               i.guide.subtitle?.toLowerCase().includes(q) ||
-              i.guide.collection?.toLowerCase().includes(q),
+              i.guide.collection?.toLowerCase().includes(q) ||
+              matches.has(i.guide.id),
           )
         : items,
-    [q, items],
+    [q, items, matches],
   );
   // Memoized so section item arrays keep their identity across re-renders —
   // each CredentialsCard's field collection and subscription depend on it.
@@ -116,8 +138,8 @@ export function LibraryView({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter guides…"
-            aria-label="Filter guides by name"
+            placeholder="Search guides and steps — rescue mode, no frames, shades…"
+            aria-label="Search guides and steps"
             className="w-full rounded-xl border border-line bg-surface py-2.5 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-ink-faint focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
           />
         </div>
@@ -155,7 +177,9 @@ export function LibraryView({
                 <CardGrid
                   items={col.items}
                   theme={theme}
+                  matches={matches}
                   onOpen={onOpen}
+                  onOpenStep={onOpenStep}
                   onReset={onReset}
                   onRemove={onRemove}
                 />
@@ -201,7 +225,9 @@ export function LibraryView({
                 <CardGrid
                   items={grouped.standalone}
                   theme={theme}
+                  matches={matches}
                   onOpen={onOpen}
+                  onOpenStep={onOpenStep}
                   onReset={onReset}
                   onRemove={onRemove}
                 />
@@ -388,13 +414,17 @@ function Collapsible({
 function CardGrid({
   items,
   theme,
+  matches,
   onOpen,
+  onOpenStep,
   onReset,
   onRemove,
 }: {
   items: LibraryItem[];
   theme: Theme;
+  matches: Map<string, SearchEntry[]>;
   onOpen: (id: string) => void;
+  onOpenStep: (id: string, stepId: string) => void;
   onReset: (id: string) => void;
   onRemove: (id: string) => void;
 }) {
@@ -405,7 +435,9 @@ function CardGrid({
           key={item.guide.id}
           item={item}
           theme={theme}
+          matches={matches.get(item.guide.id)}
           onOpen={() => onOpen(item.guide.id)}
+          onOpenStep={(stepId) => onOpenStep(item.guide.id, stepId)}
           onReset={() => onReset(item.guide.id)}
           onRemove={() => onRemove(item.guide.id)}
         />
@@ -417,13 +449,18 @@ function CardGrid({
 function GuideCard({
   item,
   theme,
+  matches,
   onOpen,
+  onOpenStep,
   onReset,
   onRemove,
 }: {
   item: LibraryItem;
   theme: Theme;
+  /** Steps the current library search hit inside this guide, if any. */
+  matches?: SearchEntry[];
   onOpen: () => void;
+  onOpenStep: (stepId: string) => void;
   onReset: () => void;
   onRemove: () => void;
 }) {
@@ -483,6 +520,33 @@ function GuideCard({
           )}
         </div>
       </div>
+
+      {matches && matches.length > 0 && (
+        <ul className="-mt-1 space-y-1" aria-label="Matching steps">
+          {matches.map((m) => (
+            <li key={m.stepId}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenStep(m.stepId);
+                }}
+                className="flex w-full items-baseline gap-1.5 rounded-lg px-2 py-1 text-left text-[12.5px] leading-snug text-ink transition-colors hover:bg-accent/10"
+              >
+                <span className="shrink-0 text-accent" aria-hidden>
+                  →
+                </span>
+                <span className="min-w-0">
+                  <span className="line-clamp-2">{m.title}</span>
+                  {m.phaseTitle && (
+                    <span className="block truncate font-mono text-[10.5px] text-ink-faint">{m.phaseTitle}</span>
+                  )}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <div className="mt-auto flex items-center justify-between font-mono text-[11px] text-ink-faint">
         <span className="tabular-nums">

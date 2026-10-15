@@ -13,15 +13,22 @@ import { ReaderView } from "./components/ReaderView";
 
 type Route =
   | { name: "library" }
-  | { name: "reader"; id: string }
+  | { name: "reader"; id: string; stepId?: string }
   | { name: "credentials"; scope?: string }
   | { name: "ports" }
   | { name: "network" };
 
 function parseHash(): Route {
   try {
-    const m = location.hash.match(/^#\/g\/(.+)$/);
-    if (m) return { name: "reader", id: decodeURIComponent(m[1]) };
+    // #/g/<guide> opens a guide; #/g/<guide>/s/<step> opens it at one step.
+    const m = location.hash.match(/^#\/g\/([^/]+)(?:\/s\/([^/]+))?$/);
+    if (m) {
+      return {
+        name: "reader",
+        id: decodeURIComponent(m[1]),
+        ...(m[2] ? { stepId: decodeURIComponent(m[2]) } : {}),
+      };
+    }
     if (/^#\/ports$/.test(location.hash)) return { name: "ports" };
     if (/^#\/network$/.test(location.hash)) return { name: "network" };
     const c = location.hash.match(/^#\/credentials(?:\/(.+))?$/);
@@ -93,8 +100,10 @@ export function App() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  const openGuide = (id: string) => {
-    location.hash = `#/g/${encodeURIComponent(id)}`;
+  const openGuide = (id: string, stepId?: string) => {
+    location.hash = stepId
+      ? `#/g/${encodeURIComponent(id)}/s/${encodeURIComponent(stepId)}`
+      : `#/g/${encodeURIComponent(id)}`;
   };
   const goLibrary = () => {
     if (location.hash && location.hash !== "#/") location.hash = "";
@@ -124,6 +133,7 @@ export function App() {
     route.name === "reader"
       ? items.find((i) => i.guide.id === route.id)
       : undefined;
+  const currentStepId = route.name === "reader" ? route.stepId : undefined;
 
   // A reader hash that points at nothing (removed / bad link) → back to library.
   useEffect(() => {
@@ -135,8 +145,9 @@ export function App() {
     <>
       {current ? (
         <ReaderView
-          key={current.guide.id}
+          key={`${current.guide.id}:${currentStepId ?? ""}`}
           guide={current.guide}
+          initialStepId={currentStepId}
           theme={theme}
           onToggleTheme={toggleTheme}
           onBack={goLibrary}
@@ -158,7 +169,8 @@ export function App() {
           items={items}
           theme={theme}
           onToggleTheme={toggleTheme}
-          onOpen={openGuide}
+          onOpen={(id) => openGuide(id)}
+          onOpenStep={(id, stepId) => openGuide(id, stepId)}
           onOpenCredentials={(scope) => {
             location.hash = `#/credentials/${encodeURIComponent(scope)}`;
           }}
