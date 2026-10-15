@@ -266,7 +266,10 @@ systemctl reboot
 14. If the failed unit named something else, or the repair ends with errors every time, the partition is beyond repair — restore the VM from the newest nightly archive on the Proxmox Backups page, or build a fresh VM and restore Home Assistant's own backup from the TrueNAS share.
 
 > [!NOTE]
-> The unit names in step 8 read like `Failed to start File System Check on /dev/disk/by-label/hassos-data` or `Failed to start Grow File System on /mnt/data`. If step 10 refuses because the partition is busy, the journal is still running — repeat step 9. The two harmless lines every HAOS boot logs at error level — a timezone event source it cannot create, and `snd_hda_intel … no codecs found` — are not the cause of anything.
+> The unit names in step 8 read like `Failed to start File System Check on /dev/disk/by-label/hassos-data` or `Failed to start Grow File System on /mnt/data`. If step 10 refuses because the partition is busy, the journal is still running — repeat step 9.
+
+> [!DETAILS] Why it waits for you, and what prevents it
+> The two slots exist so a failed operating-system update can fall back to the previous version. An attempt only counts as good once the system finishes starting, so a hard reset mid-boot looks exactly like a broken OS, and after both slots fail three times the safe behaviour is to stop and wait for a person rather than loop forever; the counters never reset themselves. One power cut costs nothing — it took fifteen in an hour on unprotected power to exhaust them. The prevention is the UPS page: on the battery-side outlets the server rides through sags and flickers, and NUT turns a real outage into one clean shutdown and one clean boot. Proxmox shows a VM in rescue mode as *running*, so after any outage the UPS page's prove-the-return list — lock a door, unlock it — is what catches this. The two harmless lines every HAOS boot logs at error level — a timezone event source it cannot create, and `snd_hda_intel … no codecs found` — are not the cause of anything.
 
 ## Locks
 
