@@ -214,53 +214,59 @@ systemctl list-units --state=failed --no-pager
 systemctl start dbus.socket rauc
 ```
 
-5. Mark the booted slot good, which resets its tries:
+5. Confirm the signature — `rauc status` prints `No bootable slot found in ORDER 'A B'`, the booted slot named under **Booted from**, and `boot status: bad` on both:
+
+```bash
+rauc status
+```
+
+6. Mark the booted slot good, which resets its tries — the other slot staying bad does not matter; it is the inactive copy:
 
 ```bash
 rauc status mark-good
 ```
 
-6. Reboot the VM — it boots normally:
+7. Reboot the VM — it boots normally:
 
 ```bash
 systemctl reboot
 ```
 
-7. If step 3 listed a unit, read its error:
+8. If step 3 listed a unit, read its error:
 
 ```bash
 journalctl -xb -p err --no-pager | tail -30
 ```
 
-8. If it names `hassos-data` or `/mnt/data`, stop the journal, which keeps that partition busy:
+9. If it names `hassos-data` or `/mnt/data`, stop the journal, which keeps that partition busy:
 
 ```bash
 systemctl stop systemd-journald
 ```
 
-9. Unmount the partition:
+10. Unmount the partition:
 
 ```bash
 umount -A /dev/disk/by-label/hassos-data
 ```
 
-10. Repair it — `-y` answers every repair prompt yes:
+11. Repair it — `-y` answers every repair prompt yes:
 
 ```bash
 fsck.ext4 -f -y /dev/disk/by-label/hassos-data
 ```
 
-11. Run the same command again until it ends without listing errors.
-12. Reboot the VM:
+12. Run the same command again until it ends without listing errors.
+13. Reboot the VM:
 
 ```bash
 systemctl reboot
 ```
 
-13. If the failed unit named something else, or the repair ends with errors every time, the partition is beyond repair — restore the VM from the newest nightly archive on the Proxmox Backups page, or build a fresh VM and restore Home Assistant's own backup from the TrueNAS share.
+14. If the failed unit named something else, or the repair ends with errors every time, the partition is beyond repair — restore the VM from the newest nightly archive on the Proxmox Backups page, or build a fresh VM and restore Home Assistant's own backup from the TrueNAS share.
 
 > [!NOTE]
-> The unit names in step 7 read like `Failed to start File System Check on /dev/disk/by-label/hassos-data` or `Failed to start Grow File System on /mnt/data`. If step 9 refuses because the partition is busy, the journal is still running — repeat step 8. The two harmless lines every HAOS boot logs at error level — a timezone event source it cannot create, and `snd_hda_intel … no codecs found` — are not the cause of anything.
+> The unit names in step 8 read like `Failed to start File System Check on /dev/disk/by-label/hassos-data` or `Failed to start Grow File System on /mnt/data`. If step 10 refuses because the partition is busy, the journal is still running — repeat step 9. The two harmless lines every HAOS boot logs at error level — a timezone event source it cannot create, and `snd_hda_intel … no codecs found` — are not the cause of anything.
 
 ## Locks
 
