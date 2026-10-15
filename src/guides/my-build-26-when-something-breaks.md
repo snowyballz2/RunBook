@@ -100,7 +100,7 @@ systemctl restart AdGuardHome
 8. Repeat step 1 — `192.168.1.54` means the chain is whole again.
 
 > [!NOTE]
-> Why the router drifts: with AdGuard dark for an hour, the CR1000A either fell back to Verizon's resolvers and stayed there, or cached the "no such name" answer a public resolver gave it and kept serving that after AdGuard returned. A restart clears both. If the Mac's own cache is the last thing holding a stale answer, flush it with `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`.
+> Why the router drifts: with AdGuard dark for an hour, the CR1000A either fell back to Verizon's resolvers and stayed there, or cached the "no such name" answer a public resolver gave it and kept serving that after AdGuard returned. A restart clears both — and so does waiting: here the name came back on its own within a day, once the cached answer expired. If the Mac's own cache is the last thing holding a stale answer, flush it with `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`.
 
 ## Cameras
 
@@ -194,6 +194,49 @@ pct reboot 102
 > ```
 >
 > If `oom-kill` keeps appearing with CUDA healthy, the container's 4 GB cap is genuinely too small — raise it in Proxmox under **102 → Resources → Memory** to 8 GB.
+
+## Home Assistant
+
+### Home Assistant is unreachable and its console says "You are in rescue mode"
+Seen here after the host's reboot storm: fifteen hard resets caught the VM mid-boot, and Home Assistant OS stopped at its rescue shell — **Press Enter for maintenance (or press Control-D to continue)** at the bottom of **Proxmox → 101 (haos) → Console**. Rescue mode means a boot-time unit failed, and after power cuts it is almost always the data partition's filesystem check. The config, the automations and the history all live on that partition, so the fix is a repair, with a way back first.
+
+1. In **Proxmox → 101 (haos) → Snapshots**, click **Take Snapshot**, name it `pre-fsck`, and leave **Include RAM** unticked — the way back if the repair makes things worse.
+2. In the console, press **Enter** — the rescue shell opens as root with no password.
+3. Find the unit that failed:
+
+```bash
+journalctl -xb -p err --no-pager | tail -30
+```
+
+4. If it names `hassos-data` or `/mnt/data`, stop the journal, which keeps that partition busy:
+
+```bash
+systemctl stop systemd-journald
+```
+
+5. Unmount the partition:
+
+```bash
+umount -A /dev/disk/by-label/hassos-data
+```
+
+6. Repair it — `-y` answers every repair prompt yes:
+
+```bash
+fsck.ext4 -f -y /dev/disk/by-label/hassos-data
+```
+
+7. Run the same command again until it ends without listing errors.
+8. Reboot the VM:
+
+```bash
+systemctl reboot
+```
+
+9. If the failed unit named something else, or the repair ends with errors every time, the partition is beyond repair — restore the VM from the newest nightly archive on the Proxmox Backups page, or build a fresh VM and restore Home Assistant's own backup from the TrueNAS share.
+
+> [!NOTE]
+> The unit names in step 3 read like `Failed to start File System Check on /dev/disk/by-label/hassos-data` or `Failed to start Grow File System on /mnt/data`. If step 5 refuses because the partition is busy, the journal is still running — repeat step 4. Pressing **Control-D** instead of Enter tries to continue the boot; with a failed mount it lands straight back in rescue, so it costs nothing to try first but rarely helps.
 
 ## Locks
 
