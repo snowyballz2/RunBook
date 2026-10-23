@@ -148,7 +148,7 @@ AdGuard gets a different monitor type, because what the house depends on is port
 | AdGuard DNS | DNS | `apple.com` | `192.168.1.53` | `53` |
 
 > [!NOTE]
-> The **Resolver Server(s)** field is the one that matters on the DNS monitor: it prefills a public resolver (`1.1.1.1`) and would happily pass with AdGuard dead. Frigate's `8971` is the authenticated UI port; `5000` is the internal one reserved for the Home Assistant integration. Nginx Proxy Manager is watched on its admin port `81`, because port `80` hits the proxy's public side, not its admin UI.
+> The **Resolver Server(s)** field is the one that matters on the DNS monitor: it prefills a public resolver (`1.1.1.1`) and would happily pass with AdGuard dead. The **Hostname** is only the question Kuma asks that resolver each minute, so it wants a public name that always exists and is never on a block list — `apple.com` is one the house looks up all day anyway. Green proves AdGuard is up *and* its path to its upstreams works; a house name like `home.kuzco.org` would pass on the rewrite alone and miss a dead upstream. Frigate's `8971` is the authenticated UI port; `5000` is the internal one reserved for the Home Assistant integration. Nginx Proxy Manager is watched on its admin port `81`, because port `80` hits the proxy's public side, not its admin UI.
 
 ### Watch the frames, not the page
 Frigate's web page stays up while every camera is dead — this build proved it for sixteen days. Frigate's stats endpoint reports each camera's live frame rate, and Uptime Kuma can evaluate it:
@@ -188,6 +188,11 @@ Frigate's web page stays up while every camera is dead — this build proved it 
 > - **Retry Interval** → appears once Retries is above 0 — keep `60`
 > - **Request Timeout** → keep `48` seconds
 > - **Resend Notification if Down X times consecutively** → keep `0` — alert once, not on repeat
+> - **Notifications** (right-hand column) → reads *Not available, please set up* until the *Make alerts find your phone* section below creates one — expected while adding monitors; that section applies the notifier to every monitor at once
+> - **Advanced → Ignore TLS/SSL errors for HTTPS websites** → tick only where the table says so — the self-signed `https://` targets; everything else stays unticked
+> - **Advanced → Domain Name Expiry Notification** → ships ticked and is harmless here: it watches a public domain's registration, and the form itself says an address like `192.168.1.52` is "not a candidate" — untick it or leave it, nothing changes
+> - **Advanced → Certificate Expiry Notification** → leave unticked — the self-signed certificates on these addresses are not worth an alarm; the proxy's real certificates renew themselves
+> - Everything else on the form — Upside Down Mode, the cache-buster, Max Redirects `10`, the saved responses, Accepted Status Codes `200-299`, IP Family, Monitor Group, Description, Tags, Proxy, HTTP Options, Authentication — keep as prefilled
 
 > [!DETAILS] Choosing between Ping, TCP Port, and HTTP(s)
 > The types form a ladder. **Ping** proves the machine answers on the network; **TCP Port** proves something is listening on a port; **HTTP(s)** proves the actual service responds properly — by default it accepts status codes 200–299 and follows up to 10 redirects. Prefer the highest rung a service offers: a frozen app can still answer pings. The type list goes well beyond these — keyword, JSON, push, and Docker checks — but these three plus the DNS type cover everything this collection built.
