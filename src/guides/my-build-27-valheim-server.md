@@ -21,7 +21,7 @@ One decision shapes a prompt in the next section, so make it first.
 >
 > **Option B — a port-forward.** The router sends UDP 2456 and 2457 from the internet to the container. Anyone with your public address and the server password can join, with nothing to install. It is the common way Valheim servers are run, and it is the first inbound door this build opens.
 >
-> Build the container the same way for both; the two options are separate sections below. Pick one.
+> Build the container the same way for both; the two options are separate sections below. Pick one — or both, on demand: build for Option A, and for the one friend who will not install Tailscale, do Option B's router steps for that evening and delete the rule afterwards. The container needs no change, the Tailscale friends keep playing while the port is open, and the exposure lasts exactly as long as the forwarding rule exists. The container's TUN/TAP answer below only matters for Option A, so answer Yes if you might ever use it.
 
 ## Build the container
 
