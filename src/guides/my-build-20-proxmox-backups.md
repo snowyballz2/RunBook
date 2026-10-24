@@ -70,7 +70,7 @@ The window is five tabs — **General**, **Notifications**, **Retention**, **Not
 
 - **Node** → leave **-- All --**
 - **Storage** → `nas-backups` — never `local` (the warning below)
-- **Schedule** → a quiet daily hour; `02:30` works on this build — the Maintenance page's *night shift* table lists every other scheduled job if you ever want to move it
+- **Schedule** → type `02:30` into the field, which means every day at 02:30 — a quiet hour on this build; the Maintenance page's *night shift* table lists every other scheduled job if you ever want to move it. The dropdown under the field is a list of example schedules in the same shorthand, not the only choices: hours go before the colon and a comma lists several, so its `2,22:30` entry would run at 02:30 *and* 22:30, two backups a day instead of one
 - **Selection mode** → **All** — any guest you create later is covered without touching the job again; the guest grid beneath it becomes a review list (the other modes — Include selected, Exclude selected, Pool based — are the hand-picked variants the Maintenance page warns can silently drop a guest)
 - **Compression** → keep **ZSTD (fast and good)**
 - **Mode** → keep **Snapshot**
