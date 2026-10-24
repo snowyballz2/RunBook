@@ -27,7 +27,7 @@ That set is deliberate — the server plugs straight into the router with no swi
 A hard power cut is the very thing this page exists to prevent, so do not become the cause of one. The server moves last, and it moves off:
 
 1. In Proxmox, click the **pve** node, then **Shutdown** at the top right, and confirm. Proxmox stops every guest in reverse start order — Frigate before Home Assistant, the TrueNAS VM cleanly through its guest agent — and then powers the host off.
-2. Wait for the fans to stop and the case lights to go out. Give it a few minutes: nine guests are stopping and the backup share is being let go.
+2. Wait for the fans to stop and the case lights to go out. Give it a few minutes: nine guests are stopping and the backup share is being let go. If ten minutes on the fans are still turning, the web UI is dead and the board's Q-code reads `05`, the operating system has halted but the board has not switched off — seen here on this box's first shutdown — so hold the power button until the fans stop; the When Something Breaks page's *The server will not power off* entry has the BIOS follow-up.
 3. Move the router, the ONT and the Caséta bridge to the battery-backed outlets — the house's internet drops for a minute or two.
 4. Move the server's plug last.
 5. The server starts on its own, because the BIOS's **Restore AC Power Loss → Power On** treats the new outlet as power returning. If it is still dark after a minute, press the power button once.

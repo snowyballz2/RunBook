@@ -78,6 +78,26 @@ nvidia-smi --query-gpu=temperature.gpu,power.draw --format=csv
 > [!NOTE]
 > A thermal trip usually announces itself with a **CPU Over Temperature Error** at the next POST, and a kernel panic hangs rather than reboots, so a machine that silently resets and comes straight back is almost always power — the wall, the supply, or a short — before it is anything else.
 
+### The server will not power off: Shutdown was clicked, the web UI is gone, but the fans keep spinning and the Q-code reads 05
+Seen here on 2026-10-24, the first deliberate shutdown this box ever had, before the move to the UPS outlets. Proxmox stopped every guest by 14:32, halted, and asked the firmware to power off; ten minutes later the fans were still turning and the board's Q-code showed `05`, the code these ASUS boards display when they believe they are in the soft-off state. The operating system was gone — nothing answered on the network — so it was the board, not Proxmox, that failed to finish.
+
+1. Confirm the operating system is gone, from the Mac in Terminal:
+
+```bash
+ping -c 3 192.168.1.50
+```
+
+2. If it answers, the shutdown is still running — the NAS share is let go only after the TrueNAS VM that serves it has stopped, and that wait has a timeout of a few minutes — so wait, then ping again.
+3. If nothing answers, hold the power button until the fans stop. Every guest is already down and the host's disk is idle; nothing is at risk.
+4. On the next boot, tap **Del** at the ROG logo and open **Advanced → APM Configuration**.
+5. Set **Power On By PCI-E** → **Disabled** and **Power On By RTC** → **Disabled** — a wake source can re-power the board the instant it switches off.
+6. Set **ErP Ready** → **Enable(S5)** — the full power-down, which also rules those wakes out; **Restore AC Power Loss** stays **Power On** and still brings the box back after an outage.
+7. Save, boot, and rehearse: click **Shutdown** on the pve node again. Fans off within a few minutes means it is fixed.
+8. If it still will not power off, the board or the supply is ignoring the off signal — the same suspects as the resets entry above, and a supply swap answers both at once.
+
+> [!NOTE]
+> This does not undo the UPS page's automatic shutdown. In an outage NUT halts the operating system — the part that protects the data — and the UPS then cuts its own outlets, so a board that would not switch off is switched off for it, and Restore AC Power Loss boots it when the mains return. The quirk costs you only on a manual shutdown, where holding the button is the cut.
+
 ## Names
 
 ### A service loads by address but not by its kuzco.org name
