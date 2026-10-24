@@ -204,8 +204,24 @@ Frigate's web page stays up while every camera is dead — this build proved it 
 ### Watch the cameras too
 The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — the likeliest to drop unnoticed, and a doorbell that stopped recording is exactly the kind of silent failure this dashboard exists to catch.
 
-1. Add a **Ping** monitor for each — the doorbell, the RLC-510WA, and one per EmpireTech turret at its static IP.
-2. Leave the Ping form's advanced prefills as they are — packet size `56`, a 2-second per-ping timeout, `3` pings per check.
+For each row below:
+
+1. Click **Add New Monitor**.
+2. **Monitor Type** → **Ping**.
+3. Set the **Friendly Name** and **Hostname** from the row.
+4. **Retries** → `1` or `2`.
+5. Leave the Ping form's advanced prefills as they are — packet size `56`, a 2-second per-ping timeout, `3` pings per check.
+6. Click **Save**.
+
+| Friendly Name | Hostname |
+|---|---|
+| Doorbell | `192.168.1.70` |
+| RLC-510WA | `192.168.1.71` |
+| shed_turret | `192.168.1.72` |
+| carport_turret | `192.168.1.73` |
+| patio_turret | `192.168.1.74` |
+| chimney_turret | `192.168.1.75` — add it when the chimney turret is mounted; a monitor on an unpowered camera is a permanent red tile |
+| kitchen_turret | `192.168.1.76` |
 
 > [!NOTE]
 > Wired cameras drop far less, but a per-camera ping is what tells you *which* one died if footage goes missing. Ping fits here because the cameras speak RTSP (Real-Time Streaming Protocol) and http-flv into Frigate rather than serving a plain web page, so a successful ping is the cleanest "it is still on the network" signal.
@@ -213,6 +229,7 @@ The Reolink Video Doorbell and the RLC-510WA are the two cameras on Wi-Fi — th
 > [!INPUT] doorbell-ip | Reolink doorbell IP | 192.168.1.70
 
 > [!INPUT] camera-ip | Reolink RLC-510WA IP | 192.168.1.71
+> The two Wi-Fi cameras are the only addresses you chose; the five turrets are fixed by the Cameras page's plan at `.72`–`.76`, so the table carries them and no field is needed.
 
 > [!TIP]
 > A separate **HTTP(s)** monitor on Frigate (above) tells you the NVR (Network Video Recorder) software is alive; the per-camera Ping monitors tell you which *camera* dropped if footage goes missing. Together they point straight at the culprit instead of leaving you guessing.
