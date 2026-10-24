@@ -104,6 +104,16 @@ The other three tabs, so nothing on them surprises you:
 > 2. Read the log in the task viewer that opens (or the node's **Task History** later).
 > 3. Confirm the Frigate entry prints the footage mount as **excluded** and the task ends **TASK OK**.
 
+> [!NOTE]
+> **Reading the first run's log.** On this build the first run took six minutes for nine guests and wrote about 15 GB of archives — the two VMs around 3 to 4 GB each, the containers 0.3 to 3 GB — so a full set of seven dailies and four weeklies will settle near 170 GB on the share. Lines in that log that look like trouble and are not:
+>
+> - `snapshots found (not included into backup)` on a VM — the archive holds the disk as it is now, not the snapshot history. It is also a reminder: a snapshot that line names is still occupying the thin pool, and once the reason for it has passed, the Maintenance page's loop says to delete it.
+> - `excluding bind mount point mp0 ('/media/frigate') from backup (not a volume)` — the footage mount staying out, by design.
+> - `filesystem type on dumpdir is 'cifs' - using /var/tmp/vzdumptmp… for temporary files` — with an SMB target, vzdump stages each container's working files on the host first. Normal.
+> - `WARNING: You have not turned on protection against thin pools running out of space` and `Sum of all thin volume sizes (<436 GiB) exceeds the size of thin pool pve/data`, printed while a container is snapshotted — the guests' disks *add up* to more than the pool, which is how a thin pool works: each one only takes what it has written. The number that matters is the pool's real fill, the `Data%` of `data` in the Maintenance page's `lvs` check. The auto-extend suggestion has nowhere to go — the volume group has 16 GB spare, on purpose — so leave it and watch the fill instead.
+> - `backup is sparse: … total zero data` — unused space inside a VM disk, skipped.
+> - `notified via target mail-to-root` — the job announced its result into the void the next section fixes.
+
 > [!DETAILS] Choosing what to keep — retention
 > By default every backup is kept forever and slowly fills the share. The job's **Retention** tab shows a **Keep all backups** box above six keep fields (**Keep Last / Hourly / Daily / Weekly / Monthly / Yearly**):
 >

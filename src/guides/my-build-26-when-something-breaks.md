@@ -306,6 +306,7 @@ systemctl reboot
 ```
 
 14. If the failed unit named something else, or the repair ends with errors every time, the partition is beyond repair — restore the VM from the newest nightly archive on the Proxmox Backups page, or build a fresh VM and restore Home Assistant's own backup from the TrueNAS share.
+15. A few days later, with Home Assistant behaving, go back to **Proxmox → 101 (haos) → Snapshots** and delete `pre-fsck` — the way back is no longer needed, the snapshot keeps taking thin-pool space for every write the VM makes, and until it is gone every nightly backup log prints `snapshots found (not included into backup)` for this VM.
 
 > [!NOTE]
 > The unit names in step 8 read like `Failed to start File System Check on /dev/disk/by-label/hassos-data` or `Failed to start Grow File System on /mnt/data`. If step 10 refuses because the partition is busy, the journal is still running — repeat step 9.
