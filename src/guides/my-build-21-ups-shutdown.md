@@ -409,7 +409,7 @@ Two rehearsals, gentle then real. First the gentle one — pull the CyberPower's
 upsc cyberpower@localhost ups.status
 ```
 
-What to expect: the status reads `OL` on line power, becomes `OB` — often `OB DISCHRG` — on battery, and returns to `OL` when you plug back in. Nothing shuts down, because `upsmon` only acts when on-battery and low-battery are true together. What the drill proves is that the battery carries the load and the data link reports it. Then, at a quiet moment, the documented full drill, no battery-draining required:
+What to expect: the status reads `OL` on line power, becomes `OB` — often `OB DISCHRG` — on battery, and returns to `OL`, usually `OL CHRG`, when you plug back in. The first ask after the pull can still say `OL`, because the driver polls every five seconds — ask again after ten, as happened here. With the full `upsc` listing, `input.voltage: 0.0` is the second proof of battery power. Nothing shuts down, because `upsmon` only acts when on-battery and low-battery are true together. What the drill proves is that the battery carries the load and the data link reports it. Then, at a quiet moment, the documented full drill, no battery-draining required:
 
 ```bash
 upsmon -c fsd
