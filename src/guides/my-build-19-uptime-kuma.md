@@ -283,9 +283,15 @@ With names in play, one more monitor earns its place — the only one on a name 
 ### Make alerts find your phone
 A red bar on a dashboard nobody has open is not an alert. ntfy is the notifier here for three reasons: it needs no account, bot, or mail credentials — a topic name is the whole setup; it pushes outward only, so the router stays closed; and it depends on nothing in the house that Kuma is watching — an alert routed through Home Assistant dies with Home Assistant.
 
-1. Install the ntfy app on your iPhone.
-2. Subscribe to a topic — make it long and random; on the default server, knowing the topic name *is* the access.
-3. In Kuma, go to **Settings → Notifications** and click **Set Up Notification**:
+1. Install the **ntfy** app on your iPhone from the App Store.
+2. Make the topic name in the Vaultwarden generator: **Password** type, length `32`, letters and numbers only — ntfy allows only letters, numbers, underscores and dashes, up to 64 characters.
+3. Save it in Vaultwarden as **Uptime Kuma · ntfy topic**.
+4. In the ntfy app, tap **+** at the top right.
+5. Enter the topic name in **Topic name**.
+6. Leave **Use another server** off — `ntfy.sh` is the server Kuma sends to.
+7. Tap **Subscribe**.
+8. Allow notifications when iOS asks.
+9. In Kuma, go to **Settings → Notifications** and click **Set Up Notification**:
 
 - **Notification Type** → **ntfy** — the easy first one
 - **Friendly Name** → the auto-filled "My ntfy Alert (1)" is fine — it names the notifier in Kuma, not the message
@@ -298,6 +304,9 @@ A red bar on a dashboard nobody has open is not an alert. ntfy is the notifier h
 - **Apply on all existing monitors** → ticked
 
 Every monitor — including ones you add later — now pushes straight to your pocket.
+
+> [!SECRET] kuma-ntfy-topic | Uptime Kuma ntfy topic
+> On `ntfy.sh` the topic name is the password: anyone who knows it can read these alerts and send fake ones, which is why it is long, random, and kept here rather than something memorable.
 
 > [!DETAILS] Reaching you other ways
 > The **Notification Type** list is long. The other well-worn options: **Telegram** (a bot you create that messages you directly), **Email (SMTP)** (sends through any mail account's SMTP (Simple Mail Transfer Protocol) server, with an **SMTP Security** option for TLS (Transport Layer Security)), and **Webhook** (an HTTP POST of the alert to any **Webhook URL** — the glue option for anything not on the list).
