@@ -292,13 +292,16 @@ A red bar on a dashboard nobody has open is not an alert. ntfy is the notifier h
 4. Set **Length** to `32`.
 5. Untick **!@#$%^&\*** — the symbols box — and leave **A-Z**, **a-z** and **0-9** ticked.
 6. Copy the result — this is your topic name.
-7. Save it as a new vault item named **Uptime Kuma · ntfy topic**, pasted into the password field.
-8. In the ntfy app on the iPhone, tap **+** at the top right.
-9. Enter the topic name in **Topic name**.
-10. Leave **Use another server** off — `ntfy.sh` is the server Kuma sends to.
-11. Tap **Subscribe**.
-12. Allow notifications when iOS asks.
-13. In Kuma, go to **Settings → Notifications** and click **Set Up Notification**:
+7. Still in the extension, add a new **Login** item — the same kind as every other record in this build's vault; a topic is a secret like any password, and the Login type masks it and copies it with one tap.
+8. Name it **Uptime Kuma · ntfy topic**.
+9. Paste the topic into its **Password** field — leave Username empty.
+10. Save the item.
+11. In the ntfy app on the iPhone, tap **+** at the top right.
+12. Enter the topic name in **Topic name**.
+13. Leave **Use another server** off — `ntfy.sh` is the server Kuma sends to.
+14. Tap **Subscribe**.
+15. Allow notifications when iOS asks.
+16. In Kuma, go to **Settings → Notifications** and click **Set Up Notification**:
 
 - **Notification Type** → **ntfy** — the easy first one
 - **Friendly Name** → the auto-filled "My ntfy Alert (1)" is fine — it names the notifier in Kuma, not the message
