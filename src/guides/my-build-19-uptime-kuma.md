@@ -257,13 +257,26 @@ If the Reverse Proxy page's eight hosts went in as one sitting, `status.kuzco.or
 - **Websockets Support** → **on**
 - **SSL tab → SSL Certificate** → the `*.kuzco.org` wildcard, and **Force SSL** → **on**
 
-Then, in the **Uptime Kuma UI** (`http://192.168.1.57:3001`), open **Settings → Reverse Proxy** and switch **Trust Proxy** (under **HTTP Headers**) to **on** — the one step unique to Kuma.
+Then the one step unique to Kuma, in the **Uptime Kuma UI** (`http://192.168.1.57:3001`):
+
+1. Open **Settings → Reverse Proxy**.
+2. Under **HTTP Headers**, switch **Trust Proxy** to **on**.
 
 > [!NOTE]
 > Without this, every visitor arriving through the proxy is logged and rate-limited as the proxy's own `.54` address; with it, Kuma believes the real client address the proxy forwards. This is the step the Reverse Proxy page's service-side table points here for.
 
-> [!TIP]
-> With names in play, one deliberate monitor earns its place: an **HTTP(s)** monitor pointed at a proxied name — `https://home.kuzco.org` is a good pick — which exercises the AdGuard rewrite, the proxy, and the certificate in a single check. Every *other* monitor stays on direct addresses on purpose, so an alert never leaves you guessing whether the service died or the proxy did.
+With names in play, one more monitor earns its place — the only one on a name rather than an address:
+
+1. Click **Add New Monitor**.
+2. **Monitor Type** → **HTTP(s)**.
+3. **Friendly Name** → `Proxy · home.kuzco.org`.
+4. **URL** → `https://home.kuzco.org`.
+5. **Retries** → `1` or `2`.
+6. Leave **Ignore TLS/SSL errors** unticked — the real certificate is part of what this one checks.
+7. Click **Save**.
+
+> [!NOTE]
+> This single check exercises the AdGuard rewrite, the proxy, and the certificate together. Every *other* monitor stays on a direct address on purpose, so when this one goes red while the others stay green, the fault is in the name chain, not the service — and an alert never leaves you guessing which.
 
 ## Keep it honest
 
