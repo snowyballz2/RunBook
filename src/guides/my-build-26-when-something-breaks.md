@@ -103,6 +103,44 @@ systemctl restart AdGuardHome
 > [!NOTE]
 > Why the router drifts: with AdGuard dark for an hour, the CR1000A either fell back to Verizon's resolvers and stayed there, or cached the "no such name" answer a public resolver gave it and kept serving that after AdGuard returned. A restart clears both — and so does waiting: here the name came back on its own within a day, once the cached answer expired. If the Mac's own cache is the last thing holding a stale answer, flush it with `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`.
 
+### Uptime Kuma says Proxy · home.kuzco.org is down with getaddrinfo ENOTFOUND, then up again twenty minutes later, and every other monitor stays green
+Seen here the week the Uptime Kuma page was finished: the ntfy alerts flapped several times a day, the monitor's history showed red stretches of twenty-odd minutes about every three quarters of an hour, and its 24-hour uptime read 80 percent. Nothing was wrong with the proxy. `getaddrinfo ENOTFOUND` is Kuma reporting that its container asked for the name and was told *no such name* — an answer, not a timeout — so the check never reached the proxy at all. Every other monitor watches an address, which is why only this one moves.
+
+> [!NOTE]
+> Kuma's container inherits the host's resolver, the router — the Uptime Kuma page left its DNS field blank on purpose — so this monitor asks the router, and the router asks AdGuard. AdGuard cannot answer "no such name" for a name it rewrites. A public resolver can, because `home.kuzco.org` exists nowhere outside AdGuard, and Cloudflare's answer for `kuzco.org` carries a 30-minute negative TTL (Time To Live — how long a resolver may repeat an answer). A router that asked anyone but AdGuard, even once — a second DNS address, or Verizon's resolvers while AdGuard was slow for a moment — gets that empty answer and repeats it for up to half an hour, which is exactly the shape of each red stretch. Every device that resolves through the router and is not on the tailnet loses the house names for the same minutes; tailnet devices ask AdGuard directly and never notice.
+
+1. While the monitor is red, on the Mac in Terminal, ask the router:
+
+```bash
+nslookup home.kuzco.org 192.168.1.1
+```
+
+2. Ask AdGuard:
+
+```bash
+nslookup home.kuzco.org 192.168.1.53
+```
+
+3. If the first says `No answer` or `NXDOMAIN` and the second answers `192.168.1.54`, AdGuard is fine and the router is the hop that is lying — carry on at step 4. If the second fails too, run the ladder above this one instead.
+4. In AdGuard at `http://192.168.1.53`, open **Query Log** and type `home.kuzco.org` into the search field at the top. Scroll to the minutes the alert names: a gap with no entries means the router stopped asking AdGuard for that stretch; entries answering `192.168.1.54` straight through it mean the router had the right answer and served a cached public one instead. Either way the router is the fault — this is only to know it, not to fix it.
+5. At `http://192.168.1.1`, go to **Advanced → Network Settings → Network Connections → Broadband Connection (Ethernet) → Settings** and read **IPv4 DNS Address 2**.
+6. If it holds anything other than `0.0.0.0`, set it to `0.0.0.0` and click **Apply** — the AdGuard page's fallback warning predicted this exact flapping for a second resolver. Give it a day: no red on this monitor by tomorrow means that was the cause, and you are done.
+7. If it already read `0.0.0.0`, the router is reaching past AdGuard on its own. Take the monitor off the router instead: in Proxmox, click **108 (uptimekuma)** → **DNS**.
+8. Double-click the **DNS servers** row.
+9. Enter `192.168.1.53 192.168.1.1` — two addresses with a space between: AdGuard first, the router behind it only so that an alert about AdGuard itself can still find its way out of the house.
+10. Click **OK**.
+11. Open the **Shutdown** menu at the top right and click **Reboot** — the container's resolver file is rewritten only when it starts.
+12. In the container's **Console**, confirm the order took:
+
+```bash
+cat /etc/resolv.conf
+```
+
+   `nameserver 192.168.1.53` above `nameserver 192.168.1.1` is right. The monitor now proves the rewrite, the proxy and the certificate the way a tailnet device sees them, and stays green while the router has its moments.
+
+> [!NOTE]
+> What step 7 does not fix: a phone, TV or guest that is not on the tailnet still asks the router, and still loses `home.kuzco.org` for those minutes. If that starts to matter, the cure is not a second DNS address on the router — that is the cause, not the fix — but moving DHCP into AdGuard so devices are handed `192.168.1.53` directly and the router's forwarder leaves the chain. The AdGuard page's *Should AdGuard serve DHCP instead of the router?* note has the reasoning and the one household check to make first; the Proxmox Backups page it said to wait for is done.
+
 ## Cameras
 
 ### Every camera says "No frames have been received"

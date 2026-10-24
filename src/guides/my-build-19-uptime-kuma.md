@@ -276,7 +276,7 @@ With names in play, one more monitor earns its place — the only one on a name 
 7. Click **Save**.
 
 > [!NOTE]
-> This single check exercises the AdGuard rewrite, the proxy, and the certificate together. Every *other* monitor stays on a direct address on purpose, so when this one goes red while the others stay green, the fault is in the name chain, not the service — and an alert never leaves you guessing which.
+> This single check exercises the AdGuard rewrite, the proxy, and the certificate together. Every *other* monitor stays on a direct address on purpose, so when this one goes red while the others stay green, the fault is in the name chain, not the service — and an alert never leaves you guessing which. If it flaps on its own — red for twenty minutes with `getaddrinfo ENOTFOUND`, then green, several times a day — the name chain's weak hop is the router, and the When Something Breaks page's *Names* section has the ladder.
 
 ## Keep it honest
 
