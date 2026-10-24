@@ -131,7 +131,12 @@ Two things that look like typos but aren't: the `upsmon primary` line really has
 > These files hold a password, which is why they ship owned by `root:nut` and readable by no one else. Edit them in place and leave the ownership and permissions alone. Keep the password in Vaultwarden as the source of truth.
 
 > [!DETAILS] Reading the four files back
-> `MODE=standalone` means one local UPS protecting this machine, and starts all three NUT layers — driver, `upsd`, `upsmon`. The `[cyberpower]` section names the UPS (any name works, it just has to match the `MONITOR` line); `port = auto` is required syntax that `usbhid-ups` ignores, since it finds the CyberPower over USB by itself. The `MONITOR` line reads left to right: the UPS called `cyberpower` on this host feeds **1** of this host's power supplies; sign in as `admin`; this host is the **primary** — the one wired to the UPS, responsible for deciding when the load shuts down.
+> One line per setting, in the order you typed them:
+>
+> - **`MODE=standalone`** — one local UPS protecting this machine. It starts all three programs: the driver, `upsd` and `upsmon`.
+> - **`[cyberpower]`** — the name you gave the UPS. Any name works; it only has to match the `MONITOR` line.
+> - **`port = auto`** — required by the file's syntax, and ignored by `usbhid-ups`, which finds the CyberPower over USB by itself.
+> - **The `MONITOR` line** — reads left to right: the UPS called `cyberpower` on this host feeds **1** of this host's power supplies; sign in as `admin`; this host is the **primary**, the one wired to the UPS and responsible for deciding when the load shuts down.
 
 ### Start it and prove it
 
@@ -145,7 +150,17 @@ The driver needs no enabling by hand — NUT watches `ups.conf` and spins up a `
 upsc cyberpower@localhost
 ```
 
-A healthy answer is a screenful of live variables. Three are worth knowing by name: `ups.status` (`OL` means on line power), `battery.charge` (percent), and `battery.runtime` (the UPS's own estimate of seconds remaining at the current load). You can also ask for one at a time: `upsc cyberpower@localhost ups.status`.
+A healthy answer is a screenful of live variables. Three are worth knowing by name:
+
+- **`ups.status`** — `OL` means on line power.
+- **`battery.charge`** — the charge, in percent.
+- **`battery.runtime`** — the UPS's own estimate of seconds remaining at the current load.
+
+To ask for just one of them:
+
+```bash
+upsc cyberpower@localhost ups.status
+```
 
 > [!DETAILS] Getting a stubborn driver going
 > If `upsc` has nothing to say, check `systemctl status nut-driver@cyberpower`.
@@ -197,7 +212,11 @@ upsc cyberpower@localhost ups.status
 ```
 
 > [!DETAILS] What the three knobs do
-> `pollinterval` is how often the `usbhid-ups` driver polls the UPS for critical status changes — it watches the `OB` (on-battery) and `LB` (low-battery) bits on this cadence; `pollfreq` is how often the driver re-reads the full variable set from the hardware. `maxretry = 3` tells **upsdrvctl**, the launcher, to attempt starting the driver three times before giving up — which clears most cold-boot races where the UPS enumerates slightly after the driver launches. (One nuance: NUT's default `pollfreq` for CyberPower units is already 12 seconds, so the explicit `30` here *relaxes* the full re-read, trading freshness for fewer USB round-trips on a link this model likes to drop.) These tame the common case; the watchdog below covers the case where the link drops anyway.
+> - **`pollinterval`** — how often the `usbhid-ups` driver polls the UPS for critical status changes: the `OB` (on-battery) and `LB` (low-battery) bits.
+> - **`pollfreq`** — how often the driver re-reads the full variable set from the hardware. NUT's default for CyberPower units is already 12 seconds, so the explicit `30` here *relaxes* the full re-read, trading freshness for fewer USB round-trips on a link this model likes to drop.
+> - **`maxretry = 3`** — tells **upsdrvctl**, the launcher, to attempt starting the driver three times before giving up, which clears most cold-boot races where the UPS enumerates slightly after the driver launches.
+>
+> These tame the common case; the watchdog below covers the case where the link drops anyway.
 
 ### Add a watchdog timer
 A small systemd timer restarts the driver if `upsc` ever reports it as not connected. Write the check script and make it executable:
@@ -258,7 +277,15 @@ systemctl daemon-reload && systemctl enable --now nut-watchdog.timer
 ## Make the shutdown automatic
 
 ### Understand the shutdown chain
-From here the sequence is already wired, and it is deliberately patient. When the wall goes dead, the UPS reports on battery (`upsc` shows `OB`) and `upsmon` does nothing but wait — power usually comes back. Only when the CyberPower declares low battery (`OB LB`) does `upsmon` raise the forced-shutdown flag (`FSD`) and call `shutdown`. The host's shutdown stops the Proxmox guest service, interrupting any running backup job — a shutdown that lands mid-backup can take noticeably longer to complete, so the battery headroom matters — and asks every guest to shut down cleanly — in reverse startup order, up to 180 seconds per guest — VM or container alike — before a stuck one is stopped hard (a guest's own **Shutdown timeout** in its Options overrides that default). Then the host powers off, and last of all NUT tells the UPS to cut its output, so the load stops draining the battery and everything gets a clean power-cycle when mains returns. (Two shipped defaults make that last act work, both already active in Debian's `upsmon.conf`: `MINSUPPLIES 1` and the `POWERDOWNFLAG` file — nothing to add, just do not delete them.)
+From here the sequence is already wired, and it is deliberately patient. What happens, in order:
+
+- **The wall goes dead.** The UPS reports on battery — `upsc` shows `OB` — and `upsmon` does nothing but wait, because power usually comes back.
+- **The CyberPower declares low battery, `OB LB`.** Only now does `upsmon` raise the forced-shutdown flag, `FSD`, and call `shutdown`.
+- **The host stops the Proxmox guest service.** That interrupts any running backup job — a shutdown that lands mid-backup takes noticeably longer, which is why the battery headroom matters.
+- **Every guest is asked to shut down cleanly,** VM or container alike, in reverse startup order, with up to 180 seconds each before a stuck one is stopped hard. A guest's own **Shutdown timeout** in its Options overrides that default.
+- **The host powers off,** and last of all NUT tells the UPS to cut its output, so the load stops draining the battery and everything gets a clean power-cycle when mains returns.
+
+Two shipped defaults make that last act work, both already active in Debian's `upsmon.conf`: `MINSUPPLIES 1` and the `POWERDOWNFLAG` file — nothing to add, just do not delete them.
 
 > [!NOTE]
 > Who decides "low"? The CyberPower does — the threshold is set in the device by its vendor, and `usbhid-ups` falls back to 30% only if the UPS reports nothing. The patience is by design: every extra minute on battery is another minute in which the power might return without anything having to stop.
@@ -277,8 +304,8 @@ Set the shutdown order so Frigate stops before Home Assistant and TrueNAS outlas
 > [!DETAILS] Shutting down earlier than the UPS would
 > If the CyberPower calls low battery later than you'd like, NUT documents two routes:
 >
-> - In the `[cyberpower]` section, add `ignorelb` with `override.battery.charge.low = 50` (and/or `override.battery.runtime.low = 600`) so NUT judges "low" by your numbers instead of the device's flag — some CyberPower models round the reported charge, so verify `upsc` shows a sane figure first.
-> - An `upssched` timer started by the on-battery event that runs `upsmon -c fsd` after a fixed number of minutes.
+> - **Your own threshold, in `ups.conf`** — in the `[cyberpower]` section add `ignorelb`, then `override.battery.charge.low = 50`, or `override.battery.runtime.low = 600`, or both. NUT then judges "low" by your numbers instead of the device's flag. Some CyberPower models round the reported charge, so check that `upsc` shows a sane figure first.
+> - **A timer, in `upssched`** — started by the on-battery event, it runs `upsmon -c fsd` after a fixed number of minutes.
 >
 > Either way, shutting down early throws away runtime during which the power might have returned.
 
@@ -335,7 +362,7 @@ Two rehearsals, gentle then real. First the gentle one — pull the CyberPower's
 upsc cyberpower@localhost ups.status
 ```
 
-`OL` becomes `OB` (often `OB DISCHRG`), then returns to `OL` when you plug back in. Nothing shuts down — `upsmon` only acts when on-battery and low-battery are true together — but it proves the battery carries the load and the data link reports it. Then, at a quiet moment, the documented full drill, no battery-draining required:
+What to expect: the status reads `OL` on line power, becomes `OB` — often `OB DISCHRG` — on battery, and returns to `OL` when you plug back in. Nothing shuts down, because `upsmon` only acts when on-battery and low-battery are true together. What the drill proves is that the battery carries the load and the data link reports it. Then, at a quiet moment, the documented full drill, no battery-draining required:
 
 ```bash
 upsmon -c fsd
