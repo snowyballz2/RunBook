@@ -130,20 +130,30 @@ The other three tabs, so nothing on them surprises you:
 ### Make a failed backup able to reach you
 The job's Notifications tab said **"Use global notification settings"** — so check what those actually are, because out of the box they cannot deliver. The default is a **`mail-to-root` sendmail target**: the host's own postfix handing mail directly to your inbox's mail server, which residential ISPs — Verizon included — block at port 25. A failed nightly backup would be announced into a void, forever. And nothing else in this build catches it: Uptime Kuma watches whether *services answer*, not whether a 02:30 *task succeeded*.
 
-Fix it once, at **Datacenter → Notifications**:
+Fix it once, at **Datacenter → Notifications**, by sending Proxmox's alerts to the ntfy topic your phone already subscribes to from the Uptime Kuma page — a push that lands like a text, with no mail account in the loop. Proxmox has no text-message target of its own; a **Webhook** target that posts to `ntfy.sh` is how it reaches the phone:
 
-1. Under **Notification Targets**, click **Add → SMTP**.
-2. Fill it out like the TrueNAS email on the Protect Your Data page:
-   - your provider's SMTP server, port **587** with **STARTTLS**
-   - the full address as username
-   - an **app-specific password** (iCloud senders generate one at appleid.apple.com)
-   - your real inbox as recipient
-3. Select the new target.
-4. Press its **Test** button — do not move on until the test mail lands.
-5. Under **Notification Matchers**, edit the default matcher.
-6. Point its target at the SMTP entry instead of `mail-to-root`.
+1. Under **Notification Targets**, click **Add → Webhook**.
+2. **Endpoint Name** → `ntfy-phone`.
+3. **Method** → **POST**.
+4. **URL** → `https://ntfy.sh/{{ secrets.channel }}`.
+5. Under **Headers**, click **Add** and enter the key `Markdown` with the value `yes`.
+6. Click **Add** again and enter the key `Title` with the value `{{ title }}`.
+7. **Body** → `{{ message }}`.
+8. Under **Secrets**, click **Add** and enter the key `channel` with the value of your ntfy topic — the *Uptime Kuma · ntfy topic* item in the vault.
+9. Click **Add** to save the target.
+10. Select the new target and click **Test** — do not move on until the push lands on the phone.
+11. Under **Notification Matchers**, select the default matcher and click **Edit**.
+12. On the **Match Rules** tab, add a **Match Severity** rule and tick **Warning**, **Error** and **Unknown** — not Info, or every successful 02:30 backup and every "updates available" notice would wake the phone.
+13. On the **Targets to notify** tab, tick `ntfy-phone` and untick `mail-to-root`.
+14. Click **OK**.
 
-The backup job needs no change after this — its "global settings" default now routes through a path that genuinely delivers. (Fields here that drift from your screen: true the guide against the screen, as always.)
+The backup job needs no change after this — its "global settings" default now routes through a path that genuinely delivers. Expect silence on good nights: a backup that succeeds is *Info* and stays out. A guest that fails to back up, a job that cannot reach the share, and anything the host mails to root — a cron job complaining, a disk warning — arrive as pushes. (Fields here that drift from your screen: true the guide against the screen, as always.)
+
+> [!NOTE]
+> The `{{ … }}` pieces are Proxmox's own placeholders, filled in when it sends: `{{ title }}` and `{{ message }}` are the alert's heading and text, and `{{ secrets.channel }}` is the topic you stored under **Secrets**, kept in a root-only file rather than in the URL where any admin screen would show it. The topic is the password of that channel, which is why it goes in a secret and not in the URL field. One topic now carries both Uptime Kuma's alerts and Proxmox's; the title on each push says which sent it.
+
+> [!DETAILS] If you would rather have email
+> The same screen offers an **SMTP** target: **Add → SMTP**, filled out like the TrueNAS email on the Protect Your Data page — your provider's SMTP server, port **587** with **STARTTLS**, the full address as username, an **app-specific password** (iCloud senders generate one at appleid.apple.com), and your real inbox as recipient — then **Test**, and point the default matcher's target at it the same way as above. It costs a mail password stored on the host; the webhook costs nothing the vault does not already hold.
 
 ### Know how to restore — and prove it
 1. Open `nas-backups` in the left tree.
