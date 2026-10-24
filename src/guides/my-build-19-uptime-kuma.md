@@ -283,15 +283,22 @@ With names in play, one more monitor earns its place — the only one on a name 
 ### Make alerts find your phone
 A red bar on a dashboard nobody has open is not an alert. ntfy is the notifier here for three reasons: it needs no account, bot, or mail credentials — a topic name is the whole setup; it pushes outward only, so the router stays closed; and it depends on nothing in the house that Kuma is watching — an alert routed through Home Assistant dies with Home Assistant.
 
+> [!NOTE]
+> A **topic** is ntfy's word for a channel: a name you make up, and anything Kuma publishes to that name arrives on every phone subscribed to it. On the public `ntfy.sh` server there are no accounts, so the name alone is the access — anyone who guesses it can read your alerts and send fake ones. That makes the name a password in all but label, which is why it comes out of the password generator rather than your head, and why the steps below rule out symbols: ntfy only accepts letters, numbers, underscores and dashes, up to 64 characters.
+
 1. Install the **ntfy** app on your iPhone from the App Store.
-2. Make the topic name in the Vaultwarden generator: **Password** type, length `32`, letters and numbers only — ntfy allows only letters, numbers, underscores and dashes, up to 64 characters.
-3. Save it in Vaultwarden as **Uptime Kuma · ntfy topic**.
-4. In the ntfy app, tap **+** at the top right.
-5. Enter the topic name in **Topic name**.
-6. Leave **Use another server** off — `ntfy.sh` is the server Kuma sends to.
-7. Tap **Subscribe**.
-8. Allow notifications when iOS asks.
-9. In Kuma, go to **Settings → Notifications** and click **Set Up Notification**:
+2. In the Bitwarden extension on the Mac, open the **Generator** tab.
+3. Set the type to **Password**.
+4. Set **Length** to `32`.
+5. Untick **!@#$%^&\*** — the symbols box — and leave **A-Z**, **a-z** and **0-9** ticked.
+6. Copy the result — this is your topic name.
+7. Save it as a new vault item named **Uptime Kuma · ntfy topic**, pasted into the password field.
+8. In the ntfy app on the iPhone, tap **+** at the top right.
+9. Enter the topic name in **Topic name**.
+10. Leave **Use another server** off — `ntfy.sh` is the server Kuma sends to.
+11. Tap **Subscribe**.
+12. Allow notifications when iOS asks.
+13. In Kuma, go to **Settings → Notifications** and click **Set Up Notification**:
 
 - **Notification Type** → **ntfy** — the easy first one
 - **Friendly Name** → the auto-filled "My ntfy Alert (1)" is fine — it names the notifier in Kuma, not the message
