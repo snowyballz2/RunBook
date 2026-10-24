@@ -63,8 +63,8 @@ That one package brings three programs, and the next section configures each in 
 
 On Proxmox VE 9 the package is NUT 2.8.1. It installs its own USB permission rules and services, and it arrives switched off — `MODE=none` in its main file — so nothing runs until the next section turns it on.
 
-### Write the four config files
-NUT's behaviour lives in `/etc/nut/`. Four small edits: switch it on, name the UPS, create an account, and point the watcher at it.
+### Write the five config files
+NUT's behaviour lives in `/etc/nut/`. Five short files, each written once in its final form — including the lines the USB-drop section and the Home Assistant section rely on later, so no file on this page is opened twice. What each line does is explained under its file.
 
 Open `/etc/nut/nut.conf`:
 
@@ -75,8 +75,10 @@ nano /etc/nut/nut.conf
 Change the existing `MODE=` line to:
 
 ```ini
-MODE=standalone
+MODE=netserver
 ```
+
+- **`MODE=netserver`** — one local UPS protecting this machine, with its state also answerable over the LAN. It starts all three programs: the driver, `upsd` and `upsmon`. The LAN half sits unused until Home Assistant asks, at the end of this page, and the `LISTEN` lines below decide exactly where it answers.
 
 Open `/etc/nut/ups.conf`:
 
@@ -91,7 +93,35 @@ Append this at the end:
     driver = usbhid-ups
     port = auto
     desc = "CyberPower CP1500PFCLCD"
+    pollinterval = 5
+    pollfreq = 30
+    maxretry = 3
 ```
+
+- **`[cyberpower]`** — the name you give the UPS. Any name works; it only has to match the `MONITOR` line below.
+- **`driver = usbhid-ups`** — the driver for a USB UPS that speaks the standard HID protocol, which this one does.
+- **`port = auto`** — required by the file's syntax, and ignored by `usbhid-ups`, which finds the CyberPower over USB by itself.
+- **`desc`** — a label for you; it changes nothing.
+- **The last three lines** — the settings that make the driver survive this model's habit of dropping its USB link. The *Handle the CyberPower USB-drop quirk* section explains each.
+
+Open `/etc/nut/upsd.conf`:
+
+```bash
+nano /etc/nut/upsd.conf
+```
+
+Append this at the end:
+
+```ini
+LISTEN 127.0.0.1 3493
+LISTEN 192.168.1.50 3493
+```
+
+- **`LISTEN 127.0.0.1 3493`** — the server answers on the host itself, which is how `upsmon` reaches it.
+- **`LISTEN 192.168.1.50 3493`** — and on the host's LAN address, which is how Home Assistant reaches it at the end of this page. Listing addresses instead of `0.0.0.0` keeps the server off interfaces it does not need; port 3493 stays on the LAN and is never forwarded.
+
+> [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
+> The address on that second line, and the one Home Assistant is given as **Host** at the end of this page.
 
 Open `/etc/nut/upsd.users`:
 
@@ -99,13 +129,31 @@ Open `/etc/nut/upsd.users`:
 nano /etc/nut/upsd.users
 ```
 
-Append the account `upsmon` signs in with:
+Append both accounts — the one `upsmon` signs in with, and a watch-only one for Home Assistant:
 
 ```ini
 [admin]
     password = pick-a-long-password
     upsmon primary
+
+[hauser]
+    password = a-different-long-password
 ```
+
+- **`[admin]`** — the account `upsmon` uses. The `upsmon primary` line really has no equals sign: it says this account may run the shutdown, and that this host is the primary, the one wired to the UPS.
+- **`[hauser]`** — Home Assistant's account, which can only read. No `upsmon` line, so it can never order a shutdown.
+
+> [!INPUT] nut-admin-user | NUT admin username | | admin
+> The `[admin]` section name in `upsd.users` — if you rename it, the `MONITOR` line must match.
+
+> [!SECRET] nut-admin-password | NUT admin password
+> Replaces `pick-a-long-password` in both files — `upsd.users` and the `MONITOR` line must match.
+
+> [!INPUT] nut-ha-user | NUT read-only username | | hauser
+> The `[hauser]` section name in `upsd.users` — the account Home Assistant signs in with.
+
+> [!SECRET] nut-ha-password | NUT read-only password
+> Replaces `a-different-long-password` in `upsd.users` — enter it alongside the username in Home Assistant's NUT dialog at the end of this page. Keep it in Vaultwarden too.
 
 Open `/etc/nut/upsmon.conf`:
 
@@ -113,30 +161,17 @@ Open `/etc/nut/upsmon.conf`:
 nano /etc/nut/upsmon.conf
 ```
 
-Append the line to watch that UPS, same password:
+Append the line that watches that UPS, with the admin password:
 
 ```ini
 MONITOR cyberpower@localhost 1 admin pick-a-long-password primary
 ```
 
-Two things that look like typos but aren't: the `upsmon primary` line really has no equals sign, and there is no shutdown command to add — Debian ships `upsmon.conf` with `SHUTDOWNCMD "/sbin/shutdown -h +0"` already active.
-
-> [!INPUT] nut-admin-user | NUT admin username | | admin
-> The `[admin]` section name in `upsd.users` — if you rename it, the `MONITOR` line must match.
-
-> [!SECRET] nut-admin-password | NUT admin password
-> Replaces `pick-a-long-password` in both files above — `upsd.users` and the `MONITOR` line must match.
+- **The `MONITOR` line** — reads left to right: the UPS called `cyberpower` on this host feeds **1** of this host's power supplies; sign in as `admin` with that password; this host is the **primary**, responsible for deciding when the load shuts down.
+- **No shutdown command to add** — Debian ships `upsmon.conf` with `SHUTDOWNCMD "/sbin/shutdown -h +0"` already active.
 
 > [!NOTE]
-> These files hold a password, which is why they ship owned by `root:nut` and readable by no one else. Edit them in place and leave the ownership and permissions alone. Keep the password in Vaultwarden as the source of truth.
-
-> [!DETAILS] Reading the four files back
-> One line per setting, in the order you typed them:
->
-> - **`MODE=standalone`** — one local UPS protecting this machine. It starts all three programs: the driver, `upsd` and `upsmon`.
-> - **`[cyberpower]`** — the name you gave the UPS. Any name works; it only has to match the `MONITOR` line.
-> - **`port = auto`** — required by the file's syntax, and ignored by `usbhid-ups`, which finds the CyberPower over USB by itself.
-> - **The `MONITOR` line** — reads left to right: the UPS called `cyberpower` on this host feeds **1** of this host's power supplies; sign in as `admin`; this host is the **primary**, the one wired to the UPS and responsible for deciding when the load shuts down.
+> These files hold passwords, which is why they ship owned by `root:nut` and readable by no one else. Edit them in place and leave the ownership and permissions alone. Keep the passwords in Vaultwarden as the source of truth.
 
 ### Start it and prove it
 
@@ -220,37 +255,13 @@ systemctl restart nut-driver@cyberpower && upsc cyberpower@localhost
 CyberPower units, this model included, have a well-documented habit: the `usbhid-ups` driver loses the USB device under load or after a glitch and never reconnects on its own. `upsc` starts answering "Driver not connected" or the data goes stale, and a UPS the host can no longer hear is a UPS that will not trigger a shutdown when it matters — the silent failure this whole page exists to prevent. Three settings make the driver resilient, and a watchdog catches the case where it still wedges.
 
 ### Make the driver reconnect itself
-Open `/etc/nut/ups.conf`:
+Nothing to run in this step — the three settings are already the last three lines of the `[cyberpower]` section you wrote, and the driver has been running with them since it started. They make it poll steadily and re-grab the device when the kernel re-enumerates it:
 
-```bash
-nano /etc/nut/ups.conf
-```
+- **`pollinterval = 5`** — how often the `usbhid-ups` driver polls the UPS for critical status changes: the `OB` (on-battery) and `LB` (low-battery) bits.
+- **`pollfreq = 30`** — how often the driver re-reads the full variable set from the hardware. NUT's default for CyberPower units is already 12 seconds, so the `30` here *relaxes* the full re-read, trading freshness for fewer USB round-trips on a link this model likes to drop.
+- **`maxretry = 3`** — tells **upsdrvctl**, the launcher, to attempt starting the driver three times before giving up, which clears most cold-boot races where the UPS enumerates slightly after the driver launches.
 
-Give the `[cyberpower]` section three more lines — the driver then polls steadily and re-grabs the device when the kernel re-enumerates it:
-
-```ini
-[cyberpower]
-    driver = usbhid-ups
-    port = auto
-    desc = "CyberPower CP1500PFCLCD"
-    pollinterval = 5
-    pollfreq = 30
-    maxretry = 3
-```
-
-These are driver-level settings, so restart the **driver** (not just upsd) for them to take effect, then confirm the status still returns `OL`:
-
-```bash
-systemctl restart nut-driver@cyberpower nut-server
-upsc cyberpower@localhost ups.status
-```
-
-> [!DETAILS] What the three knobs do
-> - **`pollinterval`** — how often the `usbhid-ups` driver polls the UPS for critical status changes: the `OB` (on-battery) and `LB` (low-battery) bits.
-> - **`pollfreq`** — how often the driver re-reads the full variable set from the hardware. NUT's default for CyberPower units is already 12 seconds, so the explicit `30` here *relaxes* the full re-read, trading freshness for fewer USB round-trips on a link this model likes to drop.
-> - **`maxretry = 3`** — tells **upsdrvctl**, the launcher, to attempt starting the driver three times before giving up, which clears most cold-boot races where the UPS enumerates slightly after the driver launches.
->
-> These tame the common case; the watchdog below covers the case where the link drops anyway.
+These tame the common case; the watchdog below covers the case where the link drops anyway.
 
 ### Add a watchdog timer
 A small systemd timer restarts the driver if `upsc` ever reports it as not connected. Write the check script and make it executable:
@@ -460,69 +471,16 @@ nvidia-smi
 ## Watch it from Home Assistant
 
 ### Open the UPS to the LAN
-So far `upsd` speaks only to the host. Three edits open it to the LAN, read-only, and Home Assistant's native NUT integration does the rest.
-
-Open `/etc/nut/nut.conf`:
-
-```bash
-nano /etc/nut/nut.conf
-```
-
-Change `MODE` once more:
-
-```ini
-MODE=netserver
-```
-
-Open `/etc/nut/upsd.conf`:
-
-```bash
-nano /etc/nut/upsd.conf
-```
-
-Append this — keep localhost, add the host's LAN address:
-
-```ini
-LISTEN 127.0.0.1 3493
-LISTEN 192.168.1.50 3493
-```
-
-> [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
-> The address on that second line, and the one Home Assistant is given as **Host** below.
-
-Open `/etc/nut/upsd.users`:
-
-```bash
-nano /etc/nut/upsd.users
-```
-
-Append a watch-only account for Home Assistant:
-
-```ini
-[hauser]
-    password = a-different-long-password
-```
-
-Restart NUT to apply the three edits:
-
-```bash
-systemctl restart nut-server nut-monitor
-```
+Nothing to edit on the host — `MODE=netserver`, the LAN `LISTEN` line and the `hauser` account were written with the other config files, so `upsd` has been answering on the LAN, read-only, since it started. Home Assistant's native NUT integration does the rest:
 
 1. In Home Assistant, go to **Settings → Devices & services**.
 2. If **Network UPS Tools (NUT)** is not already waiting under discovered devices, add it:
 
 - **Host** → `192.168.1.50`
 - **Port** → `3493`
-- **Username / Password** → the `hauser` login from the fields below
+- **Username / Password** → the `hauser` login recorded with the config files above
 
 The CyberPower appears as a device with **Battery charge**, **Status**, **Load**, and **Input voltage** enabled out of the box — Status reading "On Battery, Battery Discharging" when things get interesting. **Battery runtime**, **Battery voltage**, and the diagnostic sensors arrive disabled; enable them per entity if you want them.
-
-> [!INPUT] nut-ha-user | NUT read-only username | | hauser
-> The `[hauser]` section name in `upsd.users` — the account Home Assistant signs in with.
-
-> [!SECRET] nut-ha-password | NUT read-only password
-> Replaces `a-different-long-password` in `upsd.users` — enter it alongside the username in Home Assistant's NUT dialog. Keep it in Vaultwarden too.
 
 > [!INPUT] ha-ip | Home Assistant IP | 192.168.1.51
 
