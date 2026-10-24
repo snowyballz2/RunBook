@@ -219,7 +219,7 @@ Nobody accepts anything: with no mail server, the invite goes straight to accept
 The split that keeps it tidy: personal accounts, personal cards, anything one person uses → own vault. Anything the *house* uses → the organization. The build's infrastructure credentials can go either way — in the organization both of you can reach them, which is the better failure mode.
 
 ### Close the doors behind you
-Out of the box, anyone who can reach the page can register an account. On this LAN that is family — but a vault does not run on "probably fine". In the container's console, open the settings file:
+Out of the box, anyone who can reach the page can register an account. On this LAN that is family — but a vault does not run on "probably fine". This is the one line on this page added to a file you already wrote, and it is late on purpose: with it in place nobody can register, so it has to follow the account you just created. In the container's console, open the settings file:
 
 ```bash
 nano /opt/vaultwarden/.env
