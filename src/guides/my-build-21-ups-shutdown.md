@@ -335,13 +335,13 @@ Two shipped defaults make that last act work, both already active in Debian's `u
 > [!NOTE]
 > Who decides "low"? The CyberPower does — the threshold is set in the device by its vendor, and `usbhid-ups` falls back to 30% only if the UPS reports nothing. The patience is by design: every extra minute on battery is another minute in which the power might return without anything having to stop.
 
-Set the shutdown order so Frigate stops before Home Assistant and TrueNAS outlasts the service containers:
+The shutdown order is already set — each guest's page set it when it built the guest — so this is a check, not new work. Shutdown runs the startup order in reverse: order 1 boots first and goes down last, which puts Frigate down before Home Assistant and keeps TrueNAS up until every service container has stopped. In Proxmox, open each guest's **Options** tab and confirm **Start/Shutdown order** reads:
 
-1. In each guest's **Options** tab, find **Start/Shutdown order** — shutdown runs the startup order in reverse, so order 1 boots first and goes down last.
-2. Give **TrueNAS** the lowest order.
-3. Give **Home Assistant** a lower order than **Frigate**.
-4. Leave every other guest with no order set.
-5. If a guest genuinely needs longer than the default to stop cleanly, set its **Shutdown timeout** in the same **Options** tab.
+1. **100 (truenas)** → `1`, from the Virtual Machines page.
+2. **101 (haos)** → `2`, from the Home Assistant page.
+3. **102 (frigate)** → `3`, from the Cameras page.
+4. Every other guest → blank, shown as `any`.
+5. If a guest ever needs longer than the default to stop cleanly, set its **Shutdown timeout** in the same **Options** tab — none on this build does today.
 
 > [!WARNING]
 > Order matters for this build. The Home Assistant VM holds the Mosquitto-dependent automations, and the Frigate LXC (Linux container) talks to it over MQTT (MQ Telemetry Transport) — so the **Frigate LXC must go down before the HA VM** (its MQTT broker must outlast it), and the TrueNAS VM should outlast the service containers that may still be flushing to its shares. One catch: **guests with no order set shut down before any numbered guest** — which is what you want here, since a service container still writing to a share finishes and stops before the numbered TrueNAS VM goes down; only a guest that must outlast one of the numbered three needs an explicit order of its own.
