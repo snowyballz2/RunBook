@@ -114,6 +114,9 @@ The other three tabs, so nothing on them surprises you:
 >
 > That's a week of daily restore points plus a month of weekly ones, pruned automatically. Job-level retention overrides whatever the storage is configured to keep.
 
+> [!NOTE]
+> **Selection mode All** means every guest built after this page joins the job on its own — the Uptime Kuma, Valheim and Voice containers included. The one thing to keep out of it is bulk that can be downloaded again: Frigate's footage already rides a host mount that vzdump skips, and the Voice page gives Ollama's multi-gigabyte models a mount point with **Backup** unticked for the same reason. Everything hand-built stays in.
+
 ### Make a failed backup able to reach you
 The job's Notifications tab said **"Use global notification settings"** — so check what those actually are, because out of the box they cannot deliver. The default is a **`mail-to-root` sendmail target**: the host's own postfix handing mail directly to your inbox's mail server, which residential ISPs — Verizon included — block at port 25. A failed nightly backup would be announced into a void, forever. And nothing else in this build catches it: Uptime Kuma watches whether *services answer*, not whether a 02:30 *task succeeded*.
 
@@ -192,10 +195,15 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 - **`/etc/modprobe.d`** — the VFIO bind line `options vfio-pci ids=...` that claims the LSI 9300-8i HBA for the TrueNAS VM, keeping it out of a host SAS (Serial Attached SCSI) driver's hands.
 - **`/etc/modules`** — the early-load `vfio`, `vfio_iommu_type1`, and `vfio_pci` modules that bring the VFIO stack up at boot.
 - **`/etc/default/grub`** — the kernel command line with the `intel_iommu=on iommu=pt` flags set on the **My Build: Install Proxmox** page. Without those flags the IOMMU never comes up and the HBA passthrough silently fails.
-- **`/etc/nut`** — the NUT (Network UPS Tools) configuration that talks to the CyberPower CP1500PFCLCD over USB and shuts the host down cleanly on a long outage.
+- **`/etc/nut`** — the NUT (Network UPS Tools) configuration that talks to the CyberPower CP1500PFCLCD over USB and shuts the host down cleanly on a long outage — with its two helpers from the same page, **`/etc/systemd/system/nut-watchdog.service`**, **`nut-watchdog.timer`** and **`/usr/local/bin/nut-watchdog.sh`**, the driver-revive watchdog.
+- **`/etc/modules-load.d`** and **`/etc/udev/rules.d`** — the GPU Sharing page's fix that creates `/dev/nvidia-uvm` at every boot; without it, every camera decoder and the detector fail silently after a reboot, as the When Something Breaks page records.
+- **`/etc/sysctl.d`** — the Remote Access page's IP-forwarding file, without which the host stops routing the tailnet into the LAN.
+- **`/etc/hosts`** — the host's own name-to-address line, which Proxmox's services need to match the real address.
+- **`/var/lib/tailscale`** — the host's tailnet identity; restored, a rebuilt host comes back as the same machine with the subnet route already approved, instead of as a new one to re-approve.
+- **`/var/spool/cron/crontabs`** — root's crontab, which is to say this very backup schedule.
 
 > [!NOTE]
-> `/etc/nut` does not exist until the **My Build: UPS & Safe Shutdown** page installs NUT, and that page comes later than this one. If you run the host-config tarball below on your first pass through the build, expect `tar: /etc/nut: Cannot stat: No such file or directory` and a failure exit code — the rest of the archive is still written, so that is not a failed backup. Re-run the tarball once the UPS and safe-shutdown step is done, and treat *that* copy as the first complete one.
+> Several of these do not exist on the first pass through the build — `/etc/nut` and its watchdog arrive with the **UPS & Safe Shutdown** page, which comes later than this one. The commands below carry `--ignore-failed-read`, so a path that is not there yet earns a one-line warning and the archive is still written; the paths join it the week after their page is done.till written, so that is not a failed backup. Re-run the tarball once the UPS and safe-shutdown step is done, and treat *that* copy as the first complete one.
 
 > [!NOTE]
 > Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand. The HBA assignment to the TrueNAS VM (`qm set <truenas-vmid> -hostpci0 <hba-pci-address>`) lives inside `/etc/pve/qemu-server/<id>.conf`, and the GPU `dev0: /dev/nvidia0` shares live in `/etc/pve/lxc/<ctid>.conf` for the Frigate, Ollama, and faster-whisper containers (Frigate's exists now; the Ollama and faster-whisper containers arrive on the **My Build: Voice — Siri & Local Assist** page, and their lines land inside `/etc/pve` automatically once built) — both are inside `/etc/pve` above. The `<hba-pci-address>` is the chipset-side bus you captured from `lspci`, entered **without** the `.0` function suffix (e.g. `0000:02:00`, which passes all functions to match the GUI's All Functions tick) — **not** `0000:01:00`, which on this board is the top x16 slot where the 1080 Ti lives. But keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
@@ -204,15 +212,17 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 > From the host **Shell**, roll the lot into one dated tarball on the backup share, already mounted at `/mnt/pve/nas-backups`:
 >
 > ```bash
-> tar czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +%F).tar.gz \
->   /etc/pve /etc/network/interfaces /etc/fstab /etc/modprobe.d \
->   /etc/default/grub /etc/nut /etc/modules
+> tar --ignore-failed-read -czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +%F).tar.gz \
+>   /etc/pve /etc/network/interfaces /etc/hosts /etc/fstab /etc/modprobe.d /etc/modules \
+>   /etc/modules-load.d /etc/udev/rules.d /etc/sysctl.d /etc/default/grub \
+>   /etc/nut /etc/systemd/system/nut-watchdog.service /etc/systemd/system/nut-watchdog.timer /usr/local/bin/nut-watchdog.sh \
+>   /var/lib/tailscale /var/spool/cron/crontabs
 > ```
 >
 > Run it after any change to networking, storage, or passthrough — and let a weekly `cron` keep it honest on its own. Still in the host shell, this appends the schedule (Sundays 03:00) to root's crontab:
 >
 > ```bash
-> (crontab -l 2>/dev/null; echo '0 3 * * 0 tar czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +\%F).tar.gz /etc/pve /etc/network/interfaces /etc/fstab /etc/modprobe.d /etc/default/grub /etc/nut /etc/modules') | crontab -
+> (crontab -l 2>/dev/null; echo '0 3 * * 0 tar --ignore-failed-read -czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +\%F).tar.gz /etc/pve /etc/network/interfaces /etc/hosts /etc/fstab /etc/modprobe.d /etc/modules /etc/modules-load.d /etc/udev/rules.d /etc/sysctl.d /etc/default/grub /etc/nut /etc/systemd/system/nut-watchdog.service /etc/systemd/system/nut-watchdog.timer /usr/local/bin/nut-watchdog.sh /var/lib/tailscale /var/spool/cron/crontabs') | crontab -
 > ```
 >
 > (The `\%` is required — cron treats a bare `%` as a newline.) It is small; keep a few generations. (`/etc/pve` is a live filesystem, so `tar` may warn that a file changed while reading — harmless for these config files.)
@@ -246,11 +256,13 @@ update-initramfs -u -k all
 8. Confirm `lspci -k` shows `Kernel driver in use: vfio-pci` on the 9300-8i.
 9. **Reinstall the NVIDIA driver on the host**.
 10. Confirm `nvidia-smi` reports it, so the GPU `dev0:` shares into Frigate, Ollama, and faster-whisper work once those containers return.
-11. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage).
-12. **Restore the guests** from vzdump.
-13. Once the TrueNAS VM is restored, confirm its **Hardware** tab (or `/etc/pve/qemu-server/<id>.conf`) still shows the `hostpci0` HBA line.
-14. If it is somehow missing, re-run your saved `qm set ... -hostpci0` command.
-15. **Mind the dependency order on first boot**: start the Home Assistant VM before the Frigate LXC so the MQTT broker is up first.
+11. Confirm `ls /dev/nvidia-uvm` finds the node — the restored `/etc/modules-load.d` and `/etc/udev/rules.d` files create it at boot; if it is missing, the GPU Sharing page's *Make the CUDA device node exist at every boot* step is the fix.
+12. **Reinstall Tailscale** per the Remote Access page; with `/var/lib/tailscale` restored first, the host rejoins the tailnet as the same machine, subnet route and all — otherwise `tailscale up` and re-approve the route on the Machines page.
+13. **Re-add the `nas-backups` SMB storage** (Datacenter → Storage).
+14. **Restore the guests** from vzdump.
+15. Once the TrueNAS VM is restored, confirm its **Hardware** tab (or `/etc/pve/qemu-server/<id>.conf`) still shows the `hostpci0` HBA line.
+16. If it is somehow missing, re-run your saved `qm set ... -hostpci0` command.
+17. **Mind the dependency order on first boot**: start the Home Assistant VM before the Frigate LXC so the MQTT broker is up first.
 
 > [!TIP]
 > The honest test of this whole page is a host you have never lost. Once a year, read the rebuild list top to bottom and confirm each piece still exists where it says — the host-config tarball is recent, the `qm set` notes match the live config, and a guest restores into a spare ID. A recovery plan you have rehearsed is calm; one you are reading for the first time mid-disaster is not.

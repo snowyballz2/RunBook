@@ -162,6 +162,30 @@ Read the script before piping it into a root shell. Its Advanced walk is the sam
 
 It installs Ollama and exposes its HTTP API on port `11434`.
 
+**Keep the models off the nightly backup.** The Proxmox Backups page's job copies every guest, and Ollama's models are gigabytes each and re-downloadable in minutes — the one kind of bulk worth keeping out of it, the same way Frigate's footage is. Give them a mount point the job skips, before the first model is pulled. In Proxmox, select the Ollama container:
+
+1. Open **Resources**.
+2. Click **Add → Mount Point**.
+3. **Storage** → `local-lvm`.
+4. **Disk size** → `32`.
+5. **Path** → `/mnt/models`.
+6. Tick **Advanced**, then untick **Backup**.
+7. Click **Add**.
+
+Then, in the container's **Console**, point Ollama at it — the helper's service runs as root and keeps models under `/root/.ollama` unless told otherwise:
+
+```bash
+mkdir -p /etc/systemd/system/ollama.service.d
+cat > /etc/systemd/system/ollama.service.d/models.conf <<'EOF'
+[Service]
+Environment=OLLAMA_MODELS=/mnt/models
+EOF
+systemctl daemon-reload && systemctl restart ollama
+```
+
+> [!NOTE]
+> `OLLAMA_MODELS` is Ollama's own setting for where models live, read by the service at start; the drop-in file survives the helper's `update` command, which rewrites only the main unit. With the 40 GB root disk no longer holding models, the prefill is generous — leave it; it costs nothing while empty.
+
 **Build the faster-whisper LXC.** If a community helper exists for it, use it the same way; otherwise create a plain **Debian 13** container through the Proxmox wizard (a few cores, 2–4 GB RAM, a small disk) and install faster-whisper's Wyoming server inside it by hand — `wyoming-faster-whisper` is a **pip** package, not an apt one. Either way you end with a Debian-based LXC that will run STT against the card, listening on port `10300`.
 
 > [!DETAILS] The hand-rolled install, start to finish
