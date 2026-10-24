@@ -15,7 +15,7 @@ The build pages say how to stand each piece up. They do not say what to do six m
 ## Host
 
 ### Everything is down, and Task History shows a run of "Bulk start VMs and Containers" lines minutes apart
-Each **Bulk start VMs and Containers** line is one boot — starting every guest is the last step of booting — so a run of them minutes apart is the host rebooting over and over, and the red CT start errors beside them are starts cut off by the next reboot, not failed containers. Seen here on 2026-10-14: fifteen boots in forty-two minutes, five of them dead within a second. And again on 2026-10-24, still on wall power: resets at 03:55, 03:58 and 13:04, the last one silencing every Kuma monitor for four minutes and taking the house's DNS with it. The UPS outlets are the next move, before any more diagnosis. In **pve → Shell**:
+Each **Bulk start VMs and Containers** line is one boot — starting every guest is the last step of booting — so a run of them minutes apart is the host rebooting over and over, and the red CT start errors beside them are starts cut off by the next reboot, not failed containers. Seen here on 2026-10-14: fifteen boots in forty-two minutes, five of them dead within a second. And again on 2026-10-24, still on wall power: resets at 03:55, 03:58 and 13:04, the last one silencing every Kuma monitor for four minutes and taking the house's DNS with it. Step 3's classifier then showed the whole history: not one clean shutdown since the build weeks in August — single cuts on Sep 3, 21, 24 and 30, Oct 7, 18, 21 and 22, and three storms, Oct 12, 14 and 17, the last of them nineteen boots in half an hour that nobody noticed. One boot's last line was *Startup finished* — cut in the same breath as it finished booting. The UPS outlets are the next move, before any more diagnosis. In **pve → Shell**:
 
 1. List the boots — one row each, with its first and last timestamp; a row lasting seconds died while still booting:
 
@@ -60,19 +60,20 @@ journalctl -t kernel -p err --no-pager | tail -40
 2. Shut the server down cleanly first — the UPS page's *Move the plugs with the server off* steps, starting from the **Shutdown** button on the pve node — then move its plug to the UPS's battery-side outlets, or to a different circuit; the UPS rides through sags even before the UPS page configures it.
 3. If it still resets, unplug the case's **RESET SW** lead from the motherboard's front-panel header — a reset switch or its lead pinched during the cooling work shorts at random and produces exactly this.
 4. If it still resets, reseat the 24-pin, the CPU 8-pin, and both GPU power cables at both ends.
-5. Check the cooling is alive — the AIO pump's RPM and the CPU temperature in BIOS at POST, or from the host:
+5. If it still resets, shut the Frigate container down for a day — **102 (frigate) → Shutdown** — and run without it. The card is the largest swing in the box's power draw, so a day without a reset points at the supply under GPU load; a reset anyway clears the card and lets the supply be judged on its own.
+6. Check the cooling is alive — the AIO pump's RPM and the CPU temperature in BIOS at POST, or from the host:
 
 ```bash
 cat /sys/class/thermal/thermal_zone*/type /sys/class/thermal/thermal_zone*/temp
 ```
 
-6. Check the card the same way:
+7. Check the card the same way:
 
 ```bash
 nvidia-smi --query-gpu=temperature.gpu,power.draw --format=csv
 ```
 
-7. Still resetting with clean temperatures and cables: the power supply is next, and a memory test overnight after that.
+8. Still resetting with clean temperatures and cables: the power supply is next, and a memory test overnight after that.
 
 > [!NOTE]
 > A thermal trip usually announces itself with a **CPU Over Temperature Error** at the next POST, and a kernel panic hangs rather than reboots, so a machine that silently resets and comes straight back is almost always power — the wall, the supply, or a short — before it is anything else.
