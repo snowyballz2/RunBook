@@ -86,11 +86,9 @@ Open `/etc/nut/ups.conf`:
 nano /etc/nut/ups.conf
 ```
 
-Append this at the end — the shipped file is comments only, so the `maxretry` line still lands above the first section, which is where it must be:
+The shipped file already carries one setting above any section, `maxretry = 3` — leave it where it is. Append this at the end:
 
 ```ini
-maxretry = 3
-
 [cyberpower]
     driver = usbhid-ups
     port = auto
@@ -99,12 +97,12 @@ maxretry = 3
     pollfreq = 30
 ```
 
-- **`maxretry = 3`** — a setting for the launcher, `upsdrvctl`, not for the driver, which is why it sits above the section with no indentation. Put inside `[cyberpower]` it stops the driver cold with `'maxretry' is not a valid variable name for this driver` — seen here.
+- **`maxretry = 3`, the shipped line above** — a setting for the launcher, `upsdrvctl`, not for the driver. Copied inside `[cyberpower]` it stops the driver cold with `'maxretry' is not a valid variable name for this driver` — seen here, when an earlier version of this page said to put it there.
 - **`[cyberpower]`** — the name you give the UPS. Any name works; it only has to match the `MONITOR` line below.
 - **`driver = usbhid-ups`** — the driver for a USB UPS that speaks the standard HID protocol, which this one does.
 - **`port = auto`** — required by the file's syntax, and ignored by `usbhid-ups`, which finds the CyberPower over USB by itself.
 - **`desc`** — a label for you; it changes nothing.
-- **`pollinterval` and `pollfreq`** — with `maxretry`, the settings that make the driver survive this model's habit of dropping its USB link. The *Handle the CyberPower USB-drop quirk* section explains each.
+- **`pollinterval` and `pollfreq`** — with the shipped `maxretry`, the settings that make the driver survive this model's habit of dropping its USB link. The *Handle the CyberPower USB-drop quirk* section explains each.
 
 Open `/etc/nut/upsd.conf`:
 
@@ -257,11 +255,11 @@ systemctl restart nut-driver@cyberpower && upsc cyberpower@localhost
 CyberPower units, this model included, have a well-documented habit: the `usbhid-ups` driver loses the USB device under load or after a glitch and never reconnects on its own. `upsc` starts answering "Driver not connected" or the data goes stale, and a UPS the host can no longer hear is a UPS that will not trigger a shutdown when it matters — the silent failure this whole page exists to prevent. Three settings make the driver resilient, and a watchdog catches the case where it still wedges.
 
 ### Make the driver reconnect itself
-Nothing to run in this step — the three settings are already in the `ups.conf` you wrote, two inside the `[cyberpower]` section and one above it, and the driver has been running with them since it started. They make it poll steadily and re-grab the device when the kernel re-enumerates it:
+Nothing to run in this step — the three settings are already in `ups.conf`, two inside the `[cyberpower]` section you wrote and one that Debian ships at the top of the file, and the driver has been running with them since it started. They make it poll steadily and re-grab the device when the kernel re-enumerates it:
 
 - **`pollinterval = 5`** — how often the `usbhid-ups` driver polls the UPS for critical status changes: the `OB` (on-battery) and `LB` (low-battery) bits.
 - **`pollfreq = 30`** — how often the driver re-reads the full variable set from the hardware. NUT's default for CyberPower units is already 12 seconds, so the `30` here *relaxes* the full re-read, trading freshness for fewer USB round-trips on a link this model likes to drop.
-- **`maxretry = 3`**, above the section — tells **upsdrvctl**, the launcher, to attempt starting the driver three times before giving up, which clears most cold-boot races where the UPS enumerates slightly after the driver launches. It is the launcher's setting, not the driver's, which is why it cannot live inside the section.
+- **`maxretry = 3`**, the shipped line at the top of the file — tells **upsdrvctl**, the launcher, to attempt starting the driver three times before giving up, which clears most cold-boot races where the UPS enumerates slightly after the driver launches. It is the launcher's setting, not the driver's, which is why it cannot live inside the section.
 
 These tame the common case; the watchdog below covers the case where the link drops anyway.
 
