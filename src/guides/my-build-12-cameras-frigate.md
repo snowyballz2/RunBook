@@ -408,6 +408,183 @@ pct push 102 /tmp/yolov9-t-320.onnx /config/model_cache/yolov9-t.onnx
 
 Without this file, detection fails to start with a missing-model error.
 
+### The finished file, for reference
+The complete `config.yml` as it stands at the end of this page — detector, decode preset, every camera, the footage settings and the MQTT link — is here first as a reference, and as one paste for a rebuild or a reinstall that needs the file back. First time through, do not paste it: the sections below build it up one camera at a time, each proven before the next is added, and that is where the mistakes get caught. Its tokens — the camera passwords and `MQTT-PASS` — are explained where each is introduced, and the finished file is the one the backup warning at the end of this page tells you to copy somewhere safe.
+
+```yaml
+ffmpeg:
+  hwaccel_args: preset-nvidia
+  output_args:
+    record: preset-record-generic-audio-aac
+detectors:
+  onnx:
+    type: onnx
+model:
+  model_type: yolo-generic
+  width: 320
+  height: 320
+  input_tensor: nchw
+  input_dtype: float
+  path: /config/model_cache/yolov9-t.onnx
+  labelmap_path: /labelmap/coco-80.txt
+version: 0.17-0
+mqtt:
+  enabled: true
+  host: 192.168.1.51
+  user: mqtt-user
+  password: MQTT-PASS
+detect:
+  enabled: true
+snapshots:
+  enabled: true
+record:
+  enabled: true
+  continuous:
+    days: 7
+audio:
+  enabled: true
+go2rtc:
+  streams:
+    doorbell:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password=DOORBELL-PASS#video=copy#audio=copy#audio=opus"
+      - "rtsp://admin:DOORBELL-PASS@192.168.1.70/Preview_01_sub"
+    doorbell_sub:
+      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password=DOORBELL-PASS"
+    rlc510:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
+    rlc510_sub:
+      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
+    shed_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=0"
+    shed_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=1"
+    carport_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=0"
+    carport_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=1"
+    patio_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=0"
+    patio_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=1"
+    chimney_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=0"
+    chimney_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=1"
+    kitchen_turret:
+      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=0"
+    kitchen_turret_sub:
+      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=1"
+cameras:
+  doorbell:
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: rtsp://127.0.0.1:8554/doorbell
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - audio
+        - path: rtsp://127.0.0.1:8554/doorbell_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    live:
+      streams:
+        Doorbell: doorbell
+    objects:
+      track:
+        - person
+  rlc510:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/rlc510
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - audio
+        - path: rtsp://127.0.0.1:8554/rlc510_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+  shed_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/shed_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - audio
+        - path: rtsp://127.0.0.1:8554/shed_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  carport_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/carport_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - audio
+        - path: rtsp://127.0.0.1:8554/carport_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  patio_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/patio_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - audio
+        - path: rtsp://127.0.0.1:8554/patio_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  chimney_turret:
+    enabled: false
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/chimney_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - audio
+        - path: rtsp://127.0.0.1:8554/chimney_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+  kitchen_turret:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/kitchen_turret
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - audio
+        - path: rtsp://127.0.0.1:8554/kitchen_turret_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+```
+
 ### Point detection at ONNX on CUDA
 This build does **not** use the Intel iGPU + OpenVINO path that Frigate defaults to. Detection runs on the 1080 Ti via the **ONNX (Open Neural Network Exchange) detector on the CUDA (NVIDIA's GPU compute platform) execution provider** — this install's Frigate build ships the ONNX runtime, which picks up CUDA automatically once the card is visible, so pointing Frigate at ONNX is enough to find the card. The `detectors:` and `model:` blocks below replace the script's OpenVINO versions, and the decode preset in the next step touches the same file — so both land in **one complete-file paste there**, one Save & Restart for the pair.
 
@@ -1547,181 +1724,7 @@ mqtt:
   password: MQTT-PASS
 ```
 
-**Or paste the complete file** — rebuilds and drift; the camera password tokens as before, plus **`MQTT-PASS`**:
-
-```yaml
-ffmpeg:
-  hwaccel_args: preset-nvidia
-  output_args:
-    record: preset-record-generic-audio-aac
-detectors:
-  onnx:
-    type: onnx
-model:
-  model_type: yolo-generic
-  width: 320
-  height: 320
-  input_tensor: nchw
-  input_dtype: float
-  path: /config/model_cache/yolov9-t.onnx
-  labelmap_path: /labelmap/coco-80.txt
-version: 0.17-0
-mqtt:
-  enabled: true
-  host: 192.168.1.51
-  user: mqtt-user
-  password: MQTT-PASS
-detect:
-  enabled: true
-snapshots:
-  enabled: true
-record:
-  enabled: true
-  continuous:
-    days: 7
-audio:
-  enabled: true
-go2rtc:
-  streams:
-    doorbell:
-      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password=DOORBELL-PASS#video=copy#audio=copy#audio=opus"
-      - "rtsp://admin:DOORBELL-PASS@192.168.1.70/Preview_01_sub"
-    doorbell_sub:
-      - "ffmpeg:http://192.168.1.70/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password=DOORBELL-PASS"
-    rlc510:
-      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_main"
-    rlc510_sub:
-      - "rtsp://admin:RLC-PASS@192.168.1.71:554/h264Preview_01_sub"
-    shed_turret:
-      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=0"
-    shed_turret_sub:
-      - "rtsp://admin:TURRET-PASS@192.168.1.72:554/cam/realmonitor?channel=1&subtype=1"
-    carport_turret:
-      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=0"
-    carport_turret_sub:
-      - "rtsp://admin:TURRET-PASS@192.168.1.73:554/cam/realmonitor?channel=1&subtype=1"
-    patio_turret:
-      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=0"
-    patio_turret_sub:
-      - "rtsp://admin:TURRET-PASS@192.168.1.74:554/cam/realmonitor?channel=1&subtype=1"
-    chimney_turret:
-      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=0"
-    chimney_turret_sub:
-      - "rtsp://admin:TURRET-PASS@192.168.1.75:554/cam/realmonitor?channel=1&subtype=1"
-    kitchen_turret:
-      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=0"
-    kitchen_turret_sub:
-      - "rtsp://admin:TURRET-PASS@192.168.1.76:554/cam/realmonitor?channel=1&subtype=1"
-cameras:
-  doorbell:
-    ffmpeg:
-      output_args:
-        record: preset-record-generic-audio-copy
-      inputs:
-        - path: rtsp://127.0.0.1:8554/doorbell
-          input_args: preset-rtsp-restream
-          roles:
-            - record
-            - audio
-        - path: rtsp://127.0.0.1:8554/doorbell_sub
-          input_args: preset-rtsp-restream
-          roles:
-            - detect
-    live:
-      streams:
-        Doorbell: doorbell
-    objects:
-      track:
-        - person
-  rlc510:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/rlc510
-          input_args: preset-rtsp-restream
-          roles:
-            - record
-            - audio
-        - path: rtsp://127.0.0.1:8554/rlc510_sub
-          input_args: preset-rtsp-restream
-          roles:
-            - detect
-  shed_turret:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/shed_turret
-          input_args: preset-rtsp-restream
-          roles:
-            - record
-            - audio
-        - path: rtsp://127.0.0.1:8554/shed_turret_sub
-          input_args: preset-rtsp-restream
-          roles:
-            - detect
-    objects:
-      track:
-        - person
-  carport_turret:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/carport_turret
-          input_args: preset-rtsp-restream
-          roles:
-            - record
-            - audio
-        - path: rtsp://127.0.0.1:8554/carport_turret_sub
-          input_args: preset-rtsp-restream
-          roles:
-            - detect
-    objects:
-      track:
-        - person
-  patio_turret:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/patio_turret
-          input_args: preset-rtsp-restream
-          roles:
-            - record
-            - audio
-        - path: rtsp://127.0.0.1:8554/patio_turret_sub
-          input_args: preset-rtsp-restream
-          roles:
-            - detect
-    objects:
-      track:
-        - person
-  chimney_turret:
-    enabled: false
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/chimney_turret
-          input_args: preset-rtsp-restream
-          roles:
-            - record
-            - audio
-        - path: rtsp://127.0.0.1:8554/chimney_turret_sub
-          input_args: preset-rtsp-restream
-          roles:
-            - detect
-    objects:
-      track:
-        - person
-  kitchen_turret:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/kitchen_turret
-          input_args: preset-rtsp-restream
-          roles:
-            - record
-            - audio
-        - path: rtsp://127.0.0.1:8554/kitchen_turret_sub
-          input_args: preset-rtsp-restream
-          roles:
-            - detect
-    objects:
-      track:
-        - person
-```
+**Or paste the complete file** — the finished listing under *The finished file, for reference*, at the top of *Detect on the 1080 Ti* — for rebuilds and drift; the camera password tokens as before, plus **`MQTT-PASS`**.
 
 **Save & Restart.** This is the finished config — the one the backup warning at the end of this page tells you to copy somewhere safe.
 
