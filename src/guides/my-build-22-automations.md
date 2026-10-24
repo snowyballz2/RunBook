@@ -122,7 +122,83 @@ Why it works, top to bottom:
 > [!TIP]
 > The T1 clamps onto the quarter-turn **lever** main. Test with a real clean-water trip on a sensor and confirm the valve rotates the lever **fully closed** — not just that the entity flips to `closed`. The Third Reality 3RSP019BZ smart plugs near the sensor clusters and the valve are what keep the Zigbee mesh reaching them; a leak alert that cannot hop back to the ZBT-2 coordinator is worthless.
 
-### Don't let a dead battery disarm the net
+### Carbon monoxide or smoke — the other alarm that cannot wait
+The two **Sensereo MSC-1** alarms — **Furnace Alarm** at the furnace, **Kitchen Alarm** near the gas range — were commissioned over Thread on the Matter Locks page. Each sounds on its own regardless of this rule; what the rule adds is the same reach the leak rule has — a critical push and a spoken line — and one action the alarm itself cannot take: switching the furnace off, since the furnace is the most likely source of carbon monoxide in this house. The rule keys on the sensor *class*, as the leak rule does, so it covers both alarms, both hazards, and any alarm you add later, without naming one.
+
+1. Open **Settings → Automations & scenes**.
+2. Click **Create automation**, then **Create new automation**.
+3. Open the ⋮ menu at the top right and choose **Edit in YAML**.
+4. Paste the rule and **Save**:
+
+```yaml
+alias: Carbon monoxide or smoke — alert everyone
+triggers:
+  - trigger: event
+    event_type: state_changed
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.event.data.new_state is not none
+         and trigger.event.data.new_state.state == 'on'
+         and trigger.event.data.new_state.attributes.device_class in ['carbon_monoxide', 'smoke']
+         and (trigger.event.data.old_state is none or trigger.event.data.old_state.state != 'on') }}
+actions:
+  - if:
+      - condition: template
+        value_template: "{{ trigger.event.data.new_state.attributes.device_class == 'carbon_monoxide' }}"
+    then:
+      - action: climate.set_hvac_mode
+        target: { entity_id: climate.downstairs }
+        data: { hvac_mode: "off" }
+  - action: notify.mobile_app_naps_phone
+    data:
+      title: "🚨 {{ 'Carbon monoxide' if trigger.event.data.new_state.attributes.device_class == 'carbon_monoxide' else 'Smoke' }}"
+      message: "{{ trigger.event.data.new_state.name }} is alarming. Get everyone outside."
+      data:
+        push:
+          interruption-level: critical
+          sound: { name: default, critical: 1, volume: 1.0 }
+  - action: tts.speak
+    target: { entity_id: tts.piper }
+    data:
+      media_player_entity_id: media_player.kitchen_speaker
+      message: "{{ 'Carbon monoxide' if trigger.event.data.new_state.attributes.device_class == 'carbon_monoxide' else 'Smoke' }} detected at {{ trigger.event.data.new_state.name }}. Get everyone outside."
+mode: parallel
+```
+
+Why it works, part by part:
+
+- **The trigger and condition** — the leak rule's shape: every state change in the house, kept only when a sensor of class `carbon_monoxide` or `smoke` turns `on`. The Sensereo exposes one of each per unit.
+- **The furnace, first, and only for CO** — the thermostat goes to `off`, which stops the burner; a smoke alarm leaves the heating alone. Turning it back on is a deliberate act for after the house has been checked, not an automation.
+- **The two alerts** — the critical push pierces silent mode and Focus like the leak rule's, and the spoken line goes out on the kitchen speaker through the local Piper voice.
+- **No presence, time, or guest-mode condition** — a safety rule, with the same reasoning as the leak rule's warning above.
+
+The Sensereo also reports the CO level as a number, which is the reason it was chosen over a plain alarm: a furnace that begins leaking drifts from zero over weeks, long before any alarm would sound. A second, quieter rule watches for that:
+
+5. Open **Settings → Devices & services → Entities** and search `carbon monoxide`. The two ppm sensors are named after the devices — expect `sensor.furnace_alarm_carbon_monoxide` and `sensor.kitchen_alarm_carbon_monoxide`; if yours differ, substitute them in the rule.
+6. Create a second automation the same way and paste:
+
+```yaml
+alias: Carbon monoxide — creeping level
+triggers:
+  - trigger: numeric_state
+    entity_id:
+      - sensor.furnace_alarm_carbon_monoxide
+      - sensor.kitchen_alarm_carbon_monoxide
+    above: 25
+    for: "00:10:00"
+actions:
+  - action: notify.mobile_app_naps_phone
+    data:
+      title: "CO rising"
+      message: "{{ trigger.to_state.name }} has read over 25 ppm for ten minutes — {{ trigger.to_state.state }} ppm now. Check the furnace and ventilate."
+mode: parallel
+```
+
+7. On the **Kitchen Alarm** device page, set its **Sensitivity** control to **Low** — the maker's own advice for a kitchen, where the smoke sensor would otherwise read a seared steak as a fire; the CO side is unaffected.
+
+> [!NOTE]
+> Why 25 ppm for ten minutes: the alarm itself cannot sound below 30 ppm by design, and a healthy house reads 0. A sustained reading in the twenties is a furnace or range worth looking at that week, not a reason to leave the house — so this one is an ordinary push, no siren, no critical override. Both alarms also carry a **Test** button on their device pages; the Maintenance page's monthly walk presses it.
 The leak rule has one silent failure mode: a sensor whose battery died months ago reports nothing, so a real leak never trips it and the valve never closes. The rule looks fine in the list and protects nothing. The fix is a once-a-morning sweep that watches the watchers — every battery entity in the house, with no per-device setup, so the twelve sensors, the valve, and the three locks are all covered, plus anything you add next year.
 
 ```yaml

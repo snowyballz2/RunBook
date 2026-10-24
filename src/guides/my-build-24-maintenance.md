@@ -105,6 +105,7 @@ One sitting, roughly twenty minutes, the same order every time. Put a recurring 
 3. **Reboot** if a kernel arrived.
 4. **Walk the guests**, one at a time, confirming each still answers.
 5. **Glance at the dashboards** — Uptime Kuma all green, and the points below.
+6. **Test the two Sensereo alarms** — in Home Assistant, on the **Furnace Alarm** and **Kitchen Alarm** device pages, press **Test** and listen for the siren; a test that does not sound is a dead unit, and the Automations page's CO rule depends on them.
 
 > [!INPUT] kuma-ip | Uptime Kuma container IP | 192.168.1.57
 > The single page that tells you, at a glance, whether everything is still answering.
