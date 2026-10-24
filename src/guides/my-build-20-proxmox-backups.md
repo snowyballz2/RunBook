@@ -38,7 +38,7 @@ In the Proxmox web interface at `https://192.168.1.50:8006`, go to **Datacenter 
 - **Server** → `192.168.1.20`
 - **Username / Password** → the SMB login from the fields below
 - **Share** → `backups`
-- **Content** → tick **Backup** (older Proxmox versions label it **VZDump backup file**); **Disk image** only if you also want it as general storage
+- **Content** → **Backup**, and only Backup (older Proxmox versions label it **VZDump backup file**). Leave **Disk image** unticked: it would offer this share as a place to *create* guest disks, over SMB, when every disk in this build lives on the NVMe and the share's one job is to hold copies. With nothing ticked, the backup job below cannot pick the storage at all
 - **Nodes** → leave **All (No restrictions)** — there is one node anyway
 - **Enable** → ticked, the default
 - **Domain** and **Subdirectory** → blank
