@@ -355,7 +355,9 @@ The shutdown order is already set — each guest's page set it when it built the
 > Either way, shutting down early throws away runtime during which the power might have returned.
 
 ### Teach it to come back
-After the shutdown the UPS cuts its outlets, and when mains returns it switches them back on — but a powered outlet only boots the server if the firmware agrees. You set this on the Hardware & BIOS page with the other firmware toggles; confirm it stuck before trusting it:
+After the shutdown the UPS cuts its outlets, and when mains returns it switches them back on — but a powered outlet only boots the server if the firmware agrees. Nothing to run in this step: the Hardware & BIOS page set **Restore AC Power Loss** to **Power On**, and this box has proved it the hard way — every cut in the reset log ended in a boot nobody touched, and when its plug moved to the UPS outlets it started by itself. The proof that counts is the one you can see: a server that is up after power returns.
+
+If it ever stays dark after power returns, that is when the BIOS visit is due — and it shares a screen with the When Something Breaks page's will-not-power-off settings, so do both in one sitting:
 
 1. Plug the install-day monitor and keyboard back into the box — this board has no remote console, so the BIOS exists only on a screen attached to it.
 2. From **pve → Shell**, reboot straight into the BIOS, which spares you catching the **Del** key at the logo:
