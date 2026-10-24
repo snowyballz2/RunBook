@@ -142,7 +142,7 @@ Two concrete picks, since "somewhere on that list" is not much help:
 
 > [!INPUT] domain-name | Your domain | kuzco.org
 
-Buy it, and stop there — the token and the certificate are separate steps below. Create no records of your own: no A record with your home IP, nothing pointing at your house. From outside your LAN these names will simply not resolve, and that is the design working.
+Buy it, and stop there — the token and the certificate are separate steps below. Create no record with your home IP, nothing that points at your house from the internet. The one record this build does publish comes later on this page, under *Teach the LAN the names*, and it points at a private address nobody outside can reach — from the internet these names lead to a place that does not exist, and that is the design working.
 
 ### Harden the domain before moving on
 Eight things, ordered by what hurts most if skipped. Cloudflare splits these across two levels, and mixing them up is the main reason a setting looks missing:
@@ -184,7 +184,7 @@ Eight things, ordered by what hurts most if skipped. Cloudflare splits these acr
 7. **Ignore the registrar's own recommendations** — the Recommendations panel that urges an A record, a `www` record, and MX records assumes you are publishing a website and receiving mail, neither of which applies here.
 8. **Verify WHOIS privacy** → the registrar **Settings** tab should read *data redaction is currently enabled* — the button offers *Disable*, which is the action, not the state.
 9. **Verify the transfer lock** → same tab, **Transfer to another registrar** should be locked — on a fresh registration the Unlock control is greyed out with *domain created within the last 60 days*, which is ICANN's new-registration lock doing a transfer lock's job for you.
-10. Check **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance.
+10. Check **DNS → Records** to confirm the list is otherwise **empty** — the only entries that should ever appear there are the `_acme-challenge` records Certbot creates and deletes during issuance, and the wildcard this page adds under *Teach the LAN the names*.
 
 > [!WARNING]
 > **If you signed up with Sign in with Apple (or Google), the 2FA screen in step 1 will not let you.** Cloudflare accounts authenticating through SSO **cannot configure 2FA at all** — a documented limitation, not a password problem. You are not unprotected: Apple mandates two-factor on Apple IDs and it is hardware-backed on your own devices, so the account has a second factor, just Apple's rather than Cloudflare's. That is the same posture the Remote Access page takes for the tailnet.
@@ -201,7 +201,7 @@ Eight things, ordered by what hurts most if skipped. Cloudflare splits these acr
 > **One CAA record from step 4 is enough.** It looks like a wildcard certificate would need a second rule, but the spec applies `issue` to wildcards whenever no wildcard-specific rule exists — so the dropdown's other options, *Only allow wildcards* (`issuewild`) and *Send violation reports to* (`iodef`), stay unused. The effect: no certificate authority other than Let's Encrypt can legitimately issue for your name.
 
 > [!NOTE]
-> **The Recommendations panel from step 7 never goes away — that persistence is confirmation, not a problem.** Cloudflare shows it urging you to add an A record so "visitors can reach" your domain, a `www` record, and MX records to receive mail. Every one of them assumes you are publishing a website, and acting on the A-record suggestion would point your domain at a real host on the public internet — exactly what this design forbids. The mail suggestion is already answered better than they propose: you are declaring that the domain sends and receives nothing, rather than configuring it to.
+> **The Recommendations panel from step 7 never goes away — that persistence is confirmation, not a problem.** Cloudflare shows it urging you to add an A record so "visitors can reach" your domain, a `www` record, and MX records to receive mail. Every one of them assumes you are publishing a website, and acting on the A-record suggestion would point your domain at a real host on the public internet — exactly what this design forbids. The wildcard record added later on this page is the opposite thing: it points at a private address no visitor can reach. The mail suggestion is already answered better than they propose: you are declaring that the domain sends and receives nothing, rather than configuring it to.
 
 That last check is the one the build's threat model rests on: a domain that resolves to nothing publicly is what stops a purchased name from becoming an attack surface.
 
@@ -304,13 +304,39 @@ nslookup proxmox.kuzco.org
 Expect the proxy's IP. The names resolve; nothing answers on them yet — that is the next phase.
 
 > [!WARNING]
-> **Read the `Server:` line in that output before believing the result.** It names the resolver that actually answered, and it should be your router or AdGuard. Anything else — a `100.64.x` address especially — means a **VPN client on that machine is intercepting DNS**, the query never reached AdGuard, and the `No answer` you are looking at says nothing about whether the rewrite works. These names exist only inside your AdGuard, so they cannot resolve through any tunnelled resolver. Disconnect the VPN and run it again. This will recur for as long as that machine runs a consumer VPN, so make the `Server:` line the first thing you check whenever a name misbehaves.
+> **Read the `Server:` line in that output before believing the result.** It names the resolver that actually answered, and it should be your router or AdGuard. Anything else — a `100.64.x` address especially — means a **VPN client on that machine is intercepting DNS**, the query never reached AdGuard, and the `No answer` you are looking at says nothing about whether the rewrite works. These names are answered by your AdGuard — and, once the public record below exists, by public DNS with the same LAN address — but a VPN tunnel can neither ask AdGuard nor reach a LAN address, so its result says nothing about the rewrite. Disconnect the VPN and run it again. This will recur for as long as that machine runs a consumer VPN, so make the `Server:` line the first thing you check whenever a name misbehaves.
 
 > [!TIP]
 > **A name that failed once can keep failing after you fix it.** Resolvers cache negative answers as well as positive ones, so any lookup you tried *before* the rewrite existed — or through a VPN's resolver — leaves the router holding a "does not exist" result for minutes afterwards. It will serve that cached failure back to you while a direct query to AdGuard answers perfectly, which looks exactly like a broken configuration. Two ways to tell them apart: query a **name you have never asked for before** (if a fresh name resolves and the old one does not, it is the cache), or reboot the router to clear it outright.
 
+### Publish the same answer in public DNS
+The router hands itself out as the house's resolver and forwards to AdGuard — with AdGuard's own public resolver in its second DNS field, from the AdGuard page, so the house keeps resolving while the server is down. That second resolver has never heard of these names. A Fios router that slips to it for even a second is told `home.kuzco.org` has no address, caches that, and repeats it for the name's 30-minute negative TTL (Time To Live — how long a resolver may repeat an answer). Seen on this build: the proxy names failing for half an hour at a time, about once an hour, while every direct address worked. The cure is to make the public answer agree with AdGuard's. In **Cloudflare**, on the `kuzco.org` zone:
+
+1. Open **DNS → Records**.
+2. Click **Add record**.
+3. **Type** → `A`.
+4. **Name** → `*`.
+5. **IPv4 address** → `192.168.1.54`.
+6. **Proxy status** → click the toggle so it reads **DNS only** — the cloud turns grey, and once saved the row reads *DNS only - reserved IP*, Cloudflare's name for a private address.
+7. **TTL** → leave **Auto**.
+8. Click **Save**.
+9. If you added the bare-name rewrite above, add a second record the same way with **Name** → `@`.
+10. From the Mac, in Terminal, ask a public resolver directly:
+
+```bash
+nslookup home.kuzco.org 1.1.1.1
+```
+
+   Expect `192.168.1.54`.
+
+> [!NOTE]
+> What this publishes is a private address: useless to anyone on the internet, since nothing routes to `192.168.1.54` from outside, and it names no service — the wildcard is as anonymous as the certificate. At home nothing changes; AdGuard still answers first. The record speaks only when the router slips to its second resolver, and during a server outage, and in both cases it now says what AdGuard would have said. Keep it **DNS only**: switched to Proxied, Cloudflare would try to reach a private address and serve its own error page. A yellow banner appears the moment the record exists — *Proxying is required for most security and performance features* — and it is the same nag Cloudflare shows for every unproxied record; dismiss it with its X and never take it up on the offer. The one thing the record asks of you later is the Renumber page — when the proxy moves to `192.168.213.54`, this record moves with it.
+
+> [!DETAILS] The small print
+> Two consequences worth knowing. A device *without* Tailscale, away from home, now gets an address instead of "no such name" — it tries `192.168.1.54` and times out, the same failure a little slower. And on somebody else's network that also uses `192.168.1.0/24`, that address is theirs: if anything sits at `.54` there, the browser reaches it and stops at a certificate warning, since nobody else can hold a certificate for your name. Phones with Tailscale on are immune to both, because their lookups go to AdGuard at home, and the Renumber page's move to `192.168.213.0/24` makes the collision all but impossible for everything else.
+
 > [!DETAILS] Carrying the names with you over Tailscale
-> These names exist only inside AdGuard, so a phone off the LAN will not find them on its own. Once remote access is set up on the next page, the names can travel: on the Tailscale admin console's DNS page, add AdGuard's LAN IP under **Global nameservers** and enable **Override DNS servers** — tailnet devices then resolve through AdGuard, and `https://proxmox.kuzco.org` works from anywhere the subnet route reaches. The trade: with Override on, the phone's DNS depends on the server being up. The gentler variant is split DNS — send only `kuzco.org` lookups to AdGuard and leave the rest of the phone alone.
+> These names answer with a LAN address — from AdGuard at home, and from the public record above anywhere else — so a phone off the LAN can look them up but cannot reach what they point at. Once remote access is set up on the next page, the subnet route makes the address reachable, and the Tailscale admin console's DNS page can add AdGuard's LAN IP under **Global nameservers** with **Override DNS servers** on — tailnet devices then send every lookup, and the ad blocking with it, through AdGuard from anywhere. The trade: with Override on, the phone's DNS depends on the server being up. The gentler variant is split DNS — send only `kuzco.org` lookups to AdGuard and leave the rest of the phone alone; with the public record in place even that is optional for the names, and the override is about the filtering.
 
 ## Put every service behind it
 

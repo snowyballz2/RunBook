@@ -185,8 +185,9 @@ pct reboot 102
 
 ### Every service that stores an address
 1. **AdGuard** at `http://192.168.213.53`: **Filters → DNS rewrites** → edit the `*.kuzco.org` rewrite → `192.168.213.54`.
-2. **Nginx Proxy Manager** at `http://192.168.213.54:81`: **Hosts → Proxy Hosts** → each of the eight hosts → **Edit** → **Forward Hostname / IP** → the same last number on the new prefix → **Save**.
-3. **Homepage** — the allow-list, every monitor and widget address, and the router bookmark, from the node Shell:
+2. **Cloudflare**, on the `kuzco.org` zone: **DNS → Records** → the `*` record → **Edit** → **IPv4 address** → `192.168.213.54` → **Save** — the public copy of the same answer, and the `@` record too if you added one.
+3. **Nginx Proxy Manager** at `http://192.168.213.54:81`: **Hosts → Proxy Hosts** → each of the eight hosts → **Edit** → **Forward Hostname / IP** → the same last number on the new prefix → **Save**.
+4. **Homepage** — the allow-list, every monitor and widget address, and the router bookmark, from the node Shell:
 
 ```bash
 pct exec 107 -- sed -i 's/192\.168\.1\./192.168.213./g' /opt/homepage/.env /opt/homepage/config/services.yaml /opt/homepage/config/bookmarks.yaml
@@ -196,8 +197,8 @@ pct exec 107 -- sed -i 's/192\.168\.1\./192.168.213./g' /opt/homepage/.env /opt/
 pct exec 107 -- systemctl restart homepage
 ```
 
-4. **Uptime Kuma** at `http://192.168.213.57:3001`: every monitor whose address starts `192.168.1.` → **Edit** → the URL, the Ping hostname, or the DNS monitor's **Resolver Server** → the new prefix → **Save**.
-5. **Nextcloud**, in **Proxmox → 105 (nextcloudpi) → Console** — list the trusted entries and note which index holds `192.168.1.58`:
+5. **Uptime Kuma** at `http://192.168.213.57:3001`: every monitor whose address starts `192.168.1.` → **Edit** → the URL, the Ping hostname, or the DNS monitor's **Resolver Server** → the new prefix → **Save**.
+6. **Nextcloud**, in **Proxmox → 105 (nextcloudpi) → Console** — list the trusted entries and note which index holds `192.168.1.58`:
 
 ```bash
 sudo -E -u www-data php /var/www/nextcloud/occ config:system:get trusted_domains
@@ -219,11 +220,11 @@ sudo -E -u www-data php /var/www/nextcloud/occ config:system:get trusted_proxies
 sudo -E -u www-data php /var/www/nextcloud/occ config:system:set trusted_proxies 2 --value=192.168.213.54
 ```
 
-6. **Nextcloud's external storage** — at `https://cloud.kuzco.org`, **Settings → Administration → External storage** → the TrueNAS share's row → **Host** → `192.168.213.20`; the row's dot goes green again when it reconnects.
-7. **Vaultwarden** — nothing: it lives by its name.
-8. **The Caséta Pro bridge**, in the Lutron app: **Settings → Advanced → Integration → Network Settings** → `192.168.213.61`, gateway `192.168.213.1`, DNS `192.168.213.53`. Then reload the Lutron Caséta integration in Home Assistant; remove and re-add it if the lights stay unavailable.
-9. **SMB shares** — on the Mac, **Finder → Go → Connect to Server** → `smb://192.168.213.20/files`; on the Windows PC, map the drive letter again to `\\192.168.213.20\files`.
-10. Remove the Mac's old-range alias:
+7. **Nextcloud's external storage** — at `https://cloud.kuzco.org`, **Settings → Administration → External storage** → the TrueNAS share's row → **Host** → `192.168.213.20`; the row's dot goes green again when it reconnects.
+8. **Vaultwarden** — nothing: it lives by its name.
+9. **The Caséta Pro bridge**, in the Lutron app: **Settings → Advanced → Integration → Network Settings** → `192.168.213.61`, gateway `192.168.213.1`, DNS `192.168.213.53`. Then reload the Lutron Caséta integration in Home Assistant; remove and re-add it if the lights stay unavailable.
+10. **SMB shares** — on the Mac, **Finder → Go → Connect to Server** → `smb://192.168.213.20/files`; on the Windows PC, map the drive letter again to `\\192.168.213.20\files`.
+11. Remove the Mac's old-range alias:
 
 ```bash
 sudo ifconfig en0 -alias 192.168.1.200

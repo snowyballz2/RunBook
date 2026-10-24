@@ -74,7 +74,7 @@ nvidia-smi --query-gpu=temperature.gpu,power.draw --format=csv
 ## Names
 
 ### A service loads by address but not by its kuzco.org name
-Seen here after the host's reboot storm, with every guest running again. The `kuzco.org` names exist only inside AdGuard, so this is the chain from the Mac to AdGuard breaking somewhere — and two lookups find where. On the Mac, in Terminal:
+Seen here after the host's reboot storm, with every guest running again, before the Reverse Proxy page's public record existed. The `kuzco.org` names are answered by AdGuard, so this is the chain from the Mac to AdGuard breaking somewhere — and two lookups find where. On the Mac, in Terminal:
 
 1. Ask the way the house normally asks, through the router:
 
@@ -107,7 +107,7 @@ systemctl restart AdGuardHome
 Seen here the week the Uptime Kuma page was finished: the ntfy alerts flapped several times a day, the monitor's history showed red stretches of twenty-odd minutes about every three quarters of an hour, and its 24-hour uptime read 80 percent. Nothing was wrong with the proxy. `getaddrinfo ENOTFOUND` is Kuma reporting that its container asked for the name and was told *no such name* — an answer, not a timeout — so the check never reached the proxy at all. Every other monitor watches an address, which is why only this one moves.
 
 > [!NOTE]
-> Kuma's container inherits the host's resolver, the router — the Uptime Kuma page left its DNS field blank on purpose — so this monitor asks the router, and the router asks AdGuard. AdGuard cannot answer "no such name" for a name it rewrites. A public resolver can, because `home.kuzco.org` exists nowhere outside AdGuard, and Cloudflare's answer for `kuzco.org` carries a 30-minute negative TTL (Time To Live — how long a resolver may repeat an answer). A router that asked anyone but AdGuard, even once — a second DNS address, or Verizon's resolvers while AdGuard was slow for a moment — gets that empty answer and repeats it for up to half an hour, which is exactly the shape of each red stretch. Every device that resolves through the router and is not on the tailnet loses the house names for the same minutes; tailnet devices ask AdGuard directly and never notice.
+> Kuma's container inherits the host's resolver, the router — the Uptime Kuma page left its DNS field blank on purpose — so this monitor asks the router, and the router asks AdGuard. AdGuard cannot answer "no such name" for a name it rewrites. A public resolver could, because until that day `home.kuzco.org` existed nowhere outside AdGuard, and Cloudflare's answer for a name it does not hold carries a 30-minute negative TTL (Time To Live — how long a resolver may repeat an answer). A router that asked anyone but AdGuard, even once — a second DNS address, or Verizon's resolvers while AdGuard was slow for a moment — gets that empty answer and repeats it for up to half an hour, which is exactly the shape of each red stretch. Every device that resolves through the router and is not on the tailnet loses the house names for the same minutes; tailnet devices ask AdGuard directly and never notice.
 
 > [!DETAILS] What a watch from the Mac caught, 2026-10-24
 > A script on the Mac asked the router and AdGuard for `home.kuzco.org` every fifteen seconds. At 10:01:56 the router answered with an empty `NOERROR` — no address — while AdGuard answered `192.168.1.54` in the same second. Asked for a made-up kuzco.org name at that moment, the router returned Cloudflare's record for the zone instead of AdGuard's rewrite: it was talking to a public resolver. Thirty seconds later new names were answered by AdGuard again, but the empty answer for `home.kuzco.org` stayed for 1,806 seconds — the zone's 30-minute negative TTL to the second — and Kuma was red for the whole stretch. So the router reaches past AdGuard for a few seconds roughly once an hour, then faithfully repeats whatever it was told during those seconds for half an hour. Checked the same morning: Verizon's own resolvers, `71.242.0.12` and `71.252.0.12`, pass answers that point at private addresses, and so does this router with the AdGuard page's rebind exception in place.
@@ -126,23 +126,16 @@ nslookup home.kuzco.org 192.168.1.53
 
 3. If the first says `No answer` or `NXDOMAIN` and the second answers `192.168.1.54`, AdGuard is fine and the router is the hop that is lying — carry on at step 4. If the second fails too, run the ladder above this one instead.
 4. In AdGuard at `http://192.168.1.53`, open **Query Log** and type `home.kuzco.org` into the search field at the top. Scroll to the minutes the alert names: a gap with no entries means the router stopped asking AdGuard for that stretch; entries answering `192.168.1.54` straight through it mean the router had the right answer and served a cached public one instead. Either way the router is the fault — this is only to know it, not to fix it.
-5. At `http://192.168.1.1`, go to **Advanced → Network Settings → Network Connections → Broadband Connection (Ethernet) → Settings** and read **IPv4 DNS Address 2**.
-6. If it holds anything other than `0.0.0.0`, set it to `0.0.0.0` and click **Apply** — the AdGuard page's fallback warning predicted this exact flapping for a second resolver, and on this build the field held `94.140.14.14`, the optional secondary that page offered. Know the trade before you clear it: with the field blank, while the server is down nothing at home can look up a name — to the household that is the internet being out — until AdGuard's container is running again. Give it a day: no red on this monitor by tomorrow means that was the cause, and you are done.
-7. If it already read `0.0.0.0`, the router is reaching past AdGuard on its own. Take the monitor off the router instead: in Proxmox, click **108 (uptimekuma)** → **DNS**.
-8. Double-click the **DNS servers** row.
-9. Enter `192.168.1.53 192.168.1.1` — two addresses with a space between: AdGuard first, the router behind it only so that an alert about AdGuard itself can still find its way out of the house.
-10. Click **OK**.
-11. Open the **Shutdown** menu at the top right and click **Reboot** — the container's resolver file is rewritten only when it starts.
-12. In the container's **Console**, confirm the order took:
+5. Ask a public resolver directly — this is the answer the router falls back on:
 
 ```bash
-cat /etc/resolv.conf
+nslookup home.kuzco.org 1.1.1.1
 ```
 
-   `nameserver 192.168.1.53` above `nameserver 192.168.1.1` is right. The monitor now proves the rewrite, the proxy and the certificate the way a tailnet device sees them, and stays green while the router has its moments.
-
-> [!NOTE]
-> What step 7 does not fix: a phone, TV or guest that is not on the tailnet still asks the router, and still loses `home.kuzco.org` for those minutes. If that starts to matter, the cure is not a second DNS address on the router — that is the cause, not the fix — but moving DHCP into AdGuard so devices are handed `192.168.1.53` directly and the router's forwarder leaves the chain. The AdGuard page's *Should AdGuard serve DHCP instead of the router?* note has the reasoning and the one household check to make first; the Proxmox Backups page it said to wait for is done.
+6. If it answers `192.168.1.54`, the Reverse Proxy page's public wildcard record is in place and the router is being told the right thing when it slips — carry on at step 8.
+7. If it says `No answer` or `NXDOMAIN`, the record is missing: add it with the Reverse Proxy page's *Publish the same answer in public DNS* steps. The flapping ends within half an hour, as the cached empty answers expire — this was the fix on this build.
+8. At `http://192.168.1.1`, go to **Advanced → Network Settings → Network Connections → Broadband Connection (Ethernet) → Settings** and read **IPv4 DNS Address 2** — it should hold `94.140.14.14`, AdGuard's own public resolver. A different resolver there may strip answers that point at private addresses; set it back and click **Apply**.
+9. In Cloudflare, on **DNS → Records**, check the `*` record's proxy status reads **DNS only** — proxied, it answers with Cloudflare's own addresses instead of the proxy's.
 
 ## Cameras
 

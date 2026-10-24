@@ -245,7 +245,7 @@ A phone on cellular data is the cleanest test: a device that is definitely not o
 > [!NOTE]
 > **Proxmox's certificate warning is a known dead end on iOS Safari, not a sign anything is broken.** On recent versions the *Show Details → visit this website* control is simply unresponsive — a known bug rather than anything you are doing wrong. Do not burn time on it: the warning appearing at all already proves the test, since Safari had to reach the host and receive its certificate to show one (a broken route times out instead).
 
-The `*.kuzco.org` hostnames Nginx Proxy Manager serves need one extra step now that the tailnet exists, because those names live only in AdGuard's DNS (Domain Name System):
+The `*.kuzco.org` hostnames Nginx Proxy Manager serves get one extra step now that the tailnet exists — not so that they resolve, since the Reverse Proxy page's public record already answers them anywhere with the proxy's LAN address, but so that every lookup a phone makes, and the ad blocking with it, goes through AdGuard's DNS (Domain Name System) from anywhere:
 
 1. On the admin console's [DNS page](https://login.tailscale.com/admin/dns), under **Global nameservers**, click **Add nameserver**.
 2. Choose **Custom…** — every preset in that list (Google, Cloudflare, Quad9, Mullvad, NextDNS, Control D) is a public resolver, and you want your own.
@@ -256,7 +256,7 @@ The `*.kuzco.org` hostnames Nginx Proxy Manager serves need one extra step now t
 After that, `https://proxmox.kuzco.org` and the rest work from anywhere too.
 
 > [!DETAILS] What the override actually changed, followed one query at a time
-> `proxmox.kuzco.org` does not exist on the internet — it is a rewrite living only inside AdGuard. At home that is invisible, because the router hands AdGuard out as the resolver. On cellular the phone uses the carrier's resolver, which has never heard of the name and never will.
+> `proxmox.kuzco.org` answers with a private address from either source — AdGuard's rewrite at home, or the Reverse Proxy page's public record when a resolver outside the house is asked. On cellular without the override, the carrier's resolver hands the phone `192.168.1.54`, and the subnet route carries it there; the override changes which resolver is asked, not the answer.
 >
 > The two fields do different jobs. **Global nameservers** names *which* resolver tailnet devices use. **Override DNS servers** decides *when*: off, Tailscale handles only `.ts.net` names and defers everything else to the local network; on, the device ignores whatever resolver it was handed and sends **all** DNS to AdGuard.
 >
@@ -270,7 +270,7 @@ After that, `https://proxmox.kuzco.org` and the rest work from anywhere too.
 > 6. The answer returns the same way, and the phone connects to `.54` over that same route.
 > 7. NPM reads the hostname, forwards to Proxmox on `8006`, and serves the Let's Encrypt certificate.
 >
-> **The subnet route and the DNS override are two halves of one mechanism** — the route makes private *addresses* reachable, the override makes private *names* resolvable, and neither is useful here without the other.
+> **The subnet route and the DNS override do two different jobs** — the route makes private *addresses* reachable, and the override sends every lookup, and the filtering with it, through AdGuard. The names alone would travel without the override, thanks to the public record; the ad blocking would not.
 >
 > Two consequences beyond the names working. **Ad blocking now follows the phone**: every query it makes goes through AdGuard, in any app, anywhere, not just lookups for your own domain. And **this is tailnet-wide**, so the second household phone resolves through your AdGuard too once it joins, its browsing appearing in your query log whenever its Tailscale is connected. In that log expect everything to read `192.168.1.50` — subnet routers masquerade by default, so tailnet traffic reaches the LAN wearing the Proxmox host's address, the same per-device blindness the router caused, arriving by a different road.
 
