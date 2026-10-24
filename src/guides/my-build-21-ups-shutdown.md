@@ -264,7 +264,7 @@ Nothing to run in this step — the three settings are already in `ups.conf`, tw
 These tame the common case; the watchdog below covers the case where the link drops anyway.
 
 ### Add a watchdog timer
-A small systemd timer restarts the driver if `upsc` ever reports it as not connected. Write the check script and make it executable:
+A small systemd timer restarts the driver if `upsc` ever reports it as not connected. In **pve → Shell**, paste this whole block at once, up to and including the `chmod` line. It is two commands: the first writes everything between the two `EOF` markers into the script file — the markers are not part of the file — and the second makes it executable. Nothing prints when it works:
 
 ```bash
 cat > /usr/local/bin/nut-watchdog.sh <<'EOF'
