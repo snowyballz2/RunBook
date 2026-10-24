@@ -23,6 +23,8 @@ Four things go on the CyberPower's **battery-backed** outlets — the CP1500PFCL
 
 That set is deliberate — the server plugs straight into the router with no switch between them, so through an outage you keep Wi-Fi, Tailscale, the dashboards, and every Zigbee/Thread automation (both radios hang off the server), and with the ONT on battery, internet and push notifications survive as well. The **rack switches stay on wall power** — the cameras stop recording and the shades go dark until mains returns. If that recording gap ever bothers you, the switches idle at roughly 70–90 W with the shades asleep — adding the GS308EPP and the VIMIN to battery is what restores the camera pipeline.
 
+The two RJ45 jacks on the back — the Ethernet surge pass-through, marked as a network in and out — stay empty. The server's cable runs straight to the router, both already on battery, and routing it through the UPS adds a point of failure to the box's one network path to guard against a surge that does not arrive by Ethernet inside a house. Before ever using them, read the rating on the rear label: on some CyberPower models the pass-through is 10/100 only, which would quietly cap the server at a tenth of its link speed.
+
 ### Move the plugs with the server off
 A hard power cut is the very thing this page exists to prevent, so do not become the cause of one. The server moves last, and it moves off:
 
