@@ -473,10 +473,24 @@ nvidia-smi
 ## Watch it from Home Assistant
 
 ### Open the UPS to the LAN
-Nothing to edit on the host — `MODE=netserver`, the LAN `LISTEN` line and the `hauser` account were written with the other config files, so `upsd` has been answering on the LAN, read-only, since it started. Home Assistant's native NUT integration does the rest:
+Nothing to edit in NUT — `MODE=netserver`, the LAN `LISTEN` line and the `hauser` account were written with the other config files, so `upsd` has been answering on the LAN, read-only, since it started. What stands between it and Home Assistant is the Proxmox host's own firewall: the Cameras page turned it on to fence Frigate, and its input policy drops anything not allowed — the integration's first attempt here ended in a connection error for exactly that reason. Open the port first, then add the integration:
 
-1. In Home Assistant, go to **Settings → Devices & services**.
-2. If **Network UPS Tools (NUT)** is not already waiting under discovered devices, add it:
+1. Confirm `upsd` is listening on the LAN address — two lines, `127.0.0.1:3493` and `192.168.1.50:3493`, are right; only the first means the server has not been restarted since the `LISTEN` lines went in, so restart it with `systemctl restart nut-server` and ask again:
+
+```bash
+ss -ltnp | grep 3493
+```
+
+2. In Proxmox, click the **pve** node, then **Firewall**, then **Add**.
+3. **Direction** → `in`.
+4. **Action** → `ACCEPT`.
+5. **Protocol** → `tcp`.
+6. **Dest. port** → `3493`.
+7. **Source** → `192.168.1.51`.
+8. **Enable** → ticked — the dialog adds rules disabled by default.
+9. Click **Add**.
+10. In Home Assistant, go to **Settings → Devices & services**.
+11. If **Network UPS Tools (NUT)** is not already waiting under discovered devices, add it:
 
 - **Host** → `192.168.1.50`
 - **Port** → `3493`
@@ -490,22 +504,4 @@ The CyberPower appears as a device with **Battery charge**, **Status**, **Load**
 > One automation earns its keep: trigger on the **Status** sensor changing to a state containing "On Battery" (capital B — the match is case-sensitive) and announce it through the Nest and Google speakers via Cast, plus a phone push from the Home Assistant companion app. The push half works today; the spoken half needs the Google Cast integration and the Piper voice, both added on the Voice page later in this build — build the automation now and the announcement starts working once that page is done. The server already looks after itself; this turns a 3 am outage into a heads-up you actually hear instead of a mystery in the logs.
 
 > [!NOTE]
-> Port 3493 stays on the LAN. Listing specific addresses instead of `0.0.0.0` keeps the daemon off interfaces it doesn't need, and Home Assistant gets its own low-privilege account regardless. Never port-forward 3493 to the internet — remote access is Tailscale's job.
-
-> [!DETAILS] Unblocking a connection that fails
-> The Cameras & Frigate page turned the Proxmox firewall **on** (to fence Frigate's unauthenticated port), and the host's input policy drops what is not allowed — so add the rule before the integration can connect. At **Node `pve` → Firewall → Add**:
->
-> - **Direction** → `in`
-> - **Action** → `ACCEPT`
-> - **Protocol** → `tcp`
-> - **Dest. port** → `3493`
-> - **Source** → `192.168.1.51`
-> - **Enable** → ticked — the dialog adds rules disabled by default
->
-> If the connection still fails afterwards, check the usual suspects:
->
-> 1. Confirm the restart took (`systemctl status nut-server`).
-> 2. Confirm `MODE=netserver` is really set.
-> 3. Confirm the `LISTEN` address matches the host's real IP.
->
-> Buttons and switches (outlet control) would need an account with `instcmds` rights, which `hauser` deliberately lacks.
+> Port 3493 stays on the LAN. Listing specific addresses instead of `0.0.0.0` keeps the daemon off interfaces it doesn't need, the firewall rule admits one address, and Home Assistant gets its own low-privilege account regardless — buttons and switches for outlet control would need an account with `instcmds` rights, which `hauser` deliberately lacks. Never port-forward 3493 to the internet — remote access is Tailscale's job. If the integration still cannot connect with the rule in place, step 1 is the whole diagnosis: the second `LISTEN` line and `MODE=netserver` both show up as that `192.168.1.50:3493` line, and its absence names the file to re-check.
