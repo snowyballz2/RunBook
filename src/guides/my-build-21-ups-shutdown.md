@@ -162,23 +162,53 @@ To ask for just one of them:
 upsc cyberpower@localhost ups.status
 ```
 
-> [!DETAILS] Getting a stubborn driver going
-> If `upsc` has nothing to say, check `systemctl status nut-driver@cyberpower`.
->
-> If that unit doesn't *exist* at all, the per-UPS service was never generated from your `ups.conf` entry:
->
-> ```bash
-> systemctl restart nut-driver-enumerator
-> ```
->
-> That creates it — check again afterward.
->
-> Errors like "No matching HID UPS found" or permission denied usually mean a USB problem instead:
->
-> 1. Reseat the cable.
-> 2. Run `lsusb` and look for the CyberPower's vendor:product ID (CyberPower units commonly show as `0764:`).
->
-> Debian's shipped udev rules cover it, but after any cable change, replug it (or run `udevadm trigger`) and restart the driver.
+If `upsc` answers `Error: Driver not connected` instead — seen here on the first try — the server half is listening but the driver half is not running. The line `Init SSL without certificate database` above it is noise. Find out why:
+
+1. Ask for the driver's service:
+
+```bash
+systemctl status nut-driver@cyberpower
+```
+
+2. If it says the unit could not be found, the per-UPS service was never generated from your `ups.conf` entry — run the helper that generates it:
+
+```bash
+systemctl restart nut-driver-enumerator
+```
+
+3. Start the driver:
+
+```bash
+systemctl start nut-driver@cyberpower
+```
+
+4. Ask the UPS again — the screenful of variables means the driver is connected:
+
+```bash
+upsc cyberpower@localhost
+```
+
+5. If step 1 found the unit but showed it failed, read its log — "No matching HID UPS found" or permission denied means the USB side, not the configuration:
+
+```bash
+journalctl -u nut-driver@cyberpower -n 20 --no-pager
+```
+
+6. Reseat the USB cable at both ends.
+7. Confirm the host sees the UPS — a line with `0764:` is the CyberPower:
+
+```bash
+lsusb
+```
+
+8. Restart the driver and ask again:
+
+```bash
+systemctl restart nut-driver@cyberpower && upsc cyberpower@localhost
+```
+
+> [!NOTE]
+> Debian's shipped udev rules give the driver permission to the USB device, so a permission error after a cable change usually clears with a replug, or with `udevadm trigger`, followed by step 8.
 
 ## Handle the CyberPower USB-drop quirk
 
