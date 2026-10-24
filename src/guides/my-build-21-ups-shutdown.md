@@ -23,6 +23,19 @@ Four things go on the CyberPower's **battery-backed** outlets — the CP1500PFCL
 
 That set is deliberate — the server plugs straight into the router with no switch between them, so through an outage you keep Wi-Fi, Tailscale, the dashboards, and every Zigbee/Thread automation (both radios hang off the server), and with the ONT on battery, internet and push notifications survive as well. The **rack switches stay on wall power** — the cameras stop recording and the shades go dark until mains returns. If that recording gap ever bothers you, the switches idle at roughly 70–90 W with the shades asleep — adding the GS308EPP and the VIMIN to battery is what restores the camera pipeline.
 
+### Move the plugs with the server off
+A hard power cut is the very thing this page exists to prevent, so do not become the cause of one. The server moves last, and it moves off:
+
+1. In Proxmox, click the **pve** node, then **Shutdown** at the top right, and confirm. Proxmox stops every guest in reverse start order — Frigate before Home Assistant, the TrueNAS VM cleanly through its guest agent — and then powers the host off.
+2. Wait for the fans to stop and the case lights to go out. Give it a few minutes: nine guests are stopping and the backup share is being let go.
+3. Move the router, the ONT and the Caséta bridge to the battery-backed outlets — the house's internet drops for a minute or two.
+4. Move the server's plug last.
+5. The server starts on its own, because the BIOS's **Restore AC Power Loss → Power On** treats the new outlet as power returning. If it is still dark after a minute, press the power button once.
+6. When it has booted, check that Kuma's status page at `https://status.kuzco.org/status/home` is all green and the Home Assistant app answers — the first boot on the new feed, witnessed.
+
+> [!NOTE]
+> Never **Stop** the node or pull a running server's plug for this. Shutdown is the clean path: guests get their stop signals and time to write, the host unmounts its storage, and nothing in the journal ends mid-sentence. The same Shutdown button is the right way to power the box down for any hardware work later.
+
 Connect the bundled USB cable: the square B end into the UPS, the flat A end into a motherboard USB port on the ASUS ROG Maximus X Hero. This data link is the entire point — a battery with no USB port keeps the server up until it dies, then drops it mid-write anyway, the same dirty power-off, just delayed.
 
 > [!NOTE]

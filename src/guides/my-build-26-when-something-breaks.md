@@ -15,7 +15,7 @@ The build pages say how to stand each piece up. They do not say what to do six m
 ## Host
 
 ### Everything is down, and Task History shows a run of "Bulk start VMs and Containers" lines minutes apart
-Each **Bulk start VMs and Containers** line is one boot — starting every guest is the last step of booting — so a run of them minutes apart is the host rebooting over and over, and the red CT start errors beside them are starts cut off by the next reboot, not failed containers. Seen here on 2026-10-14: fifteen boots in forty-two minutes, five of them dead within a second. In **pve → Shell**:
+Each **Bulk start VMs and Containers** line is one boot — starting every guest is the last step of booting — so a run of them minutes apart is the host rebooting over and over, and the red CT start errors beside them are starts cut off by the next reboot, not failed containers. Seen here on 2026-10-14: fifteen boots in forty-two minutes, five of them dead within a second. And again on 2026-10-24, still on wall power: resets at 03:55, 03:58 and 13:04, the last one silencing every Kuma monitor for four minutes and taking the house's DNS with it. The UPS outlets are the next move, before any more diagnosis. In **pve → Shell**:
 
 1. List the boots — one row each, with its first and last timestamp; a row lasting seconds died while still booting:
 
@@ -29,16 +29,22 @@ journalctl --list-boots | tail -15
 journalctl -b -1 -n 40 --no-pager
 ```
 
-3. If it ends in ordinary startup or running lines with no shutdown request, the power was cut or the hardware reset itself — software never ends a journal mid-sentence — so carry on at step 5.
-4. If it ends with `upsmon`, `Forced shutdown` or `Reached target Power-Off`, something asked for the shutdown — NUT, when the UPS reports low battery on line power, or a person — and NUT's own reason is in its log:
+3. Classify every boot at once — one line per boot, its last journal entry. A line ending in `Journal stopped` was a clean shutdown or reboot; anything else is a boot that was cut:
+
+```bash
+journalctl --list-boots | grep -E '^ *-?[0-9]+ ' | awk '{print $1}' | while read -r b; do printf '%4s  ' "$b"; journalctl -q -b "$b" -n 1 -o short --no-pager; done
+```
+
+4. If the previous boot ends in ordinary startup or running lines with no shutdown request, the power was cut or the hardware reset itself — software never ends a journal mid-sentence — so carry on at step 6.
+5. If it ends with `upsmon`, `Forced shutdown` or `Reached target Power-Off`, something asked for the shutdown — NUT, when the UPS reports low battery on line power, or a person — and NUT's own reason is in its log:
 
 ```bash
 journalctl -b -1 -u nut-monitor --no-pager | tail -20
 ```
 
-5. Find out whether the whole house flickered — the router's uptime on its status page, the GS308EPP's uptime, a stove clock, or a gap across every camera's recordings at once.
-6. If the house flickered, the server is riding unprotected power, or a UPS whose battery can no longer carry it — move it to the UPS's battery-side outlets, and run the UPS page if it is not done.
-7. If nothing else reset, the fault is the server's own power feed or something inside the box — work down the list in the next entry.
+6. Find out whether the whole house flickered — the router's uptime on its status page, the GS308EPP's uptime, a stove clock, or a gap across every camera's recordings at once.
+7. If the house flickered, the server is riding unprotected power, or a UPS whose battery can no longer carry it — move it to the UPS's battery-side outlets, and run the UPS page if it is not done.
+8. If nothing else reset, the fault is the server's own power feed or something inside the box — work down the list in the next entry.
 
 > [!NOTE]
 > The BIOS's **Restore AC Power Loss → Power On** is what brings the host back after every cut; it is doing its job, not causing the loop. And the containers were never the problem: once the reboots stop, the last boot's Bulk start finishes on its own, and every guest shows running within a few minutes.
@@ -47,11 +53,11 @@ journalctl -b -1 -u nut-monitor --no-pager | tail -20
 A hard reset with no shutdown in the journal is power or hardware, so the suspects are the feed into the box and the box itself — cheapest test first, and only one change at a time, so the cure names the cause. First, the one piece of software evidence that exists: every boot's kernel errors in one list, where machine-check (`mce`), thermal, or NVIDIA `Xid` lines before a reset point at the CPU, the cooling, or the card:
 
 ```bash
-journalctl -k -p err --no-pager | tail -40
+journalctl -t kernel -p err --no-pager | tail -40
 ```
 
 1. Note what else was running on the server's circuit during each episode — an air conditioner, dryer, vacuum, microwave or space heater cycling on the same circuit sags the voltage enough to drop a power supply while the router on another circuit never notices.
-2. Move the server's plug to the UPS's battery-side outlets, or to a different circuit — the UPS rides through sags even before the UPS page configures it.
+2. Shut the server down cleanly first — the UPS page's *Move the plugs with the server off* steps, starting from the **Shutdown** button on the pve node — then move its plug to the UPS's battery-side outlets, or to a different circuit; the UPS rides through sags even before the UPS page configures it.
 3. If it still resets, unplug the case's **RESET SW** lead from the motherboard's front-panel header — a reset switch or its lead pinched during the cooling work shorts at random and produces exactly this.
 4. If it still resets, reseat the 24-pin, the CPU 8-pin, and both GPU power cables at both ends.
 5. Check the cooling is alive — the AIO pump's RPM and the CPU temperature in BIOS at POST, or from the host:
@@ -396,6 +402,7 @@ Gauges that look wrong by design — check the list before debugging:
 - **A pre-created proxy host answers 502.** "Not built yet," not "broken" — the Reverse Proxy page creates all eight hosts before their services exist.
 - **Homepage's Nginx Proxy Manager tile opens port 81.** On purpose: 80 is the proxy's public side, 81 is its admin UI.
 - **A Matter lock's Manage access dialog lists more users than you created.** Re-running a setup script stacks credentials; the Matter Locks page's broom script clears the guest slots.
+- **The kernel log shows `EXT4-fs (dm-NN): write access unavailable, skipping orphan cleanup` at the backup job's minutes.** That is vzdump mounting each container's snapshot read-only to archive it — one line per container, nightly — and not a disk problem.
 
 > [!NOTE]
 > When a new failure teaches something, it goes here under its symptom — the build pages stay a build.

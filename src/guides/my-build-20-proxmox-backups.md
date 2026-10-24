@@ -174,7 +174,7 @@ Every field in the dialog:
 Restoring over an existing guest returns it to the archived state — everything since is discarded, behind the warning "This will permanently erase current VM data." Restoring into a different, unused ID makes a *copy* alongside the original — the gentlest way to do a practice run.
 
 > [!TIP]
-> A backup you have never restored is a hope, not a plan. Do one practice restore of a small service container — Uptime Kuma is a good victim — into a spare guest ID while nothing is on fire, just to watch the process work.
+> A backup you have never restored is a hope, not a plan. Do one practice restore of a small service container — Uptime Kuma is a good victim — into a spare guest ID while nothing is on fire, just to watch the process work. Type a high ID such as `900` rather than accepting the next free number, so the copy can never be mistaken for a real guest and never takes an ID the addressing plan has reserved — `109` is the Valheim container's. When it has started and you have seen its login page, shut it down and delete the copy: select it, **More → Remove**, type its ID to confirm, tick both **Purge from job configurations** and **Destroy unreferenced disks owned by guest** — on a practice ID neither can touch anything else — and click **Remove**.
 
 > [!DETAILS] Restoring into a fresh ID from the host shell
 > From the host **Shell** you can restore an archive into a brand-new guest ID, leaving the original untouched:
