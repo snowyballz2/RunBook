@@ -223,29 +223,46 @@ Copy these off the host and onto the same `nas-backups` share, and put the short
 - **`/var/spool/cron/crontabs`** — root's crontab, which is to say this very backup schedule.
 
 > [!NOTE]
-> Several of these do not exist on the first pass through the build — `/etc/nut` and its watchdog arrive with the **UPS & Safe Shutdown** page, which comes later than this one. The commands below carry `--ignore-failed-read`, so a path that is not there yet earns a one-line warning and the archive is still written; the paths join it the week after their page is done.till written, so that is not a failed backup. Re-run the tarball once the UPS and safe-shutdown step is done, and treat *that* copy as the first complete one.
+> Several of these do not exist on the first pass through the build — `/etc/nut` and its watchdog arrive with the **UPS & Safe Shutdown** page, which comes later than this one. The commands below carry `--ignore-failed-read`, so a path that is not there yet earns a one-line warning and the archive is still written; the paths join it the week after their page is done. Re-run the tarball once the UPS page is done, and treat *that* copy as the first complete one.
 
 > [!NOTE]
 > Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand. The HBA assignment to the TrueNAS VM (`qm set <truenas-vmid> -hostpci0 <hba-pci-address>`) lives inside `/etc/pve/qemu-server/<id>.conf`, and the GPU `dev0: /dev/nvidia0` shares live in `/etc/pve/lxc/<ctid>.conf` for the Frigate, Ollama, and faster-whisper containers (Frigate's exists now; the Ollama and faster-whisper containers arrive on the **My Build: Voice — Siri & Local Assist** page, and their lines land inside `/etc/pve` automatically once built) — both are inside `/etc/pve` above. The `<hba-pci-address>` is the chipset-side bus you captured from `lspci`, entered **without** the `.0` function suffix (e.g. `0000:02:00`, which passes all functions to match the GUI's All Functions tick) — **not** `0000:01:00`, which on this board is the top x16 slot where the 1080 Ti lives. But keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
 
-> [!DETAILS] A tiny job to copy it to the NAS
-> From the host **Shell**, roll the lot into one dated tarball on the backup share, already mounted at `/mnt/pve/nas-backups`:
->
-> ```bash
-> tar --ignore-failed-read -czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +%F).tar.gz \
->   /etc/pve /etc/network/interfaces /etc/hosts /etc/fstab /etc/modprobe.d /etc/modules \
->   /etc/modules-load.d /etc/udev/rules.d /etc/sysctl.d /etc/default/grub \
->   /etc/nut /etc/systemd/system/nut-watchdog.service /etc/systemd/system/nut-watchdog.timer /usr/local/bin/nut-watchdog.sh \
->   /var/lib/tailscale /var/spool/cron/crontabs
-> ```
->
-> Run it after any change to networking, storage, or passthrough — and let a weekly `cron` keep it honest on its own. Still in the host shell, this appends the schedule (Sundays 03:00) to root's crontab:
->
-> ```bash
-> (crontab -l 2>/dev/null; echo '0 3 * * 0 tar --ignore-failed-read -czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +\%F).tar.gz /etc/pve /etc/network/interfaces /etc/hosts /etc/fstab /etc/modprobe.d /etc/modules /etc/modules-load.d /etc/udev/rules.d /etc/sysctl.d /etc/default/grub /etc/nut /etc/systemd/system/nut-watchdog.service /etc/systemd/system/nut-watchdog.timer /usr/local/bin/nut-watchdog.sh /var/lib/tailscale /var/spool/cron/crontabs') | crontab -
-> ```
->
-> (The `\%` is required — cron treats a bare `%` as a newline.) It is small; keep a few generations. (`/etc/pve` is a live filesystem, so `tar` may warn that a file changed while reading — harmless for these config files.)
+### Copy it to the NAS
+In **pve → Shell**:
+
+1. Roll the lot into one dated tarball on the backup share, already mounted at `/mnt/pve/nas-backups`:
+
+```bash
+tar --ignore-failed-read -czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +%F).tar.gz \
+  /etc/pve /etc/network/interfaces /etc/hosts /etc/fstab /etc/modprobe.d /etc/modules \
+  /etc/modules-load.d /etc/udev/rules.d /etc/sysctl.d /etc/default/grub \
+  /etc/nut /etc/systemd/system/nut-watchdog.service /etc/systemd/system/nut-watchdog.timer /usr/local/bin/nut-watchdog.sh \
+  /var/lib/tailscale /var/spool/cron/crontabs
+```
+
+2. Confirm it landed — one file, dated today, kilobytes rather than gigabytes:
+
+```bash
+ls -lh /mnt/pve/nas-backups/host-config-*
+```
+
+3. Let a weekly `cron` repeat it on its own — this appends the schedule, Sundays 03:00, to root's crontab:
+
+```bash
+(crontab -l 2>/dev/null; echo '0 3 * * 0 tar --ignore-failed-read -czf /mnt/pve/nas-backups/host-config-$(hostname)-$(date +\%F).tar.gz /etc/pve /etc/network/interfaces /etc/hosts /etc/fstab /etc/modprobe.d /etc/modules /etc/modules-load.d /etc/udev/rules.d /etc/sysctl.d /etc/default/grub /etc/nut /etc/systemd/system/nut-watchdog.service /etc/systemd/system/nut-watchdog.timer /usr/local/bin/nut-watchdog.sh /var/lib/tailscale /var/spool/cron/crontabs') | crontab -
+```
+
+4. Confirm the schedule took — the line you just added is the last one printed:
+
+```bash
+crontab -l
+```
+
+That is the whole host backup. These files, the guest archives above, and the secrets in the vault are everything a fresh Proxmox install needs to become this box again; the rebuild order below walks it. Run step 1 again after any change to networking, storage or passthrough — the Sunday copy catches what you forget.
+
+> [!NOTE]
+> Expect a `tar: Removing leading '/' from member names` line — normal — and, on the first pass, one warning per path that does not exist yet, which `--ignore-failed-read` turns from a failure into a note. `/etc/pve` is a live filesystem, so `tar` may also warn that a file changed while reading; harmless for these config files. In the cron line the `\%` is required, because cron treats a bare `%` as a newline. The archive is small; keep a few generations and delete the oldest when the share's listing gets long.
 
 > [!INPUT] proxmox-user | Proxmox web UI username | | root
 
