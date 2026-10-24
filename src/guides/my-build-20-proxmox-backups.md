@@ -201,13 +201,13 @@ Restoring over an existing guest returns it to the archived state — everything
 
 ## Back up the host itself
 
-### Save the host's own config off-box
-Everything above protects your guests. None of it protects the **Proxmox host** — the hypervisor underneath. vzdump copies the VMs and containers as machines, but the host's own configuration lives on the NVMe boot disk and vzdump never touches it. If that disk fails, you could restore every guest from the NAS and still be stranded: a fresh Proxmox install does not know this box's storage, its network bridges, its passthrough, or its UPS (uninterruptible power supply) wiring.
+### Know what the host backup must hold
+Nothing to run in this step — it is the list the next step's one command gathers, and why each entry is on it. Everything above protects your guests. None of it protects the **Proxmox host** — the hypervisor underneath. vzdump copies the VMs and containers as machines, but the host's own configuration lives on the NVMe boot disk and vzdump never touches it. If that disk fails, you could restore every guest from the NAS and still be stranded: a fresh Proxmox install does not know this box's storage, its network bridges, its passthrough, or its UPS (uninterruptible power supply) wiring.
 
 > [!WARNING]
 > A pile of vzdump archives is not a complete recovery plan on its own. Restoring them needs a working host first, and the handful of settings that make *this* host work — the bridge, the VT-d / IOMMU (Input/Output Memory Management Unit) flags, the VFIO (Virtual Function I/O) bind for the HBA (host bus adapter), the GPU `dev0:` shares — exist nowhere in those archives. Copy the host's config off the box now, while it still boots, or plan on rebuilding it from memory under pressure.
 
-Copy these off the host and onto the same `nas-backups` share, and put the short secrets in Vaultwarden too:
+The next step copies these off the host onto the same `nas-backups` share; the short secrets among them belong in Vaultwarden too:
 
 - **`/etc/pve`** — the cluster filesystem: every VM and container definition, plus your storage config. This is the heart of it, and it contains each guest's `*.conf`, including the passthrough lines below.
 - **`/etc/network/interfaces`** — the `vmbr0` bridge and any others. Get this wrong on a rebuild and nothing reaches the LAN (local area network).
