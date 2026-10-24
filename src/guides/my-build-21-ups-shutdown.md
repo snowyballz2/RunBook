@@ -488,7 +488,7 @@ ss -ltnp | grep 3493
 6. **Dest. port** → `3493`.
 7. **Source** → `192.168.1.51`.
 8. **Enable** → ticked — the dialog adds rules disabled by default.
-9. Click **Add**.
+9. Click **Add** — the rule is live within a few seconds; nothing restarts.
 10. In Home Assistant, go to **Settings → Devices & services**.
 11. If **Network UPS Tools (NUT)** is not already waiting under discovered devices, add it:
 
