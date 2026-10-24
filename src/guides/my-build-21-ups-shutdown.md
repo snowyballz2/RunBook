@@ -279,8 +279,13 @@ Set the shutdown order so Frigate stops before Home Assistant and TrueNAS outlas
 ### Teach it to come back
 After the shutdown the UPS cuts its outlets, and when mains returns it switches them back on — but a powered outlet only boots the server if the firmware agrees. You set this on the Hardware & BIOS page with the other firmware toggles; confirm it stuck before trusting it:
 
-1. Reboot the server.
-2. Press **Del** at POST.
+1. Plug the install-day monitor and keyboard back into the box — this board has no remote console, so the BIOS exists only on a screen attached to it.
+2. From **pve → Shell**, reboot straight into the BIOS, which spares you catching the **Del** key at the logo:
+
+```bash
+systemctl reboot --firmware-setup
+```
+
 3. Check **Advanced → APM Configuration → Restore AC Power Loss** reads **Power On**.
 4. If it does not, set it.
 5. Press **F10**.

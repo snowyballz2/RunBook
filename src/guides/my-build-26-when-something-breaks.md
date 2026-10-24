@@ -89,11 +89,18 @@ ping -c 3 192.168.1.50
 
 2. If it answers, the shutdown is still running — the NAS share is let go only after the TrueNAS VM that serves it has stopped, and that wait has a timeout of a few minutes — so wait, then ping again.
 3. If nothing answers, hold the power button until the fans stop. Every guest is already down and the host's disk is idle; nothing is at risk.
-4. On the next boot, tap **Del** at the ROG logo and open **Advanced → APM Configuration**.
-5. Set **Power On By PCI-E** → **Disabled** and **Power On By RTC** → **Disabled** — a wake source can re-power the board the instant it switches off.
-6. Set **ErP Ready** → **Enable(S5)** — the full power-down, which also rules those wakes out; **Restore AC Power Loss** stays **Power On** and still brings the box back after an outage.
-7. Save, boot, and rehearse: click **Shutdown** on the pve node again. Fans off within a few minutes means it is fixed.
-8. If it still will not power off, the board or the supply is ignoring the off signal — the same suspects as the resets entry above, and a supply swap answers both at once.
+4. Plug the install-day monitor and keyboard back into the box, on the same ports as then. This board has no remote console: the BIOS exists only on a screen attached to it.
+5. Once the box is up again, send it straight into the BIOS from **pve → Shell**, which spares you catching the **Del** key at the logo:
+
+```bash
+systemctl reboot --firmware-setup
+```
+
+6. Open **Advanced → APM Configuration**.
+7. Set **Power On By PCI-E** → **Disabled** and **Power On By RTC** → **Disabled** — a wake source can re-power the board the instant it switches off.
+8. Set **ErP Ready** → **Enable(S5)** — the full power-down, which also rules those wakes out; **Restore AC Power Loss** stays **Power On** and still brings the box back after an outage.
+9. Press **F10** to save, let it boot, and rehearse: click **Shutdown** on the pve node again. Fans off within a few minutes means it is fixed.
+10. If it still will not power off, the board or the supply is ignoring the off signal — the same suspects as the resets entry above, and a supply swap answers both at once.
 
 > [!NOTE]
 > This does not undo the UPS page's automatic shutdown. In an outage NUT halts the operating system — the part that protects the data — and the UPS then cuts its own outlets, so a board that would not switch off is switched off for it, and Restore AC Power Loss boots it when the mains return. The quirk costs you only on a manual shutdown, where holding the button is the cut.
