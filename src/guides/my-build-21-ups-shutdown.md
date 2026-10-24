@@ -55,8 +55,6 @@ NUT is the open-source layer that talks to the UPS and acts on what it hears. On
 apt install nut
 ```
 
-> [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
-
 That one package brings three programs, and the next section configures each in turn. The grey names are the exact words the system uses for them; they appear in the commands and the output on this page, so they are worth recognising:
 
 - **The driver, `usbhid-ups`** — talks to the CyberPower over the USB cable and reads its state. It runs as the service `nut-driver@cyberpower` once the UPS has been given that name below.
@@ -427,6 +425,9 @@ Append this — keep localhost, add the host's LAN address:
 LISTEN 127.0.0.1 3493
 LISTEN 192.168.1.50 3493
 ```
+
+> [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
+> The address on that second line, and the one Home Assistant is given as **Host** below.
 
 Open `/etc/nut/upsd.users`:
 
