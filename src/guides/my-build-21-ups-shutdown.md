@@ -188,14 +188,19 @@ systemctl start nut-driver@cyberpower
 upsc cyberpower@localhost
 ```
 
-5. If step 1 found the unit but showed it failed, read its log — "No matching HID UPS found" or permission denied means the USB side, not the configuration:
+5. If step 1 found the unit but showed it failing, read its log — the two `upsnotify` lines in it are noise; the line before them is the reason:
 
 ```bash
 journalctl -u nut-driver@cyberpower -n 20 --no-pager
 ```
 
-6. Reseat the USB cable at both ends.
-7. Confirm the host sees the UPS — a line with `0764:` is the CyberPower:
+6. If it says `Could not open any HID devices: insufficient permissions`, the UPS is on the bus but the rule that lets the `nut` user open it was never applied to the device — the UPS was plugged in before the package and its rules existed, which is how it went here. Apply the rules to every device now:
+
+```bash
+udevadm trigger
+```
+
+7. If it says only `No matching HID UPS found`, with no permissions line, the host does not see the UPS at all: reseat the USB cable at both ends, then confirm a line with `0764:` — the CyberPower — appears:
 
 ```bash
 lsusb
@@ -207,8 +212,7 @@ lsusb
 systemctl restart nut-driver@cyberpower && upsc cyberpower@localhost
 ```
 
-> [!NOTE]
-> Debian's shipped udev rules give the driver permission to the USB device, so a permission error after a cable change usually clears with a replug, or with `udevadm trigger`, followed by step 8.
+9. If the permissions line is still there after step 6, unplug the USB cable from the server for ten seconds, plug it back in, and repeat step 8 — a fresh plug-in runs the rules on the device the way the first one should have.
 
 ## Handle the CyberPower USB-drop quirk
 
