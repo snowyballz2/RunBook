@@ -168,14 +168,14 @@ mode: parallel
 
 Why it works, part by part:
 
-- **The trigger and condition** — the leak rule's shape: every state change in the house, kept only when a sensor of class `carbon_monoxide` or `smoke` turns `on`. The Sensereo exposes one of each per unit.
+- **The trigger and condition** — the leak rule's shape: every state change in the house, kept only when a sensor of class `carbon_monoxide` or `smoke` turns `on`. Each Sensereo exposes one of each — `binary_sensor.furnace_alarm_smoke` and `binary_sensor.furnace_alarm_carbon_monoxide`, named after the device — alongside **Battery alert**, **Hardware fault**, **End of service** and **Muted** binary sensors, a **Sensitivity** select and a **Self-test** button.
 - **The furnace, first, and only for CO** — the thermostat goes to `off`, which stops the burner; a smoke alarm leaves the heating alone. Turning it back on is a deliberate act for after the house has been checked, not an automation.
 - **The two alerts** — the critical push pierces silent mode and Focus like the leak rule's, and the spoken line goes out on the kitchen speaker through the local Piper voice.
 - **No presence, time, or guest-mode condition** — a safety rule, with the same reasoning as the leak rule's warning above.
 
-The Sensereo also reports the CO level as a number, which is the reason it was chosen over a plain alarm: a furnace that begins leaking drifts from zero over weeks, long before any alarm would sound. A second, quieter rule watches for that:
+The Sensereo shows the CO level as a number on its own screen, and may hand that number to Home Assistant as well — the reason it was chosen over a plain alarm, since a furnace that begins leaking drifts from zero over weeks, long before any alarm would sound. Whether the number reaches Home Assistant is the one thing two owners report differently: one sees a ppm sensor per unit, the other reports that the unit sends no value at rest, so no sensor appears and the reading lives only on the screen and in Apple Home. Look before building the second rule:
 
-5. Open **Settings → Devices & services → Entities** and search `carbon monoxide`. The two ppm sensors are named after the devices — expect `sensor.furnace_alarm_carbon_monoxide` and `sensor.kitchen_alarm_carbon_monoxide`; if yours differ, substitute them in the rule.
+5. Open **Settings → Devices & services → Entities** and search `carbon monoxide`. Beside each unit's **Carbon monoxide** binary sensor, look for a **Carbon monoxide** *sensor* with a ppm value — `sensor.furnace_alarm_carbon_monoxide` and `sensor.kitchen_alarm_carbon_monoxide`. If neither exists, the number stays on the units' screens and the rest of this step is skipped; if they do, carry on.
 6. Create a second automation the same way and paste:
 
 ```yaml
@@ -195,10 +195,10 @@ actions:
 mode: parallel
 ```
 
-7. On the **Kitchen Alarm** device page, set its **Sensitivity** control to **Low** — the maker's own advice for a kitchen, where the smoke sensor would otherwise read a seared steak as a fire; the CO side is unaffected.
+7. On the **Kitchen Alarm** device page, set its **Sensitivity** select, `select.kitchen_alarm_sensitivity`, to **Low** — the maker's own advice for a kitchen, where the smoke sensor would otherwise read a seared steak as a fire; the CO side is unaffected.
 
 > [!NOTE]
-> Why 25 ppm for ten minutes: the alarm itself cannot sound below 30 ppm by design, and a healthy house reads 0. A sustained reading in the twenties is a furnace or range worth looking at that week, not a reason to leave the house — so this one is an ordinary push, no siren, no critical override. Both alarms also carry a **Test** button on their device pages; the Maintenance page's monthly walk presses it.
+> Why 25 ppm for ten minutes: the alarm itself cannot sound below 30 ppm by design, and a healthy house reads 0. A sustained reading in the twenties is a furnace or range worth looking at that week, not a reason to leave the house — so this one is an ordinary push, no siren, no critical override. Both alarms also carry a **Self-test** button on their device pages, `button.furnace_alarm_self_test` and `button.kitchen_alarm_self_test`, which sounds the siren; the Maintenance page's monthly pass presses it. Two identical units paired without names come up as *Sensereo MS1 Smoke Alarm* with `_2` on the second one's entities, which is why the Matter Locks page has you name them at pairing.
 The leak rule has one silent failure mode: a sensor whose battery died months ago reports nothing, so a real leak never trips it and the valve never closes. The rule looks fine in the list and protects nothing. The fix is a once-a-morning sweep that watches the watchers — every battery entity in the house, with no per-device setup, so the twelve sensors, the valve, and the three locks are all covered, plus anything you add next year.
 
 ```yaml
