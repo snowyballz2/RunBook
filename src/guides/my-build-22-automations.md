@@ -69,13 +69,31 @@ actions:
 mode: parallel
 ```
 
-Why it works, top to bottom. The trigger watches every state change in the house, and the condition keeps only a **moisture**-class sensor turning `on` (wet) — so all twelve leak sensors, and any you pair later, are covered without naming one, and `trigger.event.data.new_state.name` carries *which* sensor into the alert, so the push and the spoken line both name the actual location. `mode: parallel` lets two rooms alert at once. The valve closes **first**, before any notification, because the point is to stop water, not to ask permission. Then two alerts fire in parallel: a **critical** push that reaches your iPhone wherever you are, and a `tts.speak` on a Google/Nest speaker so anyone home hears it out loud. The speech uses the **local Piper** TTS (text-to-speech) engine — installed as an app on the Home Assistant VM on the Voice page — rather than a cloud voice, so it still talks during the internet outage a burst pipe might cause.
+Why it works, top to bottom:
+
+- **The trigger** — watches every state change in the house.
+- **The condition** — keeps only a **moisture**-class sensor turning `on` (wet), so all twelve leak sensors, and any you pair later, are covered without naming one.
+- **The sensor's name, `trigger.event.data.new_state.name`** — carries *which* sensor into the alert, so the push and the spoken line both name the actual location.
+- **The mode, `mode: parallel`** — lets two rooms alert at once.
+- **The valve, first** — it closes before any notification, because the point is to stop water, not to ask permission.
+- **The two alerts** — then fire in parallel: a **critical** push that reaches your iPhone wherever you are, and a `tts.speak` on a Google/Nest speaker so anyone home hears it out loud.
+- **The voice** — the speech uses the **local Piper** TTS (text-to-speech) engine — installed as an app on the Home Assistant VM on the Voice page — rather than a cloud voice, so it still talks during the internet outage a burst pipe might cause.
 
 > [!NOTE]
-> The `notify.mobile_app_naps_phone` action exists only after the Home Assistant companion app — the one you installed and signed in on the Matter Locks page of this build — has been **opened on the iPhone and granted notification permission**. It then surfaces as `notify.mobile_app_` plus the phone's name, lower-cased and underscored — this build's phone is named *naps phone*, so its target is `notify.mobile_app_naps_phone`, and its presence tracker follows the same name as `device_tracker.naps_phone`. Read the exact target under **Settings → Tools → Actions** by typing `notify.mobile_app`; if yours differs, substitute it in every rule on this page. Without that permission the entity does not exist and will not autocomplete in the editor — and if you paste the YAML anyway, Home Assistant saves it but the notify step errors when it runs. Grant it before building this rule, since every automation on this page leans on it.
+> The `notify.mobile_app_naps_phone` action exists only after the Home Assistant companion app — the one you installed and signed in on the Matter Locks page of this build — has been **opened on the iPhone and granted notification permission**. Two entity names then follow from the phone's name:
+>
+> - **The notify target, `notify.mobile_app_naps_phone`** — the app surfaces as `notify.mobile_app_` plus the phone's name, lower-cased and underscored. This build's phone is named *naps phone*, so that is its target.
+> - **The presence tracker, `device_tracker.naps_phone`** — follows the same name.
+>
+> Read the exact target under **Settings → Tools → Actions** by typing `notify.mobile_app`; if yours differs, substitute it in every rule on this page. Without that permission the entity does not exist and will not autocomplete in the editor — and if you paste the YAML anyway, Home Assistant saves it but the notify step errors when it runs. Grant it before building this rule, since every automation on this page leans on it.
 
 > [!NOTE]
-> The spoken `tts.speak` step needs two things this build sets up later, on the Voice page: the **Piper** text-to-speech engine (which becomes the `tts.piper` entity) and a Google/Nest **Cast** speaker added to Home Assistant as a `media_player.*` entity. Until both exist, that one action fails silently while the valve-close and the critical push — the parts that actually matter — work from the moment you save. Build the rule the day the valve is paired; the spoken line starts working once you finish the Voice page. Your Google/Nest speakers are not in Home Assistant just because they are on the network — the Voice page adds them through **Settings → Devices & services → Add integration → Google Cast** so they surface as `media_player.*` targets (a HomePod cannot be a target — Home Assistant cannot push audio to it).
+> The spoken `tts.speak` step needs two things this build sets up later, on the Voice page:
+>
+> - **The Piper text-to-speech engine** — becomes the `tts.piper` entity.
+> - **A Google/Nest Cast speaker** — added to Home Assistant as a `media_player.*` entity. Your Google/Nest speakers are not in Home Assistant just because they are on the network — the Voice page adds them through **Settings → Devices & services → Add integration → Google Cast** so they surface as `media_player.*` targets. A HomePod cannot be a target — Home Assistant cannot push audio to it.
+>
+> Until both exist, that one action fails silently while the valve-close and the critical push — the parts that actually matter — work from the moment you save. Build the rule the day the valve is paired; the spoken line starts working once you finish the Voice page.
 
 > [!WARNING]
 > **No presence, time, or guest-mode condition — on purpose.** The rule's only condition is the moisture filter above. A leak at 3 a.m. with everyone home, a leak while you are away, a leak during any "guest mode" — every one of them needs the water off. A safety action must never be suppressed by presence, time, or a toggle. Drive the valve straight off the raw sensors and resist the urge to be clever.
@@ -580,7 +598,12 @@ actions:
           /api/frigate/notifications/{{ trigger.payload_json['after']['id'] }}/snapshot.jpg
 ```
 
-The first condition keeps you to `type: new`, so one person walking through does not notify you for every frame; the second filters to the label you care about. The `image` line is the subtle one: the picture is downloaded by **the phone**, not by Home Assistant — so a Frigate address would fail twice on this build (the firewall fence admits only HA and Kuma to port 5000, and a LAN IP is unreachable when you are away). The Frigate integration publishes a notification proxy on Home Assistant itself for exactly this, and the **relative** path above resolves against whatever address the phone reached HA on — which works at home and over the tailnet alike. The same proxy also serves `/thumbnail.jpg` and `/clip.mp4` per event id, if you ever want the smaller image or the video in a tap-through.
+The rule, part by part:
+
+- **The first condition** — keeps you to `type: new`, so one person walking through does not notify you for every frame.
+- **The second condition** — filters to the label you care about.
+- **The `image` line** — the subtle one: the picture is downloaded by **the phone**, not by Home Assistant — so a Frigate address would fail twice on this build (the firewall fence admits only HA and Kuma to port 5000, and a LAN IP is unreachable when you are away). The Frigate integration publishes a notification proxy on Home Assistant itself for exactly this, and the **relative** path above resolves against whatever address the phone reached HA on — which works at home and over the tailnet alike.
+- **The same proxy's other files, `/thumbnail.jpg` and `/clip.mp4`** — it also serves these per event id, if you ever want the smaller image or the video in a tap-through.
 
 > [!INPUT] frigate-ip | Frigate container IP | 192.168.1.52
 
@@ -590,7 +613,12 @@ The first condition keeps you to `type: new`, so one person walking through does
 > 1. Go to **Settings → Devices & services → Add integration → Reolink**.
 > 2. Fill in its dialog: **Host** → `192.168.1.70`, the doorbell's **Username**, and its **Password**.
 >
-> Once it is in, the ring surfaces as a **"Visitor" binary sensor** (something like `binary_sensor.front_doorbell_visitor` — the integration exposes the press this way, not as an `event` entity), and the trigger is the same shape as everything else on this page: `trigger: state` on that sensor, `to: "on"`. Confirm the exact entity name under **Entities** before you reference it. If a press ever lands seconds late, know the delivery ladder: the integration prefers TCP push, then ONVIF push, then long polling, then plain 5-second polling — and Reolink hardware cannot push ONVIF events to an HTTPS address, one more reason HA stays plain HTTP inside the LAN. Many people wire both: soft awareness on approach, the full announcement on the actual ring. The speaker-on-doorbell announcement is the worked example in the next callout below — reuse that pattern with this trigger.
+> Once it is in, the ring surfaces as a **"Visitor" binary sensor**, and the trigger is the same shape as everything else on this page:
+>
+> - **The press entity, `binary_sensor.front_doorbell_visitor`** — something like that; the integration exposes the press this way, not as an `event` entity. Confirm the exact entity name under **Entities** before you reference it.
+> - **The trigger, `trigger: state`** — on that sensor, with `to: "on"`.
+>
+> If a press ever lands seconds late, know the delivery ladder: the integration prefers TCP push, then ONVIF push, then long polling, then plain 5-second polling — and Reolink hardware cannot push ONVIF events to an HTTPS address, one more reason HA stays plain HTTP inside the LAN. Many people wire both: soft awareness on approach, the full announcement on the actual ring. The speaker-on-doorbell announcement is the worked example in the next callout below — reuse that pattern with this trigger.
 
 > [!DETAILS] Make a speaker greet a visitor
 > The same trigger can drive an announcement alongside the push. Home Assistant can only push audio to a media player it controls, which on this build means a **Google/Nest (Cast)** speaker added via **Settings → Devices & services → Add integration → Google Cast** so it surfaces as a `media_player.*` entity — the HomePod mini cannot be a target. This relies on the same Piper engine and Cast speaker the leak rule's spoken line does, both set up on the Voice page later in this build. Set the volume first as a kindness to a late-night visitor, then speak with the local Piper voice so it still announces if the internet is down:

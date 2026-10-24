@@ -107,7 +107,11 @@ apt-get install tailscale
 The first command adds Tailscale's signing key, the second its package repository, and then apt installs the signed package.
 
 > [!NOTE]
-> **If apt asks about `tailscale-archive-keyring.gpg`, answer `Y`.** The first `curl` above writes that keyring by hand, and the package ships its own copy of the same file — so dpkg stops and asks rather than overwriting something you appear to have edited. Both files are Tailscale's own repository signing key, so either answer installs correctly. **Y** (install the package maintainer's version) is the better one: it puts the file back under package management, so future Tailscale updates refresh the key silently instead of raising this prompt again every time. `D` shows the diff first if you want to see for yourself; `N` keeps your copy and works, at the cost of meeting this prompt again later.
+> **If apt asks about `tailscale-archive-keyring.gpg`, answer `Y`.** The first `curl` above writes that keyring by hand, and the package ships its own copy of the same file — so dpkg stops and asks rather than overwriting something you appear to have edited. Both files are Tailscale's own repository signing key, so either answer installs correctly. The three answers the prompt offers:
+>
+> - **Install the package maintainer's version, `Y`** — the better one: it puts the file back under package management, so future Tailscale updates refresh the key silently instead of raising this prompt again every time.
+> - **Show the diff, `D`** — shows the diff first if you want to see for yourself.
+> - **Keep your copy, `N`** — works too, at the cost of meeting this prompt again later.
 
 > [!DETAILS] Why this method, and not the install script
 > Note what those two `curl` commands do *not* do: execute anything. One downloads a signing key, the other a one-line repo definition (open the `.list` URL in a browser and read it — it is genuinely one line), and then apt installs a normally signed package. Nothing is piped into a root shell, which is why this is the default here.
@@ -284,7 +288,7 @@ After that, `https://proxmox.kuzco.org` and the rest work from anywhere too.
 >
 > One test separates all three. Still on cellular, browse to the **host's own `100.x` tailnet address** with its port — `https://100.x.y.z:8006`, the address recorded further up this page:
 >
-> - **The `100.x` address works, `192.168.1.x` does not** → Tailscale is healthy and the **subnet route** is the fault. Overwhelmingly the cause is a route advertised but never approved — nothing warns you, it simply drops traffic. Approve it on the [Machines page](https://login.tailscale.com/admin/machines) as described above, and confirm the **pve** row carries a **Subnets** badge (no badge means it is not advertising, so re-check the `sysctl` forwarding file and that `tailscale up` was re-run with `--advertise-routes=192.168.1.0/24`).
+> - **The `100.x` address works, `192.168.1.x` does not** → Tailscale is healthy and the **subnet route** is the fault. Overwhelmingly the cause is a route advertised but never approved — nothing warns you, it simply drops traffic. Approve it on the [Machines page](https://login.tailscale.com/admin/machines) as described above, and confirm the **pve** row carries a **Subnets** badge (no badge means it is not advertising, so re-check the `sysctl` forwarding file and run `tailscale set --advertise-routes=192.168.1.0/24` again, the way this page advertised it the first time).
 > - **Neither address works** → Tailscale itself is not connected. Confirm the app shows connected, and that the phone signed in with the **same account as the host** — signing in with a different identity silently creates a second, empty tailnet, which looks like a broken network rather than the wrong one.
 > - **Both work** → nothing is wrong; you were testing while still on Wi-Fi.
 
@@ -403,7 +407,12 @@ On the phone, on cellular:
 18. Leave **Internal URL** at `http://192.168.1.51:8123`, with your home Wi-Fi listed as the **Home Network Wi-Fi SSID** — the app uses the LAN address at home and the tailnet address everywhere else.
 
 > [!NOTE]
-> `<tailnet>` is the *Tailnet name* field recorded above (the `tailXXXX.ts.net` suffix from the DNS page); `homeassistant` is the VM's machine name on the tailnet. Serve is tailnet-only — nothing here is on the internet, and the `funnel` value of the same option, which would be, stays unused. The app store recommends doing the sign-in step from a desktop browser if the phone's browser struggles with it.
+> The two parts of that address:
+>
+> - **The tailnet, `<tailnet>`** — the *Tailnet name* field recorded above (the `tailXXXX.ts.net` suffix from the DNS page).
+> - **The machine, `homeassistant`** — the VM's machine name on the tailnet.
+>
+> Serve is tailnet-only — nothing here is on the internet, and the `funnel` value of the same option, which would be, stays unused. The app store recommends doing the sign-in step from a desktop browser if the phone's browser struggles with it.
 
 ## Put Tailscale on the Mac you administer from
 

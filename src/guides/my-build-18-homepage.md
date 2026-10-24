@@ -124,7 +124,12 @@ The static address matters doubly here: the installer bakes it into Homepage's s
 > The static IP matters more than usual here. Homepage ships a safety feature called **host validation**, and the installer writes this exact address into the allow-list. If the container's IP ever wandered, the page would answer every visit with "Host validation failed" instead of your dashboard. The `.55` static sits in the `.2–.99` zone the router's pool can never touch — exactly why the zone exists.
 
 > [!DETAILS] What the script actually builds
-> Node.js and the pnpm package manager; the source of the latest Homepage release unpacked to `/opt/homepage`; then a full `pnpm install` and `pnpm build` — the compile step is why the RAM default is a generous 4 GB and the install is slow. It runs as a systemd service named `homepage` on port 3000, seeds starter config into `/opt/homepage/config/`, and writes one more file worth remembering: `/opt/homepage/.env`, containing `HOMEPAGE_ALLOWED_HOSTS=localhost:3000,`-your-IP-`:3000`. That is the allow-list from the warning above, and it comes back when you wire in a proxy name.
+> Node.js and the pnpm package manager, then the latest Homepage release built from source. Where each piece lands:
+>
+> - **The source, `/opt/homepage`** — the latest Homepage release, unpacked, then built with a full `pnpm install` and `pnpm build`. The compile step is why the RAM default is a generous 4 GB and the install is slow.
+> - **The service, `homepage`** — the systemd service it runs as, on port 3000.
+> - **Starter config, `/opt/homepage/config/`** — seeded by the script.
+> - **The allow-list, `/opt/homepage/.env`** — one more file worth remembering, containing `HOMEPAGE_ALLOWED_HOSTS=localhost:3000,`-your-IP-`:3000`. That is the allow-list from the warning above, and it comes back when you wire in a proxy name.
 
 ### Confirm it loaded, then set it to start at boot
 1. Browse to `http://192.168.1.55:3000`.
@@ -258,7 +263,12 @@ The page is suddenly worth bookmarking.
 > The `siteMonitor` lines give each tile a live up/down dot with a response time — Homepage quietly sends each address a request and reports what came back. Two things to know: it is a glance, not an alarm — Uptime Kuma, built on the next page, is the thing that actually notifies you — and it skips certificate checking entirely, which is why the self-signed Proxmox and Nextcloud can be watched here without any ignore-certificate toggle. A green dot proves the service answers, not that its certificate is healthy.
 
 > [!DETAILS] How the icons work
-> Bare names like `proxmox.png` come from the community **Dashboard Icons** set, which has an icon for nearly everything self-hosted (`.png`, `.svg`, and `.webp` all work). No icon there? Prefix `mdi-` for any Material Design icon (`mdi-flask-outline`) or `si-` for a brand logo from Simple Icons (`si-github`), optionally with a color suffix like `mdi-flask-#5b8f7a`. A full URL to any image works too.
+> Bare names like `proxmox.png` come from the community **Dashboard Icons** set, which has an icon for nearly everything self-hosted (`.png`, `.svg`, and `.webp` all work). No icon there? Prefix a name instead:
+>
+> - **A Material Design icon, `mdi-`** — like `mdi-flask-outline`.
+> - **A brand logo from Simple Icons, `si-`** — like `si-github`.
+>
+> A prefixed name can also take a color suffix, like `mdi-flask-#5b8f7a`. A full URL to any image works too.
 
 > [!DETAILS] Pointing at the raw addresses instead
 > The trade-off in the names: every link depends on Nginx Proxy Manager and the AdGuard DNS (Domain Name System) rewrite staying healthy, so the links break precisely when the proxy is the thing that broke — while the dashboard itself stays reachable at `http://192.168.1.55:3000`, and the dots still tell the truth, because `siteMonitor` never left the direct addresses. If you would rather the links survive a proxy outage too, swap each `href` for its tile's `siteMonitor` value; Vaultwarden is the one tile that cannot, since its login needs the secure context only the proxied name provides.

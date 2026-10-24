@@ -150,7 +150,13 @@ Fix it once, at **Datacenter → Notifications**, by sending Proxmox's alerts to
 The backup job needs no change after this — its "global settings" default now routes through a path that genuinely delivers. Expect silence on good nights: a backup that succeeds is *Info* and stays out. A guest that fails to back up, a job that cannot reach the share, and anything the host mails to root — a cron job complaining, a disk warning — arrive as pushes. (Fields here that drift from your screen: true the guide against the screen, as always.)
 
 > [!NOTE]
-> The `{{ … }}` pieces are Proxmox's own placeholders, filled in when it sends: `{{ title }}` and `{{ message }}` are the alert's heading and text, and `{{ secrets.channel }}` is the topic you stored under **Secrets**, kept in a root-only file rather than in the URL where any admin screen would show it. The topic is the password of that channel, which is why it goes in a secret and not in the URL field. One topic now carries both Uptime Kuma's alerts and Proxmox's; the title on each push says which sent it.
+> The `{{ … }}` pieces are Proxmox's own placeholders, filled in when it sends:
+>
+> - **The heading, `{{ title }}`** — the alert's heading.
+> - **The text, `{{ message }}`** — the alert's text.
+> - **The topic, `{{ secrets.channel }}`** — the topic you stored under **Secrets**, kept in a root-only file rather than in the URL where any admin screen would show it. The topic is the password of that channel, which is why it goes in a secret and not in the URL field.
+>
+> One topic now carries both Uptime Kuma's alerts and Proxmox's; the title on each push says which sent it.
 
 > [!DETAILS] If you would rather have email
 > The same screen offers an **SMTP** target: **Add → SMTP**, filled out like the TrueNAS email on the Protect Your Data page — your provider's SMTP server, port **587** with **STARTTLS**, the full address as username, an **app-specific password** (iCloud senders generate one at appleid.apple.com), and your real inbox as recipient — then **Test**, and point the default matcher's target at it the same way as above. It costs a mail password stored on the host; the webhook costs nothing the vault does not already hold.
@@ -226,7 +232,17 @@ The next step copies these off the host onto the same `nas-backups` share; the s
 > Several of these do not exist on the first pass through the build — `/etc/nut` and its watchdog arrive with the **UPS & Safe Shutdown** page, which comes later than this one. The commands below carry `--ignore-failed-read`, so a path that is not there yet earns a one-line warning and the archive is still written; the paths join it the week after their page is done. Re-run the tarball once the UPS page is done, and treat *that* copy as the first complete one.
 
 > [!NOTE]
-> Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand. The HBA assignment to the TrueNAS VM (`qm set <truenas-vmid> -hostpci0 <hba-pci-address>`) lives inside `/etc/pve/qemu-server/<id>.conf`, and the GPU `dev0: /dev/nvidia0` shares live in `/etc/pve/lxc/<ctid>.conf` for the Frigate, Ollama, and faster-whisper containers (Frigate's exists now; the Ollama and faster-whisper containers arrive on the **My Build: Voice — Siri & Local Assist** page, and their lines land inside `/etc/pve` automatically once built) — both are inside `/etc/pve` above. The `<hba-pci-address>` is the chipset-side bus you captured from `lspci`, entered **without** the `.0` function suffix (e.g. `0000:02:00`, which passes all functions to match the GUI's All Functions tick) — **not** `0000:01:00`, which on this board is the top x16 slot where the 1080 Ti lives. But keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
+> Some of the passthrough setup is not in a file at all — it is the **`qm set`** commands you ran by hand. What they changed lives in two files, both inside `/etc/pve` above:
+>
+> - **The HBA assignment to the TrueNAS VM, `qm set 100 -hostpci0 0000:03:00,pcie=1,rombar=0`** — lives inside `/etc/pve/qemu-server/100.conf`.
+> - **The GPU shares, `dev0: /dev/nvidia0`** — live in `/etc/pve/lxc/<ctid>.conf` for the Frigate, Ollama, and faster-whisper containers. Frigate's exists now; the Ollama and faster-whisper containers arrive on the **My Build: Voice — Siri & Local Assist** page, and their lines land inside `/etc/pve` automatically once built.
+>
+> The address in that command is the HBA's chipset-side bus from the GPU Sharing & HBA Passthrough page's `lspci` step, entered **without** the `.0` function suffix:
+>
+> - **`0000:03:00`** — the card's address on this build, which passes all functions to match the GUI's All Functions tick.
+> - **Not `0000:01:00`** — which on this board is the top x16 slot where the 1080 Ti lives.
+>
+> But keep a plain-text note of the exact commands too. Re-running a command you saved is faster and surer than reverse-engineering it from a config file at 2 a.m.
 
 ### Copy it to the NAS
 In **pve → Shell**:
@@ -262,7 +278,13 @@ crontab -l
 That is the whole host backup. These files, the guest archives above, and the secrets in the vault are everything a fresh Proxmox install needs to become this box again; the rebuild order below walks it. Run step 1 again after any change to networking, storage or passthrough — the Sunday copy catches what you forget.
 
 > [!NOTE]
-> Expect two `tar: Removing leading '/'` lines, one for member names and one for hard link targets — normal — and, on the first pass, one `Warning: Cannot stat` per path that does not exist yet, which `--ignore-failed-read` turns from a failure into a note; on this build that was `/etc/nut` and the three watchdog files, all of which arrive with the UPS page. `/etc/pve` is a live filesystem, so `tar` may also warn that a file changed while reading; harmless for these config files. In the cron line the `\%` is required, because cron treats a bare `%` as a newline. The archive is small; keep a few generations and delete the oldest when the share's listing gets long.
+> Expect some noise from `tar` that is not trouble:
+>
+> - **Two `tar: Removing leading '/'` lines** — one for member names and one for hard link targets. Normal.
+> - **On the first pass, one `Warning: Cannot stat` per path that does not exist yet** — `--ignore-failed-read` turns it from a failure into a note; on this build that was `/etc/nut` and the three watchdog files, all of which arrive with the UPS page.
+> - **A warning that a file changed while reading** — `/etc/pve` is a live filesystem, so `tar` may say this. Harmless for these config files.
+>
+> In the cron line the `\%` is required, because cron treats a bare `%` as a newline. The archive is small; keep a few generations and delete the oldest when the share's listing gets long.
 
 > [!INPUT] proxmox-user | Proxmox web UI username | | root
 

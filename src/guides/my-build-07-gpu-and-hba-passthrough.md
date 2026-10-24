@@ -295,7 +295,12 @@ lspci -nnk | grep -A3 -i -e LSI -e SAS -e Broadcom
 > cat /etc/modprobe.d/vfio.conf
 > ```
 >
-> It must show **both** lines, the `ids=` and the `blacklist`; a `>` that overwrote instead of a `>>` that appended is the usual culprit. (`Kernel modules: mpt3sas` continuing to appear in `lspci -nnk` is fine — that line lists what *could* drive the card, not what does. And duplicate `vfio` lines in `/etc/modules` from running the setup block twice are harmless; no need to clean them up.)
+> It must show **both** lines, the `ids=` and the `blacklist`; a `>` that overwrote instead of a `>>` that appended is the usual culprit.
+>
+> Two things that look wrong and are not:
+>
+> - **The native driver still listed, `Kernel modules: mpt3sas`** — fine if it keeps appearing in `lspci -nnk`. That line lists what *could* drive the card, not what does.
+> - **Duplicate `vfio` lines in `/etc/modules`** — harmless if you ran the setup block twice. No need to clean them up.
 
 ### Add the HBA to the TrueNAS VM
 With the card on vfio-pci, hand the **whole device** to the TrueNAS VM — the TrueNAS VM only, no other guest.
@@ -313,7 +318,10 @@ Set:
 - **All Functions** → ticked
 - **PCI-Express** → ticked
 
-Or, equivalently, from the host shell — this build's values are the TrueNAS VM ID (`100`) and the HBA's chipset-side bus address from the `lspci` step (`03:00.0`, entered without the `.0` function suffix so all functions pass, matching the GUI ticks; the top-slot `01:00` is the 1080 Ti — never that one):
+Or, equivalently, from the host shell, with this build's two values filled in:
+
+- **The TrueNAS VM ID, `100`**.
+- **The HBA's chipset-side bus address, `03:00.0`** — from the `lspci` step, entered without the `.0` function suffix so all functions pass, matching the GUI ticks. The top-slot `01:00` is the 1080 Ti — never that one.
 
 ```bash
 qm set 100 -hostpci0 0000:03:00,pcie=1,rombar=0

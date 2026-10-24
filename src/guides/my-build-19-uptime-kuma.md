@@ -148,7 +148,12 @@ AdGuard gets a different monitor type, because what the house depends on is port
 | AdGuard DNS | DNS | `apple.com` | `192.168.1.53` | `53` |
 
 > [!NOTE]
-> The **Resolver Server(s)** field is the one that matters on the DNS monitor: it prefills a public resolver (`1.1.1.1`) and would happily pass with AdGuard dead. The **Hostname** is only the question Kuma asks that resolver each minute, so it wants a public name that always exists and is never on a block list — `apple.com` is one the house looks up all day anyway. Green proves AdGuard is up *and* its path to its upstreams works; a house name like `home.kuzco.org` would pass on the rewrite alone and miss a dead upstream. Frigate's `8971` is the authenticated UI port; `5000` is the internal one reserved for the Home Assistant integration. Nginx Proxy Manager is watched on its admin port `81`, because port `80` hits the proxy's public side, not its admin UI.
+> The **Resolver Server(s)** field is the one that matters on the DNS monitor: it prefills a public resolver (`1.1.1.1`) and would happily pass with AdGuard dead. The **Hostname** is only the question Kuma asks that resolver each minute, so it wants a public name that always exists and is never on a block list — `apple.com` is one the house looks up all day anyway. Green proves AdGuard is up *and* its path to its upstreams works; a house name like `home.kuzco.org` would pass on the rewrite alone and miss a dead upstream.
+>
+> Two port choices in the table above, explained:
+>
+> - **Frigate, `8971`** — the authenticated UI port. `5000` is the internal one reserved for the Home Assistant integration.
+> - **Nginx Proxy Manager, `81`** — its admin port. Port `80` hits the proxy's public side, not its admin UI.
 
 > [!INPUT] adguard-ip | AdGuard container IP | 192.168.1.53
 > The addresses the monitor table above uses, recorded so this page and the Credentials view show yours — a record, not a list of extra monitors to add.

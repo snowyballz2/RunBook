@@ -191,7 +191,13 @@ IN ACCEPT -p icmp
 EOF
 ```
 
-Line by line: `8971` stays open to the LAN — the authenticated UI, for you. `5000` opens only to Home Assistant (`.51`, the integration below) and Uptime Kuma (`.57`, health checks later in the build). go2rtc's restream and WebRTC (`8554`, `8555`, plus WebRTC's UDP half) go only to Home Assistant, since browsers ride 8971's proxy. `icmp` keeps the container answering pings. The `[OPTIONS]` block is the guest's own switches: firewall on, inbound drop-by-default, outbound open.
+Line by line, what that file says:
+
+- **The authenticated UI, `8971`** — stays open to the LAN. That one is for you.
+- **The internal unauthenticated port, `5000`** — opens only to Home Assistant (`.51`, the integration below) and Uptime Kuma (`.57`, health checks later in the build).
+- **go2rtc's restream and WebRTC, `8554` and `8555`** — plus WebRTC's UDP half, these go only to Home Assistant, since browsers ride 8971's proxy.
+- **Pings, `icmp`** — keeps the container answering pings.
+- **The `[OPTIONS]` block** — the guest's own switches: firewall on, inbound drop-by-default, outbound open.
 
 The file sits inert until the master switch flips. The rest is clicks:
 
@@ -406,7 +412,12 @@ Without this file, detection fails to start with a missing-model error.
 This build does **not** use the Intel iGPU + OpenVINO path that Frigate defaults to. Detection runs on the 1080 Ti via the **ONNX (Open Neural Network Exchange) detector on the CUDA (NVIDIA's GPU compute platform) execution provider** — this install's Frigate build ships the ONNX runtime, which picks up CUDA automatically once the card is visible, so pointing Frigate at ONNX is enough to find the card. The `detectors:` and `model:` blocks below replace the script's OpenVINO versions, and the decode preset in the next step touches the same file — so both land in **one complete-file paste there**, one Save & Restart for the pair.
 
 > [!NOTE]
-> The 1080 Ti is Pascal — compute capability 6.1 — which clears every requirement: compute capability 5.0 or higher, NVIDIA driver 545 or newer, and CUDA 12.x. Use a **YOLOv9** model (the small `yolov9-t` is a good starting point); avoid RF-DETR, which runs very slowly on Pascal cards. One rule that never relaxes: **detector types cannot be mixed** — an `onnx` detector here means no `openvino` or `edgetpu` block alongside it. And keep the `labelmap_path` line: a YOLOv9 export emits the **80-class** COCO list, so without it Frigate falls back to its 90-class default and mislabels every class past the first few — your tracked `dog` comes through as `cat`.
+> Four things to know about the detector and model you are about to paste:
+>
+> - **The card** — the 1080 Ti is Pascal, compute capability 6.1, which clears every requirement: compute capability 5.0 or higher, NVIDIA driver 545 or newer, and CUDA 12.x.
+> - **The model, `yolov9-t`** — use a **YOLOv9** model; the small `yolov9-t` is a good starting point. Avoid RF-DETR, which runs very slowly on Pascal cards.
+> - **The detector type, `onnx`** — one rule that never relaxes: **detector types cannot be mixed**. An `onnx` detector here means no `openvino` or `edgetpu` block alongside it.
+> - **The label list, `labelmap_path`** — keep that line. A YOLOv9 export emits the **80-class** COCO list, so without it Frigate falls back to its 90-class default and mislabels every class past the first few — your tracked `dog` comes through as `cat`.
 
 ### Set the decode preset
 Frigate also hardware-decodes every camera stream so the CPU is not burning cycles unpacking video — `hwaccel_args: preset-nvidia` selects NVDEC on the card, replacing the generated `auto`. The ONNX detector, the YOLOv9 model, and the decode preset land together in one paste. No tokens to swap:
@@ -570,7 +581,14 @@ cameras:
 ```
 
 > [!NOTE]
-> Reading the odd parts: `channel0_main.bcs` is the full-resolution stream (recorded) and `channel0_ext.bcs` is the low-res sub stream (analyzed) — splitting them spares both the doorbell and the detector. The trailing `#video=copy#audio=copy#audio=opus` is deliberate: it passes the video through untouched, keeps the original audio for recording, *and* adds a second Opus audio track the browser live view needs. On the camera, `output_args: record: preset-record-generic-audio-copy` is what actually copies that original audio into the saved files — without it the recordings drop sound. The bare `rtsp://…/Preview_01_sub` line is the talk-back path, and it must **not** carry an `ffmpeg:` prefix — go2rtc has to handle that stream directly for two-way audio to work. The `live: streams:` block binds the live view (and its talk button) to that full `doorbell` stream rather than the detect substream.
+> Reading the odd parts of that file, one at a time:
+>
+> - **The main stream, `channel0_main.bcs`** — the full-resolution stream, the one that is recorded.
+> - **The sub stream, `channel0_ext.bcs`** — the low-res sub stream, the one that is analyzed. Splitting the two spares both the doorbell and the detector.
+> - **The trailing `#video=copy#audio=copy#audio=opus`** — deliberate. It passes the video through untouched, keeps the original audio for recording, *and* adds a second Opus audio track the browser live view needs.
+> - **The record preset, `output_args: record: preset-record-generic-audio-copy`** — on the camera, this is what actually copies that original audio into the saved files. Without it the recordings drop sound.
+> - **The bare `rtsp://…/Preview_01_sub` line** — the talk-back path. It must **not** carry an `ffmpeg:` prefix — go2rtc has to handle that stream directly for two-way audio to work.
+> - **The `live: streams:` block** — binds the live view (and its talk button) to that full `doorbell` stream rather than the detect substream.
 
 > [!TIP]
 > Talk-back needs the page served over **HTTPS** — browsers only allow microphone access on a secure connection (use Frigate's authenticated port `8971`). The live view's gear panel reports the capability **per stream**: the doorbell's stream should read two-way *available* (its RTSP leg is the talk path), while the turrets read *unavailable* until their backchannel entries are added during the talk-down work on the Automations page — expected, not broken; their speakers wait on config, not hardware. That future work has one declared prerequisite worth pinning here: talk-down is WebRTC-only, and go2rtc's `webrtc:` block names the address candidates —
@@ -694,7 +712,11 @@ cameras:
 ```
 
 > [!NOTE]
-> `h264Preview_01_main` / `_sub` is the usual RLC spelling, but confirm it from the Reolink app rather than trusting the example — these paths are **H.264**, which is exactly why this model is the trouble-free Reolink (the H.265-locked higher-megapixel models are where the RTSP pain lives). Detecting on the sub stream is correct anyway — frames get resized down to the model's small 320×320 input, so a high-resolution detect stream loses the extra detail for nothing; Reolink locks the substream's resolution and frame rate in firmware, and its low-res sub is genuinely fine for an indoor room at close range. Frigate tracks `person` by default; add an `objects: track:` list if you want `dog` and friends on this camera too.
+> Three things to know about the lines just added for this camera:
+>
+> - **The stream paths, `h264Preview_01_main` / `_sub`** — the usual RLC spelling, but confirm it from the Reolink app rather than trusting the example. These paths are **H.264**, which is exactly why this model is the trouble-free Reolink (the H.265-locked higher-megapixel models are where the RTSP pain lives).
+> - **Detecting on the sub stream** — correct anyway: frames get resized down to the model's small 320×320 input, so a high-resolution detect stream loses the extra detail for nothing. Reolink locks the substream's resolution and frame rate in firmware, and its low-res sub is genuinely fine for an indoor room at close range.
+> - **The track list, `objects: track:`** — Frigate tracks `person` by default; add an `objects: track:` list if you want `dog` and friends on this camera too.
 
 > [!WARNING]
 > WiFi cameras drop more than wired ones — Frigate's docs are blunt that wireless streams are less reliable. Indoors, close to the router, the RLC-510WA has an easier life than it would outside, but if it stutters, that is the link, not Frigate. It is the one deliberate WiFi exception in the fleet; the five EmpireTechs specced below all ride the wired GS308EPP.

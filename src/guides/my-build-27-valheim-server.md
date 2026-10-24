@@ -124,7 +124,15 @@ docker logs -f valheim-server
 5. When a line reads `Game server connected`, press **Ctrl+C** — that leaves the log view; the server keeps running.
 
 > [!DETAILS] What the start script sets
-> `--restart always` brings the server back after a container reboot. `--stop-timeout 120` gives it two minutes to save the world on a stop. `--cap-add=sys_nice` lets it raise its own scheduling priority. The two `-v` lines keep the world, its backups and the server install on the container's disk, outside the Docker image, so an image update never touches them. The image checks Steam for a game update every fifteen minutes and applies one only when nobody is connected; it also writes a world backup every hour under `/root/valheim-server/config/backups`, kept for the seven days `BACKUPS_MAX_AGE` sets. The rest of its settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
+> The lines that matter, one job each:
+>
+> - **The restart rule, `--restart always`** — brings the server back after a container reboot.
+> - **The stop timeout, `--stop-timeout 120`** — gives it two minutes to save the world on a stop.
+> - **The priority capability, `--cap-add=sys_nice`** — lets it raise its own scheduling priority.
+> - **The two `-v` lines** — keep the world, its backups and the server install on the container's disk, outside the Docker image, so an image update never touches them.
+> - **The backup age, `BACKUPS_MAX_AGE`** — the image writes a world backup every hour under `/root/valheim-server/config/backups`, kept for the seven days this sets.
+>
+> The image checks Steam for a game update every fifteen minutes and applies one only when nobody is connected. The rest of its settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
 
 ### Prove it from the LAN
 On a PC with Valheim installed, at home:
@@ -311,4 +319,9 @@ docker pull ghcr.io/community-valheim-tools/valheim-server && docker stop valhei
 > [!NOTE]
 > Where the files live: the container's 16 GB disk is a slice of `local-lvm`, the **500 GB NVMe** that holds Proxmox itself and every guest's disk — so the server install, the world under `/root/valheim-server/config/worlds_local`, and the hourly zips are all on the NVMe. Neither IronWolf is involved day to day: the mirror pair only receives the nightly copy below, and the footage drive is Frigate's alone.
 >
-> Backups come from two directions. The image writes a world backup every hour as a zip under `/root/valheim-server/config/backups`, kept seven days — restoring one means stopping the server, unzipping that file, and copying the world's `.db` and `.fwl` back into `/root/valheim-server/config/worlds_local`. And the Proxmox Backups page's nightly job copies the whole container, world included, to the `nas-backups` share — the TrueNAS mirror of the two IronWolf drives. If the LAN is ever renumbered, the Renumber the LAN page carries this container's new address; Option B's router rule needs the new destination too, while Option A's tailnet address never changes. When nobody can join, the When Something Breaks page has the ladder.
+> Backups come from two directions:
+>
+> - **The hourly world backup, under `/root/valheim-server/config/backups`** — the image writes one every hour as a zip, kept seven days. Restoring one means stopping the server, unzipping that file, and copying the world's `.db` and `.fwl` back into `/root/valheim-server/config/worlds_local`.
+> - **The nightly container backup, on the `nas-backups` share** — the Proxmox Backups page's nightly job copies the whole container, world included, there — the TrueNAS mirror of the two IronWolf drives.
+>
+> If the LAN is ever renumbered, the Renumber the LAN page carries this container's new address; Option B's router rule needs the new destination too, while Option A's tailnet address never changes. When nobody can join, the When Something Breaks page has the ladder.

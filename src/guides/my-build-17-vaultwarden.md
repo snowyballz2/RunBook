@@ -80,7 +80,15 @@ Then walk away. This script *compiles* Vaultwarden from source — it is a Rust 
 > The beefy defaults serve the compiler, not the vault — at rest, Vaultwarden idles in a few hundred megabytes. Leave the allocation alone anyway: the `update` command recompiles, and will want that headroom again.
 
 > [!DETAILS] What the script builds
-> A Rust toolchain plus a release build of the latest Vaultwarden into `/opt/vaultwarden/bin`, the prebuilt web vault into `/opt/vaultwarden/web-vault`, settings in `/opt/vaultwarden/.env`, your data in `/opt/vaultwarden/data`, all run by a systemd service named `vaultwarden` on port 8000. It starts with HTTPS already on, using a self-signed certificate — that is why the printed address says `https`, and why your browser will object once.
+> A Rust toolchain plus a release build of the latest Vaultwarden. Where each piece lands:
+>
+> - **The program, `/opt/vaultwarden/bin`** — the release build of the latest Vaultwarden.
+> - **The web vault, `/opt/vaultwarden/web-vault`** — prebuilt.
+> - **The settings file, `/opt/vaultwarden/.env`**.
+> - **Your data, `/opt/vaultwarden/data`**.
+> - **The service, `vaultwarden`** — the systemd service that runs it all, on port 8000.
+>
+> It starts with HTTPS already on, using a self-signed certificate — that is why the printed address says `https`, and why your browser will object once.
 
 > [!DETAILS] Why the half-hour wait — and the fast path you are skipping
 > The **alpine** entry at the script's first menu (there is no separate script anymore — the one `vaultwarden.sh` carries both) installs Alpine's prebuilt package into a smaller container — 256 MB RAM, a 1 GB disk — in seconds, no compiler involved. The trade: versions arrive on Alpine's packaging schedule rather than straight from the project, and its paths differ from every `/opt/vaultwarden/...` path on this page (settings in `/etc/conf.d/vaultwarden`, data in `/var/lib/vaultwarden`). The i7-8700K with 32 GB is nowhere near starved, so the Debian compiled build is the documented mainline here — the half-hour compile is expected, not a fault.

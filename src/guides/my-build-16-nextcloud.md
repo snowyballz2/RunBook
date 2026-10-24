@@ -218,7 +218,9 @@ Everything uploaded lands in `/opt/ncdata/data` on the container's 8 GB root dis
    pct config 105 | grep -E 'rootfs|protection'
    ```
 
-Step 1 prints the logical volume growing from 8 GiB to 40 GiB, then `resize2fs` extending the filesystem — **online, while the container runs**, so nothing needs stopping. Step 2 should show `protection: 1`, and **no need to touch it** — verified on this build, `pct resize` runs fine on a protected container. That is worth stating because the Cameras page had to drop protection to add Frigate's mount point, which invites the assumption that every disk operation needs the same dance. It does not: the flag blocks **`pct set`** disk-config changes and container-or-disk **deletion**, while `pct resize` is permitted. Leave protection on.
+Step 1 prints the logical volume growing from 8 GiB to 40 GiB, then `resize2fs` extending the filesystem — **online, while the container runs**, so nothing needs stopping.
+
+Step 2 should show `protection: 1`, and **no need to touch it** — verified on this build, `pct resize` runs fine on a protected container. That is worth stating because the Cameras page had to drop protection to add Frigate's mount point, which invites the assumption that every disk operation needs the same dance. It does not: the flag blocks **`pct set`** disk-config changes and container-or-disk **deletion**, while `pct resize` is permitted. Leave protection on.
 
 **Shrinking is not supported**, so add space in honest increments rather than one giant leap.
 
