@@ -336,6 +336,7 @@ For this LAN-only build with no port-forwards, the workaround that fits is a sec
 > If you do run a second instance, it must have its own database — at most one Uptime Kuma per SQLite file. Two full installs, each watching the other; never two pointed at one data folder.
 
 ### Update on purpose, back up the one folder
+Nothing to run today — a service you just installed is current. This is how Kuma updates when the Maintenance page's monthly walk reaches it, recorded here on the page that built it, the same way the Nextcloud, Vaultwarden and Homepage pages record theirs, so the walk itself can stay generic.
 
 1. Take a Proxmox snapshot first — the snapshot-before-changes habit from earlier.
 2. From inside the container, open its **Console** in Proxmox.

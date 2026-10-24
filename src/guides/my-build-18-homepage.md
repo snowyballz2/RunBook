@@ -494,6 +494,8 @@ Then `https://home.kuzco.org` greets you with a padlock and your tiles.
 Uptime Kuma is built on the next page. Once it exists, give it an HTTP monitor pointed at the direct address `http://192.168.1.55:3000` — the install's allow-list already admits that address, so the monitor works untouched, and the page that watches everything is itself watched. The next page's monitor list includes exactly this entry, so working in order covers it.
 
 ### Update on purpose
+Nothing to run today — a freshly installed Homepage is current. This is how it updates when the Maintenance page's monthly walk reaches it, recorded here on the page that built it.
+
 1. Take a Proxmox snapshot first — the same habit as the rest of these containers, so rollback is instant if a release misbehaves.
 2. Type `update` in the container's console. It fetches the newest source and rebuilds (patience again), preserving your config files and `.env`.
 3. Expect one artifact: if `.env` carried no auth lines, the updater appends a few **commented-out `HOMEPAGE_AUTH_*` template lines**. Leave them commented — they belong to Homepage v2's optional login gate, which stays off unless deliberately filled in; the no-accounts design of this page holds.

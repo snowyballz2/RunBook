@@ -474,7 +474,7 @@ This section is coverage, not a step: no commands to run today. Nextcloud's docs
 > Remember the data directory here is `/opt/ncdata/data`, outside the web root, so copy it too.
 
 ### Update on purpose, snapshot first
-Take a Proxmox snapshot before any update — Nextcloud's own docs warn in a red box that "The built-in updater does not backup your database or data directory." Then keep two layers current:
+Nothing to run today — a freshly installed Nextcloud is current. This is how it updates when the Maintenance page's monthly walk reaches it, recorded here on the page that built it. Take a Proxmox snapshot before any update — Nextcloud's own docs warn in a red box that "The built-in updater does not backup your database or data directory." Then keep two layers current:
 
 1. Debian inside the container:
 

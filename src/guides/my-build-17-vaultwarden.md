@@ -433,6 +433,8 @@ Then:
 When you build Uptime Kuma later in this build, give it an HTTP(s) monitor pointed at the direct address `http://192.168.1.56:8000` rather than the proxied name — the login may live behind the proxy, but the dot should not. If the vault ever stops answering, that is how you find out before a family member does.
 
 ### Update on purpose
+Nothing to run today — a freshly installed Vaultwarden is current. This is how it updates when the Maintenance page's monthly walk reaches it, recorded here on the page that built it.
+
 1. Snapshot the container — the standard habit before any change.
 2. Type this in the container's console:
 
