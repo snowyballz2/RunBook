@@ -158,8 +158,10 @@ Frigate's web page stays up while every camera is dead — this build proved it 
 3. **Friendly Name** → `Frigate frames`.
 4. **URL** → `http://192.168.1.52:5000/api/stats` — the internal port, which the Cameras page's firewall rule already opens to this container.
 5. **Json Query** → `$count(cameras.*.camera_fps[$ > 0]) >= 5` — true while at least five cameras are delivering frames.
-6. **Expected Value** → `true`.
-7. **Save**.
+6. **Condition** → `==` — the query already did the counting and comparing, so Kuma only checks its answer.
+7. **Expected Value** → `true`.
+8. **Retries** → `1` or `2`, like every monitor here.
+9. **Save**.
 
 > [!NOTE]
 > The `5` is the number of cameras installed today — the doorbell and four turrets. When the RLC-510WA and the chimney turret come online, raise it to `7`. One camera dying drops the count below the line, so this single monitor covers the fleet, and the decoder failure on the Cameras page — page up, every frame rate at zero — is exactly what it catches.
