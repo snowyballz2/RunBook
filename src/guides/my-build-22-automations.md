@@ -422,7 +422,13 @@ actions:
           message: "Sliding door is open and nobody is home."
 ```
 
-The last block is why the sliding glass door gets a **MYGGBETT** contact sensor. The three deadbolts lock themselves on the line above, but the slider has no smart hardware and cannot be closed remotely — so the only useful action is to tell you before you are too far away to turn around. Confirm the entity's real name under **Entities** after you pair it; the guide assumes you renamed it to `binary_sensor.sliding_door`.
+The last block is why the sliding glass door gets a **MYGGBETT** contact sensor. The three deadbolts lock themselves on the line above, but the slider has no smart hardware and cannot be closed remotely — so the only useful action is to tell you before you are too far away to turn around. Every rule on this page that watches the door uses one entity id, `binary_sensor.sliding_door`. Home Assistant named the entity after the device when you paired it — on this build the device is *Sliding Door Alarm*, so the entity came out as `binary_sensor.sliding_door_alarm_door` — so give it the id the rules expect, once:
+
+1. In Home Assistant, go to **Settings → Devices & services** and open the **Entities** tab.
+2. Search for `Sliding Door` and click the **Door** entity.
+3. Click the gear icon at the top of the dialog.
+4. **Entity ID** → `binary_sensor.sliding_door`.
+5. Click **Update**.
 
 Coming home is the easy half — no conditions needed.
 
@@ -457,24 +463,14 @@ actions:
     target:
       entity_id: [lock.front_door, lock.carport_door, lock.basement_door]
   - if:
-      - condition: or
-        conditions:
-          - condition: state
-            entity_id: binary_sensor.front_door_contact
-            state: "on"
-          - condition: state
-            entity_id: binary_sensor.sliding_door
-            state: "on"
-          - condition: state
-            entity_id: binary_sensor.living_room_window
-            state: "on"
+      - condition: state
+        entity_id: binary_sensor.sliding_door
+        state: "on"
     then:
       - action: notify.mobile_app_naps_phone
         data:
           title: "Still open at bedtime"
-          message: >-
-            {{ expand('binary_sensor.front_door_contact', 'binary_sensor.sliding_door', 'binary_sensor.living_room_window')
-               | selectattr('state', 'eq', 'on') | map(attribute='name') | join(', ') }}
+          message: "The sliding door is still open."
 mode: single
 ```
 
@@ -484,10 +480,7 @@ With nobody home, any door or window opening — or any lock unlocking — is wo
 alias: Away — door or window opened
 triggers:
   - trigger: state
-    entity_id:
-      - binary_sensor.front_door_contact
-      - binary_sensor.sliding_door
-      - binary_sensor.living_room_window
+    entity_id: binary_sensor.sliding_door
     to: "on"
   - trigger: state
     entity_id: [lock.front_door, lock.carport_door, lock.basement_door]
@@ -520,7 +513,7 @@ A door left open is a quieter problem — conditioned air leaving, or a door nob
 alias: Door left open
 triggers:
   - trigger: state
-    entity_id: [binary_sensor.front_door_contact, binary_sensor.sliding_door]
+    entity_id: binary_sensor.sliding_door
     to: "on"
     for: "00:10:00"
 actions:
