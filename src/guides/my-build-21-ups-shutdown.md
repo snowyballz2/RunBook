@@ -57,7 +57,13 @@ apt install nut
 
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 
-The metapackage pulls in both halves: `nut-server` (the `usbhid-ups` driver plus `upsd`, a small daemon that publishes the UPS's state) and `nut-client` (`upsmon`, the watcher that will order the shutdown). On Debian 13 / Proxmox VE 9 (PVE) that is NUT 2.8.1, and the package installs the USB permission rules and systemd units for you. Everything sits idle until configured — NUT ships switched off (`MODE=none`).
+That one package brings three programs, and the next section configures each in turn. The grey names are the exact words the system uses for them; they appear in the commands and the output on this page, so they are worth recognising:
+
+- **The driver, `usbhid-ups`** — talks to the CyberPower over the USB cable and reads its state. It runs as the service `nut-driver@cyberpower` once the UPS has been given that name below.
+- **The server, `upsd`** — holds what the driver reads and answers anyone who asks: the watcher next, and Home Assistant later. It runs as the service `nut-server`.
+- **The watcher, `upsmon`** — asks the server every few seconds and is the one that orders the shutdown when the battery runs low. It runs as the service `nut-monitor`.
+
+On Proxmox VE 9 the package is NUT 2.8.1. It installs its own USB permission rules and services, and it arrives switched off — `MODE=none` in its main file — so nothing runs until the next section turns it on.
 
 ### Write the four config files
 NUT's behaviour lives in `/etc/nut/`. Four small edits: switch it on, name the UPS, create an account, and point the watcher at it.
