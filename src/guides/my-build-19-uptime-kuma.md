@@ -345,8 +345,13 @@ For this LAN-only build with no port-forwards, the workaround that fits is a sec
 update
 ```
 
+4. On the **Uptime Kuma LXC Update/Setting** menu, choose **2 YES (Verbose Mode)** — it shows every command as it runs, which is what you want the first time; **1** does the same work with the output hidden, **3** cancels.
+5. Press **Enter** on **Ok** — there are no further questions.
+6. Read the result: either a line saying Uptime Kuma is already at the current version, in which case nothing changed, or the sequence *Stopping Service → Updating Uptime Kuma → Starting Service → Updated successfully!*
+7. Reload `http://192.168.1.57:3001` — the dashboard answers and the monitors are all still there.
+
 > [!NOTE]
-> This compares your installed version against the latest release, stops the service, lays the new version over `/opt/uptime-kuma` without touching your data, and starts it again.
+> What the helper does: it first makes sure the container's Node.js and Chromium are the versions Kuma expects, then compares the installed Uptime Kuma against the newest release on GitHub. Only if there is a newer one does it stop the service, unpack the release over `/opt/uptime-kuma`, install its dependencies, and start the service again — your monitors, history and settings in `/opt/uptime-kuma/data` are never touched.
 
 > [!WARNING]
 > Do not re-run the install one-liner on the Proxmox *host* to update — on the host, that command begins the create-a-new-container flow. Inside the container, the short `update` command — pre-installed by the script — is what updates in place.
