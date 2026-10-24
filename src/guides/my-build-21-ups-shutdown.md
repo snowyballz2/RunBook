@@ -360,7 +360,7 @@ After the shutdown the UPS cuts its outlets, and when mains returns it switches 
 If it ever stays dark after power returns, that is when the BIOS visit is due — and it shares a screen with the When Something Breaks page's will-not-power-off settings, so do both in one sitting:
 
 1. Plug the install-day monitor and keyboard back into the box — this board has no remote console, so the BIOS exists only on a screen attached to it.
-2. From **pve → Shell**, reboot straight into the BIOS, which spares you catching the **Del** key at the logo:
+2. From **pve → Shell**, reboot straight into the BIOS, which spares you catching the **Del** key at the logo. It is a one-time request, not a setting: the firmware clears it the moment it honours it, and every boot after you press **F10** is a normal one — and if the firmware does not support it, the command refuses and nothing reboots:
 
 ```bash
 systemctl reboot --firmware-setup

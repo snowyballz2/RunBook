@@ -90,7 +90,7 @@ ping -c 3 192.168.1.50
 2. If it answers, the shutdown is still running — the NAS share is let go only after the TrueNAS VM that serves it has stopped, and that wait has a timeout of a few minutes — so wait, then ping again.
 3. If nothing answers, hold the power button until the fans stop. Every guest is already down and the host's disk is idle; nothing is at risk.
 4. Plug the install-day monitor and keyboard back into the box, on the same ports as then. This board has no remote console: the BIOS exists only on a screen attached to it.
-5. Once the box is up again, send it straight into the BIOS from **pve → Shell**, which spares you catching the **Del** key at the logo:
+5. Once the box is up again, send it straight into the BIOS from **pve → Shell**, which spares you catching the **Del** key at the logo. It is a one-time request, not a setting: the firmware clears it the moment it honours it, and every boot after you press **F10** is a normal one:
 
 ```bash
 systemctl reboot --firmware-setup
