@@ -262,7 +262,7 @@ crontab -l
 That is the whole host backup. These files, the guest archives above, and the secrets in the vault are everything a fresh Proxmox install needs to become this box again; the rebuild order below walks it. Run step 1 again after any change to networking, storage or passthrough — the Sunday copy catches what you forget.
 
 > [!NOTE]
-> Expect a `tar: Removing leading '/' from member names` line — normal — and, on the first pass, one warning per path that does not exist yet, which `--ignore-failed-read` turns from a failure into a note. `/etc/pve` is a live filesystem, so `tar` may also warn that a file changed while reading; harmless for these config files. In the cron line the `\%` is required, because cron treats a bare `%` as a newline. The archive is small; keep a few generations and delete the oldest when the share's listing gets long.
+> Expect two `tar: Removing leading '/'` lines, one for member names and one for hard link targets — normal — and, on the first pass, one `Warning: Cannot stat` per path that does not exist yet, which `--ignore-failed-read` turns from a failure into a note; on this build that was `/etc/nut` and the three watchdog files, all of which arrive with the UPS page. `/etc/pve` is a live filesystem, so `tar` may also warn that a file changed while reading; harmless for these config files. In the cron line the `\%` is required, because cron treats a bare `%` as a newline. The archive is small; keep a few generations and delete the oldest when the share's listing gets long.
 
 > [!INPUT] proxmox-user | Proxmox web UI username | | root
 
