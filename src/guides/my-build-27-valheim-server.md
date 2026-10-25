@@ -348,7 +348,7 @@ At `http://192.168.1.57:3001`:
 5. Click **Save**.
 
 ### Stop and start it
-Have everyone log out of the game first — a stop disconnects anyone still in, and their last seconds may not be saved. Then, in **Proxmox → 109 (valheim) → Console**:
+Have everyone log out of the game first — a stop disconnects anyone still in, and their last seconds may not be saved. Then, in **Proxmox → 109 (valheim) → Console**, with the two commands below rather than the **Shutdown** and **Start** buttons at the top of the container's page — those stop and start the whole container, not the game server inside it:
 
 1. Stop it — the server saves the world before it exits, which is why this can take up to two minutes; it prints the container's name when done:
 
@@ -363,6 +363,18 @@ docker start valheim-server
 ```
 
 3. Log back in. Finding the last session's progress in place is the proof that stops save, which is worth seeing once before an update or a power cut makes it matter.
+
+### If Shutdown was clicked instead
+The console ends with `[EOF - dtach terminating]` and goes blank, because the container it was attached to is gone, and the game server went down with it. The world itself is safe on the container's disk; what the shutdown may have cut short is the last save, which went through the container's own shutdown clock rather than the two minutes the stop command sets aside. In **Proxmox → 109 (valheim)**:
+
+1. Click **Start** at the top of the page — the restart rule brings the game server back on its own, in about a minute.
+2. Open **Console** and confirm it is up — the line for `valheim-server` should show an `Up` time:
+
+```bash
+docker ps
+```
+
+3. Log in and check the last session's progress is there.
 
 ### Change a setting later
 Every setting, the join password included, is a line in the start script, handed to the server when its container is created — so a change means editing the script and recreating the container. The password is the usual reason; the steps are the same for any line. In **Proxmox → 109 (valheim) → Console**:

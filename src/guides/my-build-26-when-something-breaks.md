@@ -438,6 +438,7 @@ Gauges that look wrong by design — check the list before debugging:
 - **Homepage's Nginx Proxy Manager tile opens port 81.** On purpose: 80 is the proxy's public side, 81 is its admin UI.
 - **A Matter lock's Manage access dialog lists more users than you created.** Re-running a setup script stacks credentials; the Matter Locks page's broom script clears the guest slots.
 - **The kernel log shows `EXT4-fs (dm-NN): write access unavailable, skipping orphan cleanup` at the backup job's minutes.** That is vzdump mounting each container's snapshot read-only to archive it — one line per container, nightly — and not a disk problem.
+- **A container's Console shows `[EOF - dtach terminating]` and goes blank.** The container the console was attached to stopped or restarted — its Shutdown button, a reboot — and the session ended with it. Once the container shows running again, open **Console** afresh.
 
 > [!NOTE]
 > When a new failure teaches something, it goes here under its symptom — the build pages stay a build.
