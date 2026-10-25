@@ -103,6 +103,8 @@ The prompts, in order:
 - **Use APT Cacher-NG proxy?** → **No** — it would route package downloads through an apt-cacher-ng server, and nothing on this network runs one
 - **HTTP/HTTPS proxy?** → **No** — the same question for a web proxy; the house has none, and Nginx Proxy Manager is the other direction, inbound to your services
 - **Container protection?** → **No** — it sets the guest's **Protection** flag, which makes Proxmox refuse to remove or destroy the container until you clear it under **Options**. Worth a Yes on something irreplaceable; this world is backed up hourly and the container nightly, and no other guest in the build carries it
+- **Device node creation?** → **No** — it adds the `mknod` feature, letting processes inside the container create device files of their own. Docker does not need it, and the one device Tailscale needs, the TUN device, is handed in by the TUN/TAP answer above
+- **Specific filesystem mounts?** → **No** — it adds the `mount` feature, letting the container mount NFS or SMB shares from inside. Nothing here mounts anything: the world lives on the container's own disk, and the nightly copy to the NAS is the host's backup job reaching in from outside
 - **Expose Docker TCP socket (insecure)?** — the install's own question, after the container exists → **n**
 
 > [!INPUT] valheim-ct-id | Valheim container ID | 109
