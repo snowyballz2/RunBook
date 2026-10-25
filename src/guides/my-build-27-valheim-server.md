@@ -19,9 +19,9 @@ Everything on this page is optional. Skip it and nothing else in the build chang
 > **Joining over Tailscale (Option A):**
 >
 > ```text
-> Here's how to join my Valheim server. It's a one-time setup of about five minutes, then joining is normal. You need Valheim on Steam on a PC — console and Game Pass versions can't join this server.
+> Here's how to join my Valheim server. It's a one-time setup of about five minutes, then joining is normal. You need Valheim on Steam on a Windows PC — console and Game Pass versions can't join this server.
 >
-> 1. Download Tailscale for Windows from tailscale.com/download and run the installer. If Windows asks whether to let it make changes, say Yes.
+> 1. Download Tailscale for Windows from tailscale.com/download/windows and run the installer — it's a normal .exe. If Windows asks whether to let it make changes, say Yes.
 > 2. After it installs, find the Tailscale icon in the system tray, bottom right next to the clock — if it's hidden, click the little up arrow there. Right-click it and choose Log in.
 > 3. A browser page opens asking you to sign in. Pick whichever you already have — Google, Microsoft, Apple or GitHub — and go through its sign-in. The free Personal plan is all this needs; don't pay for anything. When it says the device is connected, you can close the page.
 > 4. Now open the invite link I'm sending you, in that same browser. It shows a machine called "valheim" being shared with you — click Accept. It then shows up in the Tailscale tray menu under the other machines.
@@ -38,7 +38,7 @@ Everything on this page is optional. Skip it and nothing else in the build chang
 > **Joining by address (Option B):**
 >
 > ```text
-> Here's how to join my Valheim server. Nothing to install — you need Valheim on Steam on a PC; console and Game Pass versions can't join this server.
+> Here's how to join my Valheim server. Nothing to install — you need Valheim on Steam on a Windows PC; console and Game Pass versions can't join this server.
 >
 > 1. Make sure Steam has updated Valheim — it does this on its own, but the server runs the latest version and an old game shows "Incompatible version".
 > 2. In Valheim, go to the Join Game tab and click Join IP at the bottom.
