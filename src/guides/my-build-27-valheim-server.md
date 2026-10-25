@@ -414,7 +414,7 @@ Every setting, the join password included, is a line in the start script, handed
 nano /root/valheim-run.sh
 ```
 
-2. Change the value inside the quotes — for the password, the `-e SERVER_PASS="…"` line, keeping Valheim's rules: at least five characters, and not a string that appears inside the server name or the world name.
+2. Change the value inside the quotes — for the password, the `-e SERVER_PASS="…"` line, keeping Valheim's rules: at least five characters, and not a string that appears inside the server name or the world name. A line added goes above the last line, the one naming the image, `ghcr.io/community-valheim-tools/valheim-server` — that line stays last and is the only one without a backslash at its end; every line above it ends in one.
 3. Save with **Ctrl+O**, then **Enter**.
 4. Close the editor with **Ctrl+X**.
 5. Replace the running server with one built from the edited script — anyone playing drops for about a minute while it comes back, and the world is untouched, since it lives in the data folder the script mounts rather than in the container being replaced:
