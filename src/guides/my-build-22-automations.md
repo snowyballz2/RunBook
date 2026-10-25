@@ -758,7 +758,7 @@ Both kinds land as `cover.*` entities, commissioned straight into Home Assistant
 1. For a PoE shade, patch its run across to the 24-port switch and watch the motor's light — ten green flashes mean the switch is talking to it, and that is the network side done before any pairing.
 2. Set the shade's upper and lower limits with the remote, if that is not done yet — SmartWings' rule is limits first, then smart pairing; red and green flashing alternately means they are missing.
 3. Press and hold the **P** button on the motor head — on a PoE motor it sits beside the USB-C socket — for six seconds.
-4. Release it after the **second** jog — the red light stays on, and the motor is in pairing mode for about ninety seconds. A motor released after the first jog is not pairing, and that is the usual reason Home Assistant's add searches for a few minutes and then fails.
+4. Release it after the **second** jog — the red light comes on, and SmartWings says the motor takes about ninety seconds to finish entering pairing mode, so give it that long before the phone starts looking. A motor released after the first jog is not pairing, and that is the usual reason Home Assistant's add searches for a few minutes and then fails.
 
 > [!DETAILS] Pairing mode from the remote instead
 > With the remote showing the shade's channel: press **SETTING (P)** — the motor jogs once; press **UP** — it jogs once; press **SETTING (P)** again — it jogs twice with a brief pause, or the red light stays on, depending on the motor. Same pairing mode, from SmartWings' Matter getting-started sheet. Pairing the remote itself is separate and stays paired either way.
