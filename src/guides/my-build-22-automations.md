@@ -771,7 +771,7 @@ Then, within a few minutes, in the **Home Assistant companion app**:
 3. Choose **"No, it's new."**
 4. Scan the shade's QR pairing code — on the bottom bar, or on top of the valance (**More options…** takes a typed code instead).
 5. Confirm **Add to Home Assistant**.
-6. Give each PoE shade a **DHCP reservation** so its address never moves.
+6. Give each PoE shade a **DHCP reservation** so its address never moves — on the router at `http://192.168.1.1`: **Advanced → Network Settings → IPv4 Address Distribution → Connection List**, find the shade's row, click its pencil, tick **Static IP**, and click **Apply**. Keep the address it already has: this router only reserves addresses inside its pool.
 
 > [!NOTE]
 > A PoE shade lands as a single `cover` entity — the battery ones add a battery sensor, the wired ones do not. If the add ends in **Accessory Not Found** with the motor's red light still on, SmartWings' PoE guide says to move the shade to a different port on the switch and try again.
