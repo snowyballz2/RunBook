@@ -13,6 +13,35 @@ Everything on this page is optional. Skip it and nothing else in the build chang
 > [!INPUT] proxmox-ip | Proxmox host IP | 192.168.1.50
 > The host the container lives on. Open the web UI at `https://`-this-ip-`:8006` and log in as **root@pam** to reach the node Shell and the container's Console.
 
+> [!DETAILS] Instructions to send a friend
+> Two ready-to-send messages, one per option. Copy the block, paste it into a text to the friend, and send the address and the password in a separate message — the address is the tailnet one from Option A or the public one from Option B, both recorded on this page.
+>
+> **Joining over Tailscale (Option A):**
+>
+> ```text
+> Here's how to join my Valheim server. One-time setup, then it's a normal Join IP.
+>
+> 1. Install Tailscale on your gaming PC from tailscale.com/download and sign in — a free personal account is fine.
+> 2. Open the invite link I'm sending you and click Accept. A machine called "valheim" appears in your Tailscale list.
+> 3. Leave Tailscale running whenever you play.
+> 4. In Valheim, go to the Join Game tab, click Join IP, and enter the address I send you followed by :2456 — for example 100.64.0.5:2456.
+> 5. Click Connect and enter the password I send you.
+>
+> Tailscale only gives you that one machine — it can't see anything else in my house.
+> ```
+>
+> **Joining by address (Option B):**
+>
+> ```text
+> Here's how to join my Valheim server. Nothing to install.
+>
+> 1. In Valheim, go to the Join Game tab and click Join IP.
+> 2. Enter the address I send you followed by :2456 — for example 203.0.113.10:2456.
+> 3. Click Connect and enter the password I send you.
+>
+> The server is only open for the evening, so if it says it can't connect later, I've closed it again — just ask.
+> ```
+
 ## Pick how friends get in
 One decision shapes a prompt in the next section, so make it first.
 
