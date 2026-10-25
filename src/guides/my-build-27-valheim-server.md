@@ -192,7 +192,7 @@ docker logs -f valheim-server
 > - **The priority capability, `--cap-add=sys_nice`** — lets it raise its own scheduling priority.
 > - **The two `-v` lines** — keep the world, its backups and the server install on the container's disk, outside the Docker image, so an image update never touches them.
 > - **The backup age, `BACKUPS_MAX_AGE`** — the image writes a world backup every hour under `/root/valheim-server/config/backups`, kept for the seven days this sets.
-> - **The admin list, `ADMINLIST_IDS`** — your Steam ID, which lets your character run the server's admin commands from the in-game console: `save`, `kick`, `ban`.
+> - **The admin list, `ADMINLIST_IDS`** — the Steam IDs, separated by spaces, whose characters can run the server's admin commands from the in-game console: `save`, `kick`, `ban`, and the switch that turns on the game's cheat commands. Yours alone is the right list; a friend on it could empty a boss fight with a typed command.
 > - **The save interval, `SERVER_ARGS="-saveinterval 600"`** — the game writes the world every ten minutes instead of its default thirty, so a power cut or a stopped container costs at most ten minutes of play. Each save is a brief stutter for everyone online, which is why it is not shorter.
 >
 > The image checks Steam for a game update every fifteen minutes and applies one only when nobody is connected, and it restarts the server once a day at 5:10 a.m., again only if nobody is playing — three schedules its first log prints as cron lines, and all three sit in the Maintenance page's night-shift table. The rest of its settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
@@ -395,7 +395,7 @@ docker ps
 3. Log in and check the last session's progress is there.
 
 ### Force a save while playing
-A stop saves on its own, so this is for the moments in between — before a fight that could go either way, or when a storm is knocking the lights. The command runs from the game's console, which the admin list in the start script lets your character use, and which the game client only opens when it was launched with a flag. Once, on the PC, in **Steam → Library**:
+A stop saves on its own, so this is for the moments in between — before a fight that could go either way, or when a storm is knocking the lights. It is an admin command: the server takes it only from a character whose Steam ID is on the start script's admin list, which is you, and friends are covered by the ten-minute autosave. It runs from the game's console, which the game client only opens when it was launched with a flag. Once, on the PC, in **Steam → Library**:
 
 1. Right-click **Valheim** → **Properties**.
 2. On the **General** tab, in **Launch Options**, type `-console`, and close the window.
