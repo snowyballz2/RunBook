@@ -201,7 +201,7 @@ docker logs -f valheim-server
 > - **Every fifteen minutes** — a check with Steam for a game update, installed only while nobody is connected.
 > - **5:10 a.m. daily** — a restart of the server, again only if nobody is playing.
 >
-> The rest of the image's settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
+> Empty hours cost the world nothing. The server only moves the in-game clock while someone is connected, and the world itself is simulated by the connected players' games, so with nobody on nothing grows, smelts, ferments, rots or respawns — the next person in finds it exactly as the last one left it. That is also why the two idle-only timers interrupt nothing. The rest of the image's settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
 
 ### Prove it from the LAN
 On a PC with Valheim installed, at home:
