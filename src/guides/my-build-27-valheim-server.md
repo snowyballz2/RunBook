@@ -348,15 +348,21 @@ At `http://192.168.1.57:3001`:
 5. Click **Save**.
 
 ### Stop and start it
-In **Proxmox → 109 (valheim) → Console** — a stop saves the world first and takes up to two minutes:
+Have everyone log out of the game first — a stop disconnects anyone still in, and their last seconds may not be saved. Then, in **Proxmox → 109 (valheim) → Console**:
+
+1. Stop it — the server saves the world before it exits, which is why this can take up to two minutes; it prints the container's name when done:
 
 ```bash
 docker stop valheim-server
 ```
 
+2. Start it — this returns at once, and the server takes about a minute to load the world and accept joins:
+
 ```bash
 docker start valheim-server
 ```
+
+3. Log back in. Finding the last session's progress in place is the proof that stops save, which is worth seeing once before an update or a power cut makes it matter.
 
 ### Change a setting later
 Every setting, the join password included, is a line in the start script, handed to the server when its container is created — so a change means editing the script and recreating the container. The password is the usual reason; the steps are the same for any line. In **Proxmox → 109 (valheim) → Console**:
