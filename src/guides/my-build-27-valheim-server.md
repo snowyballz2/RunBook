@@ -19,35 +19,29 @@ Everything on this page is optional. Skip it and nothing else in the build chang
 > **Joining over Tailscale (Option A):**
 >
 > ```text
-> Here's how to join my Valheim server. It's a one-time setup of about five minutes, then joining is normal. You need Valheim on Steam on a Windows PC — console and Game Pass versions can't join this server.
+> Joining my Valheim server (Steam on a Windows PC only). One-time setup, 5 minutes:
 >
-> 1. Download Tailscale for Windows from tailscale.com/download/windows and run the installer — it's a normal .exe. If Windows asks whether to let it make changes, say Yes.
-> 2. After it installs, find the Tailscale icon in the system tray, bottom right next to the clock — if it's hidden, click the little up arrow there. Right-click it and choose Log in.
-> 3. A browser page opens asking you to sign in. Pick whichever you already have — Google, Microsoft, Apple or GitHub — and go through its sign-in. The free Personal plan is all this needs; don't pay for anything. When it says the device is connected, you can close the page.
-> 4. Now open the invite link I'm sending you, in that same browser. It shows a machine called "valheim" being shared with you — click Accept. It then shows up in the Tailscale tray menu under the other machines.
-> 5. Leave Tailscale connected whenever you play — the tray icon is the on/off switch, and it's fine to leave it on all the time.
-> 6. Make sure Steam has updated Valheim — it does this on its own, but the server runs the latest version and an old game shows "Incompatible version".
-> 7. In Valheim, go to the Join Game tab and click Join IP at the bottom. Type the address I send you followed by :2456 — it looks like 100.64.0.5:2456 — and click Connect.
-> 8. When it asks for a password, enter the one I send you. It's case-sensitive.
+> 1. Install Tailscale from tailscale.com/download/windows. Say Yes if Windows asks to allow changes.
+> 2. Right-click the Tailscale icon in the tray (next to the clock; click the ^ arrow if hidden) → Log in. Sign in with Google, Microsoft, Apple or GitHub. Free plan.
+> 3. Open the invite link I'm sending you → Accept. "valheim" appears in your Tailscale list.
+> 4. Keep Tailscale on while you play.
 >
-> First join takes a minute while the world loads. Your character is saved on your own PC; the world lives on my server. Tailscale only ever shows you that one machine — nothing else in my house — and I can switch it off from my side.
+> To join:
+> 5. Valheim → Join Game → Join IP → the address I send you plus :2456 (e.g. 100.64.0.5:2456) → Connect.
+> 6. Enter the password I send you (case-sensitive).
 >
-> If it says it can't connect: check the tray icon says Tailscale is connected and that "valheim" is in its list, then text me — I may need to restart the server.
+> Keep Valheim updated or it says "Incompatible version". First join takes a minute. Can't connect? Check Tailscale is on and "valheim" is in its list, then text me.
 > ```
 >
 > **Joining by address (Option B):**
 >
 > ```text
-> Here's how to join my Valheim server. Nothing to install — you need Valheim on Steam on a Windows PC; console and Game Pass versions can't join this server.
+> Joining my Valheim server (Steam on a Windows PC only). Nothing to install:
 >
-> 1. Make sure Steam has updated Valheim — it does this on its own, but the server runs the latest version and an old game shows "Incompatible version".
-> 2. In Valheim, go to the Join Game tab and click Join IP at the bottom.
-> 3. Type the address I send you followed by :2456 — it looks like 203.0.113.10:2456 — and click Connect.
-> 4. When it asks for a password, enter the one I send you. It's case-sensitive.
+> 1. Valheim → Join Game → Join IP → the address I send you plus :2456 (e.g. 203.0.113.10:2456) → Connect.
+> 2. Enter the password I send you (case-sensitive).
 >
-> First join takes a minute while the world loads. Your character is saved on your own PC; the world lives on my server.
->
-> The server is only open to the internet for the evening, so if it says it can't connect another day, I've closed it again — just ask and I'll open it.
+> Keep Valheim updated or it says "Incompatible version". First join takes a minute. It's only open tonight — if it won't connect another day, ask me to open it.
 > ```
 >
 > Two things on your side that the messages rely on: the invite link comes from the *Share it with a friend* steps under Option A, where **Reusable link** lets one link serve several friends and an unused link expires after 30 days; and a friend who already has a Tailscale account accepts the share from it — any account works, it does not have to match the email you invited.
