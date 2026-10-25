@@ -195,7 +195,13 @@ docker logs -f valheim-server
 > - **The admin list, `ADMINLIST_IDS`** — the Steam IDs, separated by spaces, whose characters can run the server's admin commands from the in-game console: `save`, `kick`, `ban`, and the switch that turns on the game's cheat commands. Yours alone is the right list; a friend on it could empty a boss fight with a typed command.
 > - **The save interval, `SERVER_ARGS="-saveinterval 600"`** — the game writes the world every ten minutes instead of its default thirty, so a power cut or a stopped container costs at most ten minutes of play. Each save is a brief stutter for everyone online, which is why it is not shorter.
 >
-> The image checks Steam for a game update every fifteen minutes and applies one only when nobody is connected, and it restarts the server once a day at 5:10 a.m., again only if nobody is playing — three schedules its first log prints as cron lines, and all three sit in the Maintenance page's night-shift table. The rest of its settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
+> Three timers run inside the container on their own, with nothing to set up. They are listed here because the Maintenance page keeps one table of every scheduled job in the build, and these belong in it:
+>
+> - **Five past every hour** — a backup of the world, the zip the backup age above keeps for seven days.
+> - **Every fifteen minutes** — a check with Steam for a game update, installed only while nobody is connected.
+> - **5:10 a.m. daily** — a restart of the server, again only if nobody is playing.
+>
+> The rest of the image's settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
 
 ### Prove it from the LAN
 On a PC with Valheim installed, at home:
