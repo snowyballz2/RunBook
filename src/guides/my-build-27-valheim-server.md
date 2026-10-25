@@ -101,6 +101,8 @@ The prompts, in order:
 - **NESTING SUPPORT** → **Yes** — Docker needs it
 - **GPU PASSTHROUGH** → **No**
 - **Use APT Cacher-NG proxy?** → **No** — it would route package downloads through an apt-cacher-ng server, and nothing on this network runs one
+- **HTTP/HTTPS proxy?** → **No** — the same question for a web proxy; the house has none, and Nginx Proxy Manager is the other direction, inbound to your services
+- **Container protection?** → **No** — it sets the guest's **Protection** flag, which makes Proxmox refuse to remove or destroy the container until you clear it under **Options**. Worth a Yes on something irreplaceable; this world is backed up hourly and the container nightly, and no other guest in the build carries it
 - **Expose Docker TCP socket (insecure)?** — the install's own question, after the container exists → **n**
 
 > [!INPUT] valheim-ct-id | Valheim container ID | 109
