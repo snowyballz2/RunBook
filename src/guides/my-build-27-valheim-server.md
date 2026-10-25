@@ -86,7 +86,7 @@ The prompts, in order:
 - **Set Root Password** → set one, recorded below
 - **Container ID** → accept the offered next-free number — `109` on this build unless the Voice page's containers came first; it is the ID every command below uses
 - **Hostname** → `valheim`
-- **Disk size** → `16` — the game server download is about 1 GB, and world backups accumulate beside it
+- **Disk size** → `32` — the game server download is about 1 GB, but the hourly world backups accumulate beside it for a week at a time, and a long-played world runs to a hundred megabytes a copy. The number is a ceiling on the thin pool, not space taken: the container uses only what it writes, so 32 costs nothing over 16 until the backups need it
 - **CPU cores** → `4`
 - **RAM** → `6144` — a cap, not a reservation; the server idles near 3 GB
 - **Network bridge** → **`vmbr0`**
@@ -97,9 +97,10 @@ The prompts, in order:
 - **SSH KEY SOURCE** → **none / No keys**
 - **SSH ACCESS** → **No**
 - **FUSE SUPPORT** → **No**
-- **TUN/TAP SUPPORT** → **Yes** for Option A — Tailscale inside the container needs the TUN device; **No** for Option B
+- **TUN/TAP SUPPORT** → **Yes** — Tailscale inside the container needs the TUN device for Option A, and it is harmless for Option B, so Yes keeps both open
 - **NESTING SUPPORT** → **Yes** — Docker needs it
 - **GPU PASSTHROUGH** → **No**
+- **Use APT Cacher-NG proxy?** → **No** — it would route package downloads through an apt-cacher-ng server, and nothing on this network runs one
 - **Expose Docker TCP socket (insecure)?** — the install's own question, after the container exists → **n**
 
 > [!INPUT] valheim-ct-id | Valheim container ID | 109
