@@ -105,6 +105,9 @@ The prompts, in order:
 - **Container protection?** → **No** — it sets the guest's **Protection** flag, which makes Proxmox refuse to remove or destroy the container until you clear it under **Options**. Worth a Yes on something irreplaceable; this world is backed up hourly and the container nightly, and no other guest in the build carries it
 - **Device node creation?** → **No** — it adds the `mknod` feature, letting processes inside the container create device files of their own. Docker does not need it, and the one device Tailscale needs, the TUN device, is handed in by the TUN/TAP answer above
 - **Specific filesystem mounts?** → **No** — it adds the `mount` feature, letting the container mount NFS or SMB shares from inside. Nothing here mounts anything: the world lives on the container's own disk, and the nightly copy to the NAS is the host's backup job reaching in from outside
+- **Post install hook?** → **No** — it asks for a script of your own to run once the install finishes; the only thing to do after the container exists is the next step on this page
+- **Verbose mode?** → **No** — it prints every command's output as the container builds, worth it only when a build is failing
+- **Ready to create the container?** → **Yes** — the summary above it is the whole set of answers; this is the last question before the build runs
 - **Expose Docker TCP socket (insecure)?** — the install's own question, after the container exists → **n**
 
 > [!INPUT] valheim-ct-id | Valheim container ID | 109
@@ -122,7 +125,7 @@ In **Proxmox → 109 (valheim) → Console**, logged in as `root`.
 mkdir -p /root/valheim-server/config /root/valheim-server/data
 ```
 
-2. Write the start script — swap **`VALHEIM-PASS`** for the join password first:
+2. Write the start script exactly as shown, placeholder and all — the password goes in with the next step, inside the console, because a password typed into a Mac app on the way arrives with curly quotes that break the script:
 
 ```bash
 cat > /root/valheim-run.sh <<'EOF'
@@ -144,28 +147,38 @@ docker run -d \
 EOF
 ```
 
-> [!WARNING]
-> Valheim's own rules for the join password: at least **five** characters, and it must not appear inside the server name or the world name. `SERVER_PUBLIC=false` keeps the server out of Steam's public browser — friends join by address, which both options below provide.
+3. Open the script in the console's editor:
+
+```bash
+nano /root/valheim-run.sh
+```
+
+4. On the `SERVER_PASS` line, replace `VALHEIM-PASS` with the join password, typed there, between the straight quotes that are already in place. Valheim's rules are checked at start-up: at least **five** characters, and nothing that appears inside the server name or the world name — with both named `Kuzco`, the password cannot contain `kuzco`.
+5. Save with **Ctrl+O**, then **Enter**, and close with **Ctrl+X**.
+
+> [!NOTE]
+> `SERVER_PUBLIC=false` keeps the server out of Steam's public browser — friends join by address, which both options below provide. If a setting needs changing after the first start, the password included, *Change a setting later* near the end of the page is the way: edit this script and recreate the container. Two failures seen here on the first attempt: a four-letter password, which the server refuses at start-up, and a closing quote that had become a curly `”` on its way through a Mac app, which bash reports as `unexpected EOF while looking for matching` and which is why the password now goes in through nano.
 
 > [!INPUT] valheim-server-name | Valheim server name | Kuzco
 
 > [!INPUT] valheim-world-name | Valheim world name | Kuzco
 
 > [!SECRET] valheim-password | Valheim join password
+> At least five characters, and not a string that appears in the server or world name — the rule in step 4.
 
-3. Start it:
+6. Start it:
 
 ```bash
 bash /root/valheim-run.sh
 ```
 
-4. Watch the first start — it downloads the server from Steam, about 1 GB:
+7. Watch the first start — it downloads the server from Steam, about 1 GB:
 
 ```bash
 docker logs -f valheim-server
 ```
 
-5. When a line reads `Game server connected`, press **Ctrl+C** — that leaves the log view; the server keeps running.
+8. When a line reads `Game server connected`, press **Ctrl+C** — that leaves the log view; the server keeps running.
 
 > [!DETAILS] What the start script sets
 > The lines that matter, one job each:
@@ -176,7 +189,7 @@ docker logs -f valheim-server
 > - **The two `-v` lines** — keep the world, its backups and the server install on the container's disk, outside the Docker image, so an image update never touches them.
 > - **The backup age, `BACKUPS_MAX_AGE`** — the image writes a world backup every hour under `/root/valheim-server/config/backups`, kept for the seven days this sets.
 >
-> The image checks Steam for a game update every fifteen minutes and applies one only when nobody is connected. The rest of its settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
+> The image checks Steam for a game update every fifteen minutes and applies one only when nobody is connected, and it restarts the server once a day at 5:10 a.m., again only if nobody is playing — three schedules its first log prints as cron lines, and all three sit in the Maintenance page's night-shift table. The rest of its settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
 
 ### Prove it from the LAN
 On a PC with Valheim installed, at home:
@@ -335,19 +348,26 @@ docker start valheim-server
 ```
 
 ### Change a setting later
+Every setting, the join password included, is a line in the start script, handed to the server when its container is created — so a change means editing the script and recreating the container. The password is the usual reason; the steps are the same for any line. In **Proxmox → 109 (valheim) → Console**:
+
 1. Edit the start script:
 
 ```bash
 nano /root/valheim-run.sh
 ```
 
-2. Save with **Ctrl+O**, then **Enter**.
-3. Close the editor with **Ctrl+X**.
-4. Replace the running server with one built from the edited script:
+2. Change the value inside the quotes — for the password, the `-e SERVER_PASS="…"` line, keeping Valheim's rules: at least five characters, and not a string that appears inside the server name or the world name.
+3. Save with **Ctrl+O**, then **Enter**.
+4. Close the editor with **Ctrl+X**.
+5. Replace the running server with one built from the edited script — anyone playing drops for about a minute while it comes back, and the world is untouched, since it lives in the data folder the script mounts rather than in the container being replaced:
 
 ```bash
 docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run.sh
 ```
+
+6. For a new password, update the Valheim join password field above and the vault item, and send friends the new one.
+
+If step 5 answers `No such container: valheim-server`, the server was never started: the chain stops at `docker stop` because there is nothing to stop. Run the start script on its own, as in *Start it* above — `bash /root/valheim-run.sh` — which is also the right move after a first start that failed on a bad password.
 
 ### Updates
 
@@ -361,7 +381,7 @@ docker pull ghcr.io/community-valheim-tools/valheim-server && docker stop valhei
 ```
 
 > [!NOTE]
-> Where the files live: the container's 16 GB disk is a slice of `local-lvm`, the **500 GB NVMe** that holds Proxmox itself and every guest's disk — so the server install, the world under `/root/valheim-server/config/worlds_local`, and the hourly zips are all on the NVMe. Neither IronWolf is involved day to day: the mirror pair only receives the nightly copy below, and the footage drive is Frigate's alone.
+> Where the files live: the container's 32 GB disk is a slice of `local-lvm`, the **500 GB NVMe** that holds Proxmox itself and every guest's disk — so the server install, the world under `/root/valheim-server/config/worlds_local`, and the hourly zips are all on the NVMe. Neither IronWolf is involved day to day: the mirror pair only receives the nightly copy below, and the footage drive is Frigate's alone.
 >
 > Backups come from two directions:
 >

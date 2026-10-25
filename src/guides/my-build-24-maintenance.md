@@ -125,6 +125,9 @@ Everything this collection put on a clock, in Eastern summer time. This is the a
 | 3:00 a.m. Monday | SMART short test, both mirror drives | Protect Your Data |
 | 4:00 a.m. on the 7th & 21st | SMART long test, one mirror drive each | Protect Your Data |
 | overnight daily | Home Assistant's own backup | Home Assistant & Zigbee2MQTT |
+| 5 past every hour | Valheim world backup, a zip kept seven days | Valheim Server |
+| every 15 min | Valheim update check, applied only with nobody playing | Valheim Server |
+| 5:10 a.m. daily | Valheim server restart, skipped while anyone plays | Valheim Server |
 
 Two notes that matter when reading it. The Nextcloud entry is a **four-hour window**, not an instant, and it is the one job pinned to **UTC** — so it slides to 12–4 a.m. in winter while everything else stays put. And the overlaps are accepted, not oversights: vzdump runs inside Nextcloud's window, and on Sundays the scrub's tail can brush it. Every job here is either a point-in-time snapshot or an ordinary transaction, so simultaneous ones simply run slower at an hour nobody is awake — there is no hour in the month that dodges everything, and nothing here needs dodging.
 
@@ -227,6 +230,20 @@ Once a quarter, look at the machine, not just its dashboards:
 Everything not on these two lists is event-driven, and you already built the events. Uptime Kuma shouts when a service dies, TrueNAS emails when a disk or scrub complains, and the NUT (Network UPS Tools) shutdown drill on the CyberPower UPS (uninterruptible power supply) proved a power cut handles itself. The Home Assistant leak automations already make the Third Reality sensors announce a wet floor on the Nest speakers. If no alert fires between passes, the server needs exactly none of your attention — which is the entire point of the build.
 
 ## When a password has to change
+
+### Change a container's root password
+Every service container has a root password from its helper's install dialog. To replace one — a typo at creation, or a routine change — the host sets it without knowing the old one. In **pve → Shell**, with the container's ID in place of `109`:
+
+1. Set the new password; it asks for it twice and prints nothing else:
+
+```bash
+pct exec 109 -- passwd
+```
+
+2. Update the container's root-password entry in Vaultwarden and the matching field on its build page.
+
+> [!NOTE]
+> The same command works from inside the container's own **Console** as plain `passwd`, but that route needs the current password to log in first, which is the one case where the host's way is the only way.
 
 ### Change the EmpireTech camera password
 The password lives in the camera; Frigate only carries a copy, in the ten `rtsp://admin:…` lines of its `go2rtc: streams:` map. So it changes in the cameras first, then in that map, then in the two records. All five turrets share one login — keep it that way, or the map needs two passwords.
