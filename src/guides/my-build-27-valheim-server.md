@@ -110,6 +110,13 @@ The prompts, in order:
 
 > [!SECRET] valheim-root-password | Valheim container root password
 
+### Find your Steam ID
+The start script names one admin — the account that can force a save, and kick or ban, from the in-game console — by Steam ID, a seventeen-digit number starting `7656`. On the PC:
+
+1. Open `store.steampowered.com/account` in a browser signed in to Steam — the **Steam ID** sits under the account name at the top of the page.
+
+> [!INPUT] valheim-admin-id | Steam ID of the admin
+
 ### Write the server's settings
 In **Proxmox → 109 (valheim) → Console**, logged in as `root`.
 
@@ -119,7 +126,7 @@ In **Proxmox → 109 (valheim) → Console**, logged in as `root`.
 mkdir -p /root/valheim-server/config /root/valheim-server/data
 ```
 
-2. Write the start script exactly as shown, placeholder and all — the password goes in with the next step, inside the console, because a password typed into a Mac app on the way arrives with curly quotes that break the script:
+2. Write the start script exactly as shown, placeholders and all — the password and the Steam ID go in with the next step, inside the console, because a password typed into a Mac app on the way arrives with curly quotes that break the script:
 
 ```bash
 cat > /root/valheim-run.sh <<'EOF'
@@ -137,6 +144,8 @@ docker run -d \
   -e SERVER_PUBLIC=false \
   -e TZ=America/New_York \
   -e BACKUPS_MAX_AGE=7 \
+  -e ADMINLIST_IDS="STEAM-ID" \
+  -e SERVER_ARGS="-saveinterval 600" \
   ghcr.io/community-valheim-tools/valheim-server
 EOF
 ```
@@ -148,7 +157,8 @@ nano /root/valheim-run.sh
 ```
 
 4. On the `SERVER_PASS` line, replace `VALHEIM-PASS` with the join password, typed there, between the straight quotes that are already in place. Valheim's rules are checked at start-up: at least **five** characters, and nothing that appears inside the server name or the world name — with both named `Kuzco`, the password cannot contain `kuzco`.
-5. Save with **Ctrl+O**, then **Enter**, and close with **Ctrl+X**.
+5. On the `ADMINLIST_IDS` line, replace `STEAM-ID` with the Steam ID from above.
+6. Save with **Ctrl+O**, then **Enter**, and close with **Ctrl+X**.
 
 > [!NOTE]
 > `SERVER_PUBLIC=false` keeps the server out of Steam's public browser — friends join by address, which both options below provide. If a setting needs changing after the first start, the password included, *Change a setting later* near the end of the page is the way: edit this script and recreate the container. Two failures seen here on the first attempt: a four-letter password, which the server refuses at start-up, and a closing quote that had become a curly `”` on its way through a Mac app, which bash reports as `unexpected EOF while looking for matching` and which is why the password now goes in through nano.
@@ -160,19 +170,19 @@ nano /root/valheim-run.sh
 > [!SECRET] valheim-password | Valheim join password
 > At least five characters, and not a string that appears in the server or world name — the rule in step 4.
 
-6. Start it:
+7. Start it:
 
 ```bash
 bash /root/valheim-run.sh
 ```
 
-7. Watch the first start — it downloads the server from Steam, about 1 GB:
+8. Watch the first start — it downloads the server from Steam, about 1 GB:
 
 ```bash
 docker logs -f valheim-server
 ```
 
-8. When a line reads `Game server connected`, press **Ctrl+C** — that leaves the log view; the server keeps running.
+9. When a line reads `Game server connected`, press **Ctrl+C** — that leaves the log view; the server keeps running.
 
 > [!DETAILS] What the start script sets
 > The lines that matter, one job each:
@@ -182,6 +192,8 @@ docker logs -f valheim-server
 > - **The priority capability, `--cap-add=sys_nice`** — lets it raise its own scheduling priority.
 > - **The two `-v` lines** — keep the world, its backups and the server install on the container's disk, outside the Docker image, so an image update never touches them.
 > - **The backup age, `BACKUPS_MAX_AGE`** — the image writes a world backup every hour under `/root/valheim-server/config/backups`, kept for the seven days this sets.
+> - **The admin list, `ADMINLIST_IDS`** — your Steam ID, which lets your character run the server's admin commands from the in-game console: `save`, `kick`, `ban`.
+> - **The save interval, `SERVER_ARGS="-saveinterval 600"`** — the game writes the world every ten minutes instead of its default thirty, so a power cut or a stopped container costs at most ten minutes of play. Each save is a brief stutter for everyone online, which is why it is not shorter.
 >
 > The image checks Steam for a game update every fifteen minutes and applies one only when nobody is connected, and it restarts the server once a day at 5:10 a.m., again only if nobody is playing — three schedules its first log prints as cron lines, and all three sit in the Maintenance page's night-shift table. The rest of its settings are documented at `github.com/community-valheim-tools/valheim-server-docker`.
 
@@ -350,22 +362,28 @@ At `http://192.168.1.57:3001`:
 ### Stop and start it
 Have everyone log out of the game first — a stop disconnects anyone still in, and their last seconds may not be saved. Then, in **Proxmox → 109 (valheim) → Console**, with the two commands below rather than the **Shutdown** and **Start** buttons at the top of the container's page — those stop and start the whole container, not the game server inside it:
 
-1. Stop it — the server saves the world before it exits, which is why this can take up to two minutes; it prints the container's name when done:
+1. Stop it — the stop is itself a save: the image hands the game the same interrupt Ctrl+C would, the game writes the world and then exits, and the two-minute stop timeout in the start script is the time it has. It prints the container's name when done:
 
 ```bash
 docker stop valheim-server
 ```
 
-2. Start it — this returns at once, and the server takes about a minute to load the world and accept joins:
+2. See the save it made — the last `World saved` line, with its write time, is the one the stop triggered, and the proof that nothing played since the previous save was lost:
+
+```bash
+docker logs --tail 40 valheim-server 2>&1 | grep 'World saved'
+```
+
+3. Start it — this returns at once, and the server takes about a minute to load the world and accept joins:
 
 ```bash
 docker start valheim-server
 ```
 
-3. Log back in. Finding the last session's progress in place is the proof that stops save, which is worth seeing once before an update or a power cut makes it matter.
+4. Log back in. The last session's progress in place is the same proof from the game's side, worth seeing once before an update or a power cut makes it matter.
 
 ### If Shutdown was clicked instead
-The console ends with `[EOF - dtach terminating]` and goes blank, because the container it was attached to is gone, and the game server went down with it. The world itself is safe on the container's disk; what the shutdown may have cut short is the last save, which went through the container's own shutdown clock rather than the two minutes the stop command sets aside. In **Proxmox → 109 (valheim)**:
+The console ends with `[EOF - dtach terminating]` and goes blank, because the container it was attached to is gone, and the game server went down with it. The world itself is safe on the container's disk; what is lost is the play since the game's last save, because a container shutdown does not hand the game the interrupt it saves on with time to use it — the first time this happened here it cost about ten minutes. With the start script's save interval, that is the most it can cost. In **Proxmox → 109 (valheim)**:
 
 1. Click **Start** at the top of the page — the restart rule brings the game server back on its own, in about a minute.
 2. Open **Console** and confirm it is up — the line for `valheim-server` should show an `Up` time:
@@ -375,6 +393,17 @@ docker ps
 ```
 
 3. Log in and check the last session's progress is there.
+
+### Force a save while playing
+A stop saves on its own, so this is for the moments in between — before a fight that could go either way, or when a storm is knocking the lights. The command runs from the game's console, which the admin list in the start script lets your character use, and which the game client only opens when it was launched with a flag. Once, on the PC, in **Steam → Library**:
+
+1. Right-click **Valheim** → **Properties**.
+2. On the **General** tab, in **Launch Options**, type `-console`, and close the window.
+
+Then, in the game, connected to the server:
+
+3. Press **F5** — the console opens.
+4. Type `save` and press **Enter** — the server writes the world at once, and its log shows a fresh `World saved` line, the same check as in *Stop and start it*.
 
 ### Change a setting later
 Every setting, the join password included, is a line in the start script, handed to the server when its container is created — so a change means editing the script and recreating the container. The password is the usual reason; the steps are the same for any line. In **Proxmox → 109 (valheim) → Console**:
