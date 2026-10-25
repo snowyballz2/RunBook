@@ -211,7 +211,7 @@ pct exec 109 -- ls -l /dev/net/tun
 ```
 
 2. A line beginning `crw-rw-rw-` with `10, 200` in it means the device is there — carry on to the next step. `No such file or directory` means the helper's answer was missed; carry on at step 3.
-3. Add the two lines Tailscale's own instructions give for an unprivileged Proxmox container, and restart it:
+3. Add the two lines Tailscale's own instructions give for an unprivileged Proxmox container, and restart it — on the host, still in **pve → Shell**: `/etc/pve` exists only there, and inside the container's own console these lines answer `No such file or directory`:
 
 ```bash
 echo 'lxc.cgroup2.devices.allow: c 10:200 rwm' >> /etc/pve/lxc/109.conf
@@ -225,29 +225,41 @@ pct reboot 109
 > An earlier version of this step counted the word `tun` in the container's config and expected two matches. The helper writes two lines, but only the mount line contains the word — the device-permission line names it by number, `10:200` — and newer helpers write a single `dev0: /dev/net/tun` line instead, so the honest count is one either way. Seen here on the first build, which is why the step now checks the device rather than the file.
 
 ### Install Tailscale in the container
-In **Proxmox → 109 (valheim) → Console**, fetch the installer, read it, then run it — the Remote Access page's habit:
+In **Proxmox → 109 (valheim) → Console** — the Remote Access page's download-read-run habit, one command at a time, because the reader swallows anything pasted after it:
+
+1. Fetch the installer:
 
 ```bash
 curl -fsSL https://tailscale.com/install.sh -o tailscale-install.sh
+```
+
+2. Read it — `q` leaves the viewer:
+
+```bash
 less tailscale-install.sh
+```
+
+3. Run it; it adds Tailscale's package source and installs the package, about a minute:
+
+```bash
 sh tailscale-install.sh
 ```
 
-Then bring it up:
+4. Bring it up — it prints a login link within a few seconds:
 
 ```bash
 tailscale up
 ```
 
-The output prints a URL:
-
-1. Open it in a browser on the Mac.
-2. Sign in with the same account the Remote Access page used — the container joins your tailnet as `valheim`.
-3. Back in the Console, print its tailnet address:
+5. Open that link in a browser on the Mac and sign in with the same account the Remote Access page used — the container joins your tailnet as `valheim`, and the Console prints `Success`.
+6. Back in the Console, print its tailnet address:
 
 ```bash
 tailscale ip -4
 ```
+
+> [!NOTE]
+> Seen here on the first build: the three install commands pasted together ran the download, opened the reader, and never reached the run line, so `tailscale up` answered `command not found`. Three separate pastes, as above, is the cure.
 
 > [!INPUT] valheim-tailscale-ip | Valheim container tailnet IP (100.x) | 100.101.102.104
 > The address friends join by. It never changes, and it survives the Renumber the LAN page untouched.
@@ -369,11 +381,30 @@ docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run
 If step 5 answers `No such container: valheim-server`, the server was never started: the chain stops at `docker stop` because there is nothing to stop. Run the start script on its own, as in *Start it* above — `bash /root/valheim-run.sh` — which is also the right move after a first start that failed on a bad password.
 
 ### Updates
+Nothing to run today — this step records how the server updates, for the Maintenance page's monthly walk, and the one command below is for the rare day the image's project page announces a release worth having.
 
 > [!NOTE]
 > Three layers update three ways. The game updates itself — the fifteen-minute Steam check in the container, applied only while nobody is connected — so a Valheim patch never strands friends on a mismatched version. The container's Debian layer updates in the Maintenance page's walk like every other guest. The server image itself changes rarely, and only matters when its project page announces a release worth having.
 
-Pull the new image and rebuild the server from the same start script:
+Let GitHub say when that day comes — it can email you for the image's releases and nothing else, with the account the Cameras page's HACS step created:
+
+1. Open `https://github.com/community-valheim-tools/valheim-server-docker` and sign in.
+2. Click **Watch**, near the top right.
+3. Choose **Custom**.
+4. Tick **Releases** only.
+5. Click **Apply**.
+
+Those emails go to the account's default address. To send them somewhere else — a different inbox, or the one your phone's mail app shows — GitHub routes everything from that organization to a verified address of your choice; its mobile app's push notifications never cover releases, so the phone sees them as mail:
+
+6. If the address is new to GitHub, add it under your profile picture → **Settings** → **Emails**, and click the link GitHub mails to verify it.
+7. Click the inbox icon at the top right of any GitHub page.
+8. In the left sidebar, under the repositories, open the **Manage notifications** drop-down and click **Notification settings**.
+9. Under **Default notifications email**, click **Custom routing**.
+10. Click **Add new route**.
+11. Open **Pick organization** and choose **community-valheim-tools**.
+12. Select the verified address and click **Save**.
+
+A release is worth having when its notes name a fix for something you have hit, a change the game's own updates need, or a security fix; most months bring no email, and the game stays current through the image's Steam check regardless. When one is worth it, pull the new image and rebuild the server from the same start script — the world is untouched, and anyone playing drops for about a minute:
 
 ```bash
 docker pull ghcr.io/community-valheim-tools/valheim-server && docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run.sh
