@@ -368,10 +368,10 @@ Have everyone log out of the game first — a stop disconnects anyone still in, 
 docker stop valheim-server
 ```
 
-2. See the save it made — the last `World saved` line, with its write time, is the one the stop triggered, and the proof that nothing played since the previous save was lost:
+2. See the save it made — a save is five numbered `World save` lines, and the last `World save (5/5) done` line, with its total time, is the one the stop triggered, and the proof that nothing played since the previous save was lost:
 
 ```bash
-docker logs --tail 40 valheim-server 2>&1 | grep 'World saved'
+docker logs --tail 60 valheim-server 2>&1 | grep 'save (5/5)'
 ```
 
 3. Start it — this returns at once, and the server takes about a minute to load the world and accept joins:
@@ -404,10 +404,10 @@ Then, in the game, connected to the server:
 
 3. Press **F5** — the console opens.
 4. Type `save` and press **Enter** — the console answers `Saving..` and nothing more, however long you wait; that is the server's acknowledgement, and the write itself is reported only in the server's log.
-5. Read the log in **Proxmox → 109 (valheim) → Console** — a `World saved` line stamped with the minute you typed the command is the save:
+5. Read the log in **Proxmox → 109 (valheim) → Console** — a `World save (5/5) done` line stamped with the minute you typed the command is the save, and its total time, a fraction of a second on this world, is the stutter players felt:
 
 ```bash
-docker logs --tail 40 valheim-server 2>&1 | grep 'World saved'
+docker logs --tail 60 valheim-server 2>&1 | grep 'save (5/5)'
 ```
 
 ### Change a setting later
