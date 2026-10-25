@@ -361,6 +361,19 @@ Seen here after a storm outage: Home Assistant came back, the Matter subscriptio
 6. Restart Home Assistant from **Settings → System**.
 7. Still dead: pull the lock's battery pack, reseat it, and wait for it to re-join.
 
+## Shades
+
+### A shade's Matter add fails after a few minutes
+The phone's message is the same whatever went wrong; the reason is in the Matter Server's own log. In **Home Assistant → Settings → Apps → Matter Server**, on the **Log** tab:
+
+1. Type `ommission` in the search box — the attempt's lines appear: the steps it executed, and in red the one that failed, with the reason after `failed with error`.
+2. If the red line says `already commissioned into this fabric`, the motor still holds this Home Assistant's credential from an earlier attempt that failed partway. Check **Settings → Devices & services → Matter** first — a shade listed there is already in, and needs no pairing.
+3. Otherwise clear the motor's pairings from the remote — back cover off, the shade's channel showing: **SETTING (P)**, one jog; **UP**, one jog; **SETTING (P)**, red light — wait a minute, and add it again. The limits survive.
+4. If the red line names a different step, set the app's **log_level** to `debug` on its **Configuration** tab, restart it from the **Info** tab, add the shade again, and read the same search — the debug lines say what the motor answered.
+
+> [!NOTE]
+> The first time this was needed, a search for `rror` came back with nothing while `ommission` found the red lines, so search for that. If the viewer shows `Loading log…` at the top, it is still fetching: wait for the line to go before trusting an empty result.
+
 ## Remote access
 
 ### The phone reaches home on cellular but not on someone else's Wi-Fi

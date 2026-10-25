@@ -757,11 +757,12 @@ Both kinds land as `cover.*` entities, commissioned straight into Home Assistant
 
 1. For a PoE shade, patch its run across to the 24-port switch and watch the motor's light — ten green flashes mean the switch is talking to it, and that is the network side done before any pairing.
 2. Set the shade's upper and lower limits with the remote, if that is not done yet — SmartWings' rule is limits first, then smart pairing; red and green flashing alternately means they are missing.
-3. Press and hold the **P** button on the motor head — on a PoE motor it sits beside the USB-C socket — for six seconds.
-4. Release it after the **second** jog — the red light comes on, and SmartWings says the motor takes about ninety seconds to finish entering pairing mode, so give it that long before the phone starts looking. A motor released after the first jog is not pairing, and that is the usual reason Home Assistant's add searches for a few minutes and then fails.
+3. Put the motor into pairing mode from the remote, which also clears any Matter pairing the motor already holds — with the remote's back cover off and the shade's channel showing, press **SETTING (P)**: the motor jogs once.
+4. Press **UP**: it jogs once.
+5. Press **SETTING (P)** again: the red light comes on. Give the motor a minute or two before the phone starts looking.
 
-> [!DETAILS] Pairing mode from the remote instead
-> With the remote showing the shade's channel: press **SETTING (P)** — the motor jogs once; press **UP** — it jogs once; press **SETTING (P)** again — it jogs twice with a brief pause, or the red light stays on, depending on the motor. Same pairing mode, from SmartWings' Matter getting-started sheet. Pairing the remote itself is separate and stays paired either way.
+> [!NOTE]
+> Holding the motor head's **P** button for six seconds — on a PoE motor it sits beside the USB-C socket — and releasing after the **second** jog opens the same window without clearing anything, and is fine for a shade fresh from the box. It is the wrong tool after an add that failed partway: a failed attempt can leave this Home Assistant's own credential on the motor, and every later try then ends with `already commissioned into this fabric` in the Matter Server's log, however the phone words it. The remote sequence above clears that, with the limits and the remote's own pairing intact — SmartWings calls it the Matter pairing reset. Released after the first jog, the P button has done nothing at all, which is the other way an add searches for a few minutes and then fails.
 
 Then, within a few minutes, in the **Home Assistant companion app**:
 
