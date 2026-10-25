@@ -368,7 +368,7 @@ The phone's message is the same whatever went wrong; the reason is in the Matter
 
 1. Type `ommission` in the search box — the attempt's lines appear: the steps it executed, and in red the one that failed, with the reason after `failed with error`.
 2. If the red line says `already commissioned into this fabric`, the motor still holds this Home Assistant's credential from an earlier attempt that failed partway. Check **Settings → Devices & services → Matter** first — a shade listed there is already in, and needs no pairing.
-3. Otherwise clear the motor's pairings from the remote — back cover off, the shade's channel showing: **SETTING (P)**, one jog; **UP**, one jog; **SETTING (P)**, red light — wait a minute, and add it again. The limits survive.
+3. Otherwise clear the motor's Matter pairings, using the remote — back cover off, the shade's channel showing: **SETTING (P)**, one jog; **UP**, one jog; **SETTING (P)**, red light — wait a minute, and add it again. The limits survive, and so does the remote's own pairing: only the links to controllers are cleared.
 4. If the red line names a different step, set the app's **log_level** to `debug` on its **Configuration** tab, restart it from the **Info** tab, add the shade again, and read the same search — the debug lines say what the motor answered.
 
 > [!NOTE]
