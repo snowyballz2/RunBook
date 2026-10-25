@@ -403,7 +403,12 @@ A stop saves on its own, so this is for the moments in between — before a figh
 Then, in the game, connected to the server:
 
 3. Press **F5** — the console opens.
-4. Type `save` and press **Enter** — the server writes the world at once, and its log shows a fresh `World saved` line, the same check as in *Stop and start it*.
+4. Type `save` and press **Enter** — the console answers `Saving..` and nothing more, however long you wait; that is the server's acknowledgement, and the write itself is reported only in the server's log.
+5. Read the log in **Proxmox → 109 (valheim) → Console** — a `World saved` line stamped with the minute you typed the command is the save:
+
+```bash
+docker logs --tail 40 valheim-server 2>&1 | grep 'World saved'
+```
 
 ### Change a setting later
 Every setting, the join password included, is a line in the start script, handed to the server when its container is created — so a change means editing the script and recreating the container. The password is the usual reason; the steps are the same for any line. In **Proxmox → 109 (valheim) → Console**:
