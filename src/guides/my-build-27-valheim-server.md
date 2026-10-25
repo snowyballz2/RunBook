@@ -202,22 +202,27 @@ A loading screen into a fresh world means the server is running. Everything from
 > The host already routes the whole LAN into your tailnet, but a shared machine never carries its subnet routes into the friend's tailnet — Tailscale's docs are explicit. So the container gets its own Tailscale client, and that one machine is what you share. Sharing is available on every plan and does not use your plan's user seats.
 
 ### Confirm the TUN device
-The helper's **TUN/TAP SUPPORT → Yes** answer should have written two lines into the container's config. On the node **Shell**:
+The helper's **TUN/TAP SUPPORT → Yes** answer hands the container the TUN device Tailscale needs. The proof is the device itself, seen from inside the container. In **pve → Shell**:
+
+1. Ask the container for the device:
 
 ```bash
-grep -c tun /etc/pve/lxc/109.conf
+pct exec 109 -- ls -l /dev/net/tun
 ```
 
-`2` means it did. `0` means the answer was missed — add the lines by hand:
+2. A line beginning `crw-rw-rw-` with `10, 200` in it means the device is there — carry on to the next step. `No such file or directory` means the helper's answer was missed; carry on at step 3.
+3. Add the two lines Tailscale's own instructions give for an unprivileged Proxmox container, and restart it:
 
-> [!DETAILS] Adding the TUN device by hand
-> Tailscale's own instructions for an unprivileged Proxmox container are these two lines in `/etc/pve/lxc/109.conf`, followed by a container restart:
->
-> ```bash
-> echo 'lxc.cgroup2.devices.allow: c 10:200 rwm' >> /etc/pve/lxc/109.conf
-> echo 'lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file' >> /etc/pve/lxc/109.conf
-> pct reboot 109
-> ```
+```bash
+echo 'lxc.cgroup2.devices.allow: c 10:200 rwm' >> /etc/pve/lxc/109.conf
+echo 'lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file' >> /etc/pve/lxc/109.conf
+pct reboot 109
+```
+
+4. Repeat step 1 — the device line is there now.
+
+> [!NOTE]
+> An earlier version of this step counted the word `tun` in the container's config and expected two matches. The helper writes two lines, but only the mount line contains the word — the device-permission line names it by number, `10:200` — and newer helpers write a single `dev0: /dev/net/tun` line instead, so the honest count is one either way. Seen here on the first build, which is why the step now checks the device rather than the file.
 
 ### Install Tailscale in the container
 In **Proxmox → 109 (valheim) → Console**, fetch the installer, read it, then run it — the Remote Access page's habit:
