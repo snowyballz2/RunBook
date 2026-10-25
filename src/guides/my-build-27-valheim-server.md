@@ -197,7 +197,7 @@ docker logs -f valheim-server
 >
 > Three timers run inside the container on their own, with nothing to set up. They are listed here because the Maintenance page keeps one table of every scheduled job in the build, and these belong in it:
 >
-> - **Five past every hour** — a backup of the world, the zip the backup age above keeps for seven days.
+> - **Five past every hour, and at every container start** — a zip of the world files as the game last saved them, kept seven days by the backup age above. A copy, not a save: it holds nothing the game has not yet written, and it is the history to reach for after a corrupted world or a wrecked base. The host's nightly backup then carries the whole container, zips included, to the NAS.
 > - **Every fifteen minutes** — a check with Steam for a game update, installed only while nobody is connected.
 > - **5:10 a.m. daily** — a restart of the server, again only if nobody is playing.
 >
