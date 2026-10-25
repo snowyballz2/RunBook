@@ -753,7 +753,7 @@ Every PoE shade needs its **own Cat6 run** back to the switch.
 > The motor is **802.3af/at** and draws about **5 W** (120–150 µA idle) over runs up to **100 m (328 ft)**, which is why a whole house of them barely dents the 320 W budget. SmartWings ships a full PoE wiring guide with the shades; this matches it.
 
 ### Onboard the shades
-Both kinds land as `cover.*` entities, commissioned straight into Home Assistant's Matter controller — no Apple Home, no vendor app. A motor only advertises itself for pairing while it is in **pairing mode**: a shade that has been running from its remote is silent, and Home Assistant's search finds nothing until the motor is woken. At the shade first:
+Both kinds land as `cover.*` entities, commissioned straight into Home Assistant's Matter controller — no Apple Home, no vendor app. The remote is untouched by any of it: its pairing lives in the motor on SmartWings' own radio, pairing mode is not a reset, and afterwards the remote and Home Assistant drive the same motor side by side, with a move from the remote showing in Home Assistant a moment later. A motor only advertises itself for pairing while it is in **pairing mode**: a shade that has been running from its remote is silent, and Home Assistant's search finds nothing until the motor is woken. At the shade first:
 
 1. For a PoE shade, patch its run across to the 24-port switch and watch the motor's light — ten green flashes mean the switch is talking to it, and that is the network side done before any pairing.
 2. Set the shade's upper and lower limits with the remote, if that is not done yet — SmartWings' rule is limits first, then smart pairing; red and green flashing alternately means they are missing.
