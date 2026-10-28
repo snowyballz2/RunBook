@@ -365,8 +365,39 @@ At `http://192.168.1.57:3001`:
 4. **Hostname** → `192.168.1.62`.
 5. Click **Save**.
 
+### See who is on
+Nothing to set up: the game's own panel and the server's log already hold it. The image's status page and Steam's server browser are no help here, since both answer only for a public server, and even then leave player names blank.
+
+From inside the game, connected to the server:
+
+1. Press **F2** — the panel's **Players** list shows everyone connected, by character name, with each player's ID beside it. **F2** again closes it.
+
+From **Proxmox → 109 (valheim) → Console**:
+
+2. Ask whether anyone is on right now — the check the server itself runs before an update or its 5:10 restart, which watches the game's network traffic for three seconds:
+
+```bash
+docker exec valheim-server valheim-is-idle && echo "Nobody is on" || echo "Someone is on"
+```
+
+3. Read the comings and goings, newest last:
+
+```bash
+docker logs valheim-server 2>&1 | grep -E 'Got connection|ZDOID from|Closing socket|wrong password' | tail -40
+```
+
+> [!NOTE]
+> Each line carries its time. What they mean:
+>
+> - **`Got connection SteamID`** — someone's game reached the server; the number after it is their Steam ID.
+> - **`Got character ZDOID from`** — that player's character is in the world, under the name after it.
+> - **`Closing socket`** — the Steam ID after it left.
+> - **`has wrong password`** — a join that failed on the password.
+>
+> To put a person to a Steam ID, open `steamcommunity.com/profiles/` followed by the number in a browser — it lands on their Steam profile. The log reaches back to the server's last re-creation, so a settings change starts it afresh.
+
 ### Stop and start it
-Have everyone log out of the game first — a stop disconnects anyone still in, and their last seconds may not be saved. Then, in **Proxmox → 109 (valheim) → Console**, with the two commands below rather than the **Shutdown** and **Start** buttons at the top of the container's page — those stop and start the whole container, not the game server inside it:
+Have everyone log out of the game first — *See who is on* confirms it — since a stop disconnects anyone still in, and their last seconds may not be saved. Then, in **Proxmox → 109 (valheim) → Console**, with the two commands below rather than the **Shutdown** and **Start** buttons at the top of the container's page — those stop and start the whole container, not the game server inside it:
 
 1. Stop it — the stop is itself a save: the image hands the game the same interrupt Ctrl+C would, the game writes the world and then exits, and the two-minute stop timeout in the start script is the time it has. It prints the container's name when done:
 
