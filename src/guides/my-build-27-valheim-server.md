@@ -403,7 +403,7 @@ docker logs valheim-server 2>&1 | grep -E 'Got connection|ZDOID from|Closing soc
 The log lines above are the trigger: the two log-filter lines in the start script hand each one to a short script, which pushes **"Name joined"** or **"Name left"** to ntfy, the app that carries the Uptime Kuma alerts, using the character's name. A wrong password or a death pushes nothing.
 
 > [!NOTE]
-> These go to a topic of their own rather than the Kuma one, so game chatter never buries a house alert and either can be muted alone — and so the topic can be shared: a friend who installs ntfy and subscribes to it gets the same pushes and nothing else. The name is the only lock on an ntfy topic, which is why it comes from the password generator. Pasting the Kuma topic at step 10 instead also works, with both kinds of push in one list.
+> These go to a topic of their own rather than the Kuma one, so game chatter never buries a house alert and either can be muted alone — and so the topic can be shared: a friend who installs ntfy and subscribes to it gets the same pushes and nothing else. The name is the only lock on an ntfy topic, which is why it comes from the password generator. Pasting the Kuma topic at step 11 instead also works, with both kinds of push in one list.
 
 Make the topic, on the Mac and the iPhone:
 
@@ -427,8 +427,9 @@ Then in **Proxmox → 109 (valheim) → Console**:
 read -rp "Topic: " t && echo "$t" > /root/valheim-server/config/ntfy-topic
 ```
 
-10. Paste the topic at the `Topic:` prompt and press **Enter**.
-11. Write the script — paste it as-is:
+10. Copy the topic — the **Password** of the **Valheim · ntfy topic** item in Bitwarden, the 32 characters from step 5.
+11. Paste it at the `Topic:` prompt the console is now showing, and press **Enter** — nothing prints back; the normal prompt returning means it is saved.
+12. Write the script — paste it as-is and press **Enter**:
 
 ```bash
 cat > /root/valheim-server/config/players-notify.sh <<'EOF'
@@ -463,7 +464,8 @@ curl -s -m 10 -o /dev/null -H "Title: Valheim" -d "$msg" "https://ntfy.sh/$(cat 
 EOF
 ```
 
-12. Test the push without the game — three made-up log lines, which should bring **"Test joined"** and then **"Test left"** to the iPhone:
+13. Check the normal prompt is back under the `EOF` line — the file is written. A `>` at the start of the line instead means the console is still waiting for a line reading only `EOF`, and takes everything typed as more of the script: press **Ctrl+C**, which throws the unfinished paste away and writes nothing, then repeat step 12.
+14. Test the push without the game — paste these three made-up log lines and press **Enter**; they should bring **"Test joined"** and then **"Test left"** to the iPhone:
 
 ```bash
 echo 'Got connection SteamID 1' | docker exec -i valheim-server bash /config/players-notify.sh
@@ -471,37 +473,37 @@ echo 'Got character ZDOID from Test : 1:1' | docker exec -i valheim-server bash 
 echo 'Closing socket 1' | docker exec -i valheim-server bash /config/players-notify.sh
 ```
 
-13. Check the start script carries the two log-filter lines — `2` means it does and the server already runs with them, so skip to step 19; `0` means it was written before they joined it:
+15. Check the start script carries the two log-filter lines — `2` means it does and the server already runs with them, so skip to step 21; `0` means it was written before they joined it:
 
 ```bash
 grep -c LOG_FILTER /root/valheim-run.sh
 ```
 
-14. Only if it printed `0` — open the start script:
+16. Only if it printed `0` — open the start script:
 
 ```bash
 nano /root/valheim-run.sh
 ```
 
-15. Add these two lines directly above the last line, the image line, `ghcr.io/community-valheim-tools/valheim-server`:
+17. Add these two lines directly above the last line, the image line, `ghcr.io/community-valheim-tools/valheim-server`:
 
 ```bash
   -e VALHEIM_LOG_FILTER_REGEXP_Players="Got connection SteamID|Got character ZDOID from|Closing socket" \
   -e ON_VALHEIM_LOG_FILTER_REGEXP_Players="bash /config/players-notify.sh" \
 ```
 
-16. Save with **Ctrl+O**, then **Enter**.
-17. Close the editor with **Ctrl+X**.
-18. Replace the running server with one built from the edited script — anyone playing drops for about a minute, and the world is untouched:
+18. Save with **Ctrl+O**, then **Enter**.
+19. Close the editor with **Ctrl+X**.
+20. Replace the running server with one built from the edited script — anyone playing drops for about a minute, and the world is untouched:
 
 ```bash
 docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run.sh
 ```
 
-19. Prove it from the PC: join the server — a push reads your character's name and **joined**; quit to the main menu — another reads **left**.
+21. Prove it from the PC: join the server — a push reads your character's name and **joined**; quit to the main menu — another reads **left**.
 
 > [!NOTE]
-> How the script tells a join from a respawn: a fresh connection leaves the player's Steam ID waiting, and only the first character to enter the world after it claims it and pushes **joined** — a respawn after a death finds nothing waiting and stays quiet. The Steam ID it claimed is what later recognises the same player's **Closing socket** line as their exit. Its notes live in memory inside the server's container, so a restart starts them clean. If a real join pushes nothing while step 12 worked, run the log command in *See who is on* and compare its lines with the three made-up ones above.
+> How the script tells a join from a respawn: a fresh connection leaves the player's Steam ID waiting, and only the first character to enter the world after it claims it and pushes **joined** — a respawn after a death finds nothing waiting and stays quiet. The Steam ID it claimed is what later recognises the same player's **Closing socket** line as their exit. Its notes live in memory inside the server's container, so a restart starts them clean. If a real join pushes nothing while step 14 worked, run the log command in *See who is on* and compare its lines with the three made-up ones above.
 
 ### Stop and start it
 Have everyone log out of the game first — *See who is on* confirms it — since a stop disconnects anyone still in, and their last seconds may not be saved. Then, in **Proxmox → 109 (valheim) → Console**, with the two commands below rather than the **Shutdown** and **Start** buttons at the top of the container's page — those stop and start the whole container, not the game server inside it:
