@@ -779,6 +779,18 @@ Then, within a few minutes, in the **Home Assistant companion app**:
 > [!NOTE]
 > **Add integration → Matter** is only the one-time server setup, done back on the Matter Locks page — it dead-ends on an already-configured integration. A **PoE (Ethernet) shade** joins over the wired LAN; a **battery (Thread) shade** joins over Home Assistant's OpenThread Border Router — the phone's Bluetooth does the handshake and hands over the Thread credentials, exactly like the locks. That means the phone must hold this network's credentials: the Matter Locks page's **Send credentials** step. A phone that commissioned the locks already has them.
 
+### Pair or unpair a shade and a remote channel
+The remote's pairings are a separate layer from Matter, kept in the motor, and one move does both jobs: on a channel that already drives the motor it removes the motor from that channel, and on a channel that does not it adds it. From the motor maker's remote guide:
+
+1. Press any button to wake the remote, then within ten seconds press **‹** or **›** until the channel you want shows.
+2. Press and hold the motor head's **P** button for about two seconds, until the motor jogs **once** — the short hold, which is the remote's pairing mode, not the six-second Matter one.
+3. Within ten seconds, press and hold **STOP** for two seconds — the motor jogs **twice**, and the channel now drives the motor if it did not, or no longer does if it did.
+
+A motor on several channels is removed one channel at a time. Channel **0** on the fifteen-channel remote is the all-shades channel and is not a pairing of its own. To hand a channel's pairing to a second remote, with the first remote on that channel: press its **SETTING (P)** once, the motor jogs; press it again, the motor jogs; then press **SETTING (P)** on the new remote on the channel you want, and the motor jogs twice.
+
+> [!NOTE]
+> The motor head's one button does four things by hold time, each confirmed by jogs: about two seconds and one jog is pairing mode for the remote; six seconds and two jogs is Matter pairing mode; ten seconds and three jogs is sleep mode, which the same two-second hold wakes it from; and fourteen seconds and four jogs is the factory reset, which wipes every pairing, remote and Matter alike, and the limits with them — after it, the limits come first again, then the remote, then Matter.
+
 ### Group them and drive them as one
 Make one group so PoE-vs-battery stops mattering, then automate the group.
 
