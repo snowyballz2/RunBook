@@ -473,7 +473,7 @@ echo 'Got character ZDOID from Test : 1:1' | docker exec -i valheim-server bash 
 echo 'Closing socket 1' | docker exec -i valheim-server bash /config/players-notify.sh
 ```
 
-15. Check the start script carries the two log-filter lines — `2` means it does and the server already runs with them, so skip to step 21; `0` means it was written before they joined it:
+15. Check the start script carries the two log-filter lines — `2` means it does and the server already runs with them, so skip to step 23; `0` means it was written before they joined it:
 
 ```bash
 grep -c LOG_FILTER /root/valheim-run.sh
@@ -500,7 +500,14 @@ nano /root/valheim-run.sh
 docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run.sh
 ```
 
-21. Prove it from the PC: join the server — a push reads your character's name and **joined**; quit to the main menu — another reads **left**.
+21. Check what it printed — `valheim-server` twice and then a long string of letters and numbers, the new server's ID, means it is up; carry on at step 23.
+22. Only if it answered `Error response from daemon: No such container: valheim-server` — there was no server left to stop: an earlier run of step 20 removed it and the start script then stopped short, so nothing is running and the world sits safely on disk. Start the new one on its own; it prints the ID, or the reason it cannot start:
+
+```bash
+bash /root/valheim-run.sh
+```
+
+23. Prove it from the PC, a minute or two after the start while the world loads: join the server — a push reads your character's name and **joined**; quit to the main menu — another reads **left**.
 
 > [!NOTE]
 > How the script tells a join from a respawn: a fresh connection leaves the player's Steam ID waiting, and only the first character to enter the world after it claims it and pushes **joined** — a respawn after a death finds nothing waiting and stays quiet. The Steam ID it claimed is what later recognises the same player's **Closing socket** line as their exit. Its notes live in memory inside the server's container, so a restart starts them clean. If a real join pushes nothing while step 14 worked, run the log command in *See who is on* and compare its lines with the three made-up ones above.
