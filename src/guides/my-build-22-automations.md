@@ -786,10 +786,42 @@ The remote's pairings are a separate layer from Matter, kept in the motor, and o
 2. Press and hold the motor head's **P** button for about two seconds, until the motor jogs **once** — the short hold, which is the remote's pairing mode, not the six-second Matter one.
 3. Within ten seconds, press and hold **STOP** for two seconds — the motor jogs **twice**, and the channel now drives the motor if it did not, or no longer does if it did.
 
-A motor on several channels is removed one channel at a time. Channel **0** on the fifteen-channel remote is the all-shades channel and is not a pairing of its own. To hand a channel's pairing to a second remote, with the first remote on that channel: press its **SETTING (P)** once, the motor jogs; press it again, the motor jogs; then press **SETTING (P)** on the new remote on the channel you want, and the motor jogs twice.
+The **Helix dial remote** pairs the same way: its **CHANNEL** button steps through its eight channels in place of **‹** **›**, then the same **P** hold and **STOP** hold — from SmartWings' Helix programming manual. Like the handheld's, its channel **0** drives every shade paired to any of its numbered channels, **1** to **8** — channel **8** is an ordinary channel — and only shades paired to that remote answer it. Whatever the remote, one motor holds at most **ten** channels in all, handheld and dial together, by SmartWings' own figure.
+
+A motor on several channels is removed one channel at a time — the remote guide has no clear-every-channel sequence — and Home Assistant keeps the shade throughout, its Matter pairing and the limits untouched; only the fourteen-second factory reset below takes both kinds of pairing at once. Channel **0** on the fifteen-channel remote is the all-shades channel and is not a pairing of its own. To hand a channel's pairing to a second remote, with the first remote on that channel: press its **SETTING (P)** once, the motor jogs; press it again, the motor jogs; then press **SETTING (P)** on the new remote on the channel you want, and the motor jogs twice.
 
 > [!NOTE]
 > The motor head's one button does four things by hold time, each confirmed by jogs: about two seconds and one jog is pairing mode for the remote; six seconds and two jogs is Matter pairing mode; ten seconds and three jogs is sleep mode, which the same two-second hold wakes it from; and fourteen seconds and four jogs is the factory reset, which wipes every pairing, remote and Matter alike, and the limits with them — after it, the limits come first again, then the remote, then Matter.
+
+### Start every remote over
+Every shade arrived paired to its own remote, and the remotes have since collected pairings at random. With all of them staying in use on a new plan, the clean start is the factory reset, once per shade: it clears every remote at once, where undoing the pairings channel by channel would mean fifteen channels on every remote and a trip to a motor head for each stray. It also clears the limits and the Matter pairing, so the shade leaves Home Assistant first and comes back under its old entity ID. Write the plan down first — which channels, on which remotes, handheld and Helix dial alike, each shade answers, at most ten per shade — then take one shade all the way through before the next, so the rest of the house keeps its shades in Home Assistant meanwhile.
+
+In Home Assistant:
+
+1. Note the shade's entity ID, such as `cover.living_room_left` — it comes back under the same one.
+2. Go to **Settings → Connectivity → Matter** and select **Devices** — Home Assistant's current location for Matter devices; on a version whose Settings has no **Connectivity**, it is **Settings → Devices & services → Matter**.
+3. Select the shade.
+4. Open the **⋮** menu and select **Delete**.
+
+At the shade:
+
+5. Hold the motor head's **P** button for fourteen seconds, until the motor jogs **four** times and its light turns red.
+6. Do the move above on the first channel the shade should answer.
+7. Tap **UP**. If the shade goes down, hold **UP** + **DOWN** together for two seconds, until it jogs once.
+8. Bring the shade to its top stop, stopping before it goes past, and hold **UP** + **STOP**, letting go at the **second** jog, about two seconds in.
+9. Bring it to its bottom stop and hold **DOWN** + **STOP**, again letting go at the **second** jog.
+10. Tap **UP** once — the shade runs all the way up and stops on its own at the top limit.
+11. Only if each tap moves it just a centimetre or so — a limit did not save. Bring the shade to that stop again and repeat its step, 8 or 9, pressing both buttons at the same moment and letting go at the second jog. If holding **UP** + **DOWN** reverses the shade rather than switching anything, no limit saved at all: put the direction right as at step 7, then redo steps 8 and 9.
+12. Only if taps still move it a centimetre, yet holding **UP** or **DOWN** runs it to each limit and it stops there by itself — the limits are saved and the motor is in step mode. Hold **UP** + **DOWN** for about five seconds, until it jogs once, then within four seconds press **STOP** — one jog, and a single tap now runs it end to end.
+13. Do the move above once for every other channel the shade should answer, on any remote, and tap **UP** and **DOWN** on each to check.
+
+Back in Home Assistant:
+
+14. Add the shade as in *Onboard the shades* above — its remote is paired again, so the remote sequence opens pairing mode as before.
+15. Open the new shade's entity, select **⚙ Settings**, set **Entity ID** to the one noted at step 1, and select **Update** — the group and the automations find it again.
+
+> [!NOTE]
+> Holding **UP** or **DOWN** for more than three seconds runs the shade on its own — press **STOP** near the spot, then tap to fine-tune before setting a limit. Until both limits are saved, a tap moves the shade only a little, which is how the fine-tuning works. A limit hold kept going to about five seconds jogs **once** instead of twice: that opens the motor's limit adjusting, where taps also inch, and the two-second hold at the chosen spot is what saves. **UP** + **DOWN** means two different things by timing — two seconds before the limits exist reverses the direction (step 7), five seconds after switches step mode on or off (step 12). The reset leaves the PoE shade's DHCP reservation alone, since the router holds that against the motor's network hardware, not its pairings. Seen here on the first reset: after the bottom limit, every tap still moved the shade about a centimetre, and UP + DOWN then reversed it — the limits had not saved. The steps come from the motor maker's remote guide — *Initial Setup Programming*, *Adjusting Limits* and *Tilt Mode*.
 
 ### Group them and drive them as one
 Make one group so PoE-vs-battery stops mattering, then automate the group.

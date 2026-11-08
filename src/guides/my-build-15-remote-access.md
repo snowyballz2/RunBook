@@ -221,7 +221,7 @@ Advertised routes do nothing until an admin — you — approves them, so a stra
 5. Click **Save**.
 
 > [!NOTE]
-> The household's other devices need nothing extra: macOS, iOS, tvOS, and Windows all pick up new subnet routes automatically. Only Linux clients opt in manually, with `tailscale set --accept-routes` — relevant only if you later run a Linux laptop on the tailnet.
+> The household's other devices need nothing extra: macOS, iOS, tvOS, and Windows all pick up new subnet routes automatically. Only Linux clients opt in manually, with `tailscale set --accept-routes` — relevant only if you later run a Linux laptop on the tailnet. Windows is the one that takes the route even at home, ahead of the network it is plugged into, so a Windows PC that never leaves the house should have it turned off — *When something breaks* has the one command, under *Remote access*.
 
 ## Prove it from your iPhone
 

@@ -374,6 +374,17 @@ The phone's message is the same whatever went wrong; the reason is in the Matter
 > [!NOTE]
 > The first time this was needed, a search for `rror` came back with nothing while `ommission` found the red lines, so search for that. If the viewer shows `Loading log…` at the top, it is still fetching: wait for the line to go before trusting an empty result.
 
+### One shade answers the handheld remote reliably, the Helix dial only sometimes
+A pairing is all or nothing — a shade either holds a channel or it does not — so a shade that answers some presses and misses others is hearing the dial weakly, or being sent moves it cannot place. Every other shade working from the same dial points at this one shade's reception or setup. At the shade:
+
+1. Tap **UP** on the handheld — the shade runs all the way and stops on its own. If each tap moves it about a centimetre, its limits are not saved, and the dial's percentage positions have nothing to measure against while the handheld's plain up and down still work: set them again as on the Automations page, *Start every remote over*, steps 7 to 12.
+2. Charge the dial with a plain USB charger and a Type-C cable — SmartWings says not to use a fast-charging PD charger — until its light shows green. A low battery shortens its reach, and the shade with the weakest reception drops out first.
+3. Stand beside the shade and use the dial there. Reliable up close and unreliable from its usual spot means range: where the dial lives, or what sits between it and this shade.
+4. Look at the motor head: if a thin antenna wire leaves it, it should hang free, not pinned behind the bracket or folded against the metal tube.
+
+> [!NOTE]
+> Seen here: one PoE shade, after its remote pairings were started over, answered the dial unreliably while every other shade answered it and the same shade answered the handheld well. Which check fixed it goes here once known.
+
 ## Remote access
 
 ### The phone reaches home on cellular but not on someone else's Wi-Fi
@@ -382,6 +393,32 @@ That Wi-Fi is on `192.168.1.x` too, and a network you are standing in beats the 
 1. On the phone, open **Settings → Wi-Fi → (i)** beside the network — an address starting `192.168.1.` confirms it.
 2. Open Home Assistant at `https://homeassistant.<tailnet>.ts.net` — the collision-proof address from the Remote Access page.
 3. For anything else, turn Wi-Fi off for the visit. The Renumber the LAN page is the permanent fix.
+
+### The Windows PC drops the file share while Tailscale is on, at home
+Windows takes the tailnet's `192.168.1.0/24` route ahead of the network it is plugged into, so with Tailscale running, the PC's traffic for the NAS goes into the tunnel, out through the host and back onto the LAN — slower at best, and dead whenever the tunnel hiccups, which drops a copy mid-transfer and leaves the share answering `0x80070035` and **The network path was not found**. The Mac and the iPhone prefer the network they are standing in; Windows does not. A desktop that never leaves the house has no use for the route. In **PowerShell** on the PC:
+
+1. Ask which way the PC sends traffic for the NAS — `InterfaceAlias : Tailscale` confirms it:
+
+```
+Test-NetConnection 192.168.1.20 -Port 445
+```
+
+2. Stop this PC using the tailnet's route to the LAN — its Tailscale still reaches the tailnet's own `100.x` addresses:
+
+```
+& "C:\Program Files\Tailscale\tailscale.exe" set --accept-routes=false
+```
+
+3. Repeat step 1 — `InterfaceAlias` now names the PC's own network adapter, and `TcpTestSucceeded` reads `True`.
+4. Open the share's drive in **File Explorer**.
+5. Only if Windows answers **The local device name is already in use** — the old mapping is stuck; clear it, then map the share again as on the TrueNAS page:
+
+```
+net use K: /delete
+```
+
+> [!NOTE]
+> Seen here: a copy from the PC to the `files` share dropped partway, TrueNAS and its disks stayed up, and the PC could not reconnect — `Test-NetConnection` failed both ping and port 445 through the **Tailscale** interface, and at the next sign-in Windows could not restore drive `K:` either.
 
 ### Every site fails while Tailscale is on, and works the moment it is off
 Not an internet problem — a DNS one, and a designed cost. The tailnet's DNS override sends every lookup from your phone and Mac to AdGuard at home, so when the house is unreachable — the server down, the home internet down, or the tunnel itself broken — those two devices have no DNS at all while everyone else's internet is fine. Tailscale off means the carrier's DNS, which is why everything returns at once.

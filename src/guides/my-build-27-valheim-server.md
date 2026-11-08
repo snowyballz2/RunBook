@@ -145,7 +145,7 @@ docker run -d \
   -e TZ=America/New_York \
   -e BACKUPS_MAX_AGE=7 \
   -e ADMINLIST_IDS="STEAM-ID" \
-  -e SERVER_ARGS="-saveinterval 600" \
+  -e SERVER_ARGS="-saveinterval 1800" \
   -e VALHEIM_LOG_FILTER_REGEXP_Players="Got connection SteamID|Got character ZDOID from|Closing socket" \
   -e ON_VALHEIM_LOG_FILTER_REGEXP_Players="bash /config/players-notify.sh" \
   ghcr.io/community-valheim-tools/valheim-server
@@ -195,7 +195,7 @@ docker logs -f valheim-server
 > - **The two `-v` lines** — keep the world, its backups and the server install on the container's disk, outside the Docker image, so an image update never touches them.
 > - **The backup age, `BACKUPS_MAX_AGE`** — the image writes a world backup every hour under `/root/valheim-server/config/backups`, kept for the seven days this sets.
 > - **The admin list, `ADMINLIST_IDS`** — the Steam IDs, separated by spaces, whose characters can run the server's admin commands from the in-game console: `save`, `kick`, `ban`, and the switch that turns on the game's cheat commands. Yours alone is the right list; a friend on it could empty a boss fight with a typed command.
-> - **The save interval, `SERVER_ARGS="-saveinterval 600"`** — the game writes the world every ten minutes instead of its default thirty, so a power cut or a stopped container costs at most ten minutes of play. Each save is a brief stutter for everyone online, which is why it is not shorter.
+> - **The save interval, `SERVER_ARGS="-saveinterval 1800"`** — the game writes the world every thirty minutes, its own default, written out so it is one number to change. A power cut or a container shut down from Proxmox costs at most that much play; a stop with the console command saves first and costs nothing. Each save is a moment's stutter for everyone online — at ten minutes, tried here first, that came round too often to ignore, and with the server staying up for weeks at a time the shorter interval bought little.
 > - **The log-filter pair, `VALHEIM_LOG_FILTER_REGEXP_Players`** and the `ON_` line under it — hand every join and leave line in the server's log to the push script from *Get a push when someone joins or leaves*. The lines stay in the log, each followed by a `Running hook` line of the server's own, and until that script exists a join also logs that it is missing, which is harmless.
 >
 > Three timers run inside the container on their own, with nothing to set up. They are listed here because the Maintenance page keeps one table of every scheduled job in the build, and these belong in it:
@@ -473,7 +473,7 @@ echo 'Got character ZDOID from Test : 1:1' | docker exec -i valheim-server bash 
 echo 'Closing socket 1' | docker exec -i valheim-server bash /config/players-notify.sh
 ```
 
-15. Check the start script carries the two log-filter lines — `2` means it does and the server already runs with them, so skip to step 23; `0` means it was written before they joined it:
+15. Check the start script carries the two log-filter lines — `2` means it does and the server already runs with them, so skip to step 27; `0` means it was written before they joined it:
 
 ```bash
 grep -c LOG_FILTER /root/valheim-run.sh
@@ -485,29 +485,43 @@ grep -c LOG_FILTER /root/valheim-run.sh
 nano /root/valheim-run.sh
 ```
 
-17. Add these two lines directly above the last line, the image line, `ghcr.io/community-valheim-tools/valheim-server`:
+17. Move the cursor onto the line just above the last one — the last line is the image line, `ghcr.io/community-valheim-tools/valheim-server` — and press **Ctrl+E**, which jumps to the end of that line, just after its `\`.
+18. Press **Enter** for a fresh line.
+19. Paste these two lines on it:
 
 ```bash
   -e VALHEIM_LOG_FILTER_REGEXP_Players="Got connection SteamID|Got character ZDOID from|Closing socket" \
   -e ON_VALHEIM_LOG_FILTER_REGEXP_Players="bash /config/players-notify.sh" \
 ```
 
-18. Save with **Ctrl+O**, then **Enter**.
-19. Close the editor with **Ctrl+X**.
-20. Replace the running server with one built from the edited script — anyone playing drops for about a minute, and the world is untouched:
+20. Save with **Ctrl+O**, then **Enter**.
+21. Close the editor with **Ctrl+X**.
+22. Clear any spaces left at the ends of the script's lines — they are invisible in the editor, but one after a closing `\` ends the command early, and the start then fails with `docker: invalid reference format` and `line 19: ghcr.io/community-valheim-tools/valheim-server: No such file or directory`, as it did here on the first run. It prints nothing:
+
+```bash
+sed -i 's/[[:space:]]*$//' /root/valheim-run.sh
+```
+
+23. Replace the running server with one built from the edited script — anyone playing drops for about a minute, and the world is untouched:
 
 ```bash
 docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run.sh
 ```
 
-21. Check what it printed — `valheim-server` twice and then a long string of letters and numbers, the new server's ID, means it is up; carry on at step 23.
-22. Only if it answered `Error response from daemon: No such container: valheim-server` — there was no server left to stop: an earlier run of step 20 removed it and the start script then stopped short, so nothing is running and the world sits safely on disk. Start the new one on its own; it prints the ID, or the reason it cannot start:
+24. Check what it printed — `valheim-server` twice and then a long string of letters and numbers, the new server's ID, means it is up; carry on at step 26.
+25. Only if it answered `Error response from daemon: No such container: valheim-server` — there was no server left to stop: an earlier run of step 23 removed it and the start script then stopped short, so nothing is running and the world sits safely on disk. Start the new one on its own; it prints the ID, or the reason it cannot start:
 
 ```bash
 bash /root/valheim-run.sh
 ```
 
-23. Prove it from the PC, a minute or two after the start while the world loads: join the server — a push reads your character's name and **joined**; quit to the main menu — another reads **left**.
+26. Check the world has loaded — a minute or two after the start, this prints a `Game server connected` line, and until then nothing; run it again until the line appears:
+
+```bash
+docker logs valheim-server 2>&1 | grep 'Game server connected'
+```
+
+27. Prove it from the PC: join the server — a push reads your character's name and **joined**; quit to the main menu — another reads **left**.
 
 > [!NOTE]
 > How the script tells a join from a respawn: a fresh connection leaves the player's Steam ID waiting, and only the first character to enter the world after it claims it and pushes **joined** — a respawn after a death finds nothing waiting and stays quiet. The Steam ID it claimed is what later recognises the same player's **Closing socket** line as their exit. Its notes live in memory inside the server's container, so a restart starts them clean. If a real join pushes nothing while step 14 worked, run the log command in *See who is on* and compare its lines with the three made-up ones above.
@@ -536,7 +550,7 @@ docker start valheim-server
 4. Log back in. The last session's progress in place is the same proof from the game's side, worth seeing once before an update or a power cut makes it matter.
 
 ### If Shutdown was clicked instead
-The console ends with `[EOF - dtach terminating]` and goes blank, because the container it was attached to is gone, and the game server went down with it. The world itself is safe on the container's disk; what is lost is the play since the game's last save, because a container shutdown does not hand the game the interrupt it saves on with time to use it — the first time this happened here it cost about ten minutes. With the start script's save interval, that is the most it can cost. In **Proxmox → 109 (valheim)**:
+The console ends with `[EOF - dtach terminating]` and goes blank, because the container it was attached to is gone, and the game server went down with it. The world itself is safe on the container's disk; what is lost is the play since the game's last save, because a container shutdown does not hand the game the interrupt it saves on with time to use it — the first time this happened here it cost about ten minutes. The most it can cost is the start script's save interval, thirty minutes. In **Proxmox → 109 (valheim)**:
 
 1. Click **Start** at the top of the page — the restart rule brings the game server back on its own, in about a minute.
 2. Open **Console** and confirm it is up — the line for `valheim-server` should show an `Up` time:
@@ -548,7 +562,7 @@ docker ps
 3. Log in and check the last session's progress is there.
 
 ### Force a save while playing
-A stop saves on its own, so this is for the moments in between — before a fight that could go either way, or when a storm is knocking the lights. It is an admin command: the server takes it only from a character whose Steam ID is on the start script's admin list, which is you, and friends are covered by the ten-minute autosave. It runs from the game's console, which the game client only opens when it was launched with a flag. Once, on the PC, in **Steam → Library**:
+A stop saves on its own, so this is for the moments in between — before a fight that could go either way, or when a storm is knocking the lights. It is an admin command: the server takes it only from a character whose Steam ID is on the start script's admin list, which is you, and friends are covered by the thirty-minute autosave. It runs from the game's console, which the game client only opens when it was launched with a flag. Once, on the PC, in **Steam → Library**:
 
 1. Right-click **Valheim** → **Properties**.
 2. On the **General** tab, in **Launch Options**, type `-console`, and close the window.
@@ -575,15 +589,21 @@ nano /root/valheim-run.sh
 2. Change the value inside the quotes — for the password, the `-e SERVER_PASS="…"` line, keeping Valheim's rules: at least five characters, and not a string that appears inside the server name or the world name. A line added goes above the last line, the one naming the image, `ghcr.io/community-valheim-tools/valheim-server` — that line stays last and is the only one without a backslash at its end; every line above it ends in one.
 3. Save with **Ctrl+O**, then **Enter**.
 4. Close the editor with **Ctrl+X**.
-5. Replace the running server with one built from the edited script — anyone playing drops for about a minute while it comes back, and the world is untouched, since it lives in the data folder the script mounts rather than in the container being replaced:
+5. Clear any spaces left at the ends of the script's lines — invisible in the editor, but one after a closing `\` ends the command early and the start fails with `docker: invalid reference format`. It prints nothing:
+
+```bash
+sed -i 's/[[:space:]]*$//' /root/valheim-run.sh
+```
+
+6. Replace the running server with one built from the edited script — anyone playing drops for about a minute while it comes back, and the world is untouched, since it lives in the data folder the script mounts rather than in the container being replaced:
 
 ```bash
 docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run.sh
 ```
 
-6. For a new password, update the Valheim join password field above and the vault item, and send friends the new one.
+7. For a new password, update the Valheim join password field above and the vault item, and send friends the new one.
 
-If step 5 answers `No such container: valheim-server`, the server was never started: the chain stops at `docker stop` because there is nothing to stop. Run the start script on its own, as in *Start it* above — `bash /root/valheim-run.sh` — which is also the right move after a first start that failed on a bad password.
+If step 6 answers `No such container: valheim-server`, the server was never started: the chain stops at `docker stop` because there is nothing to stop. Run the start script on its own, as in *Start it* above — `bash /root/valheim-run.sh` — which is also the right move after a first start that failed on a bad password.
 
 ### Updates
 Nothing to run today — this step records how the server updates, for the Maintenance page's monthly walk, and the one command below is for the rare day the image's project page announces a release worth having.
