@@ -368,6 +368,101 @@ At `http://192.168.1.57:3001`:
 4. **Hostname** → `192.168.1.62`.
 5. Click **Save**.
 
+### Check its health
+Kuma only says the container answers. This is the look at the game server itself, once a month on the Maintenance page's pass or whenever play feels off. It answers four questions in order: is every part running, is it saving and backing up, is anything growing that should not, and is it keeping up. There is nothing to set up, and each answer is one command or one graph.
+
+In **Proxmox → 109 (valheim) → Console**:
+
+1. Check every part of the server is running — five lines read `RUNNING`, each with how long it has been up, and the sixth, `valheim-bootstrap`, reads `EXITED`, which is right, since it runs once at start-up:
+
+```bash
+docker exec valheim-server supervisorctl status
+```
+
+> [!NOTE]
+> The parts, one per line of that list:
+>
+> - **`crond`** — the clock behind the hourly backup, the fifteen-minute update check and the 5:10 restart.
+> - **`syslogd`** — passes every part's output into the one log that `docker logs` reads.
+> - **`valheim-backup`** — makes the hourly zips.
+> - **`valheim-server`** — the game itself. Its uptime counts from its last restart, normally that morning's 5:10, so under a day. Shorter than the time since 5:10 means it restarted since — after an update, which step 4 shows, or after a crash, which the container recovers from on its own by starting the game again.
+> - **`valheim-updater`** — the Steam check every fifteen minutes.
+
+2. Check it is saving — each line is one save, stamped with its time and ending with how long it took, `Total time [149ms]` when this page was written:
+
+```bash
+docker logs valheim-server 2>&1 | grep 'save (5/5)' | tail -5
+```
+
+Healthy is the newest no more than half an hour old while people are playing, and every total time a fraction of a second. That total is the stutter everyone feels at each save, and it grows with the world, so it is the number to compare from one check to the next.
+
+3. Check the hourly backups — the first line is the folder's total, then the three newest zips, named by date and time:
+
+```bash
+ls -lht /root/valheim-server/config/backups | head -4
+```
+
+Healthy is the newest made at five past this hour or the last one, with the sizes close to one another and creeping up only as the world grows. A newest zip hours old means the backup part has stopped, and step 1 shows it.
+
+4. Look for trouble the server has reported — the image marks its own problems `ERROR` or `WARN` and announces each update; nothing printed is the healthy answer:
+
+```bash
+docker logs valheim-server 2>&1 | grep -E 'ERROR -|WARN -|FATAL -|was updated' | tail -20
+```
+
+`Valheim Server was updated - restarting` is a game patch arriving. `Failed to update Valheim server from Steam` now and then is Steam being busy, and it retries in fifteen minutes; the same line all day means the container cannot reach Steam.
+
+5. Measure the three folders that hold the server's files:
+
+```bash
+du -sh /root/valheim-server/config/worlds_local /root/valheim-server/config/backups /root/valheim-server/data
+```
+
+> [!NOTE]
+> What each size is:
+>
+> - **`worlds_local`** — the world. It grows as the world is explored and built on, and it is the size worth writing down each check.
+> - **`backups`** — a week of hourly zips, 168 of them, so it rises with the world and goes no further.
+> - **`data`** — the game server, held twice: the download and the running copy. It stays the same between game updates.
+
+6. Measure the server's own log — the file behind `docker logs`, which every log check on this page reads:
+
+```bash
+du -h "$(docker inspect -f '{{.LogPath}}' valheim-server)"
+```
+
+The log is the one thing here with no limit. It holds every line since the server was last re-created, including a Steam check every fifteen minutes while nobody plays, and only a re-creation empties it. Its size only matters to the log searches, which slow down as it grows.
+
+7. Only if it has passed about 500 MB — start it afresh with the recreate from *Change a setting later*, editing nothing. Anyone playing drops for about a minute, and the comings and goings in *See who is on* start again from now:
+
+```bash
+docker stop valheim-server && docker rm valheim-server && bash /root/valheim-run.sh
+```
+
+8. Check what Docker itself keeps — the **Images** line is the server image, and after an image update from *Updates* the old copy stays behind and shows under **RECLAIMABLE**:
+
+```bash
+docker system df
+```
+
+9. Only if the **Images** line shows anything under **RECLAIMABLE** — remove the leftover copies; the image the server runs on is never touched:
+
+```bash
+docker image prune -f
+```
+
+Then in **Proxmox → 109 (valheim) → Summary**:
+
+10. Read **Bootdisk size** at the top — how much of the 32 GB disk is in use. Under three-quarters is healthy. The backups folder from step 5 is nearly all of what grows, and if it is the problem, lowering `BACKUPS_MAX_AGE` from `7` with *Change a setting later* keeps fewer days.
+11. Open the time-frame menu at the top right of the graphs, which reads **Hour**, and pick **Week**.
+12. Read the **CPU Usage** graph — it should rise while people play and fall back low when nobody does. High with nobody on is the warning.
+13. Read the **Memory Usage** graph — the **Used** line should hold a steady level under the **Total** line, the 6 GB cap. A Used line that climbs day after day without coming back down, or one that reaches Total, is the warning.
+14. Read the **CPU Pressure Stall** graph — the share of time the server waited for a free core. Near zero means the i7 always had room. A steady rise while people play means the host was busy elsewhere, with Frigate or Ollama, and players feel it as lag.
+15. Write the date, the world size from step 5, the newest save time from step 2 and the log size from step 6 in the field below — the next check compares against it.
+
+> [!INPUT] valheim-health-last | Last health check
+> One line, in the shape: Nov 8 — world 40 MB, save 149 ms, log 20 MB.
+
 ### See who is on
 Nothing to set up: the game's own panel and the server's log already hold it. The image's status page and Steam's server browser are no help here, since both answer only for a public server, and even then leave player names blank.
 
