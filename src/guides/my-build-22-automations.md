@@ -284,7 +284,7 @@ mode: single
 ## Doors and presence
 
 ### Auto-lock the U400s and notify on unlock
-The three **Aqara U400** deadbolts were commissioned directly into Home Assistant over Matter (per the Matter Locks page), so each surfaces as a `lock.*` entity. This build has **no door or window contact sensors** — the only Third Reality devices here are the leak sensors and the router plugs — so these rules trigger off the lock's *own* reported state instead of an external sensor. Three patterns per lock.
+The three **Aqara U400** deadbolts were commissioned directly into Home Assistant over Matter (per the Matter Locks page), so each surfaces as a `lock.*` entity. None of the three doors has a contact sensor — the build's only one is on the sliding glass door, which has no lock to drive — so these rules trigger off the lock's *own* reported state instead of an external sensor. Three patterns per lock.
 
 First, auto-lock a few minutes after the lock is opened — trigger on the lock holding `unlocked` for a few minutes, then re-lock it. This stands in for a door-closed sensor: if the deadbolt is left open, it secures itself.
 
@@ -345,7 +345,7 @@ mode: parallel
 All three doors sit in every trigger, and `trigger.entity_id` and `trigger.to_state.name` let one rule serve whichever door fired — `mode: parallel` lets two doors run their own timers at the same time.
 
 > [!TIP]
-> If you later add a door/window **contact sensor** and pair it (the same way you joined the leak sensors), you can swap the auto-lock trigger to fire on the *door* closing and holding (`binary_sensor.front_door_contact` reading `off` `for: "00:05:00"`) for a more natural "lock after the door is shut" behaviour. An Aqara contact on the **Zigbee** mesh is the safe choice, since Zigbee already has mains-powered routers here; IKEA's **MYGGBETT** at $8 is the cheaper option once the Thread mesh has routers of its own. The build does not ship one, so the lock-state version above is the default.
+> If you later add a door/window **contact sensor** and pair it (the same way you joined the leak sensors), you can swap the auto-lock trigger to fire on the *door* closing and holding (`binary_sensor.front_door_contact` reading `off` `for: "00:05:00"`) for a more natural "lock after the door is shut" behaviour. An Aqara contact on the **Zigbee** mesh is the safe choice, since Zigbee already has mains-powered routers here; IKEA's **MYGGBETT** at $8 is the cheaper option, now that the Thread mesh has routers of its own. The build's one MYGGBETT watches the sliding door, not a locked one, so the lock-state version above is the default.
 
 ### Watch the locks the way the storm taught
 A power blip has a lock-specific aftermath this build has now lived through: Home Assistant comes back, the Matter subscription does not, and a lock sits there showing **connected** while commands time out — invisible until someone tries the door from an airport. Two watchdogs cover both shapes of the failure.
@@ -458,6 +458,23 @@ The presence rules below reach for `climate.*` and `light.*` entities. The Casé
 
 Then note the two `climate.*` entity names it creates (the rules below use `climate.downstairs`; substitute your real names). The Caséta dimmers are already `light.*` entities from that earlier step, ready for the presence rules here and the scenes at the end of this page.
 
+### Name the sliding door sensor
+The **MYGGBETT** on the sliding glass door is the build's one contact sensor. The three deadbolt doors report through their locks, but the slider has no smart hardware and cannot be locked or closed remotely, so this sensor is the only way Home Assistant knows it is open. Every rule on this page that watches it uses one entity id, `binary_sensor.sliding_door`. Home Assistant named the entity after the device when you paired it — on this build the device is *Sliding Door Alarm*, so the entity came out as `binary_sensor.sliding_door_alarm_door` — so give it the id the rules expect, once:
+
+1. In Home Assistant, go to **Settings → Devices & services** and open the **Entities** tab.
+2. Search for `Sliding Door` and click the **Door** entity.
+3. Click the gear icon at the top of the dialog.
+4. **Entity ID** → `binary_sensor.sliding_door`.
+5. Click **Update**.
+
+It reads `on` while the door is open. The rules that watch it sit with the others of their kind further down:
+
+- **Everybody left**, under *Presence* — a push when the house empties with the door open.
+- **Goodnight lockdown**, under *The house at night and away* — a push at 10:30 p.m. if it is still open.
+- **Away — door or window opened**, in the same section — a critical alert when it opens with nobody home.
+- **Door left open**, in the same section — a push once it has stood open ten minutes.
+- **Pause HVAC on open window**, the optional rule under *ecobee setback* — turns the downstairs system off while it stands open.
+
 ### Presence — everybody left, somebody home
 The companion app on each iPhone hands you a **device tracker** for free. So far only one phone has the app — the iPhone from the Matter Locks page.
 
@@ -498,13 +515,7 @@ actions:
           message: "Sliding door is open and nobody is home."
 ```
 
-The last block is why the sliding glass door gets a **MYGGBETT** contact sensor. The three deadbolts lock themselves on the line above, but the slider has no smart hardware and cannot be closed remotely — so the only useful action is to tell you before you are too far away to turn around. Every rule on this page that watches the door uses one entity id, `binary_sensor.sliding_door`. Home Assistant named the entity after the device when you paired it — on this build the device is *Sliding Door Alarm*, so the entity came out as `binary_sensor.sliding_door_alarm_door` — so give it the id the rules expect, once:
-
-1. In Home Assistant, go to **Settings → Devices & services** and open the **Entities** tab.
-2. Search for `Sliding Door` and click the **Door** entity.
-3. Click the gear icon at the top of the dialog.
-4. **Entity ID** → `binary_sensor.sliding_door`.
-5. Click **Update**.
+The last block is the sliding door's. The three deadbolts lock themselves on the line above, but the slider cannot be closed remotely, so the only useful action is to tell you before you are too far away to turn around.
 
 Coming home is the easy half — no conditions needed.
 
