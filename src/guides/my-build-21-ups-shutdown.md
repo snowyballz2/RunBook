@@ -194,6 +194,13 @@ journalctl -u nut-monitor -n 12 --no-pager
 
 `Unable to use old-style MONITOR line without a username` means NUT counted four words after `MONITOR` in `upsmon.conf` where it needs five. Either a word is missing, or the password holds a `#`, a quote or a backslash, which cuts the line short or glues two words together while the line still looks complete in the editor. Seen here on 2026-11-22: the line looked right, six words ending in `primary`, and the watcher had been failing at every start since the page was first run on Oct 24. The cure is a new password of letters and numbers only, put in both `upsd.users` and the `MONITOR` line, then the restart above.
 
+The same command on a healthy watcher, as seen here on 2026-11-22 after the fix:
+
+- **`Communications with UPS cyberpower@localhost established`** — the line that matters. The watcher is logged in and reading the UPS.
+- **`Poll UPS … failed - Driver not connected`**, then **`Communications … lost`**, a few seconds earlier — harmless. Both halves restarted in the same second, and the watcher asked before the server half had its driver back.
+- **`upsnotify`** lines and **`Could not find PID file`** — start-up chatter, safe to ignore.
+- **`Login on UPS … failed`** or **`ACCESS-DENIED`** — the two passwords do not match. Put the same one in both files and restart.
+
 The driver needs no enabling by hand — NUT watches `ups.conf` and spins up a `nut-driver@cyberpower` service for the new section automatically. Then ask the UPS how it is doing:
 
 ```bash
