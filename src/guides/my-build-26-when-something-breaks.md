@@ -113,32 +113,33 @@ Seen here on 2026-11-22, with the server on the UPS's battery outlets: the box w
 3. Wait for the case's small lights to go out, then count a full minute more.
 4. Push the cord back in. The box starts by itself, without the power button.
 5. If it stays dark, repeat steps 2 to 4 with a longer wait.
-6. Once it is up, list the boots in **pve → Shell** — the last row is the boot now running, and the row above it is the one that ended with the box off:
+6. Once it is up, list the boots in **pve → Shell**. The last row is the boot now running:
 
 ```bash
 journalctl --list-boots | tail -8
 ```
 
-7. Read how that boot ended:
+7. Going up from the last row, find the first boot that ran for more than a few minutes. That is the one that ended with the box off, and the number at the start of its row is what the next commands need. A row above the last that lasted only seconds is a failed start from the re-plugging — on 2026-11-22 one sat in between, so the number was `-2`.
+8. Read how that boot ended. The commands below are written for `-1`; change it if your number was different:
 
 ```bash
 journalctl -b -1 -n 25 --no-pager
 ```
 
-8. If it ends with `upsmon`, `Forced shutdown` or `Reached target Power-Off`, the UPS ordered a shutdown, and its reason is in this log:
+9. If it ends with `upsmon`, `Forced shutdown` or `Reached target Power-Off`, the UPS ordered a shutdown, and its reason is in this log:
 
 ```bash
 journalctl -b -1 -u nut-monitor --no-pager | tail -20
 ```
 
-9. If it ends in ordinary running lines with no shutdown request, the power supply switched itself off — carry on at step 3 of *The server resets by itself and nothing else in the house does*, above.
+10. If it ends in ordinary running lines with no shutdown request, the power was cut from under it — carry on at step 3 of *The server resets by itself and nothing else in the house does*, above.
 
 > [!NOTE]
 > What the lights mean: the power supply has two outputs, a small one that is always on while it is plugged in, and the main one that runs the computer. Lit lights on a dead box mean the small one is alive, so the outlet and the UPS are delivering power, and the main one is off and locked. A supply locks itself off when it senses a fault — too much current, a short, a wrong voltage, or its own overheating — and stays locked, ignoring the power button, until it has been without mains long enough to drain. A quick unplug is too short, which is why the first two tries did nothing. The board stuck in its soft-off state, the *will not power off* entry above, looks the same from outside and clears the same way.
 >
-> What the journal showed for 2026-11-22: the boot ended at 06:19:07 on ordinary running lines with no shutdown request, so it was a cut, and the box then sat off for seven hours. On the second re-plug it started, died one second into its boot log, and restarted by itself with nobody touching it. The boot list also held four more cuts on Nov 14, between 19:25 and 19:40, all on the UPS's battery outlets. That leaves two suspects: a UPS that drops its outlets for a moment, or the power supply. The test that separates them is the UPS page's plug-pull drill — a server that dies when the UPS's wall plug is pulled names the UPS, and one that rides through names the supply. The result goes here once the drill has been run.
+> What the journal showed for 2026-11-22: the boot ended at 06:19:07 on ordinary running lines with no shutdown request, so it was a cut, and the box then sat off for seven hours. On the second re-plug it started, died one second into its boot log, and restarted by itself with nobody touching it. The boot list also held four more cuts on Nov 14, between 19:25 and 19:40, all on the UPS's battery outlets. That leaves two suspects: a UPS that drops its outlets for a moment, or the power supply. The test that separates them is the UPS page's plug-pull drill — a server that dies when the UPS's wall plug is pulled names the UPS, and one that rides through names the supply. The drill passed once, on Oct 24, so one more pass proves little: pull the plug three times, half a minute each, a minute apart. The result goes here once that has been run.
 >
-> The same reading found the UPS watcher not running: `nut-monitor` was failing at start with `Unable to use old-style MONITOR line without a username`. It did not cause the cuts, but with it down nothing would have shut the server down on a flat battery. The UPS page's *Start it and prove it* step now checks for it.
+> The same reading found the UPS watcher not running: `nut-monitor` was failing at start with `Unable to use old-style MONITOR line without a username`. It did not cause the cuts, but with it down nothing would have shut the server down on a flat battery. It had been failing since Oct 24 and was fixed on Nov 22 with a new password of letters and numbers only. The UPS page's *Start it and prove it* step now checks for it.
 
 ## Names
 
