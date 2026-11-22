@@ -53,8 +53,10 @@ journalctl -b -1 -u nut-monitor --no-pager | tail -20
 A hard reset with no shutdown in the journal is power or hardware, so the suspects are the feed into the box and the box itself — cheapest test first, and only one change at a time, so the cure names the cause. First, the one piece of software evidence that exists: every boot's kernel errors in one list, where machine-check (`mce`), thermal, or NVIDIA `Xid` lines before a reset point at the CPU, the cooling, or the card:
 
 ```bash
-journalctl -t kernel -p err --no-pager | tail -40
+journalctl -t kernel -p err --no-pager | grep -v 'orphan cleanup' | tail -40
 ```
+
+The `grep` drops the nightly backup's own lines, one per container at 02:30, which are harmless and would otherwise fill the whole list. On 2026-11-22 they were all the unfiltered list showed: the last was at 02:37, and the cut came at 06:19 with nothing logged in between.
 
 1. Note what else was running on the server's circuit during each episode — an air conditioner, dryer, vacuum, microwave or space heater cycling on the same circuit sags the voltage enough to drop a power supply while the router on another circuit never notices.
 2. Shut the server down cleanly first — the UPS page's *Move the plugs with the server off* steps, starting from the **Shutdown** button on the pve node — then move its plug to the UPS's battery-side outlets, or to a different circuit; the UPS rides through sags even before the UPS page configures it.
