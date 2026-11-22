@@ -140,6 +140,7 @@ Append both accounts — the one `upsmon` signs in with, and a watch-only one fo
     password = a-different-long-password
 ```
 
+- **Both passwords** — letters and numbers only. NUT reads a `#` as the start of a comment and drops the rest of the line, and quotes, backslashes, spaces and `=` are special to it too, so a generated password with symbols breaks the file it sits in without any error at the time.
 - **`[admin]`** — the account `upsmon` uses. The `upsmon primary` line really has no equals sign: it says this account may run the shutdown, and that this host is the primary, the one wired to the UPS.
 - **`[hauser]`** — Home Assistant's account, which can only read. No `upsmon` line, so it can never order a shutdown.
 
@@ -147,7 +148,7 @@ Append both accounts — the one `upsmon` signs in with, and a watch-only one fo
 > The `[admin]` section name in `upsd.users` — if you rename it, the `MONITOR` line must match.
 
 > [!SECRET] nut-admin-password | NUT admin password
-> Replaces `pick-a-long-password` in both files — `upsd.users` and the `MONITOR` line must match.
+> Replaces `pick-a-long-password` in both files — `upsd.users` and the `MONITOR` line must match. Letters and numbers only.
 
 > [!INPUT] nut-ha-user | NUT read-only username | | hauser
 > The `[hauser]` section name in `upsd.users` — the account Home Assistant signs in with.
@@ -191,7 +192,7 @@ If the second line reads `failed` or `activating`, the watcher did not start, an
 journalctl -u nut-monitor -n 12 --no-pager
 ```
 
-`Unable to use old-style MONITOR line without a username` means the `MONITOR` line in `upsmon.conf` has four words after `MONITOR` where it needs five — the username or the password is missing. Seen here on 2026-11-22, found only while reading the logs after the server was cut on battery-backed power.
+`Unable to use old-style MONITOR line without a username` means NUT counted four words after `MONITOR` in `upsmon.conf` where it needs five. Either a word is missing, or the password holds a `#`, a quote or a backslash, which cuts the line short or glues two words together while the line still looks complete in the editor. Seen here on 2026-11-22: the line looked right, six words ending in `primary`, and the watcher had been failing at every start since the page was first run on Oct 24. The cure is a new password of letters and numbers only, put in both `upsd.users` and the `MONITOR` line, then the restart above.
 
 The driver needs no enabling by hand — NUT watches `ups.conf` and spins up a `nut-driver@cyberpower` service for the new section automatically. Then ask the UPS how it is doing:
 
