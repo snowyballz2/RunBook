@@ -192,7 +192,12 @@ If the second line reads `failed` or `activating`, the watcher did not start, an
 journalctl -u nut-monitor -n 12 --no-pager
 ```
 
-`Unable to use old-style MONITOR line without a username` means NUT counted four words after `MONITOR` in `upsmon.conf` where it needs five. Either a word is missing, or the password holds a `#`, a quote or a backslash, which cuts the line short or glues two words together while the line still looks complete in the editor. Seen here on 2026-11-22: the line looked right, six words ending in `primary`, and the watcher had been failing at every start since the page was first run on Oct 24. The cure is a new password of letters and numbers only, put in both `upsd.users` and the `MONITOR` line, then the restart above.
+`Unable to use old-style MONITOR line without a username` means NUT counted four words after `MONITOR` where it needs five. There are two ways to get there:
+
+- **A word is missing** from the line in `upsmon.conf`.
+- **The password holds a `#`, a quote or a backslash.** That cuts the line short or glues two words together, while the line still looks complete in the editor.
+
+Seen here on 2026-11-22: the line looked right, six words ending in `primary`, and the watcher had been failing at every start since the page was first run on Oct 24. The cure is a new password of letters and numbers only, put in both the accounts file and the watcher's line, then the restart above.
 
 The same command on a healthy watcher, as seen here on 2026-11-22 after the fix:
 
@@ -425,13 +430,30 @@ systemctl reboot --firmware-setup
 > A handful of log entries turns "it trips sometimes" into a pattern someone can act on, and it is the only evidence that survives between visits. Conveniently, most of that log writes itself once this page is done — every transfer to battery lands in the host's journal (`journalctl -u nut-monitor`) and, once the Home Assistant integration below is wired up, in HA's history as a timestamped state change on the UPS status sensor. A trip at 3 am that nobody witnessed still gets recorded to the minute. One trap to avoid: moving the server to a different circuit fixes *your* uptime and nothing else. If the fault is a damaged cable in a wall, it is still there, still arcing, just no longer inconveniencing you enough to chase.
 
 ### Rehearse the outage
-Two rehearsals, gentle then real. First the gentle one — pull the CyberPower's plug from the wall for half a minute while everything runs. Run this before pulling the plug, then again while on battery:
+Two rehearsals, gentle then real. The gentle one first, in **pve → Shell**, with everything running:
+
+1. Ask the UPS its state on wall power. It reads `OL`:
 
 ```bash
 upsc cyberpower@localhost ups.status
 ```
 
-What to expect: the status reads `OL` on line power, becomes `OB` — often `OB DISCHRG` — on battery, and returns to `OL`, usually `OL CHRG`, when you plug back in. The first ask after the pull can still say `OL`, because the driver polls every five seconds — ask again after ten, as happened here. With the full `upsc` listing, `input.voltage: 0.0` is the second proof of battery power. Nothing shuts down, because `upsmon` only acts when on-battery and low-battery are true together. What the drill proves is that the battery carries the load and the data link reports it. Then, at a quiet moment, the documented full drill, no battery-draining required:
+2. Pull the CyberPower's plug out of the wall. It beeps.
+3. Wait ten seconds and run the same command again. It reads `OB`, often `OB DISCHRG`. Asked sooner it can still say `OL`, because the driver polls every five seconds — as happened here.
+4. At half a minute, push the plug back in. The state returns to `OL`, usually `OL CHRG`.
+5. Read what the watcher recorded — an on-battery line and an on-line-power line for each pull:
+
+```bash
+journalctl -u nut-monitor -n 12 --no-pager
+```
+
+What the drill proves is that the battery carries the load and the data link reports it.
+
+- **Nothing shuts down** — the watcher only acts when on-battery and low-battery are true together.
+- **`input.voltage: 0.0`** in the full `upsc` listing is the second proof of battery power.
+- **Run here twice** — once on Oct 24 at 56 % battery, and as three pulls a minute apart on 2026-11-22. The server rode through every one.
+
+Then the real one, at a quiet moment — the documented full drill, no battery-draining required:
 
 ```bash
 upsmon -c fsd
@@ -495,24 +517,36 @@ nvidia-smi
 ## Watch it from Home Assistant
 
 ### Open the UPS to the LAN
-Nothing to edit in NUT — `MODE=netserver`, the LAN `LISTEN` line and the `hauser` account were written with the other config files, so `upsd` has been answering on the LAN, read-only, since it started. What stands between it and Home Assistant is the Proxmox host's own firewall: the Cameras page turned it on to fence Frigate, and its input policy drops anything not allowed — the integration's first attempt here ended in a connection error for exactly that reason. Open the port first, then add the integration:
+Nothing to edit in NUT. Three things were written with the other config files, so the server half has been answering on the LAN, read-only, since it started:
 
-1. Confirm `upsd` is listening on the LAN address — two lines, `127.0.0.1:3493` and `192.168.1.50:3493`, are right; only the first means the server has not been restarted since the `LISTEN` lines went in, so restart it with `systemctl restart nut-server` and ask again:
+- **`MODE=netserver`** — lets it answer other machines.
+- **The LAN `LISTEN` line** — the address it answers on.
+- **The `hauser` account** — the read-only login Home Assistant uses.
+
+What stands between it and Home Assistant is the Proxmox host's own firewall: the Cameras page turned it on to fence Frigate, and its input policy drops anything not allowed — the integration's first attempt here ended in a connection error for exactly that reason. Open the port first, then add the integration:
+
+1. Confirm the server half is listening on the LAN address. Two lines are right, one holding `127.0.0.1:3493` and one holding `192.168.1.50:3493`:
 
 ```bash
 ss -ltnp | grep 3493
 ```
 
-2. In Proxmox, click the **pve** node, then **Firewall**, then **Add**.
-3. **Direction** → `in`.
-4. **Action** → `ACCEPT`.
-5. **Protocol** → `tcp`.
-6. **Dest. port** → `3493`.
-7. **Source** → `192.168.1.51`.
-8. **Enable** → ticked — the dialog adds rules disabled by default.
-9. Click **Add** — the rule is live within a few seconds; nothing restarts.
-10. In Home Assistant, go to **Settings → Devices & services**.
-11. If **Network UPS Tools (NUT)** is not already waiting under discovered devices, add it:
+2. Only if the `192.168.1.50` line is missing: the server half has not been restarted since the `LISTEN` lines went in. Restart it, then run step 1 again:
+
+```bash
+systemctl restart nut-server
+```
+
+3. In Proxmox, click the **pve** node, then **Firewall**, then **Add**.
+4. **Direction** → `in`.
+5. **Action** → `ACCEPT`.
+6. **Protocol** → `tcp`.
+7. **Dest. port** → `3493`.
+8. **Source** → `192.168.1.51`.
+9. **Enable** → ticked — the dialog adds rules disabled by default.
+10. Click **Add** — the rule is live within a few seconds; nothing restarts.
+11. In Home Assistant, go to **Settings → Devices & services**.
+12. If **Network UPS Tools (NUT)** is not already waiting under discovered devices, add it:
 
 - **Host** → `192.168.1.50`
 - **Port** → `3493`
@@ -526,4 +560,10 @@ The CyberPower appears as a device with **Battery charge**, **Status**, **Load**
 > One automation earns its keep: trigger on the **Status** sensor changing to a state containing "On Battery" (capital B — the match is case-sensitive) and announce it through the Nest and Google speakers via Cast, plus a phone push from the Home Assistant companion app. The push half works today; the spoken half needs the Google Cast integration and the Piper voice, both added on the Voice page later in this build — build the automation now and the announcement starts working once that page is done. The server already looks after itself; this turns a 3 am outage into a heads-up you actually hear instead of a mystery in the logs.
 
 > [!NOTE]
-> Port 3493 stays on the LAN. Listing specific addresses instead of `0.0.0.0` keeps the daemon off interfaces it doesn't need, the firewall rule admits one address, and Home Assistant gets its own low-privilege account regardless — buttons and switches for outlet control would need an account with `instcmds` rights, which `hauser` deliberately lacks. Never port-forward 3493 to the internet — remote access is Tailscale's job. If the integration still cannot connect with the rule in place, step 1 is the whole diagnosis: the second `LISTEN` line and `MODE=netserver` both show up as that `192.168.1.50:3493` line, and its absence names the file to re-check.
+> Port 3493 stays on the LAN. Never port-forward it to the internet — remote access is Tailscale's job.
+>
+> - **Specific addresses instead of `0.0.0.0`** keep the daemon off interfaces it doesn't need.
+> - **The firewall rule** admits one address.
+> - **The `hauser` account** is low-privilege on purpose. Buttons and switches for outlet control would need an account with `instcmds` rights, which it lacks.
+>
+> If the integration still cannot connect with the rule in place, step 1 is the whole diagnosis. The `192.168.1.50:3493` line appears only when both the second `LISTEN` line and the netserver mode are in place, so its absence names the file to re-check.
