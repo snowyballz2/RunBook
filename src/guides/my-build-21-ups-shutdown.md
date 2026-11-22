@@ -179,6 +179,20 @@ MONITOR cyberpower@localhost 1 admin pick-a-long-password primary
 systemctl restart nut-server nut-monitor
 ```
 
+Check both came up — this should print `active` twice:
+
+```bash
+systemctl is-active nut-server nut-monitor
+```
+
+If the second line reads `failed` or `activating`, the watcher did not start, and nothing will shut the server down when the battery runs low. The `upsc` readings below work regardless, because they ask the server half, so they cannot show this. Read why it stopped:
+
+```bash
+journalctl -u nut-monitor -n 12 --no-pager
+```
+
+`Unable to use old-style MONITOR line without a username` means the `MONITOR` line in `upsmon.conf` has four words after `MONITOR` where it needs five — the username or the password is missing. Seen here on 2026-11-22, found only while reading the logs after the server was cut on battery-backed power.
+
 The driver needs no enabling by hand — NUT watches `ups.conf` and spins up a `nut-driver@cyberpower` service for the new section automatically. Then ask the UPS how it is doing:
 
 ```bash

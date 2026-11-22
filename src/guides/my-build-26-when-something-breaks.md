@@ -136,7 +136,9 @@ journalctl -b -1 -u nut-monitor --no-pager | tail -20
 > [!NOTE]
 > What the lights mean: the power supply has two outputs, a small one that is always on while it is plugged in, and the main one that runs the computer. Lit lights on a dead box mean the small one is alive, so the outlet and the UPS are delivering power, and the main one is off and locked. A supply locks itself off when it senses a fault — too much current, a short, a wrong voltage, or its own overheating — and stays locked, ignoring the power button, until it has been without mains long enough to drain. A quick unplug is too short, which is why the first two tries did nothing. The board stuck in its soft-off state, the *will not power off* entry above, looks the same from outside and clears the same way.
 >
-> The UPS has ruled out the wall as the cause, so a lock-out with nothing in the journal points at the supply itself, a short inside the case, or the card's power draw. Which one it was goes here once the journal has been read.
+> What the journal showed for 2026-11-22: the boot ended at 06:19:07 on ordinary running lines with no shutdown request, so it was a cut, and the box then sat off for seven hours. On the second re-plug it started, died one second into its boot log, and restarted by itself with nobody touching it. The boot list also held four more cuts on Nov 14, between 19:25 and 19:40, all on the UPS's battery outlets. That leaves two suspects: a UPS that drops its outlets for a moment, or the power supply. The test that separates them is the UPS page's plug-pull drill — a server that dies when the UPS's wall plug is pulled names the UPS, and one that rides through names the supply. The result goes here once the drill has been run.
+>
+> The same reading found the UPS watcher not running: `nut-monitor` was failing at start with `Unable to use old-style MONITOR line without a username`. It did not cause the cuts, but with it down nothing would have shut the server down on a flat battery. The UPS page's *Start it and prove it* step now checks for it.
 
 ## Names
 
