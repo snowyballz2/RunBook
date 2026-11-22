@@ -105,6 +105,39 @@ systemctl reboot --firmware-setup
 > [!NOTE]
 > This does not undo the UPS page's automatic shutdown. In an outage NUT halts the operating system — the part that protects the data — and the UPS then cuts its own outlets, so a board that would not switch off is switched off for it, and Restore AC Power Loss boots it when the mains return. The quirk costs you only on a manual shutdown, where holding the button is the cut.
 
+### The server is off and the power button does nothing, while small lights on the case stay lit
+Seen here on 2026-11-22, with the server on the UPS's battery outlets: the box was found off, the power button did nothing, and the headphone light and the network port's light were still on. Pulling the plug and putting it back started it on the third try.
+
+1. Look at the UPS's display. If it is dark or reads on battery, the house power is out and nothing below applies — the UPS page covers what happens next.
+2. Pull the server's power cord out of the back of the box.
+3. Wait for the case's small lights to go out, then count a full minute more.
+4. Push the cord back in. The box starts by itself, without the power button.
+5. If it stays dark, repeat steps 2 to 4 with a longer wait.
+6. Once it is up, list the boots in **pve → Shell** — the last row is the boot now running, and the row above it is the one that ended with the box off:
+
+```bash
+journalctl --list-boots | tail -8
+```
+
+7. Read how that boot ended:
+
+```bash
+journalctl -b -1 -n 25 --no-pager
+```
+
+8. If it ends with `upsmon`, `Forced shutdown` or `Reached target Power-Off`, the UPS ordered a shutdown, and its reason is in this log:
+
+```bash
+journalctl -b -1 -u nut-monitor --no-pager | tail -20
+```
+
+9. If it ends in ordinary running lines with no shutdown request, the power supply switched itself off — carry on at step 3 of *The server resets by itself and nothing else in the house does*, above.
+
+> [!NOTE]
+> What the lights mean: the power supply has two outputs, a small one that is always on while it is plugged in, and the main one that runs the computer. Lit lights on a dead box mean the small one is alive, so the outlet and the UPS are delivering power, and the main one is off and locked. A supply locks itself off when it senses a fault — too much current, a short, a wrong voltage, or its own overheating — and stays locked, ignoring the power button, until it has been without mains long enough to drain. A quick unplug is too short, which is why the first two tries did nothing. The board stuck in its soft-off state, the *will not power off* entry above, looks the same from outside and clears the same way.
+>
+> The UPS has ruled out the wall as the cause, so a lock-out with nothing in the journal points at the supply itself, a short inside the case, or the card's power draw. Which one it was goes here once the journal has been read.
+
 ## Names
 
 ### A service loads by address but not by its kuzco.org name
