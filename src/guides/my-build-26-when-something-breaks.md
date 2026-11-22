@@ -58,6 +58,14 @@ journalctl -t kernel -p err --no-pager | grep -v 'orphan cleanup' | tail -40
 
 The `grep` drops the nightly backup's own lines, one per container at 02:30, which are harmless and would otherwise fill the whole list. On 2026-11-22 they were all the unfiltered list showed: the last was at 02:37, and the cut came at 06:19 with nothing logged in between.
 
+What a clean list looks like, as seen here on 2026-11-22 — the same three lines at the start of every boot, and nothing else:
+
+- **`SGX disabled or unsupported by BIOS`** — a CPU feature this build does not use.
+- **`tpm_crb … [Firmware Bug]: ACPI region does not cover the entire command/response buffer`**, twice — a known quirk in how the board describes its security chip. The kernel works around it.
+- **A line with nothing after `kernel:`** — an empty message, logged once per boot.
+
+A list holding only these means the processor, the cooling and the card logged no complaint before any cut, which points away from all three and toward power.
+
 1. Note what else was running on the server's circuit during each episode — an air conditioner, dryer, vacuum, microwave or space heater cycling on the same circuit sags the voltage enough to drop a power supply while the router on another circuit never notices.
 2. Shut the server down cleanly first — the UPS page's *Move the plugs with the server off* steps, starting from the **Shutdown** button on the pve node — then move its plug to the UPS's battery-side outlets, or to a different circuit; the UPS rides through sags even before the UPS page configures it.
 3. If it still resets, unplug the case's **RESET SW** lead from the motherboard's front-panel header — a reset switch or its lead pinched during the cooling work shorts at random and produces exactly this.
