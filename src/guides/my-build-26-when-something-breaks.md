@@ -151,6 +151,8 @@ journalctl -b -1 -u nut-monitor --no-pager | tail -20
 >
 > The result, 2026-11-22: the server rode through all three. That clears the UPS, and the cuts on its battery outlets had already cleared the house circuit, so the fault is inside the box. The way it failed narrows it further. A shorted reset lead restarts the board; it does not leave it off with a dead power button. A box that stays off until the mains are pulled is a power supply that has locked itself, either on its own fault or on a short in something it feeds. So the supply and its cables now come ahead of the reset lead.
 >
+> The kernel's error list for every boot was clean as well: nothing but the three start-up lines described under *The server resets by itself*. The decision, 2026-11-22: replace the supply, a Toughpower Grand RGB 850W from the 2017 build. Two rules for the swap. None of the old modular cables are reused, because the supply end of a modular cable is wired differently from one model to the next and a wrong one can destroy a drive. And the card gets two separate cables, one per plug, in place of the single cable with a pigtail it has run on. Whether the cuts stop goes here once the new supply has run for a month.
+>
 > The same reading found the UPS watcher not running: `nut-monitor` was failing at start with `Unable to use old-style MONITOR line without a username`. It did not cause the cuts, but with it down nothing would have shut the server down on a flat battery. It had been failing since Oct 24 and was fixed on Nov 22 with a new password of letters and numbers only. The UPS page's *Start it and prove it* step now checks for it.
 
 ## Names
